@@ -21,7 +21,7 @@
   "scripts": {
     "build": "echo \"Nothing to build\"",
     "clean": "rimraf --glob out *.vsix",
-    "package": "yarn package:vsix",
+    "package": "rimraf clean && yarn build && yarn package:vsix",
     "package:vsix": "vsce package --yarn",
     "symlink": "yarn symlink:browser && yarn symlink:electron",
     "symlink:browser": "symlink-dir . ../../applications/browser-app/plugins/crossmodel-theme",

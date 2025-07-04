@@ -32,7 +32,7 @@
     "langium:generate": "langium generate",
     "langium:watch": "langium generate --watch",
     "lint": "eslint -c ./.eslintrc.cjs --ext .ts,.tsx ./src",
-    "package": "rimraf --glob out *.vsix && yarn package:webpack && yarn package:vsix",
+    "package": "rimraf clean && yarn build && yarn package:vsix",
     "package:vsix": "vsce package --yarn --allow-star-activation",
     "package:webpack": "webpack --mode production --devtool hidden-source-map",
     "symlink": "yarn symlink:browser && yarn symlink:electron",
