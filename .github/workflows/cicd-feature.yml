@@ -10,32 +10,48 @@ on:
       - chore/*
 
 jobs:
-  check-open-pr:
-    name: Check open PR
-    runs-on: ubuntu-latest
-    outputs:
-      open_pr_found: ${{ steps.output-pr-info.outputs.prFound }}
+  package:
+    runs-on: windows-2022
     steps:
-      # Get open (non-draft) PR info.
-      - name: Get PR info
-        uses: 8BitJonny/gh-get-current-pr@3.0.0
-        id: PR
-        with:
-          filterOutClosed: true
-          filterOutDraft: true
-      - name: Output PR info
-        id: output-pr-info
-        if: steps.PR.outputs.pr_found == 'true'
+      # Set environment variables
+      - name: Set env variables
+        shell: bash
+        # We set env variables on the GITHUB_ENV variable so they value is available in all consecutive steps.
         run: |
-          echo "prFound: ${{ steps.PR.outputs.pr_found }}"
-          echo "prFound=${{ steps.PR.outputs.pr_found }}" >> "$GITHUB_OUTPUT"
-          echo "prUrl: ${{ steps.PR.outputs.pr_url }}"
-          echo "prUrl=${{ steps.PR.outputs.pr_url }}" >> "$GITHUB_OUTPUT"
+          echo "PYTHON_VERSION=3.11.4" >> "$GITHUB_ENV"
+          echo "NODE_VERSION=20.x" >> "$GITHUB_ENV"
+          echo "GITHUB_TOKEN=${{ inputs.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
-  build-and-test:
-    needs: check-open-pr
-    # Only run the build if there is no open PR found (otherwise this is handled in the PR workflow).
-    if: ${{ needs.check-open-pr.outputs.open_pr_found != 'true' }}
-    uses: ./.github/workflows/build-and-test.yml
-    with:
-      runs-on: "['ubuntu-22.04']"
+      # Setup Node
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@crossmodel'
+          cache: 'yarn'
+
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build dev package (Windows, Linux)
+        if: (runner.os == 'Windows' || runner.os == 'Linux') && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          yarn --skip-integrity-check --network-timeout 100000
+          yarn build:packages
+          yarn theia:electron package:preview
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+
+      - name: Upload Windows Dist Files
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            applications/electron/dist/**
+          retention-days: 1
