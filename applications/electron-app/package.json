@@ -23,7 +23,6 @@
     "download:plugins": "theia download:plugins",
     "package": "yarn package:pre && electron-builder -c.mac.identity=null --publish never && yarn package:post",
     "package:extensions": "yarn --cwd ../../extensions/crossmodel-lang package -o ../../applications/electron-app/plugins/ && yarn --cwd ../../extensions/crossmodel-theme package -o ../../applications/electron-app/plugins/",
-    "package:post": "rimraf --glob plugins/crossmodel-* && yarn --cwd ../../extensions/crossmodel-lang symlink",
     "package:pre": "rimraf --glob dist plugins/crossmodel-* & yarn rebuild && yarn package:extensions",
     "package:preview": "yarn package:pre && electron-builder -c.mac.identity=null --dir && yarn package:post",
     "rebuild": "theia rebuild:electron --cacheRoot ../..",
