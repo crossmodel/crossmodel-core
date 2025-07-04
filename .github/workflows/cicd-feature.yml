@@ -16,7 +16,7 @@ jobs:
       # Checkout the code.
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       # Set environment variables
       - name: Set env variables
         shell: bash
@@ -42,7 +42,6 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Build dev package (Windows, Linux)
-        if: (runner.os == 'Windows' || runner.os == 'Linux') && github.event_name == 'pull_request'
         shell: bash
         run: |
           yarn --skip-integrity-check --network-timeout 100000
