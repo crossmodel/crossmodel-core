@@ -1,7 +1,7 @@
-appId: crossbreeze.crossmodel
-productName: CrossModelCE
-copyright: Copyright © 2023 CrossBreeze
-executableName: crossmodel-app
+appId: crossbreeze.crossmodel.core
+productName: CrossModel Core Edition
+copyright: Copyright © 2025 CrossBreeze
+executableName: crossmodel-core-app
 electronDist: ../../node_modules/electron/dist
 electronVersion: 30.1.2
 # Although it is generally not recommended to disable asar, it is required for Theia.
@@ -9,6 +9,8 @@ electronVersion: 30.1.2
 # because binaries can not be executed from the asar archive.
 # See asar file API limitations: https://www.electronjs.org/docs/tutorial/application-packaging#limitations-of-the-node-api
 asar: false
+nodeGypRebuild: false
+npmRebuild: false
 
 directories:
   buildResources: resources
@@ -19,8 +21,9 @@ directories:
 files:
   - src-gen
   - lib
+  - resources/icons/icon_256x256.png
   - scripts
-  - '!**node_modules/electron/**'
+  - "!**node_modules/**"
 
 extraResources:
   - from: plugins
@@ -43,7 +46,11 @@ mac:
 linux:
   icon: resources/icons/icon_256x256.png
   category: Development
+  vendor: CrossBreeze
+  mimeTypes:
+    - inode/directory
   target:
+    - deb
     - AppImage
   publish: null # we don't know where this will be published yet
 
