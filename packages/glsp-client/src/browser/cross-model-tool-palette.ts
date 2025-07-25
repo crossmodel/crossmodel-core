@@ -23,6 +23,7 @@ const CLICKED_CSS_CLASS = 'clicked';
 export class CrossModelToolPalette extends ToolPalette {
    protected readonly defaultToolsBtnId = 'default-tool';
    protected override initializeContents(containerElement: HTMLElement): void {
+      this.addMinimizePaletteButton();
       this.createHeader();
       this.createBody();
       this.changeActiveButton(this.defaultToolsButton);
