@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.2](https://github.com/crossmodel/crossmodel-core/compare/v0.5.1...v0.5.2) (2025-07-28)
+
+
+### Bug Fixes
+
+* DataModel re-linking should happen after workspace was initialized ([#158](https://github.com/crossmodel/crossmodel-core/issues/158)) ([032651e](https://github.com/crossmodel/crossmodel-core/commit/032651e74e411567555d56a3bf7667279eec8a20))
+
+
+
+
+
 ## [0.5.1](https://github.com/crossmodel/crossmodel-core/compare/v0.5.0...v0.5.1) (2025-07-22)
 
 **Note:** Version bump only for package crossmodel-lang
