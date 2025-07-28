@@ -29,15 +29,15 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
       try {
          await super.initializeWorkspace(folders, cancelToken);
          this.logger.info('Workspace Initialized');
+
+         // notify that the workspace is initialized
          const uris = this.folders?.map(folder => this.getRootFolder(folder)) || [];
+         this.workspaceInitializedDeferred.resolve(uris);
+         this.onWorkspaceInitializedEmitter.fire(uris);
 
          // relink all data models as their dependencies might not have properly resolved due to the order in which files are processed
          const update = this.services.workspace.DataModelManager.getDataModelInfos().map(info => info.uri);
          await this.documentBuilder.update(update, [], cancelToken);
-
-         // notify that the workspace is initialized
-         this.workspaceInitializedDeferred.resolve(uris);
-         this.onWorkspaceInitializedEmitter.fire(uris);
       } catch (error) {
          this.workspaceInitializedDeferred.reject(error);
       }
