@@ -96,6 +96,14 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
             this.tool.dispatchActions([deleteCssClasses(ctx.root, 'input-mode')]);
          });
    }
+
+   override nonDraggingMouseUp(ctx: GModelElement, event: MouseEvent): Action[] {
+      // only handle main mouse button
+      if (event.button !== 0) {
+         return [];
+      }
+      return super.nonDraggingMouseUp(ctx, event);
+   }
 }
 
 class EntityNameInputDialogProps extends SingleTextInputDialogProps {

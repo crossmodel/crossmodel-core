@@ -48,7 +48,11 @@ export class SourceObjectCreationMouseListener extends MouseListener implements 
       return [];
    }
 
-   override mouseUp(target: GModelElement, _event: MouseEvent): Action[] {
+   override mouseUp(target: GModelElement, event: MouseEvent): Action[] {
+      // only handle main mouse button
+      if (event.button !== 0) {
+         return [];
+      }
       if (target !== target.root) {
          return [];
       }

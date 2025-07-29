@@ -20,6 +20,10 @@ export class CrossModelMouseDeleteTool extends MouseDeleteTool {
 @injectable()
 export class CrossModelDeleteMouseListener extends DeleteToolMouseListener {
    override mouseUp(target: GModelElement, event: MouseEvent): Action[] {
+      // only handle main mouse button
+      if (event.button !== 0) {
+         return [];
+      }
       const deletableParent = findParentByFeature(target, isDeletable);
       if (deletableParent === undefined) {
          return [];
