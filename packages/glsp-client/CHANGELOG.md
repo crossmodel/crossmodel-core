@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/crossmodel/crossmodel-core/compare/v0.5.2...v0.6.0) (2025-07-29)
+
+
+### Features
+
+* Restore minimize/maximize tool palette behavior ([#159](https://github.com/crossmodel/crossmodel-core/issues/159)) ([34be0eb](https://github.com/crossmodel/crossmodel-core/commit/34be0eb0d5692798b8f98d2d7ddc0db82c8c0620))
+
+
+
+
+
 ## [0.5.1](https://github.com/crossmodel/crossmodel-core/compare/v0.5.0...v0.5.1) (2025-07-22)
 
 **Note:** Version bump only for package @crossmodel/glsp-client
