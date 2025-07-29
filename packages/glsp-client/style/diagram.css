@@ -146,40 +146,20 @@
    stroke-linecap: round;
 }
 
-/* .sprotty[id^='system-diagram'] .tool-palette {
-   top: 11px;
-   right: 11px;
-   width: 150px;
-   border: 1px solid #d7d7d7;
+.minimize-palette-button {
+   top: 16px;
+   right: 20px;
 }
 
-.sprotty[id^='system-diagram'] .tool-palette .palette-header,
-.sprotty[id^='system-diagram'] .tool-palette .group-header,
-.sprotty[id^='system-diagram'] .minimize-palette-button {
-   display: none;
+.tool-palette {
+   transition: max-height 0.2s ease-in-out;
+   overflow: hidden;
 }
-
-.sprotty[id^='system-diagram'] .tool-palette .tool-button {
-   outline-width: 0;
-}
-
-.sprotty[id^='system-diagram'] .tool-palette .tool-button::before {
-   margin-right: var(--theia-ui-padding);
-   font-size: var(--theia-icon-size);
-   font: normal normal normal 16px/1 codicon;
-   content: '\eafd';
-   -webkit-font-smoothing: antialiased;
-   -moz-osx-font-smoothing: grayscale;
-}
-
-.sprotty[id^='system-diagram'] .tool-palette .tool-button.clicked {
-   background: var(--theia-activityBarBadge-background);
-   color: var(--theia-activityBarBadge-foreground);
-} */
 
 .tool-palette .group-header {
    display: none;
 }
+
 .command-palette {
    animation: none;
 }
