@@ -23,7 +23,7 @@ jobs:
         # We set env variables on the GITHUB_ENV variable so they value is available in all consecutive steps.
         run: |
           echo "PYTHON_VERSION=3.11.4" >> "$GITHUB_ENV"
-          echo "NODE_VERSION=20.x" >> "$GITHUB_ENV"
+          echo "NODE_VERSION=22.x" >> "$GITHUB_ENV"
           echo "GITHUB_TOKEN=${{ inputs.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
       # Setup Node
@@ -56,5 +56,5 @@ jobs:
         with:
           name: windows
           path: |
-            applications/electron/dist/**
+            applications/electron-app/dist/**
           retention-days: 1
