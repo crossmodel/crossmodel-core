@@ -11,7 +11,14 @@ on:
 
 jobs:
   package:
-    runs-on: windows-2022
+    name: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-22.04', 'windows-2022', 'macos-13']
+
+    runs-on: ${{ matrix.os }}
     steps:
       # Checkout the code.
       - name: Checkout
@@ -41,7 +48,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Build dev package (Windows, Linux)
+      - name: Build dev package
         shell: bash
         run: |
           yarn --skip-integrity-check --network-timeout 100000
@@ -50,11 +57,10 @@ jobs:
         env:
           NODE_OPTIONS: --max_old_space_size=4096
 
-      - name: Upload Windows Dist Files
-        if: runner.os == 'Windows'
+      - name: Upload ${{ matrix.os }} Dist Files
         uses: actions/upload-artifact@v4
         with:
-          name: windows
+          name: ${{ matrix.os }}
           path: |
             applications/electron-app/dist/**
           retention-days: 1
