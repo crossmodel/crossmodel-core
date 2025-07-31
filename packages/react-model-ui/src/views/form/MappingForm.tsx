@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { TextField } from '@mui/material';
+import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
 import { useMapping, useModelDispatch, useReadonly } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
@@ -36,22 +36,28 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
          iconClass='codicon-group-by-ref-type'
       >
          <FormSection label='General'>
-            <TextField label='Target Attribute' value={attributeMapping.attribute?.value ?? ''} disabled={true} spellCheck={false} />
-            <TextField
-               label='Expression'
-               value={attributeMapping.expression ?? ''}
-               disabled={readonly}
-               onChange={event =>
-                  dispatch({
-                     type: 'attribute-mapping:change-expression',
-                     mappingIdx: props.mappingIndex,
-                     expression: event.target.value ?? ''
-                  })
-               }
-            />
+            <span className='p-float-label'>
+               <InputText id='targetAttribute' value={attributeMapping.attribute?.value ?? ''} disabled={true} spellCheck={false} />
+               <label htmlFor='targetAttribute'>Target Attribute</label>
+            </span>
+            <span className='p-float-label'>
+               <InputText
+                  id='expression'
+                  value={attributeMapping.expression ?? ''}
+                  disabled={readonly}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                     dispatch({
+                        type: 'attribute-mapping:change-expression',
+                        mappingIdx: props.mappingIndex,
+                        expression: e.target.value ?? ''
+                     })
+                  }
+               />
+               <label htmlFor='expression'>Expression</label>
+            </span>
          </FormSection>
          <FormSection label='Sources'>
-            <AttributeMappingSourcesDataGrid mapping={attributeMapping} mappingIdx={props.mappingIndex} />
+            <AttributeMappingSourcesDataGrid attributeMapping={attributeMapping} mappingIdx={props.mappingIndex} />
          </FormSection>
       </Form>
    );

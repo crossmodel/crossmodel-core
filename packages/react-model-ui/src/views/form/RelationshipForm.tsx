@@ -10,7 +10,9 @@ import {
    ReferenceableElement,
    toId
 } from '@crossmodel/protocol';
-import { Autocomplete, TextField } from '@mui/material';
+import { Dropdown } from 'primereact/dropdown';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
 import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly, useRelationship, useUntitled, useUri } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
@@ -57,20 +59,20 @@ export function RelationshipForm(): React.ReactElement {
    );
 
    const handleParentChange = React.useCallback(
-      (_: React.SyntheticEvent, newParentRef: string) => {
-         dispatch({ type: 'relationship:change-parent', parent: newParentRef });
+      (event: { value: string }) => {
+         dispatch({ type: 'relationship:change-parent', parent: event.value });
          if (untitled && usingDefaultName) {
-            updateNameAndId(newParentRef, relationship.child);
+            updateNameAndId(event.value, relationship.child);
          }
       },
       [dispatch, untitled, usingDefaultName, relationship, updateNameAndId]
    );
 
    const handleChildChange = React.useCallback(
-      (_: React.SyntheticEvent, newChildRef: string) => {
-         dispatch({ type: 'relationship:change-child', child: newChildRef });
+      (event: { value: string }) => {
+         dispatch({ type: 'relationship:change-child', child: event.value });
          if (untitled && usingDefaultName) {
-            updateNameAndId(relationship.parent, newChildRef);
+            updateNameAndId(relationship.parent, event.value);
          }
       },
       [dispatch, untitled, usingDefaultName, relationship, updateNameAndId]
@@ -91,86 +93,132 @@ export function RelationshipForm(): React.ReactElement {
    return (
       <Form id={relationship.id} name={relationship.name ?? ModelFileType.Relationship} iconClass={ModelStructure.Relationship.ICON_CLASS}>
          <FormSection label='General'>
-            <TextField
-               label='Name'
-               value={relationship.name ?? ''}
-               disabled={readonly}
-               error={!!diagnostics.name?.length}
-               helperText={diagnostics.name?.at(0)?.message}
-               onChange={handleNameChange}
-               required={true}
-            />
+            <div className='p-field p-fluid' style={{ marginTop: '1rem', marginBottom: '2rem' }}>
+               <span className='p-float-label'>
+                  <InputText
+                     id='name'
+                     value={relationship.name ?? ''}
+                     onChange={handleNameChange}
+                     disabled={readonly}
+                     required={true}
+                     className={diagnostics.name?.length ? 'p-invalid' : ''}
+                  />
+                  <label htmlFor='name'>Name</label>
+               </span>
+               {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
+            </div>
 
-            <TextField
-               label='Description'
-               multiline={true}
-               rows={2}
-               value={relationship.description ?? ''}
-               disabled={readonly}
-               error={!!diagnostics.description?.length}
-               onChange={event => dispatch({ type: 'relationship:change-description', description: event.target.value ?? '' })}
-            />
+            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
+               <span className='p-float-label'>
+                  <InputTextarea
+                     id='description'
+                     value={relationship.description ?? ''}
+                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        dispatch({ type: 'relationship:change-description', description: event.target.value ?? '' })
+                     }
+                     disabled={readonly}
+                     rows={3}
+                     autoResize
+                     className={diagnostics.description?.length ? 'p-invalid' : ''}
+                  />
+                  <label htmlFor='description'>Description</label>
+               </span>
+               {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
+            </div>
 
             <AsyncAutoComplete
                label='Parent'
                optionLoader={referenceableElements}
-               textFieldProps={{ required: true, helperText: diagnostics.parent?.at(0)?.message, error: !!diagnostics.parent?.length }}
-               onChange={handleParentChange}
                value={relationship.parent ?? ''}
+               onChange={handleParentChange}
                disabled={readonly}
-               selectOnFocus={true}
+               required={true}
+               error={!!diagnostics.parent?.length}
+               helperText={diagnostics.parent?.[0]?.message}
             />
 
-            <Autocomplete
-               options={cardinalities}
-               disabled={readonly}
-               handleHomeEndKeys={true}
-               value={relationship.parentCardinality ?? ''}
-               onChange={(_evt, newParentCardinality) =>
-                  dispatch({ type: 'relationship:change-parent-cardinality', parentCardinality: newParentCardinality ?? '' })
-               }
-               renderInput={params => <TextField {...params} label='Parent Cardinality' />}
-            />
+            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
+               <span className='p-float-label'>
+                  <Dropdown
+                     id='parentCardinality'
+                     options={cardinalities}
+                     value={relationship.parentCardinality ?? ''}
+                     onChange={e =>
+                        dispatch({
+                           type: 'relationship:change-parent-cardinality',
+                           parentCardinality: e.value ?? ''
+                        })
+                     }
+                     disabled={readonly}
+                  />
+                  <label htmlFor='parentCardinality'>Parent Cardinality</label>
+               </span>
+            </div>
 
-            <TextField
-               label='Parent Role'
-               multiline={true}
-               value={relationship.parentRole ?? ''}
-               disabled={readonly}
-               error={!!diagnostics.parentRole?.length}
-               onChange={event => dispatch({ type: 'relationship:change-parent-role', parentRole: event.target.value ?? '' })}
-            />
+            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
+               <span className='p-float-label'>
+                  <InputTextarea
+                     id='parentRole'
+                     value={relationship.parentRole ?? ''}
+                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        dispatch({ type: 'relationship:change-parent-role', parentRole: event.target.value ?? '' })
+                     }
+                     disabled={readonly}
+                     rows={2}
+                     autoResize
+                     className={diagnostics.parentRole?.length ? 'p-invalid' : ''}
+                  />
+                  <label htmlFor='parentRole'>Parent Role</label>
+               </span>
+               {diagnostics.parentRole?.length && <small className='p-error'>{diagnostics.parentRole?.[0]?.message}</small>}
+            </div>
 
             <AsyncAutoComplete
                label='Child'
                optionLoader={referenceableElements}
-               textFieldProps={{ required: true, helperText: diagnostics.child?.at(0)?.message, error: !!diagnostics.child?.length }}
-               onChange={handleChildChange}
                value={relationship.child ?? ''}
-               clearOnBlur={true}
+               onChange={handleChildChange}
                disabled={readonly}
-               selectOnFocus={true}
+               required={true}
+               error={!!diagnostics.child?.length}
+               helperText={diagnostics.child?.[0]?.message}
             />
 
-            <Autocomplete
-               options={cardinalities}
-               disabled={readonly}
-               handleHomeEndKeys={true}
-               value={relationship.childCardinality ?? ''}
-               onChange={(_evt, newChildCardinality) =>
-                  dispatch({ type: 'relationship:change-child-cardinality', childCardinality: newChildCardinality ?? '' })
-               }
-               renderInput={params => <TextField {...params} label='Child Cardinality' />}
-            />
+            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
+               <span className='p-float-label'>
+                  <Dropdown
+                     id='childCardinality'
+                     options={cardinalities}
+                     value={relationship.childCardinality ?? ''}
+                     onChange={e =>
+                        dispatch({
+                           type: 'relationship:change-child-cardinality',
+                           childCardinality: e.value ?? ''
+                        })
+                     }
+                     disabled={readonly}
+                  />
+                  <label htmlFor='childCardinality'>Child Cardinality</label>
+               </span>
+            </div>
 
-            <TextField
-               label='Child Role'
-               multiline={true}
-               value={relationship.childRole ?? ''}
-               disabled={readonly}
-               error={!!diagnostics.childRole?.length}
-               onChange={event => dispatch({ type: 'relationship:change-child-role', childRole: event.target.value ?? '' })}
-            />
+            <div className='p-field p-fluid' style={{ marginBottom: '1rem' }}>
+               <span className='p-float-label'>
+                  <InputTextarea
+                     id='childRole'
+                     value={relationship.childRole ?? ''}
+                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        dispatch({ type: 'relationship:change-child-role', childRole: event.target.value ?? '' })
+                     }
+                     disabled={readonly}
+                     rows={2}
+                     autoResize
+                     className={diagnostics.childRole?.length ? 'p-invalid' : ''}
+                  />
+                  <label htmlFor='childRole'>Child Role</label>
+               </span>
+               {diagnostics.childRole?.length && <small className='p-error'>{diagnostics.childRole?.[0]?.message}</small>}
+            </div>
          </FormSection>
          <FormSection label='Attributes'>
             <RelationshipAttributesDataGrid diagnostics={diagnostics} />

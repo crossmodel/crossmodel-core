@@ -1,52 +1,73 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, CustomPropertyType, findNextUnique, identifier, toId } from '@crossmodel/protocol';
-import { GridColDef } from '@mui/x-data-grid';
+import { CustomProperty, CustomPropertyType, findNextUnique, toId } from '@crossmodel/protocol';
 import * as React from 'react';
 import { useDataModel, useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import GridComponent, { GridComponentRow, ValidationFunction } from './GridComponent';
+import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
-export type CustomPropertyRow = GridComponentRow<CustomProperty>;
+export interface CustomPropertyRow extends CustomProperty {
+   idx: number;
+}
 
 export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
    const dataModel = useDataModel();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
-   // Callback for when the user stops editing a cell.
-   const handleRowUpdate = React.useCallback(
-      (customProperty: CustomPropertyRow): CustomPropertyRow => {
+   const onRowUpdate = React.useCallback(
+      (customProperty: CustomPropertyRow) => {
+         const errors = validateField(customProperty);
+         if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            return;
+         }
+         setValidationErrors({});
+         // Generate unique ID from name when it changes
+         if (customProperty.name) {
+            const existingIds = dataModel?.customProperties?.filter(prop => prop.id !== customProperty.id) || [];
+            customProperty.id = findNextUnique(toId(customProperty.name), existingIds, prop => prop.id || '');
+         }
          dispatch({
             type: 'datamodel:customProperty:update',
             customPropertyIdx: customProperty.idx,
-            customProperty: GridComponentRow.getData(customProperty)
+            customProperty: customProperty
          });
-         return customProperty;
       },
       [dispatch]
    );
 
-   const handleAddCustomProperty = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
-         if (customProperty.name) {
-            const id = findNextUnique(
-               toId(findNextUnique(customProperty.name, dataModel.customProperties!, identifier)),
-               dataModel.customProperties!,
-               identifier
-            );
-            dispatch({
-               type: 'datamodel:customProperty:add-customProperty',
-               customProperty: { ...customProperty, id }
-            });
-         }
+   const onRowAdd = React.useCallback(
+      (customProperty: CustomPropertyRow) => {
+         // Clear any previous validation errors
+         setValidationErrors({});
+
+         // Create a new custom property with empty values
+         const name = customProperty.name || '';
+         const existingIds = dataModel?.customProperties || [];
+         const id = name ? findNextUnique(toId(name), existingIds, prop => prop.id || '') : '';
+
+         const customPropertyData: CustomProperty = {
+            $type: CustomPropertyType,
+            name,
+            value: customProperty.value || '',
+            id,
+            $globalId: '',
+            description: ''
+         };
+
+         dispatch({
+            type: 'datamodel:customProperty:add-customProperty',
+            customProperty: customPropertyData
+         });
       },
-      [dispatch, dataModel.customProperties]
+      [dispatch]
    );
 
-   const handleCustomPropertyUpward = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
+   const onRowMoveUp = React.useCallback(
+      (customProperty: CustomPropertyRow) => {
          dispatch({
             type: 'datamodel:customProperty:move-customProperty-up',
             customPropertyIdx: customProperty.idx
@@ -55,8 +76,8 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       [dispatch]
    );
 
-   const handleCustomPropertyDownward = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
+   const onRowMoveDown = React.useCallback(
+      (customProperty: CustomPropertyRow) => {
          dispatch({
             type: 'datamodel:customProperty:move-customProperty-down',
             customPropertyIdx: customProperty.idx
@@ -65,8 +86,8 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       [dispatch]
    );
 
-   const handleCustomPropertyDelete = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
+   const onRowDelete = React.useCallback(
+      (customProperty: CustomPropertyRow) => {
          dispatch({
             type: 'datamodel:customProperty:delete-customProperty',
             customPropertyIdx: customProperty.idx
@@ -75,65 +96,76 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       [dispatch]
    );
 
-   const validateCustomProperty = React.useCallback<ValidationFunction<CustomProperty>>(
-      <P extends keyof CustomProperty, V extends CustomProperty[P]>(field: P, value: V): string | undefined => {
-         if (field === 'name' && !value) {
-            return 'Invalid Name';
-         }
-         return undefined;
-      },
-      []
-   );
+   const validateField = React.useCallback((rowData: CustomPropertyRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.name) {
+         errors.name = 'Invalid Name';
+      }
+      return errors;
+   }, []);
 
-   const columns = React.useMemo<GridColDef<CustomProperty>[]>(
+   const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
          {
             field: 'name',
-            headerName: 'Name',
-            flex: 200,
-            editable: !readonly,
-            type: 'string'
+            header: 'Name',
+            editor: true
+         },
+         {
+            field: '$type',
+            header: 'Data Type',
+            editor: true
          },
          {
             field: 'value',
-            headerName: 'Value',
-            flex: 200,
-            editable: !readonly,
-            type: 'string'
-         },
-         { field: 'description', headerName: 'Description', editable: !readonly, flex: 200 }
+            header: 'Value',
+            editor: true
+         }
       ],
-      [readonly]
+      []
    );
 
-   const defaultEntry = React.useMemo<CustomProperty>(
+   const defaultEntry = React.useMemo<CustomPropertyRow>(
       () => ({
          $type: CustomPropertyType,
-         id: findNextUnique('customProperty', dataModel.customProperties!, customProperty => customProperty.id!),
-         $globalId: 'toBeAssigned',
-         name: findNextUnique('New custom property', dataModel.customProperties!, customProperty => customProperty.name!)
+         $globalId: '',
+         name: '',
+         value: '',
+         id: '',
+         idx: -1
       }),
+      []
+   );
+
+   if (!dataModel) {
+      return <ErrorView errorMessage='No data model available' />;
+   }
+
+   const gridData = React.useMemo(
+      () =>
+         (dataModel.customProperties || []).map((prop, idx) => ({
+            ...prop,
+            idx
+         })),
       [dataModel.customProperties]
    );
 
-   // Check if model initialized. Has to be here otherwise the compiler complains.
-   if (dataModel === undefined) {
-      return <ErrorView errorMessage='No data model!' />;
-   }
    return (
-      <GridComponent<CustomProperty>
-         key={dataModel.id + '-grid'}
-         gridColumns={columns}
-         gridData={dataModel.customProperties!}
-         defaultEntry={defaultEntry}
-         onDelete={handleCustomPropertyDelete}
-         onMoveDown={handleCustomPropertyDownward}
-         onMoveUp={handleCustomPropertyUpward}
-         noEntriesText='No Custom Properties'
-         newEntryText='Add custom property'
-         onAdd={handleAddCustomProperty}
-         onUpdate={handleRowUpdate}
-         validateField={validateCustomProperty}
+      <PrimeDataGrid
+         columns={columns}
+         data={gridData}
+         keyField='idx'
+         height='300px'
+         onRowAdd={onRowAdd}
+         onRowUpdate={onRowUpdate}
+         onRowDelete={onRowDelete}
+         onRowMoveUp={onRowMoveUp}
+         onRowMoveDown={onRowMoveDown}
+         defaultNewRow={defaultEntry}
+         readonly={readonly}
+         validationErrors={validationErrors}
+         noDataMessage='No custom properties'
+         addButtonLabel='Add Property'
       />
    );
 }

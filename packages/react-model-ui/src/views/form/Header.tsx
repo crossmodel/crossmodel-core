@@ -3,8 +3,8 @@
  ********************************************************************************/
 
 import { ERRONEOUS_MODEL, ModelDiagnostic } from '@crossmodel/protocol';
-import { OpenInNewOutlined, SaveOutlined } from '@mui/icons-material';
-import { AppBar, Box, Button, Icon, Toolbar, Typography } from '@mui/material';
+import { Button } from 'primereact/button';
+import { Toolbar } from 'primereact/toolbar';
 import { useDiagnostics, useDirty, useModelOpen, useModelSave, useUntitled } from '../../ModelContext';
 import { createEditorError } from '../common/EditorError';
 import React = require('react');
@@ -22,36 +22,36 @@ export function Header({ name, id, iconClass }: HeaderProps): React.ReactElement
    const untitled = useUntitled();
    const diagnostics = useDiagnostics();
 
-   return (
-      <AppBar position='sticky'>
-         {ModelDiagnostic.hasParseErrors(diagnostics) && createEditorError(ERRONEOUS_MODEL)}
-         <Toolbar variant='dense' sx={{ minHeight: '40px' }}>
-            <Box sx={{ display: { xs: 'none', sm: 'flex' }, flexGrow: 1, gap: '1em', alignItems: 'center' }}>
-               {iconClass && <Icon baseClassName='codicon' className={iconClass} sx={{ fontSize: '1.7em !important' }} />}
-               <Typography variant='h6' component='div' className='form-title'>
-                  {name}
-                  {saveModel && dirty ? '*' : ''}
-               </Typography>
-               {!untitled && (
-                  <Typography variant='overline' component='div' sx={{ pt: '.5em' }}>
-                     ID: {id}
-                  </Typography>
-               )}
-            </Box>
+   const startContent = (
+      <div style={{ display: 'flex', flexGrow: 1, gap: '1em', alignItems: 'center' }}>
+         {iconClass && <i className={`codicon ${iconClass}`} style={{ fontSize: '1.7em' }} />}
+         <h5 style={{ margin: 0, fontWeight: 500 }} className='form-title'>
+            {name}
+            {saveModel && dirty ? '*' : ''}
+         </h5>
+         {!untitled && (
+            <span style={{ paddingTop: '.25em', marginLeft: '1em', fontSize: '0.8rem', textTransform: 'uppercase', opacity: 0.7 }}>
+               ID: {id}
+            </span>
+         )}
+      </div>
+   );
 
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-               {openModel && (
-                  <Button onClick={openModel} startIcon={<OpenInNewOutlined />} color='inherit'>
-                     Open
-                  </Button>
-               )}
-               {saveModel && (
-                  <Button onClick={saveModel} startIcon={<SaveOutlined />} color='inherit' disabled={!dirty}>
-                     Save
-                  </Button>
-               )}
-            </Box>
-         </Toolbar>
-      </AppBar>
+   const endContent = (
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+         {openModel && <Button onClick={openModel} icon='pi pi-external-link' label='Open' text />}
+         {saveModel && <Button onClick={saveModel} icon='pi pi-save' label='Save' text disabled={!dirty} />}
+      </div>
+   );
+
+   return (
+      <div style={{ position: 'sticky', top: 0, zIndex: 1000, backgroundColor: 'var(--surface-b)' }}>
+         {ModelDiagnostic.hasParseErrors(diagnostics) && createEditorError(ERRONEOUS_MODEL)}
+         <Toolbar
+            start={startContent}
+            end={endContent}
+            style={{ minHeight: '40px', padding: '0.5rem 1rem', borderRadius: 0, border: 'none', background: 'transparent' }}
+         />
+      </div>
    );
 }

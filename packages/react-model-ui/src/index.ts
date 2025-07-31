@@ -1,6 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
+import './style/index.css';
 export * from './ModelContext';
 export * from './ModelProvider';
 export * from './ModelReducer';

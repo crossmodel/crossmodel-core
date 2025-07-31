@@ -1,85 +1,88 @@
-/********************************************************************************
- * Copyright (c) 2024 CrossBreeze.
- ********************************************************************************/
-/* eslint-disable no-null/no-null */
-import { Autocomplete, AutocompleteProps, CircularProgress, TextField, TextFieldProps } from '@mui/material';
+import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
+import { ProgressSpinner } from 'primereact/progressspinner';
+import * as React from 'react';
 import { useReadonly } from '../../ModelContext';
-import React = require('react');
 
-export interface AsyncAutoCompleteProps<T> extends Omit<AutocompleteProps<T, false, true, false>, 'renderInput' | 'options'> {
+export interface AsyncAutoCompleteProps<T = string> {
    label: string;
    optionLoader: () => Promise<T[]>;
-   /**
-    * MUI shows a warning if the current value doesn't match an available option.
-    * This callback can be used to synchronize selection state with options.
-    */
-   onOptionsLoaded?: (options: T[]) => unknown;
-   textFieldProps?: TextFieldProps;
+   onOptionsLoaded?: (options: T[]) => void;
+   value: T;
+   onChange: (event: { value: T }) => void;
+   disabled?: boolean;
+   required?: boolean;
+   className?: string;
+   error?: boolean;
+   helperText?: string;
+   forceSelection?: boolean;
+   field?: keyof T;
 }
 
-// Based on https://mui.com/material-ui/react-autocomplete/
-export default function AsyncAutoComplete<T>({
+export default function AsyncAutoComplete<T = string>({
    label,
    optionLoader,
    onOptionsLoaded,
-   textFieldProps,
-   ...props
+   value,
+   onChange,
+   disabled = false,
+   required = false,
+   className = '',
+   error = false,
+   helperText = '',
+   forceSelection = false,
+   field
 }: AsyncAutoCompleteProps<T>): React.ReactElement {
-   const [open, setOpen] = React.useState(!!props.open);
-   const [options, setOptions] = React.useState<readonly T[]>([]);
-   const loading = open && options.length === 0;
-   const readonly = useReadonly();
+   const [options, setOptions] = React.useState<T[]>([]);
+   const [loading, setLoading] = React.useState(false);
+   const readonly = useReadonly() || disabled;
 
-   React.useEffect(() => {
-      let active = true;
-      if (!loading) {
-         return undefined;
+   const loadSuggestions = async (event: AutoCompleteCompleteEvent) => {
+      setLoading(true);
+      try {
+         const allOptions = await optionLoader();
+         const filtered = !event.query.trim()
+            ? allOptions
+            : allOptions.filter(opt =>
+                 String(field ? opt[field] : opt)
+                    .toLowerCase()
+                    .startsWith(event.query.toLowerCase())
+              );
+         setOptions(filtered);
+         onOptionsLoaded?.(filtered);
+      } finally {
+         setLoading(false);
       }
-      const loadOperation = async (): Promise<void> => {
-         const loadedOptions = await optionLoader();
-         if (active) {
-            onOptionsLoaded?.(loadedOptions);
-            setOptions([...loadedOptions]);
-         }
-      };
-      loadOperation();
-
-      return () => {
-         active = false;
-      };
-   }, [loading, optionLoader, onOptionsLoaded]);
+   };
 
    return (
-      <Autocomplete
-         open={open}
-         onOpen={() => setOpen(true)}
-         onClose={() => setOpen(false)}
-         options={options}
-         loading={loading}
-         disabled={readonly}
-         disableClearable={true}
-         handleHomeEndKeys={true}
-         autoSelect={true}
-         autoHighlight={true}
-         autoComplete={true}
-         {...props}
-         renderInput={params => (
-            <TextField
-               {...params}
-               {...textFieldProps}
-               label={label}
-               InputProps={{
-                  ...params.InputProps,
-                  required: textFieldProps?.required,
-                  endAdornment: (
-                     <React.Fragment>
-                        {loading ? <CircularProgress color='inherit' size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                     </React.Fragment>
-                  )
-               }}
+      <div className='p-field p-fluid' style={{ marginBottom: '1rem', position: 'relative' }}>
+         <span className='p-float-label'>
+            <AutoComplete<T>
+               value={value}
+               suggestions={options as (T extends any[] ? T[number] : T)[]}
+               completeMethod={loadSuggestions}
+               onChange={e => onChange({ value: e.value })}
+               disabled={readonly}
+               className={`${className} ${error ? 'p-invalid' : ''}`}
+               dropdown
+               forceSelection={forceSelection}
+               field={field ? String(field) : undefined}
             />
+            <label htmlFor={label}>{label}</label>
+         </span>
+         {error && helperText && <small className='p-error'>{helperText}</small>}
+         {loading && (
+            <div
+               style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)'
+               }}
+            >
+               <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth='4' />
+            </div>
          )}
-      />
+      </div>
    );
 }

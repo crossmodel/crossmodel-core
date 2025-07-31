@@ -2,215 +2,299 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 import {
-   BinaryExpression,
    BinaryExpressionType,
+   BooleanExpression,
    CrossReferenceContext,
    JoinConditionType,
    Mapping,
    NumberLiteralType,
    ReferenceableElement,
-   SourceObject,
    SourceObjectAttributeReferenceType,
    SourceObjectCondition,
-   StringLiteralType,
-   quote
+   StringLiteralType
 } from '@crossmodel/protocol';
-import { DataGridProps, GridColDef, GridRenderEditCellParams, useGridApiContext } from '@mui/x-data-grid';
+import { AutoComplete } from 'primereact/autocomplete';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
-import AsyncAutoComplete from './AsyncAutoComplete';
-import GridComponent, { GridComponentRow } from './GridComponent';
+import { ErrorView } from '../ErrorView';
+import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
-export interface EditSourceObjectConditionComponentProps extends GridRenderEditCellParams<BinaryExpression> {
-   field: 'left' | 'right';
-   sourceObject: SourceObject;
+export interface SourceObjectConditionRow {
+   $type: typeof BinaryExpressionType;
+   left: {
+      $type: typeof SourceObjectAttributeReferenceType | typeof StringLiteralType | typeof NumberLiteralType;
+      value: string;
+   };
+   operator: '!=' | '<' | '<=' | '=' | '>' | '>=';
+   right: {
+      $type: typeof SourceObjectAttributeReferenceType | typeof StringLiteralType | typeof NumberLiteralType;
+      value: string;
+   };
+   idx: number;
 }
 
-export function EditSourceObjectConditionComponent({
-   id,
-   row,
-   field,
-   hasFocus,
-   sourceObject
-}: EditSourceObjectConditionComponentProps): React.ReactElement {
-   const queryApi = useModelQueryApi();
-   const gridApi = useGridApiContext();
-   const readonly = useReadonly();
+export interface SourceObjectConditionDataGridProps {
+   mapping: Mapping;
+   sourceObjectIdx: number;
+}
 
-   const referenceCtx: CrossReferenceContext = React.useMemo(
+export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: SourceObjectConditionDataGridProps): React.ReactElement {
+   const dispatch = useModelDispatch();
+   const queryApi = useModelQueryApi();
+   const readonly = useReadonly();
+   const [leftSuggestions, setLeftSuggestions] = React.useState<ReferenceableElement[]>([]);
+   const [rightSuggestions, setRightSuggestions] = React.useState<ReferenceableElement[]>([]);
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+   const sourceObject = mapping.sources[sourceObjectIdx];
+
+   const leftReferenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
          container: { globalId: sourceObject.$globalId },
          syntheticElements: [
             { property: 'conditions', type: JoinConditionType },
             { property: 'expression', type: BinaryExpressionType },
-            { property: field, type: SourceObjectAttributeReferenceType }
+            { property: 'left', type: SourceObjectAttributeReferenceType }
          ],
          property: 'value'
       }),
-      [field, sourceObject.$globalId]
+      [sourceObject.$globalId]
    );
-   const referenceableElements = React.useCallback(() => queryApi.findReferenceableElements(referenceCtx), [queryApi, referenceCtx]);
 
-   const handleValueChange = React.useCallback(
-      (_evt: React.SyntheticEvent, newValue: ReferenceableElement | string): void => {
-         const literal = typeof newValue === 'string';
-         const fieldValue = literal ? newValue : newValue.label;
-         const $type = literal ? (isNaN(parseFloat(newValue)) ? StringLiteralType : NumberLiteralType) : SourceObjectAttributeReferenceType;
-         gridApi.current.setEditCellValue({ id, field, value: { $type, value: fieldValue } });
+   const rightReferenceCtx: CrossReferenceContext = React.useMemo(
+      () => ({
+         container: { globalId: sourceObject.$globalId },
+         syntheticElements: [
+            { property: 'conditions', type: JoinConditionType },
+            { property: 'expression', type: BinaryExpressionType },
+            { property: 'right', type: SourceObjectAttributeReferenceType }
+         ],
+         property: 'value'
+      }),
+      [sourceObject.$globalId]
+   );
+
+   const searchLeft = React.useCallback(
+      async (event: { query: string }) => {
+         const elements = await queryApi.findReferenceableElements(leftReferenceCtx);
+         setLeftSuggestions(elements);
       },
-      [field, gridApi, id]
+      [queryApi, leftReferenceCtx]
    );
 
-   const value = React.useMemo<ReferenceableElement>(
-      () => ({ uri: '', label: row[field]?.value?.toString() ?? '', type: row.$type }),
-      [field, row]
+   const searchRight = React.useCallback(
+      async (event: { query: string }) => {
+         const elements = await queryApi.findReferenceableElements(rightReferenceCtx);
+         setRightSuggestions(elements);
+      },
+      [queryApi, rightReferenceCtx]
    );
 
-   return (
-      <AsyncAutoComplete<ReferenceableElement>
-         openOnFocus={true}
-         fullWidth={true}
-         label=''
-         optionLoader={referenceableElements}
-         onChange={handleValueChange}
-         value={value}
-         clearOnBlur={true}
-         disabled={readonly}
-         selectOnFocus={true}
-         freeSolo={true as any}
-         textFieldProps={{ sx: { margin: '0' }, autoFocus: hasFocus, placeholder: 'Select a source object or specify a string or number' }}
-         isOptionEqualToValue={(option, val) => option.label === val.label}
-      />
-   );
-}
-
-export type SourceObjectConditionRow = GridComponentRow<BinaryExpression>;
-
-export interface SourceObjectConditionDataGridProps extends Omit<DataGridProps<BinaryExpression>, 'rows' | 'columns' | 'processRowUpdate'> {
-   mapping: Mapping;
-   sourceObjectIdx: number;
-}
-
-export function SourceObjectConditionDataGrid({
-   mapping,
-   sourceObjectIdx,
-   ...props
-}: SourceObjectConditionDataGridProps): React.ReactElement {
-   const dispatch = useModelDispatch();
-   const readonly = useReadonly();
-
-   const sourceObject = React.useMemo<SourceObject>(() => mapping.sources[sourceObjectIdx], [mapping.sources, sourceObjectIdx]);
-
-   const conditions = React.useMemo<BinaryExpression[]>(
-      () => sourceObject?.conditions?.map(condition => condition.expression) ?? [],
-      [sourceObject?.conditions]
+   const onRowUpdate = React.useCallback(
+      (condition: SourceObjectConditionRow) => {
+         const errors = validateField(condition);
+         if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            return;
+         }
+         setValidationErrors({});
+         dispatch({
+            type: 'source-object:update-condition',
+            sourceObjectIdx,
+            conditionIdx: condition.idx,
+            condition: {
+               $type: JoinConditionType,
+               expression: {
+                  $type: BinaryExpressionType,
+                  left: condition.left as unknown as BooleanExpression,
+                  op: condition.operator,
+                  right: condition.right as unknown as BooleanExpression
+               }
+            }
+         });
+      },
+      [dispatch, sourceObjectIdx]
    );
 
-   const defaultCondition = React.useMemo<BinaryExpression>(
+   const onRowAdd = React.useCallback(
+      (condition: SourceObjectConditionRow) => {
+         dispatch({
+            type: 'source-object:add-condition',
+            sourceObjectIdx,
+            condition: {
+               $type: JoinConditionType,
+               expression: {
+                  $type: BinaryExpressionType,
+                  left: {
+                     $type: condition.left.$type,
+                     value: condition.left.value
+                  } as BooleanExpression,
+                  op: condition.operator,
+                  right: {
+                     $type: condition.right.$type,
+                     value: condition.right.value
+                  } as BooleanExpression
+               }
+            }
+         });
+      },
+      [dispatch, sourceObjectIdx]
+   );
+
+   const onRowDelete = React.useCallback(
+      (condition: SourceObjectConditionRow) => {
+         dispatch({
+            type: 'source-object:delete-condition',
+            sourceObjectIdx,
+            conditionIdx: condition.idx
+         });
+      },
+      [dispatch, sourceObjectIdx]
+   );
+
+   const onRowMoveUp = React.useCallback(
+      (condition: SourceObjectConditionRow) => {
+         dispatch({
+            type: 'source-object:move-condition-up',
+            sourceObjectIdx,
+            conditionIdx: condition.idx
+         });
+      },
+      [dispatch, sourceObjectIdx]
+   );
+
+   const onRowMoveDown = React.useCallback(
+      (condition: SourceObjectConditionRow) => {
+         dispatch({
+            type: 'source-object:move-condition-down',
+            sourceObjectIdx,
+            conditionIdx: condition.idx
+         });
+      },
+      [dispatch, sourceObjectIdx]
+   );
+
+   const validateField = React.useCallback((rowData: SourceObjectConditionRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.left?.value) {
+         errors.left = 'Left value required';
+      }
+      if (!rowData.operator) {
+         errors.operator = 'Operator required';
+      }
+      if (!rowData.right?.value) {
+         errors.right = 'Right value required';
+      }
+      return errors;
+   }, []);
+
+   const handleValue = React.useCallback((value: ReferenceableElement | string): any => {
+      const literal = typeof value === 'string';
+      const fieldValue = literal ? value : value.label;
+      const $type = literal
+         ? isNaN(parseFloat(value as string))
+            ? StringLiteralType
+            : NumberLiteralType
+         : SourceObjectAttributeReferenceType;
+      return { $type, value: fieldValue };
+   }, []);
+
+   const columns = React.useMemo<GridColumn<SourceObjectConditionRow>[]>(
+      () => [
+         {
+            field: 'left',
+            header: 'Left Expression',
+            body: rowData => (
+               <AutoComplete
+                  value={rowData.left?.value}
+                  suggestions={leftSuggestions}
+                  completeMethod={searchLeft}
+                  field='label'
+                  dropdown
+                  onChange={e => onRowUpdate({ ...rowData, left: handleValue(e.value) })}
+                  disabled={readonly}
+               />
+            )
+         },
+         {
+            field: 'operator',
+            header: 'Operator',
+            editor: true
+         },
+         {
+            field: 'right',
+            header: 'Right Expression',
+            body: rowData => (
+               <AutoComplete
+                  value={rowData.right?.value}
+                  suggestions={rightSuggestions}
+                  completeMethod={searchRight}
+                  field='label'
+                  dropdown
+                  onChange={e => onRowUpdate({ ...rowData, right: handleValue(e.value) })}
+                  disabled={readonly}
+               />
+            )
+         }
+      ],
+      [leftSuggestions, rightSuggestions, searchLeft, searchRight, onRowUpdate, readonly, handleValue]
+   );
+
+   const defaultEntry = React.useMemo<SourceObjectConditionRow>(
       () => ({
          $type: BinaryExpressionType,
-         left: { $type: 'StringLiteral', value: '' },
-         op: '=',
-         right: { $type: 'StringLiteral', value: '' }
+         left: { $type: SourceObjectAttributeReferenceType, value: '' },
+         operator: '=',
+         right: { $type: SourceObjectAttributeReferenceType, value: '' },
+         idx: -1
       }),
       []
    );
 
-   const handleConditionUpdate = React.useCallback(
-      (row: SourceObjectConditionRow): SourceObjectConditionRow => {
-         if (row.left.value === '' && row.right.value === '' && row.op === '=') {
-            dispatch({ type: 'source-object:delete-condition', sourceObjectIdx, conditionIdx: row.idx });
-         } else {
-            const expression: BinaryExpression & { idx?: number } = { ...row };
-            delete expression.idx;
-            const condition: SourceObjectCondition = { $type: 'JoinCondition', expression };
-            dispatch({
-               type: 'source-object:update-condition',
-               sourceObjectIdx,
-               conditionIdx: row.idx,
-               condition
-            });
-         }
-         return row;
-      },
-      [dispatch, sourceObjectIdx]
-   );
+   if (!mapping || !sourceObject) {
+      return <ErrorView errorMessage='No mapping or source object available' />;
+   }
 
-   const handleAddCondition = React.useCallback(
-      (row: SourceObjectConditionRow): void => {
-         if (row.left.value !== '' || row.right.value !== '' || row.op !== '=') {
-            const condition: SourceObjectCondition = { $type: 'JoinCondition', expression: row };
-            dispatch({ type: 'source-object:add-condition', sourceObjectIdx, condition });
-         }
-      },
-      [dispatch, sourceObjectIdx]
-   );
-
-   const handleConditionUpward = React.useCallback(
-      (row: SourceObjectConditionRow): void =>
-         dispatch({ type: 'source-object:move-condition-up', sourceObjectIdx, conditionIdx: row.idx }),
-      [dispatch, sourceObjectIdx]
-   );
-
-   const handleConditionDownward = React.useCallback(
-      (row: SourceObjectConditionRow): void =>
-         dispatch({ type: 'source-object:move-condition-up', sourceObjectIdx, conditionIdx: row.idx }),
-      [dispatch, sourceObjectIdx]
-   );
-
-   const handleConditionDelete = React.useCallback(
-      (row: SourceObjectConditionRow): void => dispatch({ type: 'source-object:delete-condition', sourceObjectIdx, conditionIdx: row.idx }),
-      [dispatch, sourceObjectIdx]
-   );
-
-   const columns: GridColDef<BinaryExpression>[] = React.useMemo(
-      () => [
-         {
-            field: 'left',
-            flex: 200,
-            editable: !readonly,
-            renderHeader: () => 'Left',
-            valueGetter: (_value, row) => row.left,
-            valueFormatter: (value, row) => (row.left.$type === 'StringLiteral' ? quote(row.left.value) : row.left.value),
-            renderEditCell: params => <EditSourceObjectConditionComponent {...params} field='left' sourceObject={sourceObject} />,
-            type: 'singleSelect'
-         },
-         {
-            field: 'op',
-            flex: 50,
-            editable: !readonly,
-            renderHeader: () => 'Operator',
-            type: 'singleSelect',
-            valueOptions: ['=', '!=', '<', '<=', '>', '>=']
-         },
-         {
-            field: 'right',
-            flex: 200,
-            editable: !readonly,
-            renderHeader: () => 'Right',
-            valueGetter: (_value, row) => row.right,
-            valueFormatter: (value, row) => (row.right.$type === 'StringLiteral' ? quote(row.right.value) : row.right.value),
-            renderEditCell: params => <EditSourceObjectConditionComponent {...params} field='right' sourceObject={sourceObject} />,
-            type: 'singleSelect'
-         }
-      ],
-      [readonly, sourceObject]
+   const gridData = React.useMemo(
+      () =>
+         sourceObject.conditions?.map((condition: SourceObjectCondition, idx: number) => ({
+            $type: condition.expression.$type,
+            left: {
+               $type: condition.expression.left.$type as
+                  | typeof SourceObjectAttributeReferenceType
+                  | typeof StringLiteralType
+                  | typeof NumberLiteralType,
+               value: typeof condition.expression.left.value === 'string' ? condition.expression.left.value : ''
+            },
+            operator: condition.expression.op,
+            right: {
+               $type: condition.expression.right.$type as
+                  | typeof SourceObjectAttributeReferenceType
+                  | typeof StringLiteralType
+                  | typeof NumberLiteralType,
+               value: typeof condition.expression.right.value === 'string' ? condition.expression.right.value : ''
+            },
+            idx
+         })) || [],
+      [sourceObject.conditions]
    );
 
    return (
-      <GridComponent
-         key={sourceObject.id + '-condition-grid'}
-         {...props}
-         gridColumns={columns}
-         gridData={conditions}
-         noEntriesText={'No Conditions'}
-         newEntryText='Add Condition'
-         defaultEntry={defaultCondition}
-         onAdd={handleAddCondition}
-         onDelete={handleConditionDelete}
-         onUpdate={handleConditionUpdate}
-         onMoveDown={handleConditionDownward}
-         onMoveUp={handleConditionUpward}
+      <PrimeDataGrid
+         columns={columns}
+         data={gridData}
+         keyField='idx'
+         height='300px'
+         onRowAdd={onRowAdd}
+         onRowUpdate={onRowUpdate}
+         onRowDelete={onRowDelete}
+         onRowMoveUp={onRowMoveUp}
+         onRowMoveDown={onRowMoveDown}
+         defaultNewRow={defaultEntry}
+         readonly={readonly}
+         validationErrors={validationErrors}
+         noDataMessage='No conditions'
+         addButtonLabel='Add Condition'
       />
    );
 }

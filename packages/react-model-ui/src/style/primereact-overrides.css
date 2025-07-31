@@ -1,0 +1,222 @@
+/* PrimeReact component styles */
+
+/* Theme-specific styles */
+.light-theme {
+   --surface-ground: #ffffff;
+   --surface-section: #f8f9fa;
+   --surface-card: #ffffff;
+   --surface-border: #dfe7ef;
+   --text-color: #000000;
+   --primary-color: #007acc;
+   --focus-ring: #007acc40;
+}
+
+.dark-theme {
+   --surface-ground: #1e1e1e;
+   --surface-section: #252526;
+   --surface-card: #252526;
+   --surface-border: #404040;
+   --text-color: #d4d4d4;
+   --primary-color: #0e639c;
+   --focus-ring: #0e639c40;
+}
+
+/* Global components */
+.p-component {
+   font-family: var(--theia-ui-font-family);
+   font-size: 1rem;
+   color: var(--text-color);
+}
+
+/* Button styles */
+.p-button {
+   color: #ffffff;
+   background: var(--primary-color);
+   border: 1px solid var(--primary-color);
+   padding: 0.5rem 1rem;
+   font-size: 1rem;
+   transition:
+      background-color 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+}
+
+.p-button:enabled:hover {
+   background: var(--primary-color);
+   opacity: 0.9;
+}
+
+/* DataGrid styles */
+.p-datatable .p-datatable-tbody > tr > td {
+   padding: 0.5rem;
+}
+
+.p-datatable .p-datatable-header {
+   background: var(--surface-card);
+   border: 1px solid var(--surface-border);
+   border-width: 1px 1px 0 1px;
+   padding: 0.5rem 1rem;
+   font-weight: 600;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 1px solid var(--surface-border);
+   border-width: 0 0 1px 0;
+   padding: 0.5rem;
+   font-weight: 600;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 0 none;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+   border: 1px solid var(--surface-border);
+   border-width: 0 0 1px 0;
+}
+
+.p-datatable .p-datatable-tbody > tr:nth-child(even) {
+   background: var(--surface-hover);
+}
+
+/* Input field styles */
+.p-inputtext {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 1px solid var(--surface-border);
+   padding: 0.5rem;
+   font-size: 1rem;
+   transition:
+      background-color 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+}
+
+.p-inputtext:enabled:hover {
+   border-color: var(--primary-color);
+}
+
+.p-inputtext:enabled:focus {
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0 0.2rem var(--focus-ring);
+   border-color: var(--primary-color);
+}
+
+/* Dropdown styles */
+.p-dropdown {
+   background: var(--surface-card);
+   border: 1px solid var(--surface-border);
+   transition:
+      background-color 0.2s,
+      border-color 0.2s;
+   border-radius: 4px;
+}
+
+.p-dropdown:not(.p-disabled):hover {
+   border-color: var(--primary-color);
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0 0.2rem var(--focus-ring);
+   border-color: var(--primary-color);
+}
+
+/* Checkbox styles */
+.p-checkbox {
+   width: 20px;
+   height: 20px;
+}
+
+.p-checkbox .p-checkbox-box {
+   border: 2px solid var(--surface-border);
+   background: var(--surface-card);
+   width: 20px;
+   height: 20px;
+   color: var(--text-color);
+   border-radius: 4px;
+   transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      box-shadow 0.2s;
+}
+
+.p-checkbox .p-checkbox-box.p-highlight {
+   border-color: var(--primary-color);
+   background: var(--primary-color);
+}
+.p-autocomplete-input:enabled:focus,
+.p-dropdown:focus,
+.p-multiselect:focus {
+   box-shadow: 0 0 0 1px var(--theia-focusBorder);
+   border-color: var(--theia-focusBorder);
+}
+
+.p-button {
+   background: var(--theia-button-background);
+   color: var(--theia-button-foreground);
+   border: 1px solid var(--theia-button-border);
+}
+
+.p-button:enabled:hover {
+   background: var(--theia-button-hoverBackground);
+}
+
+.p-datatable {
+   background: var(--theia-editor-background);
+   color: var(--theia-editor-foreground);
+}
+
+.p-datatable .p-datatable-header {
+   background: var(--theia-titleBar-activeBackground);
+   color: var(--theia-titleBar-activeForeground);
+}
+
+.p-datatable .p-datatable-tbody > tr {
+   background: var(--theia-editor-background);
+   color: var(--theia-editor-foreground);
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+   background: var(--theia-list-hoverBackground);
+}
+
+.p-accordion .p-accordion-header .p-accordion-header-link {
+   background: var(--theia-titleBar-activeBackground);
+   color: var(--theia-titleBar-activeForeground);
+}
+
+.p-accordion .p-accordion-content {
+   background: var(--theia-editor-background);
+   color: var(--theia-editor-foreground);
+   border: 1px solid var(--theia-widget-border);
+}
+
+.p-toolbar {
+   background: var(--theia-titleBar-activeBackground);
+   border: none;
+   padding: 0.5rem;
+}
+
+/* Form validation styles */
+.p-error {
+   color: var(--theia-errorForeground);
+}
+
+.p-invalid {
+   border-color: var(--theia-errorForeground) !important;
+}
+
+/* Float label styles */
+.p-float-label input:focus ~ label,
+.p-float-label input.p-filled ~ label,
+.p-float-label textarea:focus ~ label,
+.p-float-label textarea.p-filled ~ label {
+   color: var(--theia-focusBorder);
+}

@@ -2,20 +2,14 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import {
-   AllDataModelTypeInfos,
-   CrossModelValidationErrors,
-   DataModelTypeInfo,
-   DataModelTypeInfos,
-   ModelStructure,
-   toId
-} from '@crossmodel/protocol';
-import { TextField } from '@mui/material';
+import { AllDataModelTypeInfos, CrossModelValidationErrors, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
+import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
 import { useDataModel, useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly, useUntitled, useUri } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
-import AsyncAutoComplete from '../common/AsyncAutoComplete';
 import { DataModelCustomPropertiesDataGrid } from '../common/DataModelCustomPropertiesDataGrid';
 import { DataModelDependenciesDataGrid } from '../common/DataModelDependenciesDataGrid';
 import { FormSection } from '../FormSection';
@@ -30,6 +24,8 @@ export function DataModelForm(): React.ReactElement {
    const readonly = useReadonly();
    const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
 
+   const [filteredTypes, setFilteredTypes] = React.useState<DataModelTypeInfo[]>([]);
+
    const handleNameChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
          dispatch({ type: 'datamodel:change-name', name: event.target.value });
@@ -43,16 +39,16 @@ export function DataModelForm(): React.ReactElement {
    );
 
    const handleDescriptionChange = React.useCallback(
-      (event: React.ChangeEvent<HTMLInputElement>) => {
+      (event: React.ChangeEvent<HTMLTextAreaElement>) => {
          dispatch({ type: 'datamodel:change-description', description: event.target.value });
       },
       [dispatch]
    );
 
    const handleTypeChange = React.useCallback(
-      (_: any, value: any) => {
-         if (value) {
-            dispatch({ type: 'datamodel:change-type', dataModelType: value.value });
+      (e: AutoCompleteChangeEvent) => {
+         if (e.value) {
+            dispatch({ type: 'datamodel:change-type', dataModelType: e.value.value });
          }
       },
       [dispatch]
@@ -65,6 +61,18 @@ export function DataModelForm(): React.ReactElement {
       [dispatch]
    );
 
+   const searchType = (event: AutoCompleteCompleteEvent) => {
+      let _filteredTypes;
+      if (!event.query.trim()) {
+         _filteredTypes = [...AllDataModelTypeInfos];
+      } else {
+         _filteredTypes = AllDataModelTypeInfos.filter(type => {
+            return type.label.toLowerCase().startsWith(event.query.toLowerCase());
+         });
+      }
+      setFilteredTypes(_filteredTypes);
+   };
+
    if (!dataModel) {
       return <div>No data model found</div>;
    }
@@ -72,56 +80,66 @@ export function DataModelForm(): React.ReactElement {
    return (
       <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.System.ICON_CLASS}>
          <FormSection label='General'>
-            <TextField
-               fullWidth={true}
-               label='Name'
-               margin='normal'
-               variant='outlined'
-               disabled={readonly}
-               required={true}
-               value={dataModel.name ?? ''}
-               error={!!diagnostics.name?.length}
-               helperText={diagnostics.name?.at(0)?.message}
-               onChange={handleNameChange}
-            />
-            <TextField
-               fullWidth={true}
-               label='Description'
-               margin='normal'
-               variant='outlined'
-               disabled={readonly}
-               multiline={true}
-               rows={3}
-               value={dataModel.description ?? ''}
-               error={!!diagnostics.description?.length}
-               helperText={diagnostics.description?.at(0)?.message}
-               onChange={handleDescriptionChange}
-            />
-            <AsyncAutoComplete
-               label='Type'
-               optionLoader={async () => AllDataModelTypeInfos}
-               value={DataModelTypeInfos[dataModel.type] ?? DataModelTypeInfos.logical}
-               onChange={handleTypeChange}
-               getOptionLabel={(option: DataModelTypeInfo) => option.label}
-               isOptionEqualToValue={(option: DataModelTypeInfo, value: DataModelTypeInfo) => option.value === value.value}
-               textFieldProps={{
-                  margin: 'normal',
-                  variant: 'outlined',
-                  fullWidth: true,
-                  required: true
-               }}
-            />
-            <TextField
-               fullWidth={true}
-               label='Version'
-               margin='normal'
-               variant='outlined'
-               disabled={readonly}
-               value={dataModel.version ?? ''}
-               error={!!diagnostics.version?.length}
-               helperText={diagnostics.version?.at(0)?.message}
-               onChange={handleVersionChange}
-            />
+            <div className='p-field p-fluid' style={{ marginTop: '1rem', marginBottom: '2rem' }}>
+               <span className='p-float-label'>
+                  <InputText
+                     id='name'
+                     value={dataModel.name ?? ''}
+                     onChange={handleNameChange}
+                     disabled={readonly}
+                     required={true}
+                     className={diagnostics.name?.length ? 'p-invalid' : ''}
+                  />
+                  <label htmlFor='name'>Name</label>
+               </span>
+               {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
+            </div>
+            <div className='p-field p-fluid' style={{ marginBottom: '2rem', marginTop: '1rem' }}>
+               <span className='p-float-label'>
+                  <InputTextarea
+                     id='description'
+                     value={dataModel.description ?? ''}
+                     onChange={handleDescriptionChange}
+                     disabled={readonly}
+                     rows={3}
+                     autoResize
+                     className={diagnostics.description?.length ? 'p-invalid' : ''}
+                  />
+                  <label htmlFor='description'>Description</label>
+               </span>
+               {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
+            </div>
+            <div className='p-field p-fluid' style={{ marginBottom: '2rem', marginTop: '1rem' }}>
+               <span className='p-float-label'>
+                  <AutoComplete<DataModelTypeInfo>
+                     id='type'
+                     value={AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]}
+                     suggestions={filteredTypes}
+                     completeMethod={searchType}
+                     field='label'
+                     onChange={handleTypeChange}
+                     disabled={readonly}
+                     required={true}
+                     className={diagnostics.type?.length ? 'p-invalid' : ''}
+                     dropdown
+                  />
+                  <label htmlFor='type'>Type</label>
+               </span>
+               {diagnostics.type?.length && <small className='p-error'>{diagnostics.type?.[0]?.message}</small>}
+            </div>
+            <div className='p-field p-fluid' style={{ marginBottom: '1rem', marginTop: '1rem' }}>
+               <span className='p-float-label'>
+                  <InputText
+                     id='version'
+                     value={dataModel.version ?? ''}
+                     onChange={handleVersionChange}
+                     disabled={readonly}
+                     className={diagnostics.version?.length ? 'p-invalid' : ''}
+                  />
+                  <label htmlFor='version'>Version</label>
+               </span>
+               {diagnostics.version?.length && <small className='p-error'>{diagnostics.version?.[0]?.message}</small>}
+            </div>
          </FormSection>
          <FormSection label='Dependencies'>
             <DataModelDependenciesDataGrid />

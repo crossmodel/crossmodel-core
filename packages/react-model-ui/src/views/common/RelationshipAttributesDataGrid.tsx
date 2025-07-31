@@ -2,88 +2,33 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import { CrossReferenceContext, ModelDiagnostic, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
-import { GridColDef, GridRenderCellParams, GridRenderEditCellParams, useGridApiContext } from '@mui/x-data-grid';
+import { AutoComplete } from 'primereact/autocomplete';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
-import AsyncAutoComplete from './AsyncAutoComplete';
-import GridComponent, { GridComponentRow } from './GridComponent';
+import { ErrorView } from '../ErrorView';
+import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
-export interface EditAttributePropertyComponentProps extends GridRenderEditCellParams {
-   property: 'child' | 'parent';
+function getDiagnosticKey(row: { idx: number }, field: string): string {
+   return `attributes[${row.idx}].${field}`;
 }
 
-function getDiagnosticKey(props: { row: { idx: number }; field: string }): string {
-   return `attributes[${props.row.idx}].${props.field}`;
+export interface AttributePropertyProps {
+   field: string;
+   row: { idx: number };
+   diagnostics: Record<string, ModelDiagnostic[] | undefined>;
+   value: string;
 }
 
-export function AttributePropertyComponent(
-   props: GridRenderCellParams & { diagnostics: Record<string, ModelDiagnostic[] | undefined> }
-): React.ReactNode {
-   const relevantDiagnostics = props.diagnostics[getDiagnosticKey(props)];
-   const content = props.row[props.field];
-   const title = relevantDiagnostics?.at(0)?.message || content;
-   return <div title={title}>{content}</div>;
+export function AttributeProperty({ field, row, diagnostics, value }: AttributePropertyProps): React.ReactNode {
+   const relevantDiagnostics = diagnostics[getDiagnosticKey(row, field)];
+   const title = relevantDiagnostics?.[0]?.message || value;
+   return <div title={title}>{value}</div>;
 }
 
-export function EditAttributePropertyComponent({
-   id,
-   value,
-   field,
-   hasFocus,
-   property
-}: EditAttributePropertyComponentProps): React.ReactElement {
-   const relationship = useRelationship();
-   const queryApi = useModelQueryApi();
-   const gridApi = useGridApiContext();
-   const readonly = useReadonly();
-
-   const referenceCtx: CrossReferenceContext = React.useMemo(
-      () => ({
-         container: { globalId: relationship!.id! },
-         syntheticElements: [{ property: 'attributes', type: RelationshipAttributeType }],
-         property
-      }),
-      [relationship, property]
-   );
-   const referenceableElements = React.useCallback(
-      () => queryApi.findReferenceableElements(referenceCtx).then(elements => elements.map(element => element.label)),
-      [queryApi, referenceCtx]
-   );
-
-   const handleValueChange = React.useCallback(
-      (newValue: string): void => {
-         gridApi.current.setEditCellValue({ id, field, value: newValue });
-      },
-      [field, gridApi, id]
-   );
-
-   const handleOptionsLoaded = React.useCallback(
-      (options: string[]) => {
-         if (options.length && !value) {
-            gridApi.current.setEditCellValue({ id, field, value: options[0] });
-         }
-      },
-      [value, field, gridApi, id]
-   );
-
-   return (
-      <AsyncAutoComplete
-         autoFocus={hasFocus}
-         fullWidth={true}
-         label=''
-         optionLoader={referenceableElements}
-         onOptionsLoaded={handleOptionsLoaded}
-         onChange={(_evt, newReference) => handleValueChange(newReference)}
-         value={value ?? ''}
-         clearOnBlur={true}
-         selectOnFocus={true}
-         disabled={readonly}
-         textFieldProps={{ sx: { margin: '0' } }}
-      />
-   );
+export interface RelationshipAttributeRow extends RelationshipAttribute {
+   idx: number;
 }
 
-export type RelationshipAttributeRow = GridComponentRow<RelationshipAttribute>;
 export interface RelationshipAttributeDataGridProps {
    diagnostics: Record<string, ModelDiagnostic[] | undefined>;
 }
@@ -91,53 +36,85 @@ export interface RelationshipAttributeDataGridProps {
 export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttributeDataGridProps): React.ReactElement {
    const relationship = useRelationship();
    const dispatch = useModelDispatch();
+   const queryApi = useModelQueryApi();
    const readonly = useReadonly();
+   const [parentSuggestions, setParentSuggestions] = React.useState<string[]>([]);
+   const [childSuggestions, setChildSuggestions] = React.useState<string[]>([]);
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
-   // Callback for when the user stops editing a cell.
-   const handleRowUpdate = React.useCallback(
-      (attribute: RelationshipAttributeRow): RelationshipAttributeRow => {
-         // Handle change of name property.
+   const parentReferenceCtx: CrossReferenceContext = React.useMemo(
+      () => ({
+         container: { globalId: relationship?.id || '' },
+         syntheticElements: [{ property: 'attributes', type: RelationshipAttributeType }],
+         property: 'parent'
+      }),
+      [relationship]
+   );
+
+   const childReferenceCtx: CrossReferenceContext = React.useMemo(
+      () => ({
+         container: { globalId: relationship?.id || '' },
+         syntheticElements: [{ property: 'attributes', type: RelationshipAttributeType }],
+         property: 'child'
+      }),
+      [relationship]
+   );
+
+   const searchParent = React.useCallback(
+      async (event: { query: string }) => {
+         const elements = await queryApi.findReferenceableElements(parentReferenceCtx);
+         setParentSuggestions(elements.map(element => element.label || ''));
+      },
+      [queryApi, parentReferenceCtx]
+   );
+
+   const searchChild = React.useCallback(
+      async (event: { query: string }) => {
+         const elements = await queryApi.findReferenceableElements(childReferenceCtx);
+         setChildSuggestions(elements.map(element => element.label || ''));
+      },
+      [queryApi, childReferenceCtx]
+   );
+
+   const onRowUpdate = React.useCallback(
+      (attribute: RelationshipAttributeRow) => {
+         const errors = validateField(attribute);
+         if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            return;
+         }
+         setValidationErrors({});
          dispatch({
             type: 'relationship:attribute:update',
             attributeIdx: attribute.idx,
-            attribute: GridComponentRow.getData(attribute)
+            attribute: attribute
          });
-         return attribute;
       },
       [dispatch]
    );
 
-   const handleAddAttribute = React.useCallback(
-      (attribute: RelationshipAttributeRow): void => {
-         if (attribute.child && attribute.parent) {
-            dispatch({ type: 'relationship:attribute:add-relationship', attribute });
-         }
-      },
-      [dispatch]
-   );
+   const onRowAdd = React.useCallback(
+      (attribute: RelationshipAttributeRow) => {
+         // Clear any previous validation errors
+         setValidationErrors({});
 
-   const handleAttributeUpward = React.useCallback(
-      (attribute: RelationshipAttributeRow): void => {
+         // Create a new attribute with empty values
+         const attributeData: RelationshipAttribute = {
+            $type: RelationshipAttributeType,
+            parent: attribute.parent || '',
+            child: attribute.child || ''
+         };
+
          dispatch({
-            type: 'relationship:attribute:move-attribute-up',
-            attributeIdx: attribute.idx
+            type: 'relationship:attribute:add',
+            attribute: attributeData
          });
       },
       [dispatch]
    );
 
-   const handleAttributeDownward = React.useCallback(
-      (attribute: RelationshipAttributeRow): void => {
-         dispatch({
-            type: 'relationship:attribute:move-attribute-down',
-            attributeIdx: attribute.idx
-         });
-      },
-      [dispatch]
-   );
-
-   const handleAttributeDelete = React.useCallback(
-      (attribute: RelationshipAttributeRow): void => {
+   const onRowDelete = React.useCallback(
+      (attribute: RelationshipAttributeRow) => {
          dispatch({
             type: 'relationship:attribute:delete-attribute',
             attributeIdx: attribute.idx
@@ -146,45 +123,114 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
       [dispatch]
    );
 
-   const columns: GridColDef[] = React.useMemo(
+   const onRowMoveUp = React.useCallback(
+      (attribute: RelationshipAttributeRow) => {
+         dispatch({
+            type: 'relationship:attribute:move-attribute-up',
+            attributeIdx: attribute.idx
+         });
+      },
+      [dispatch]
+   );
+
+   const onRowMoveDown = React.useCallback(
+      (attribute: RelationshipAttributeRow) => {
+         dispatch({
+            type: 'relationship:attribute:move-attribute-down',
+            attributeIdx: attribute.idx
+         });
+      },
+      [dispatch]
+   );
+
+   const validateField = React.useCallback((rowData: RelationshipAttributeRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.parent) {
+         errors.parent = 'Invalid Parent';
+      }
+      if (!rowData.child) {
+         errors.child = 'Invalid Child';
+      }
+      return errors;
+   }, []);
+
+   const columns = React.useMemo<GridColumn<RelationshipAttributeRow>[]>(
       () => [
          {
             field: 'parent',
-            headerName: 'Parent',
-            flex: 200,
-            editable: !readonly,
-            renderEditCell: params => <EditAttributePropertyComponent {...params} property='parent' />,
-            renderCell: params => <AttributePropertyComponent {...params} diagnostics={diagnostics} />,
-            type: 'singleSelect',
-            cellClassName: params => (diagnostics[getDiagnosticKey(params)] && 'Mui-error') || ''
+            header: 'Parent',
+            body: rowData => (
+               <AutoComplete
+                  value={rowData.parent}
+                  suggestions={parentSuggestions}
+                  completeMethod={searchParent}
+                  field='label'
+                  dropdown
+                  forceSelection
+                  onChange={e => onRowUpdate({ ...rowData, parent: e.value })}
+                  disabled={readonly}
+               />
+            )
          },
          {
             field: 'child',
-            headerName: 'Child',
-            flex: 200,
-            editable: !readonly,
-            renderEditCell: params => <EditAttributePropertyComponent {...params} property='child' />,
-            renderCell: params => <AttributePropertyComponent {...params} diagnostics={diagnostics} />,
-            type: 'singleSelect',
-            cellClassName: params => (diagnostics[getDiagnosticKey(params)] && 'Mui-error') || ''
+            header: 'Child',
+            body: rowData => (
+               <AutoComplete
+                  value={rowData.child}
+                  suggestions={childSuggestions}
+                  completeMethod={searchChild}
+                  field='label'
+                  dropdown
+                  forceSelection
+                  onChange={e => onRowUpdate({ ...rowData, child: e.value })}
+                  disabled={readonly}
+               />
+            )
          }
       ],
-      [readonly, diagnostics]
+      [parentSuggestions, childSuggestions, searchParent, searchChild, onRowUpdate, readonly]
+   );
+
+   const defaultEntry = React.useMemo<RelationshipAttributeRow>(
+      () => ({
+         $type: RelationshipAttributeType,
+         parent: '',
+         child: '',
+         idx: -1
+      }),
+      []
+   );
+
+   if (!relationship) {
+      return <ErrorView errorMessage='No relationship available' />;
+   }
+
+   const gridData = React.useMemo(
+      () =>
+         (relationship.attributes || []).map((attr, idx) => ({
+            ...attr,
+            idx
+         })),
+      [relationship.attributes]
    );
 
    return (
-      <GridComponent
-         key={relationship.id + '-grid'}
-         gridColumns={columns}
-         gridData={relationship.attributes}
-         defaultEntry={{ $type: RelationshipAttributeType }}
-         onDelete={handleAttributeDelete}
-         onMoveDown={handleAttributeDownward}
-         onMoveUp={handleAttributeUpward}
-         noEntriesText='No Attributes'
-         newEntryText='Add Attribute'
-         onAdd={handleAddAttribute}
-         onUpdate={handleRowUpdate}
+      <PrimeDataGrid
+         columns={columns}
+         data={gridData}
+         keyField='idx'
+         height='300px'
+         onRowAdd={onRowAdd}
+         onRowUpdate={onRowUpdate}
+         onRowDelete={onRowDelete}
+         onRowMoveUp={onRowMoveUp}
+         onRowMoveDown={onRowMoveDown}
+         defaultNewRow={defaultEntry}
+         readonly={readonly}
+         validationErrors={validationErrors}
+         noDataMessage='No attributes'
+         addButtonLabel='Add Attribute'
       />
    );
 }

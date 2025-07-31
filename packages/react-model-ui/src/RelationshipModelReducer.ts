@@ -57,7 +57,7 @@ export interface RelationshipAttributeUpdateAction extends ModelAction {
 }
 
 export interface RelationshipAttributeAddEmptyAction extends ModelAction {
-   type: 'relationship:attribute:add-relationship';
+   type: 'relationship:attribute:add';
    attribute: RelationshipAttribute;
 }
 
@@ -174,7 +174,7 @@ export function RelationshipModelReducer(state: ModelState, action: Relationship
          relationship.attributes[action.attributeIdx] = action.attribute;
          break;
 
-      case 'relationship:attribute:add-relationship':
+      case 'relationship:attribute:add':
          relationship.attributes.push(action.attribute);
          break;
 

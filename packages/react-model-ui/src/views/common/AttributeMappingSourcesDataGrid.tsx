@@ -6,32 +6,40 @@ import {
    AttributeMappingSource,
    AttributeMappingSourceType,
    AttributeMappingType,
+   CrossModelElement,
    CrossReferenceContext,
+   NamedObject,
    ReferenceableElement,
    TargetObjectType
 } from '@crossmodel/protocol';
-import { GridColDef, GridRenderEditCellParams, useGridApiContext } from '@mui/x-data-grid';
+import { AutoComplete } from 'primereact/autocomplete';
 import * as React from 'react';
-import { useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
-import AsyncAutoComplete from './AsyncAutoComplete';
-import GridComponent, { GridComponentRow } from './GridComponent';
+import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
-export interface EditAttributeMappingSourceComponentProps extends GridRenderEditCellParams<AttributeMappingSource> {}
+interface AttributeMappingSourcesDataGridProps {
+   attributeMapping: AttributeMapping;
+   mappingIdx: number;
+}
 
-export function EditAttributeMappingSourceComponent({
-   id,
-   row,
-   field,
-   hasFocus
-}: EditAttributeMappingSourceComponentProps): React.ReactElement {
-   const mapping = useMapping();
+export interface AttributeMappingSourceRow extends Omit<AttributeMappingSource & CrossModelElement, 'value'> {
+   idx: number;
+   value: string;
+}
+
+export function AttributeMappingSourcesDataGrid({
+   attributeMapping,
+   mappingIdx
+}: AttributeMappingSourcesDataGridProps): React.ReactElement {
+   const dispatch = useModelDispatch();
    const queryApi = useModelQueryApi();
-   const gridApi = useGridApiContext();
    const readonly = useReadonly();
+   const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: mapping.id },
+         container: { globalId: 'mapping_' + mappingIdx },
          syntheticElements: [
             { property: 'target', type: TargetObjectType },
             { property: 'mappings', type: AttributeMappingType },
@@ -39,118 +47,146 @@ export function EditAttributeMappingSourceComponent({
          ],
          property: 'value'
       }),
-      [mapping]
+      [mappingIdx]
    );
-   const referenceableElements = React.useCallback(() => queryApi.findReferenceableElements(referenceCtx), [queryApi, referenceCtx]);
 
-   const handleValueChange = React.useCallback(
-      (_evt: React.SyntheticEvent, newValue: ReferenceableElement): void => {
-         const source = { $type: AttributeMappingSourceType, value: newValue.label, uri: newValue.uri };
-         gridApi.current.setEditCellValue({ id, field, value: source });
+   const search = React.useCallback(
+      async (event: { query: string }) => {
+         const elements = await queryApi.findReferenceableElements(referenceCtx);
+         setSuggestions(
+            elements.map(e => ({
+               ...e,
+               label: (e as unknown as NamedObject).name || (e as unknown as NamedObject).$globalId || 'Unnamed Element'
+            }))
+         );
       },
-      [field, gridApi, id]
+      [queryApi, referenceCtx]
    );
 
-   const value = React.useMemo<ReferenceableElement>(() => ({ uri: '', label: row.value.toString() ?? '', type: row.$type }), [row]);
+   const onSourceAdd = React.useCallback(
+      (sourceToAdd: AttributeMappingSourceRow) => {
+         // Clear any previous validation errors
+         setValidationErrors({});
 
-   return (
-      <AsyncAutoComplete<ReferenceableElement>
-         openOnFocus={true}
-         fullWidth={true}
-         label=''
-         optionLoader={referenceableElements}
-         onChange={handleValueChange}
-         value={value}
-         disabled={readonly}
-         clearOnBlur={true}
-         selectOnFocus={true}
-         textFieldProps={{ sx: { margin: '0' }, autoFocus: hasFocus, placeholder: 'Select an attribute' }}
-         isOptionEqualToValue={(option, val) => option.label === val.label}
-      />
+         // Create a new source with empty value
+         const sourceData: AttributeMappingSource = {
+            $type: AttributeMappingSourceType,
+            value: ''
+         };
+
+         dispatch({
+            type: 'attribute-mapping:add-source',
+            mappingIdx,
+            source: sourceData
+         });
+      },
+      [dispatch, mappingIdx]
    );
-}
 
-export type AttributeMappingSourceRow = GridComponentRow<AttributeMappingSource>;
+   const onSourceDelete = React.useCallback(
+      (sourceToDelete: AttributeMappingSourceRow) => {
+         dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx: sourceToDelete.idx });
+      },
+      [dispatch, mappingIdx]
+   );
 
-export interface AttributeMappingSourcesDataGridProps {
-   mapping: AttributeMapping;
-   mappingIdx: number;
-}
-
-export function AttributeMappingSourcesDataGrid({ mapping, mappingIdx }: AttributeMappingSourcesDataGridProps): React.ReactElement {
-   const dispatch = useModelDispatch();
-
-   const sources = React.useMemo<AttributeMappingSource[]>(() => mapping.sources, [mapping]);
-
-   const defaultSource = React.useMemo<AttributeMappingSource>(() => ({ $type: AttributeMappingSourceType, value: '' }), []);
-
-   // Callback for when the user stops editing a cell.
-   const handleSourceUpdate = React.useCallback(
-      (row: AttributeMappingSourceRow): AttributeMappingSourceRow => {
-         if (row.value === '') {
-            dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx: row.idx });
-         } else {
-            dispatch({ type: 'attribute-mapping:update-source', mappingIdx, sourceIdx: row.idx, source: row });
+   const onSourceUpdate = React.useCallback(
+      (sourceToUpdate: AttributeMappingSourceRow) => {
+         const errors = validateField(sourceToUpdate);
+         if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            return;
          }
-         return row;
+         setValidationErrors({});
+         dispatch({ type: 'attribute-mapping:update-source', mappingIdx, source: sourceToUpdate, sourceIdx: sourceToUpdate.idx });
       },
       [dispatch, mappingIdx]
    );
 
-   const handleAddSource = React.useCallback(
-      (row: AttributeMappingSourceRow): void => {
-         if (row.value !== '') {
-            dispatch({ type: 'attribute-mapping:add-source', mappingIdx, source: row });
-         }
+   const onSourceMoveUp = React.useCallback(
+      (sourceToMove: AttributeMappingSourceRow) => {
+         dispatch({ type: 'attribute-mapping:move-source-up', mappingIdx, sourceIdx: sourceToMove.idx });
       },
       [dispatch, mappingIdx]
    );
 
-   const handleSourceUpward = React.useCallback(
-      (row: AttributeMappingSourceRow): void => dispatch({ type: 'attribute-mapping:move-source-up', mappingIdx, sourceIdx: row.idx }),
+   const onSourceMoveDown = React.useCallback(
+      (sourceToMove: AttributeMappingSourceRow) => {
+         dispatch({ type: 'attribute-mapping:move-source-down', mappingIdx, sourceIdx: sourceToMove.idx });
+      },
       [dispatch, mappingIdx]
    );
 
-   const handleSourceDownward = React.useCallback(
-      (row: AttributeMappingSourceRow): void => dispatch({ type: 'attribute-mapping:move-source-down', mappingIdx, sourceIdx: row.idx }),
-      [dispatch, mappingIdx]
-   );
+   const validateField = React.useCallback((rowData: AttributeMappingSourceRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.value) {
+         errors.value = 'Invalid Value';
+      }
+      return errors;
+   }, []);
 
-   const handleSourceDelete = React.useCallback(
-      (row: AttributeMappingSourceRow): void => dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx: row.idx }),
-      [dispatch, mappingIdx]
-   );
-
-   const columns: GridColDef[] = React.useMemo(
+   const columns: GridColumn<AttributeMappingSourceRow>[] = React.useMemo(
       () => [
          {
             field: 'value',
-            flex: 200,
-            editable: true,
-            renderHeader: () => <></>,
-            valueGetter: (_value, row) => row,
-            valueSetter: (value, row) => value,
-            valueFormatter: (value, row) => (value as AttributeMappingSource).value,
-            renderEditCell: params => <EditAttributeMappingSourceComponent {...params} />,
-            type: 'singleSelect'
-         } as GridColDef
+            header: 'Value',
+            editor: true,
+            body: rowData => (
+               <AutoComplete
+                  value={rowData.value}
+                  suggestions={suggestions}
+                  completeMethod={search}
+                  field='label'
+                  dropdown
+                  forceSelection
+                  onChange={e => onSourceUpdate({ ...rowData, value: e.value.label })}
+                  disabled={readonly}
+               />
+            )
+         }
       ],
+      [suggestions, search, onSourceUpdate, readonly]
+   );
+
+   const defaultEntry = React.useMemo<AttributeMappingSourceRow>(
+      () => ({
+         $type: AttributeMappingSourceType,
+         value: '',
+         idx: -1
+      }),
       []
    );
 
+   if (!attributeMapping) {
+      return <></>;
+   }
+
+   const gridData = React.useMemo(
+      () =>
+         (attributeMapping.sources || []).map((source: AttributeMappingSource, idx: number) => ({
+            ...source,
+            idx,
+            value: String(source.value || '')
+         })),
+      [attributeMapping.sources]
+   );
+
    return (
-      <GridComponent
-         columnHeaderHeight={0}
-         gridColumns={columns}
-         gridData={sources}
-         noEntriesText='No Sources'
-         newEntryText='Add Source'
-         defaultEntry={defaultSource}
-         onAdd={handleAddSource}
-         onDelete={handleSourceDelete}
-         onUpdate={handleSourceUpdate}
-         onMoveDown={handleSourceDownward}
-         onMoveUp={handleSourceUpward}
+      <PrimeDataGrid
+         columns={columns}
+         data={gridData}
+         keyField='idx'
+         height='300px'
+         onRowAdd={onSourceAdd}
+         onRowUpdate={onSourceUpdate}
+         onRowDelete={onSourceDelete}
+         onRowMoveUp={onSourceMoveUp}
+         onRowMoveDown={onSourceMoveDown}
+         defaultNewRow={defaultEntry}
+         readonly={readonly}
+         validationErrors={validationErrors}
+         noDataMessage='No source expressions'
+         addButtonLabel='Add Source'
       />
    );
 }
