@@ -1,4 +1,4 @@
-# Tests: CrossModel Core Edition
+# Testing CrossModel
 
 ## Getting started
 
@@ -16,20 +16,6 @@ Unit tests can be placed in the same directory as the TypeScript files they test
 
 Unit test files should have the structure `*.test.ts` as their filename, for clarity in the project structure and to allow Jest to run your TypeScript tests[^1]. Consider using the inbuilt assert functions of Jest, such as:  
 `expect(sum(5, 25)).toEqual(30)` and `expect(results_arr.length).toBeGreaterThan(2)` . See all the methods available on [`expect()`](https://jestjs.io/docs/expect).
-
-To run a test multiple times with different variable values, use `test.each()`. The first parameter is an array of objects or arrays containing the values. See the example below:
-
-    test.each([{path: 'C:/Users/MariekeBartels/Documents/GitHub/crossmodel/package.json', isDir: false},
-        {path: __dirname, isDir: true}, {path: process.cwd(), isDir: true}
-    ])('tests of isDirectory and isFile for path ${path} - isDir is ${isDir}', ({path, isDir}) => {
-        const uri = URI.file(path);
-        let result;
-        if (isDir)
-            result = Utils.isDirectory(uri);
-        else
-            result = Utils.isFile(uri);
-        expect(result).toBeTruthy();
-    });
 
 [^1]: Files with this name structure are transformed by _ts-jest_ so that _Jest_ can process them as Javascript
 
