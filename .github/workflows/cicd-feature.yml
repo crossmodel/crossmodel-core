@@ -57,6 +57,7 @@ jobs:
           yarn theia:electron package:prod
         env:
           NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Upload ${{ runner.os }} ${{ runner.arch }} installer
         if: runner.os == 'Windows'
