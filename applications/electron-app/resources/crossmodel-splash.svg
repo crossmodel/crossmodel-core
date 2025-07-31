@@ -1,7 +1,7 @@
 <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="500" height="235">
-	<title>&lt;Group&gt;</title>
+	<title>crossmodel-splash</title>
 	<style>
-		.s0 { fill: #1d3c51 } 
+		.s0 { fill-opacity: .75;fill: #1d3c51 } 
 		.s1 { fill: #c69a2c } 
 		.s2 { fill: #ffffff } 
 	</style>
