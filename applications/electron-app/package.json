@@ -16,7 +16,7 @@
   "main": "scripts/crossmodel-electron-main.js",
   "scripts": {
     "build": "yarn -s rebuild && theia build --app-target=\"electron\" --mode development && yarn download:plugins",
-    "postbuild": "shx cp ../../node_modules/libavoid-js/dist/libavoid.wasm ../../applications/electron-app/lib/frontend/libavoid.wasm",
+    "postbuild": "shx cp ../../node_modules/libavoid-js/dist/libavoid.wasm ./lib/frontend/libavoid.wasm",
     "build:prod": "yarn -s rebuild && theia build --app-target=\"electron\" && yarn -s postbuild",
     "bundle": "cross-env NODE_OPTIONS=--max-old-space-size=8192 && yarn build",
     "clean": "theia clean && rimraf lib src-gen",
