@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-22.04', 'windows-2022', 'macos-13']
+        os: ['ubuntu-24.04', 'windows-2022', 'macos-13', 'macos-14']
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -58,10 +58,48 @@ jobs:
         env:
           NODE_OPTIONS: --max_old_space_size=4096
 
-      - name: Upload ${{ runner.os }} installer
+      - name: Upload ${{ runner.os }} ${{ runner.arch }} installer
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-installer
+          name: ${{ runner.os }}-${{ runner.arch }}-installer
           path: |
             applications/electron-app/dist/CrossModel *.*
+            !applications/electron-app/dist/CrossModel *.blockmap
+          retention-days: 1
+
+      - name: Upload ${{ runner.os }} ${{ runner.arch }} AppImage installer
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-${{ runner.arch }}-AppImage-installer
+          path: |
+            applications/electron-app/dist/CrossModel *.AppImage
+          retention-days: 1
+
+      - name: Upload ${{ runner.os }} ${{ runner.arch }} Debian installer
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-${{ runner.arch }}-deb-installer
+          path: |
+            applications/electron-app/dist/CrossModel *.deb
+          retention-days: 1
+
+      - name: Upload ${{ runner.os }} ${{ runner.arch }} dmg installer
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-${{ runner.arch }}-dmg-installer
+          path: |
+            applications/electron-app/dist/CrossModel *.dmg
+          retention-days: 1
+
+      - name: Upload ${{ runner.os }} ${{ runner.arch }} zip installer
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-${{ runner.arch }}-zip-installer
+          path: |
+            applications/electron-app/dist/CrossModel *.zip
           retention-days: 1
