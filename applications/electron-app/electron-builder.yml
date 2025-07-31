@@ -43,6 +43,7 @@ mac:
   target:
     - dmg
     - zip
+  publish: null # we don't know where this will be published yet
 
 linux:
   icon: resources/icons/icon_256x256.png

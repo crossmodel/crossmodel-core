@@ -57,7 +57,6 @@ jobs:
           yarn theia:electron package:prod
         env:
           NODE_OPTIONS: --max_old_space_size=4096
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # MacOS package requires GitHub token.
 
       - name: Upload ${{ matrix.os }} Setup File(s)
         uses: actions/upload-artifact@v4
