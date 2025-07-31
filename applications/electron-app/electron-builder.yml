@@ -22,6 +22,7 @@ files:
   - src-gen
   - lib
   - resources/icons/icon_256x256.png
+  - resources/crossmodel-splash.svg
   - scripts
   - "!**node_modules/**"
 

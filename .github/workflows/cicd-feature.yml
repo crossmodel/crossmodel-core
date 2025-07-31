@@ -53,14 +53,15 @@ jobs:
         run: |
           yarn --skip-integrity-check --network-timeout 100000
           yarn build:packages
-          yarn theia:electron package:preview
+          yarn theia:electron build:prod
+          yarn theia:electron package:prod
         env:
           NODE_OPTIONS: --max_old_space_size=4096
 
-      - name: Upload ${{ matrix.os }} Dist Files
+      - name: Upload ${{ matrix.os }} Setup File(s)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}-installer
           path: |
-            applications/electron-app/dist/**
+            applications/electron-app/dist/CrossModel *.*
           retention-days: 1
