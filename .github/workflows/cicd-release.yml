@@ -2,8 +2,6 @@ name: cicd-release
 
 on:
   push:
-    branches:
-      - feature/*
     tags:
       - 'v*'
 
@@ -51,7 +49,7 @@ jobs:
 
 
   package:
-    name: Package ${{ matrix.os }}
+    name: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
