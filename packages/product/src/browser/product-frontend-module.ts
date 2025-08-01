@@ -21,7 +21,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
    });
 
    // Override the getting started widget
-   rebind(CrossModelGettingStartedWidget).toSelf();
+   bind(CrossModelGettingStartedWidget).toSelf();
    bind(WidgetFactory)
       .toDynamicValue(context => ({
          id: GettingStartedWidget.ID,
