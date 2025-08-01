@@ -23,26 +23,19 @@
     "style"
   ],
   "scripts": {
-    "build": "tsc -b && npm run copy-assets",
+    "build": "tsc -b",
     "clean": "rimraf lib tsconfig.tsbuildinfo",
-    "copy-assets": "copyfiles -u 1 src/style/**/*.css lib/",
     "lint": "eslint -c ../../.eslintrc.js --ext .ts,.tsx ./src",
     "test": "jest --passWithNoTests",
     "watch": "tsc -w"
   },
   "dependencies": {
     "@crossmodel/protocol": "0.6.0",
-    "@types/node": "^20.11.16",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
     "immer": "^10.1.1",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "use-immer": "^0.11.0"
-  },
-  "devDependencies": {
-    "copyfiles": "^2.4.1"
   }
 }

@@ -4,8 +4,6 @@
 
 import { CrossModelRoot } from '@crossmodel/protocol';
 import { URI } from '@theia/core';
-import 'primeicons/primeicons.css';
-import 'primereact/resources/primereact.min.css';
 import * as React from 'react';
 import { useImmerReducer } from 'use-immer';
 import {
