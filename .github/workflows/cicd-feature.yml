@@ -10,98 +10,32 @@ on:
       - chore/*
 
 jobs:
-  package:
-    name: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['ubuntu-22.04', 'windows-2022', 'macos-13', 'macos-14'] # macos-13 for intel, macos-14 for arm
-
-    runs-on: ${{ matrix.os }}
+  check-open-pr:
+    name: Check open PR
+    runs-on: ubuntu-latest
+    outputs:
+      open_pr_found: ${{ steps.output-pr-info.outputs.prFound }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set env variables
-        shell: bash
-        # We set env variables on the GITHUB_ENV variable so they value is available in all consecutive steps.
+      # Get open (non-draft) PR info.
+      - name: Get PR info
+        uses: 8BitJonny/gh-get-current-pr@3.0.0
+        id: PR
+        with:
+          filterOutClosed: true
+          filterOutDraft: true
+      - name: Output PR info
+        id: output-pr-info
+        if: steps.PR.outputs.pr_found == 'true'
         run: |
-          echo "PYTHON_VERSION=3.11.4" >> "$GITHUB_ENV"
-          echo "NODE_VERSION=22.x" >> "$GITHUB_ENV"
-          echo "GITHUB_TOKEN=${{ inputs.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
+          echo "prFound: ${{ steps.PR.outputs.pr_found }}"
+          echo "prFound=${{ steps.PR.outputs.pr_found }}" >> "$GITHUB_OUTPUT"
+          echo "prUrl: ${{ steps.PR.outputs.pr_url }}"
+          echo "prUrl=${{ steps.PR.outputs.pr_url }}" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@crossmodel'
-          cache: 'yarn'
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Build dev package
-        shell: bash
-        run: |
-          yarn --skip-integrity-check --network-timeout 100000
-          yarn build:packages
-          yarn theia:electron build:prod
-          yarn theia:electron package:prod
-        env:
-          NODE_OPTIONS: --max_old_space_size=4096
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
-
-      - name: Upload ${{ runner.os }} ${{ runner.arch }} installer
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-${{ runner.arch }}-installer
-          path: |
-            applications/electron-app/dist/CrossModel-*.exe
-          retention-days: 1
-          compression-level: 0
-
-      - name: Upload ${{ runner.os }} ${{ runner.arch }} AppImage
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-${{ runner.arch }}-AppImage
-          path: |
-            applications/electron-app/dist/CrossModel-*.AppImage
-          retention-days: 1
-          compression-level: 0
-
-      - name: Upload ${{ runner.os }} ${{ runner.arch }} Debian installer
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-${{ runner.arch }}-deb-installer
-          path: |
-            applications/electron-app/dist/CrossModel-*.deb
-          retention-days: 1
-          compression-level: 0
-
-      - name: Upload ${{ runner.os }} ${{ runner.arch }} dmg installer
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-${{ runner.arch }}-dmg-installer
-          path: |
-            applications/electron-app/dist/CrossModel-*.dmg
-          retention-days: 1
-          compression-level: 0
-
-      # Disabled zip for now, it's not being build since dmg files are working fine.
-      # - name: Upload ${{ runner.os }} ${{ runner.arch }} zip installer
-      #   if: runner.os == 'macOS'
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ${{ runner.os }}-${{ runner.arch }}-zip-installer
-      #     path: |
-      #       applications/electron-app/dist/CrossModel-*.zip
-      #     retention-days: 1
-      #     compression-level: 0
+  build-and-test:
+    needs: check-open-pr
+    # Only run the build if there is no open PR found (otherwise this is handled in the PR workflow).
+    if: ${{ needs.check-open-pr.outputs.open_pr_found != 'true' }}
+    uses: ./.github/workflows/build-and-test.yml
+    with:
+      runs-on: "['ubuntu-22.04']"
