@@ -63,6 +63,7 @@ jobs:
           path: |
             applications/electron-app/dist/CrossModel-*.exe
           retention-days: 1
+          compression-level: 0
 
       - name: Upload ${{ runner.os }} ${{ runner.arch }} AppImage
         if: runner.os == 'Linux'
@@ -72,6 +73,7 @@ jobs:
           path: |
             applications/electron-app/dist/CrossModel-*.AppImage
           retention-days: 1
+          compression-level: 0
 
       - name: Upload ${{ runner.os }} ${{ runner.arch }} Debian installer
         if: runner.os == 'Linux'
@@ -81,6 +83,7 @@ jobs:
           path: |
             applications/electron-app/dist/CrossModel-*.deb
           retention-days: 1
+          compression-level: 0
 
       - name: Upload ${{ runner.os }} ${{ runner.arch }} dmg installer
         if: runner.os == 'macOS'
@@ -90,6 +93,7 @@ jobs:
           path: |
             applications/electron-app/dist/CrossModel-*.dmg
           retention-days: 1
+          compression-level: 0
 
       # Disabled zip for now, it's not being build since dmg files are working fine.
       # - name: Upload ${{ runner.os }} ${{ runner.arch }} zip installer
@@ -100,3 +104,4 @@ jobs:
       #     path: |
       #       applications/electron-app/dist/CrossModel-*.zip
       #     retention-days: 1
+      #     compression-level: 0
