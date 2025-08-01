@@ -1,6 +1,8 @@
-# CrossModel Core Edition
-
-![CrossModel Logo](./applications/electron-app/resources/crossmodel-splash.svg?sanitize=true)
+<br/>
+<div align="center">
+   <img src="./docs/img/crossmodel-logo.svg" alt="CrossModel Logo" style="width: 400px;" />
+   <h3>CrossModel Core Edition</h3>
+</div>
 
 - [What is CrossModel?](#what-is-crossmodel)
 - [Installation](#installation)
@@ -17,11 +19,11 @@ With a Git-backed engine, support for custom properties, mappings, versioning, a
 
 ### Data modeling
 
-![CrossModel - Modeling](docs/crossmodel-datamodel.png)
+![CrossModel - Modeling](docs/img/crossmodel-datamodel.png)
 
 ### Mapping (Data flow)
 
-![CrossModel - Mapping](docs/crossmodel-mapping.png)
+![CrossModel - Mapping](docs/img/crossmodel-mapping.png)
 
 ## Installation
 
@@ -31,19 +33,23 @@ Steps:
 
 - Click on the latest release under the 'Releases' topic on the right.
 - On the release page, in the 'Assets' section find the installer you need and click on it to download it (you might need to login to see the files).
-   - For **Windows** choose the 'Windows-X64-installer'.
+   - For **Windows** download the 'Windows-X64-installer'.
+      - Run the CrossModel-Core-X64-<version>.exe file and follow the installation wizard.
    - For **MacOS**:
-      - For Intel based choose 'macOS-X64-dmg-installer'.
-      - For ARM based (M1, M2, etc.) choose 'macOS-AR64-dmg-installer'.
+      - For Intel based download the 'macOS-X64-dmg-installer'.
+      - For ARM based (M1, M2, etc.) download the 'macOS-ARM64-dmg-installer'.
+         > The MacOS application is not properly signed yet, which results in a error message when starting
+         > CrossModel after installation. To resolve the error you need to disable the quarantine for CrossModel.
+         > To achieve this execute the following command in the terminal after installation:<br />
+         > `xattr -r -d com.apple.quarantine /Applications/CrossModel-Core.app`
    - For **Linux**:
-      - For Debian based distributions (Ubuntu, Debian, etc.) choose 'Linux-X64-deb-installer'.
-      - For other distributions choose 'Linux-X64-AppImage-installer'.
-
-> The MacOS application is not properly signed yet, which results in a error message when starting CrossModel after installation. To resolve the error you need to disable the quarantine for CrossModel. To achieve this execute the following command in the terminal after installation:
->
-> `xattr -r -d com.apple.quarantine /Applications/crossmodel-core-app.app`
->
-> After executing this command CrossModel should start without errors.
+      - For Debian based distributions (Ubuntu, Debian, etc.) download the 'Linux-X64-deb-installer'.
+         - After downloading run the .deb file and follow the installation wizard.
+      - You can also run CrossModel in an isolated AppImage environment, which can also work on non-Debian distributions. To do so, download the the 'Linux-X64-AppImage'.
+         - After downloading make the file executable by running the following command in the terminal (adjust the file path accordingly):<br />
+           `chmod +x "CrossModel-Core-*.AppImage"`
+         - You can now start CrossModel Core by double-clicking on the AppImage file.
+            > Running the AppImage requires FUSE to be installed (<https://github.com/AppImage/AppImageKit/wiki/FUSE>).
 
 ## Getting started
 

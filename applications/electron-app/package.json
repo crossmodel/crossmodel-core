@@ -1,5 +1,5 @@
 {
-  "name": "crossmodel-app",
+  "name": "crossmodel-core-electron",
   "version": "0.6.0",
   "private": true,
   "description": "CrossModel Core Edition",
@@ -24,7 +24,7 @@
     "download:plugins": "theia download:plugins",
     "package": "yarn -s package:preview",
     "package:extensions": "yarn --cwd ../.. package:extensions && pwsh -c Expand-Archive -Path ../../extensions/crossmodel-lang/*.vsix -DestinationPath ./plugins/crossmodel-lang && pwsh -c Expand-Archive -Path ../../extensions/crossmodel-theme/*.vsix -DestinationPath ./plugins/crossmodel-theme",
-    "package:pre": "rimraf --glob dist plugins/crossmodel-* && yarn rebuild && yarn package:extensions",
+    "package:pre": "rimraf --glob dist plugins/crossmodel-* && yarn rebuild && yarn package:extensions && shx cp ./resources/license.txt ./resources/license_en.txt",
     "package:preview": "yarn package:pre && electron-builder -c.mac.identity=null --dir",
     "package:prod": "yarn package:pre && electron-builder -c.mac.identity=null",
     "rebuild": "theia rebuild:electron --cacheRoot ../..",

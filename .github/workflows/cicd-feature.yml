@@ -16,15 +16,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-22.04', 'windows-2022', 'macos-13', 'macos-14'] # macos-13 for intel-based, macos-14 for arm-based
+        os: ['ubuntu-22.04', 'windows-2022', 'macos-13', 'macos-14'] # macos-13 for intel, macos-14 for arm
 
     runs-on: ${{ matrix.os }}
     steps:
-      # Checkout the code.
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Set environment variables
       - name: Set env variables
         shell: bash
         # We set env variables on the GITHUB_ENV variable so they value is available in all consecutive steps.
@@ -33,7 +31,6 @@ jobs:
           echo "NODE_VERSION=22.x" >> "$GITHUB_ENV"
           echo "GITHUB_TOKEN=${{ inputs.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
-      # Setup Node
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
@@ -42,7 +39,6 @@ jobs:
           scope: '@crossmodel'
           cache: 'yarn'
 
-      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -65,17 +61,16 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ runner.arch }}-installer
           path: |
-            applications/electron-app/dist/CrossModel *.*
-            !applications/electron-app/dist/CrossModel *.blockmap
+            applications/electron-app/dist/CrossModel-*.exe
           retention-days: 1
 
-      - name: Upload ${{ runner.os }} ${{ runner.arch }} AppImage installer
+      - name: Upload ${{ runner.os }} ${{ runner.arch }} AppImage
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-${{ runner.arch }}-AppImage-installer
+          name: ${{ runner.os }}-${{ runner.arch }}-AppImage
           path: |
-            applications/electron-app/dist/CrossModel *.AppImage
+            applications/electron-app/dist/CrossModel-*.AppImage
           retention-days: 1
 
       - name: Upload ${{ runner.os }} ${{ runner.arch }} Debian installer
@@ -84,7 +79,7 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ runner.arch }}-deb-installer
           path: |
-            applications/electron-app/dist/CrossModel *.deb
+            applications/electron-app/dist/CrossModel-*.deb
           retention-days: 1
 
       - name: Upload ${{ runner.os }} ${{ runner.arch }} dmg installer
@@ -93,14 +88,15 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ runner.arch }}-dmg-installer
           path: |
-            applications/electron-app/dist/CrossModel *.dmg
+            applications/electron-app/dist/CrossModel-*.dmg
           retention-days: 1
 
-      - name: Upload ${{ runner.os }} ${{ runner.arch }} zip installer
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-${{ runner.arch }}-zip-installer
-          path: |
-            applications/electron-app/dist/CrossModel *.zip
-          retention-days: 1
+      # Disabled zip for now, it's not being build since dmg files are working fine.
+      # - name: Upload ${{ runner.os }} ${{ runner.arch }} zip installer
+      #   if: runner.os == 'macOS'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ runner.os }}-${{ runner.arch }}-zip-installer
+      #     path: |
+      #       applications/electron-app/dist/CrossModel-*.zip
+      #     retention-days: 1

@@ -10,6 +10,6 @@ By installing or using this application, you agree to the following terms:
 
 This application is provided "as is", without warranty of any kind. See the GNU Affero General Public License for details.
 
-A copy of the AGPL v3 should be included with this application. If not, see [https://www.gnu.org/licenses/](https://www.gnu.org/licenses/).
+A copy of the AGPL v3 should be included with this application. If not, see https://www.gnu.org/licenses/.
 
-For questions or more information, contact the [CrossModel](https://crossmodel.io) team.
+For questions or more information, contact the CrossModel team (https://crossmodel.io).

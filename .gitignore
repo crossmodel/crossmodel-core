@@ -20,3 +20,4 @@ dist
 **/playwright/.cache
 **/allure-results
 *.vsix
+applications/electron-app/resources/license_en.txt

@@ -1,7 +1,7 @@
 appId: crossbreeze.crossmodel.core
-productName: CrossModel Core Edition
+productName: CrossModel Core
 copyright: Copyright © 2025 CrossBreeze
-executableName: crossmodel-core-app
+executableName: CrossModel-Core
 electronDist: ../../node_modules/electron/dist
 electronVersion: 37.2.1
 # Although it is generally not recommended to disable asar, it is required for Theia.
@@ -11,6 +11,19 @@ electronVersion: 37.2.1
 asar: false
 nodeGypRebuild: false
 npmRebuild: false
+
+# Override the name in the package.json so we have proper product name.
+extraMetadata:
+  name: CrossModel-Core
+
+# If we enable file associations, the .cm files will be opened in CrossModel in a new session.
+# But then you get the error the file is not a CrossModel workspace, so we need some extra handling for this behavior.
+# fileAssociations:
+#   - ext: "cm"
+#     name: CrossModel
+#     description: CrossModel Data Model File
+#     icon: resources/icons/icon.ico
+#     role: Editor
 
 directories:
   buildResources: resources
@@ -42,7 +55,7 @@ mac:
   darkModeSupport: true
   target:
     - dmg
-    - zip
+    #- zip # Disabled zip for now, dmg works good.
   publish: null # we don't know where this will be published yet
 
 linux:
@@ -65,11 +78,12 @@ nsis:
   uninstallerIcon: resources/icons/icon.ico
   allowToChangeInstallationDirectory: true
   runAfterFinish: false
-  artifactName: ${productName}-${version}.${ext}
-  license: ./resources/LICENSE
+  artifactName: ${name}-${arch}-${version}.${ext}
+  license: ./resources/license.txt
 dmg:
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${arch}-${version}.${ext}
 deb:
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${arch}-${version}.${ext}
 appImage:
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${arch}-${version}.${ext}
+  license: ./resources/license.txt
