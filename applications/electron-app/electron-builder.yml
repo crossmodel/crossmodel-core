@@ -1,14 +1,29 @@
-appId: crossbreeze.crossmodel
-productName: CrossModelCE
-copyright: Copyright © 2023 CrossBreeze
-executableName: crossmodel-app
+appId: crossbreeze.crossmodel.core
+productName: CrossModel Core
+copyright: Copyright © 2025 CrossBreeze
+executableName: CrossModel-Core
 electronDist: ../../node_modules/electron/dist
-electronVersion: 30.1.2
+electronVersion: 37.2.1
 # Although it is generally not recommended to disable asar, it is required for Theia.
 # Enabling this leads to: process ERROR Error: spawn ENOTDIR
 # because binaries can not be executed from the asar archive.
 # See asar file API limitations: https://www.electronjs.org/docs/tutorial/application-packaging#limitations-of-the-node-api
 asar: false
+nodeGypRebuild: false
+npmRebuild: false
+
+# Override the name in the package.json so we have proper product name.
+extraMetadata:
+  name: CrossModel-Core
+
+# If we enable file associations, the .cm files will be opened in CrossModel in a new session.
+# But then you get the error the file is not a CrossModel workspace, so we need some extra handling for this behavior.
+# fileAssociations:
+#   - ext: "cm"
+#     name: CrossModel
+#     description: CrossModel Data Model File
+#     icon: resources/icons/icon.ico
+#     role: Editor
 
 directories:
   buildResources: resources
@@ -19,8 +34,10 @@ directories:
 files:
   - src-gen
   - lib
+  - resources/icons/icon_256x256.png
+  - resources/crossmodel-splash.svg
   - scripts
-  - '!**node_modules/electron/**'
+  - "!**node_modules/**"
 
 extraResources:
   - from: plugins
@@ -38,12 +55,17 @@ mac:
   darkModeSupport: true
   target:
     - dmg
-    - zip
+    #- zip # Disabled zip for now, dmg works good.
+  publish: null # we don't know where this will be published yet
 
 linux:
   icon: resources/icons/icon_256x256.png
   category: Development
+  vendor: CrossBreeze
+  mimeTypes:
+    - inode/directory
   target:
+    - deb
     - AppImage
   publish: null # we don't know where this will be published yet
 
@@ -56,10 +78,12 @@ nsis:
   uninstallerIcon: resources/icons/icon.ico
   allowToChangeInstallationDirectory: true
   runAfterFinish: false
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${arch}-${version}.${ext}
+  license: ./resources/license.txt
 dmg:
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${arch}-${version}.${ext}
 deb:
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${arch}-${version}.${ext}
 appImage:
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${arch}-${version}.${ext}
+  license: ./resources/license.txt

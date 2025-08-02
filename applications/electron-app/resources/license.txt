@@ -1,0 +1,15 @@
+Copyright (c) 2025 CrossBreeze
+
+This application is licensed under the GNU Affero General Public License (AGPL) version 3.
+
+By installing or using this application, you agree to the following terms:
+
+- You may use, modify, and share this application under the terms of the AGPL v3 as published by the Free Software Foundation.
+- If you distribute or make modified versions of this application available to others, you must also provide access to the source code as required by the AGPL v3.
+- Redistribution is permitted only under the conditions of the AGPL v3.
+
+This application is provided "as is", without warranty of any kind. See the GNU Affero General Public License for details.
+
+A copy of the AGPL v3 should be included with this application. If not, see https://www.gnu.org/licenses/.
+
+For questions or more information, contact the CrossModel team (https://crossmodel.io).
