@@ -31,12 +31,12 @@
     "@crossmodel/form-client": "0.7.0",
     "@crossmodel/glsp-client": "0.7.0",
     "@eclipse-glsp/theia-integration": "2.4.0",
-    "@theia/core": "1.63.3",
-    "@theia/editor": "1.63.3",
-    "@theia/editor-preview": "1.63.3",
-    "@theia/filesystem": "1.63.3",
-    "@theia/messages": "1.63.3",
-    "@theia/monaco": "1.63.3"
+    "@theia/core": "1.64.0",
+    "@theia/editor": "1.64.0",
+    "@theia/editor-preview": "1.64.0",
+    "@theia/filesystem": "1.64.0",
+    "@theia/messages": "1.64.0",
+    "@theia/monaco": "1.64.0"
   },
   "theiaExtensions": [
     {
