@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { findNextUnique, LogicalAttribute, toId } from '@crossmodel/protocol';
+import { findNextUnique, identifier, LogicalAttribute, toId } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import * as React from 'react';
@@ -12,8 +12,8 @@ export interface EntityAttributeRow extends LogicalAttribute {
    idx: number;
    name: string;
    datatype: string;
-   description: string;
-   isKey?: boolean;
+   description?: string;
+   identifier?: boolean;
 }
 
 const dataTypeOptions = [
@@ -44,18 +44,13 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow): void => {
+         console.log('Updating attribute:', attribute);
          const errors = validateField(attribute);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
             return;
          }
          setValidationErrors({});
-
-         // Generate unique ID when name changes
-         if (attribute.name) {
-            const existingIds = entity.attributes?.filter(attr => attr.id !== attribute.id) || [];
-            attribute.id = findNextUnique(toId(attribute.name), existingIds, attr => attr.id || '');
-         }
 
          dispatch({
             type: 'entity:attribute:update',
@@ -71,24 +66,16 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          // Clear any previous validation errors
          setValidationErrors({});
 
-         // Create a new attribute with default values
-         const name = attribute.name || '';
-         const existingIds = entity.attributes || [];
-         const id = name ? findNextUnique(toId(name), existingIds, attr => attr.id || '') : '';
+         console.log('Adding attribute:', attribute);
 
-         const attributeData: LogicalAttribute = {
-            $type: 'LogicalAttribute',
-            name,
-            datatype: attribute.datatype || '',
-            description: attribute.description || '',
-            id,
-            $globalId: ''
-         };
+         if (attribute.name) {
+            const id = findNextUnique(toId(findNextUnique(attribute.name, entity.attributes, identifier)), entity.attributes, identifier);
 
-         dispatch({
-            type: 'entity:attribute:add-attribute',
-            attribute: attributeData
-         });
+            dispatch({
+               type: 'entity:attribute:add-attribute',
+               attribute: { ...attribute, id }
+            });
+         }
       },
       [dispatch]
    );
@@ -138,7 +125,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             name: attr.name || '',
             datatype: attr.datatype || 'string',
             description: attr.description || '',
-            isKey: (attr as any).key || false,
+            identifier: (attr as any).identifier || false,
             id: attr.id || '',
             $type: 'LogicalAttribute',
             $globalId: attr.id || ''
@@ -148,16 +135,16 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
-         name: '',
-         datatype: 'string',
-         description: '',
-         isKey: false,
+         name: findNextUnique('New Attribute', entity?.attributes || [], attr => attr.name || ''),
+         datatype: 'Text',
          idx: -1,
-         id: '',
+         id: findNextUnique('Attribute', entity?.attributes || [], attr => attr.id!),
+         description: '',
+         identifier: false,
          $type: 'LogicalAttribute',
-         $globalId: ''
+         $globalId: 'toBeAssigned'
       }),
-      []
+      [entity.attributes]
    );
 
    const columns: GridColumn<EntityAttributeRow>[] = React.useMemo(
@@ -165,33 +152,38 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          {
             field: 'name',
             header: 'Name',
-            editor: true,
-            sortable: true,
-            style: { width: '200px' }
+            editor: !readonly,
+            headerStyle: { width: '20%' }
          },
          {
             field: 'datatype',
             header: 'Data Type',
-            style: { width: '150px' },
-            body: (rowData: EntityAttributeRow) => (
+            headerStyle: { width: '15%' },
+            editor: (options: any) => (
                <Dropdown
-                  value={rowData.datatype}
+                  value={options.value}
                   options={dataTypeOptions}
-                  onChange={e => handleRowUpdate({ ...rowData, datatype: e.value })}
+                  onChange={e => options.editorCallback(e.value)}
                   disabled={readonly}
                   className='w-full'
                />
             )
          },
          {
-            field: 'isKey',
+            field: 'identifier',
             header: 'Key',
-            style: { width: '80px' },
+            dataType: 'boolean',
+            headerStyle: { width: '10%' },
             body: (rowData: EntityAttributeRow) => (
                <div className='flex align-items-center justify-content-center'>
+                  <Checkbox checked={rowData.identifier ?? false} readOnly />
+               </div>
+            ),
+            editor: (options: any) => (
+               <div className='flex align-items-center justify-content-center'>
                   <Checkbox
-                     checked={rowData.isKey ?? false}
-                     onChange={e => handleRowUpdate({ ...rowData, isKey: e.checked ?? false })}
+                     checked={options.value ?? false}
+                     onChange={e => options.editorCallback(e.checked ?? false)}
                      disabled={readonly}
                   />
                </div>
@@ -200,11 +192,10 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          {
             field: 'description',
             header: 'Description',
-            editor: true,
-            style: { width: '200px' }
+            editor: true
          }
       ],
-      [dataTypeOptions, handleRowUpdate, readonly]
+      [dataTypeOptions, readonly]
    );
 
    if (!entity) {
@@ -213,10 +204,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    return (
       <PrimeDataGrid
+         className='entity-attributes-datatable'
          columns={columns}
          data={gridData}
          keyField='idx'
-         height='400px'
+         height='auto'
          onRowAdd={handleAddAttribute}
          onRowUpdate={handleRowUpdate}
          onRowDelete={handleAttributeDelete}

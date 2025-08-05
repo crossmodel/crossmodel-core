@@ -8,7 +8,7 @@ import * as React from 'react';
 export interface GridColumn<T> {
    field: keyof T;
    header: string;
-   editor?: boolean;
+   editor?: boolean | ((options: any) => React.ReactNode);
    sortable?: boolean;
    body?: (rowData: T) => React.ReactNode;
    headerStyle?: React.CSSProperties;
@@ -31,6 +31,7 @@ export interface PrimeDataGridProps<T> {
    editable?: boolean;
    readonly?: boolean;
    validationErrors?: Record<string, string>;
+   className?: string;
 }
 
 export function PrimeDataGrid<T extends Record<string, any>>({
@@ -48,7 +49,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    defaultNewRow = {},
    editable = true,
    readonly = false,
-   validationErrors = {}
+   validationErrors = {},
+   className
 }: PrimeDataGridProps<T>): React.ReactElement {
    const [editingRows, setEditingRows] = React.useState({});
 
@@ -62,13 +64,28 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const actionTemplate = (rowData: T) => (
       <div className='flex gap-2'>
          {onRowDelete && !readonly && (
-            <Button icon='pi pi-trash' className='p-button-text p-button-danger' onClick={() => onRowDelete(rowData)} tooltip='Delete' />
+            <Button
+               icon='pi pi-trash'
+               className='p-button-text p-button-danger p-btn-sm-icon mr-1-rem'
+               onClick={() => onRowDelete(rowData)}
+               tooltip='Delete'
+            />
          )}
          {onRowMoveUp && !readonly && (
-            <Button icon='pi pi-arrow-up' className='p-button-text' onClick={() => onRowMoveUp(rowData)} tooltip='Move Up' />
+            <Button
+               icon='pi pi-arrow-up'
+               className='p-button-text p-btn-sm-icon mr-1-rem'
+               onClick={() => onRowMoveUp(rowData)}
+               tooltip='Move Up'
+            />
          )}
          {onRowMoveDown && !readonly && (
-            <Button icon='pi pi-arrow-down' className='p-button-text' onClick={() => onRowMoveDown(rowData)} tooltip='Move Down' />
+            <Button
+               icon='pi pi-arrow-down'
+               className='p-button-text p-btn-sm-icon mr-1-rem'
+               onClick={() => onRowMoveDown(rowData)}
+               tooltip='Move Down'
+            />
          )}
       </div>
    );
@@ -113,7 +130,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onRowEditChange={e => setEditingRows(e.data)}
             scrollable
             scrollHeight={height}
-            className='p-datatable-sm'
+            className={`p-datatable-sm ${className || ''}`}
             showGridlines
             size='small'
             emptyMessage={noDataMessage}
@@ -125,7 +142,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   header={col.header}
                   sortable={col.sortable}
                   body={col.body}
-                  editor={col.editor ? cellEditor : undefined}
+                  editor={typeof col.editor === 'function' ? col.editor : col.editor ? cellEditor : undefined}
                   headerStyle={col.headerStyle}
                   style={col.style}
                />

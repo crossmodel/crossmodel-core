@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, CustomPropertyType, findNextUnique, toId } from '@crossmodel/protocol';
+import { CustomProperty, CustomPropertyType, findNextUnique, identifier, toId } from '@crossmodel/protocol';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
@@ -39,26 +39,18 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
          // Clear any previous validation errors
          setValidationErrors({});
 
-         // Create a new custom property with empty values
-         const name = customProperty.name || '';
-         const existingIds = entity?.customProperties || [];
-         const id = name ? findNextUnique(toId(name), existingIds, prop => prop.id || '') : '';
+         if (customProperty.name) {
+            // Create a new custom property with empty values
+            const existingIds = entity?.customProperties || [];
+            const id = findNextUnique(toId(findNextUnique(customProperty.name, existingIds, identifier)), existingIds, identifier);
 
-         const customPropertyData: CustomProperty = {
-            $type: CustomPropertyType,
-            name,
-            value: customProperty.value || '',
-            id,
-            $globalId: 'toBeAssigned',
-            description: ''
-         };
-
-         dispatch({
-            type: 'entity:customProperty:add-customProperty',
-            customProperty: customPropertyData
-         });
+            dispatch({
+               type: 'entity:customProperty:add-customProperty',
+               customProperty: { ...customProperty, id }
+            });
+         }
       },
-      [dispatch]
+      [dispatch, entity?.customProperties]
    );
 
    const onRowMoveUp = React.useCallback(
@@ -101,9 +93,9 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
 
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
-         { field: 'name', header: 'Name', editor: !readonly },
-         { field: '$type', header: 'Data Type', editor: !readonly },
-         { field: 'value', header: 'Value', editor: !readonly },
+         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' } },
+         { field: '$type', header: 'Data Type', editor: !readonly, style: { width: '15%' } },
+         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' } },
          { field: 'description', header: 'Description', editor: !readonly }
       ],
       [readonly]
@@ -137,10 +129,11 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
 
    return (
       <PrimeDataGrid
+         className='entity-custom-properties-datatable'
          columns={columns}
          data={gridData}
          keyField='idx'
-         height='300px'
+         height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}

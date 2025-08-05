@@ -48,14 +48,14 @@
 
 /* DataGrid styles */
 .p-datatable .p-datatable-tbody > tr > td {
-   padding: 0.5rem;
+   padding: 0.25rem;
 }
 
 .p-datatable .p-datatable-header {
    background: var(--surface-card);
    border: 1px solid var(--surface-border);
    border-width: 1px 1px 0 1px;
-   padding: 0.5rem 1rem;
+   padding: 0.25rem 1rem;
    font-weight: 600;
 }
 
@@ -64,7 +64,7 @@
    color: var(--text-color);
    border: 1px solid var(--surface-border);
    border-width: 0 0 1px 0;
-   padding: 0.5rem;
+   padding: 0.25rem;
    font-weight: 600;
 }
 
@@ -83,12 +83,12 @@
    background: var(--surface-hover);
 }
 
-.p-datatable .p-datatable-tbody > tr > td:empty {
+/* .p-datatable .p-datatable-tbody > tr > td:empty {
    background-color: var(--surface-ground);
    border: 1px solid var(--surface-border);
    border-radius: 4px;
    min-height: 2rem;
-}
+} */
 
 /* Input field styles */
 .p-inputtext {
@@ -197,12 +197,14 @@
 .p-accordion .p-accordion-header .p-accordion-header-link {
    background: var(--theia-titleBar-activeBackground);
    color: var(--theia-titleBar-activeForeground);
+   padding: 1rem;
 }
 
 .p-accordion .p-accordion-content {
    background: var(--theia-editor-background);
    color: var(--theia-editor-foreground);
    border: 1px solid var(--theia-widget-border);
+   padding: 1rem;
 }
 
 .p-toolbar {
@@ -226,4 +228,18 @@
 .p-float-label textarea:focus ~ label,
 .p-float-label textarea.p-filled ~ label {
    color: var(--theia-focusBorder);
+}
+
+.mr-1-rem {
+   margin-right: 0.25rem;
+}
+
+.p-btn-sm-icon {
+   width: auto;
+   padding: 0.25rem 0.5rem;
+}
+
+.entity-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.entity-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext {
+   width: 100%;
 }

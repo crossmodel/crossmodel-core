@@ -53,7 +53,7 @@ export function EntityForm(): React.ReactElement {
                {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
             </div>
 
-            <div className='p-field p-fluid' style={{ marginBottom: '1rem' }}>
+            <div className='p-field p-fluid' style={{ marginBottom: '0' }}>
                <span className='p-float-label'>
                   <InputTextarea
                      id='description'
