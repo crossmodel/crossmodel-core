@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, CustomPropertyType, findNextUnique, toId } from '@crossmodel/protocol';
+import { CustomProperty, CustomPropertyType, findNextUnique, identifier, toId } from '@crossmodel/protocol';
 import * as React from 'react';
 import { useModelDispatch, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
@@ -25,11 +25,6 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
             return;
          }
          setValidationErrors({});
-         // Generate unique ID from name when it changes
-         if (customProperty.name) {
-            const existingIds = relationship?.customProperties?.filter(prop => prop.id !== customProperty.id) || [];
-            customProperty.id = findNextUnique(toId(customProperty.name), existingIds, prop => prop.id || '');
-         }
          dispatch({
             type: 'relationship:customProperty:update',
             customPropertyIdx: customProperty.idx,
@@ -44,26 +39,18 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
          // Clear any previous validation errors
          setValidationErrors({});
 
-         // Create a new custom property with empty values
-         const name = customProperty.name || '';
-         const existingIds = relationship?.customProperties || [];
-         const id = name ? findNextUnique(toId(name), existingIds, prop => prop.id || '') : '';
+         if (customProperty.name) {
+            // Create a new custom property with empty values
+            const existingIds = relationship?.customProperties || [];
+            const id = findNextUnique(toId(findNextUnique(customProperty.name, existingIds, identifier)), existingIds, identifier);
 
-         const customPropertyData: CustomProperty = {
-            $type: CustomPropertyType,
-            name,
-            value: customProperty.value || '',
-            id,
-            $globalId: '',
-            description: ''
-         };
-
-         dispatch({
-            type: 'relationship:customProperty:add-customProperty',
-            customProperty: customPropertyData
-         });
+            dispatch({
+               type: 'relationship:customProperty:add-customProperty',
+               customProperty: { ...customProperty, id }
+            });
+         }
       },
-      [dispatch]
+      [dispatch, relationship?.customProperties]
    );
 
    const onRowMoveUp = React.useCallback(
@@ -106,40 +93,24 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
 
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
-         {
-            field: 'name',
-            header: 'Name',
-            editor: true
-         },
-         {
-            field: '$type',
-            header: 'Data Type',
-            editor: true
-         },
-         {
-            field: 'value',
-            header: 'Value',
-            editor: true
-         },
-         {
-            field: 'description',
-            header: 'Description',
-            editor: true
-         }
+         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' } },
+         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' } },
+         { field: 'description', header: 'Description', editor: !readonly }
       ],
-      []
+      [readonly]
    );
 
    const defaultEntry = React.useMemo<CustomPropertyRow>(
       () => ({
          $type: CustomPropertyType,
-         $globalId: '',
-         id: '',
-         name: '',
+         $globalId: 'toBeAssigned',
+         name: findNextUnique('New custom property', relationship?.customProperties || [], p => p.name || ''),
+         id: findNextUnique('customProperty', relationship?.customProperties || [], p => p.id || ''),
          value: '',
+         description: '',
          idx: -1
       }),
-      []
+      [relationship?.customProperties]
    );
 
    if (!relationship) {
@@ -157,10 +128,11 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
 
    return (
       <PrimeDataGrid
+         className='relationship-custom-properties-datatable'
          columns={columns}
          data={gridData}
          keyField='idx'
-         height='300px'
+         height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}

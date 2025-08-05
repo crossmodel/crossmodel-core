@@ -240,6 +240,8 @@
 }
 
 .entity-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
-.entity-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext {
+.entity-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.data-model-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.relationship-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext {
    width: 100%;
 }
