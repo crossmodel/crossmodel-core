@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@crossmodel/protocol": "0.7.0",
-    "@theia/core": "1.63.3"
+    "@theia/core": "1.64.0"
   },
   "theiaExtensions": [
     {
