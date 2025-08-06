@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { CrossReferenceContext, DataModelDependency, DataModelDependencyType } from '@crossmodel/protocol';
-import { AutoComplete } from 'primereact/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import * as React from 'react';
 import { useDataModel, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
@@ -13,21 +13,20 @@ export interface DataModelDependencyRow extends DataModelDependency {
    idx: number;
 }
 
-export function DataModelDependenciesDataGrid(): React.ReactElement {
-   const dataModel = useDataModel();
-   const dispatch = useModelDispatch();
-   const queryApi = useModelQueryApi();
-   const readonly = useReadonly();
-   const [suggestions, setSuggestions] = React.useState<string[]>([]);
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+interface DataModelDependencyEditorProps {
+   options: any;
+}
 
-   const validateField = React.useCallback((rowData: DataModelDependencyRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.datamodel) {
-         errors.datamodel = 'Invalid Data Model';
-      }
-      return errors;
-   }, []);
+function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React.ReactElement {
+   const { options } = props;
+   const { editorCallback } = options;
+
+   const [currentValue, setCurrentValue] = React.useState(options.value);
+   const [suggestions, setSuggestions] = React.useState<string[]>([]);
+   const queryApi = useModelQueryApi();
+   const dataModel = useDataModel();
+   const readonly = useReadonly();
+   const isDropdownClicked = React.useRef(false);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
@@ -39,12 +38,55 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    );
 
    const search = React.useCallback(
-      async (event: { query: string }) => {
+      async (event: AutoCompleteCompleteEvent) => {
          const elements = await queryApi.findReferenceableElements(referenceCtx);
-         setSuggestions(elements.map(element => element.label || ''));
+         const filteredSuggestions = elements
+            .map(element => element.label || '')
+            .filter(label =>
+               isDropdownClicked.current ? true : event.query ? label.toLowerCase().includes(event.query.toLowerCase()) : true
+            );
+         setSuggestions(filteredSuggestions);
+         isDropdownClicked.current = false;
       },
       [queryApi, referenceCtx]
    );
+
+   const onSelect = (e: AutoCompleteSelectEvent) => {
+      setCurrentValue(e.value);
+      if (editorCallback) {
+         editorCallback(e.value);
+      }
+   };
+
+   return (
+      <AutoComplete
+         value={currentValue ?? ''}
+         suggestions={suggestions}
+         completeMethod={search}
+         dropdown
+         className='w-full'
+         onDropdownClick={() => (isDropdownClicked.current = true)}
+         onChange={e => setCurrentValue(e.value)}
+         onSelect={onSelect}
+         disabled={readonly}
+         autoFocus
+      />
+   );
+}
+
+export function DataModelDependenciesDataGrid(): React.ReactElement {
+   const dataModel = useDataModel();
+   const dispatch = useModelDispatch();
+   const readonly = useReadonly();
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+   const validateField = React.useCallback((rowData: DataModelDependencyRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.datamodel) {
+         errors.datamodel = 'Invalid Data Model';
+      }
+      return errors;
+   }, []);
 
    const onRowUpdate = React.useCallback(
       (dependency: DataModelDependencyRow) => {
@@ -65,16 +107,12 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
 
    const onRowAdd = React.useCallback(
       (dependency: DataModelDependencyRow) => {
-         // Clear any previous validation errors
          setValidationErrors({});
-
-         // Create a new dependency with required fields
          const dependencyData: DataModelDependency = {
             $type: DataModelDependencyType,
-            datamodel: '', // Start with empty string, will be filled via AutoComplete
-            version: ''
+            datamodel: dependency.datamodel as string,
+            version: dependency.version || ''
          };
-
          dispatch({
             type: 'datamodel:dependency:add-dependency',
             dependency: dependencyData
@@ -118,21 +156,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          {
             field: 'datamodel',
             header: 'Data Model',
-            body: rowData => (
-               <AutoComplete
-                  value={rowData.datamodel}
-                  suggestions={suggestions}
-                  completeMethod={search}
-                  field='label'
-                  dropdown
-                  className='w-full'
-                  onChange={e => {
-                     const updatedRow = { ...rowData, datamodel: e.value };
-                     onRowUpdate(updatedRow);
-                  }}
-                  disabled={readonly}
-               />
-            )
+            editor: (options: any) => <DataModelDependencyEditor options={options} />
          },
          {
             field: 'version',
@@ -141,7 +165,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             style: { width: '150px' }
          }
       ],
-      [suggestions, search, onRowUpdate, readonly]
+      []
    );
 
    const defaultEntry = React.useMemo<Partial<DataModelDependencyRow>>(
@@ -161,6 +185,8 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       () =>
          (dataModel.dependencies || []).map((dep, idx) => ({
             ...dep,
+            datamodel: dep.datamodel ?? '',
+            version: dep.version ?? '',
             idx
          })),
       [dataModel.dependencies]

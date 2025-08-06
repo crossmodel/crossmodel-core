@@ -55,7 +55,7 @@ export default function AsyncAutoComplete<T = string>({
    };
 
    return (
-      <div className='p-field p-fluid' style={{ marginBottom: '1rem', position: 'relative' }}>
+      <div className='p-field p-fluid' style={{ marginBottom: '2rem', position: 'relative' }}>
          <span className='p-float-label'>
             <AutoComplete<T>
                value={value}

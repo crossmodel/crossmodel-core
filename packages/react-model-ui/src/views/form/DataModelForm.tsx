@@ -3,7 +3,8 @@
  ********************************************************************************/
 
 import { AllDataModelTypeInfos, CrossModelValidationErrors, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
-import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
+import { debounce } from 'lodash';
+import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
@@ -25,6 +26,13 @@ export function DataModelForm(): React.ReactElement {
    const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
 
    const [filteredTypes, setFilteredTypes] = React.useState<DataModelTypeInfo[]>([]);
+   const [currentTypeValue, setCurrentTypeValue] = React.useState<DataModelTypeInfo | undefined>(
+      AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]
+   );
+
+   React.useEffect(() => {
+      setCurrentTypeValue(AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]);
+   }, [dataModel.type]);
 
    const handleNameChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,13 +53,24 @@ export function DataModelForm(): React.ReactElement {
       [dispatch]
    );
 
-   const handleTypeChange = React.useCallback(
-      (e: AutoCompleteChangeEvent) => {
+   const handleTypeChange = React.useCallback((e: AutoCompleteChangeEvent) => {
+      setCurrentTypeValue(e.value as DataModelTypeInfo);
+   }, []);
+
+   const debouncedDispatch = React.useCallback(
+      debounce((value: string) => {
+         dispatch({ type: 'datamodel:change-type', dataModelType: value });
+      }, 300), // Adjust the debounce delay as needed
+      [dispatch]
+   );
+
+   const handleTypeSelect = React.useCallback(
+      (e: AutoCompleteSelectEvent) => {
          if (e.value) {
-            dispatch({ type: 'datamodel:change-type', dataModelType: e.value.value });
+            debouncedDispatch(e.value.value);
          }
       },
-      [dispatch]
+      [debouncedDispatch]
    );
 
    const handleVersionChange = React.useCallback(
@@ -113,11 +132,12 @@ export function DataModelForm(): React.ReactElement {
                <span className='p-float-label'>
                   <AutoComplete<DataModelTypeInfo>
                      id='type'
-                     value={AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]}
+                     value={currentTypeValue}
                      suggestions={filteredTypes}
                      completeMethod={searchType}
                      field='label'
                      onChange={handleTypeChange}
+                     onSelect={handleTypeSelect}
                      disabled={readonly}
                      required={true}
                      className={diagnostics.type?.length ? 'p-invalid' : ''}
