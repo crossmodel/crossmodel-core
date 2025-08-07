@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import { CrossReferenceContext, ModelDiagnostic, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
-import { AutoComplete } from 'primereact/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
@@ -33,48 +33,73 @@ export interface RelationshipAttributeDataGridProps {
    diagnostics: Record<string, ModelDiagnostic[] | undefined>;
 }
 
+interface RelationshipAttributeEditorProps {
+   options: any;
+   isParent: boolean;
+}
+
+function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): React.ReactElement {
+   const { options, isParent } = props;
+   const { editorCallback } = options;
+
+   const [currentValue, setCurrentValue] = React.useState(options.value);
+   const [suggestions, setSuggestions] = React.useState<string[]>([]);
+   const queryApi = useModelQueryApi();
+   const relationship = useRelationship();
+   const readonly = useReadonly();
+   const isDropdownClicked = React.useRef(false);
+
+   const referenceCtx: CrossReferenceContext = React.useMemo(
+      () => ({
+         container: { globalId: relationship?.id || '' },
+         syntheticElements: [{ property: 'attributes', type: RelationshipAttributeType }],
+         property: isParent ? 'parent' : 'child'
+      }),
+      [relationship, isParent]
+   );
+
+   const search = React.useCallback(
+      async (event: AutoCompleteCompleteEvent) => {
+         const elements = await queryApi.findReferenceableElements(referenceCtx);
+         const filteredSuggestions = elements
+            .map(element => element.label || '')
+            .filter(label =>
+               isDropdownClicked.current ? true : event.query ? label.toLowerCase().includes(event.query.toLowerCase()) : true
+            );
+         setSuggestions(filteredSuggestions);
+         isDropdownClicked.current = false;
+      },
+      [queryApi, referenceCtx]
+   );
+
+   const onSelect = (e: AutoCompleteSelectEvent) => {
+      setCurrentValue(e.value);
+      if (editorCallback) {
+         editorCallback(e.value);
+      }
+   };
+
+   return (
+      <AutoComplete
+         value={currentValue ?? ''}
+         suggestions={suggestions}
+         completeMethod={search}
+         dropdown
+         className='w-full'
+         onDropdownClick={() => (isDropdownClicked.current = true)}
+         onChange={e => setCurrentValue(e.value)}
+         onSelect={onSelect}
+         disabled={readonly}
+         autoFocus
+      />
+   );
+}
+
 export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttributeDataGridProps): React.ReactElement {
    const relationship = useRelationship();
    const dispatch = useModelDispatch();
-   const queryApi = useModelQueryApi();
    const readonly = useReadonly();
-   const [parentSuggestions, setParentSuggestions] = React.useState<string[]>([]);
-   const [childSuggestions, setChildSuggestions] = React.useState<string[]>([]);
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
-
-   const parentReferenceCtx: CrossReferenceContext = React.useMemo(
-      () => ({
-         container: { globalId: relationship?.id || '' },
-         syntheticElements: [{ property: 'attributes', type: RelationshipAttributeType }],
-         property: 'parent'
-      }),
-      [relationship]
-   );
-
-   const childReferenceCtx: CrossReferenceContext = React.useMemo(
-      () => ({
-         container: { globalId: relationship?.id || '' },
-         syntheticElements: [{ property: 'attributes', type: RelationshipAttributeType }],
-         property: 'child'
-      }),
-      [relationship]
-   );
-
-   const searchParent = React.useCallback(
-      async (event: { query: string }) => {
-         const elements = await queryApi.findReferenceableElements(parentReferenceCtx);
-         setParentSuggestions(elements.map(element => element.label || ''));
-      },
-      [queryApi, parentReferenceCtx]
-   );
-
-   const searchChild = React.useCallback(
-      async (event: { query: string }) => {
-         const elements = await queryApi.findReferenceableElements(childReferenceCtx);
-         setChildSuggestions(elements.map(element => element.label || ''));
-      },
-      [queryApi, childReferenceCtx]
-   );
 
    const onRowUpdate = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
@@ -159,37 +184,15 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
          {
             field: 'parent',
             header: 'Parent',
-            body: rowData => (
-               <AutoComplete
-                  value={rowData.parent}
-                  suggestions={parentSuggestions}
-                  completeMethod={searchParent}
-                  field='label'
-                  dropdown
-                  forceSelection
-                  onChange={e => onRowUpdate({ ...rowData, parent: e.value })}
-                  disabled={readonly}
-               />
-            )
+            editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={true} />
          },
          {
             field: 'child',
             header: 'Child',
-            body: rowData => (
-               <AutoComplete
-                  value={rowData.child}
-                  suggestions={childSuggestions}
-                  completeMethod={searchChild}
-                  field='label'
-                  dropdown
-                  forceSelection
-                  onChange={e => onRowUpdate({ ...rowData, child: e.value })}
-                  disabled={readonly}
-               />
-            )
+            editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={false} />
          }
       ],
-      [parentSuggestions, childSuggestions, searchParent, searchChild, onRowUpdate, readonly]
+      []
    );
 
    const defaultEntry = React.useMemo<RelationshipAttributeRow>(
@@ -217,6 +220,7 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
 
    return (
       <PrimeDataGrid
+         className='relationship-attributes-datatable'
          columns={columns}
          data={gridData}
          keyField='idx'

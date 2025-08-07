@@ -162,7 +162,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             field: 'version',
             header: 'Version',
             editor: true,
-            style: { width: '150px' }
+            headerStyle: { width: '150px' }
          }
       ],
       []
@@ -194,6 +194,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
 
    return (
       <PrimeDataGrid
+         className='data-model-dependencies-datatable'
          columns={columns}
          data={gridData}
          keyField='idx'

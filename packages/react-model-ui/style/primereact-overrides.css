@@ -33,7 +33,7 @@
    color: #ffffff;
    background: var(--primary-color);
    border: 1px solid var(--primary-color);
-   padding: 0.5rem 1rem;
+   padding: 0.5rem;
    font-size: 1rem;
    transition:
       background-color 0.2s,
@@ -179,6 +179,24 @@
    background: var(--theia-button-hoverBackground);
 }
 
+/* AutoComplete Dropdown Arrow */
+.p-autocomplete-dropdown.p-button {
+   background: var(--surface-card);
+   color: #6b7280;
+   width: 3rem;
+   border: 1px solid var(--surface-border);
+   border-left: none;
+   border-top-right-radius: 6px;
+   border-bottom-right-radius: 6px;
+}
+.p-autocomplete-dropdown.p-button:hover,
+.p-autocomplete-dropdown.p-button:focus {
+   background: var(--surface-card);
+   border-color: var(--primary-color);
+   outline: 0;
+   box-shadow: none;
+}
+
 .p-datatable {
    background: var(--theia-editor-background);
    color: var(--theia-editor-foreground);
@@ -201,14 +219,14 @@
 .p-accordion .p-accordion-header .p-accordion-header-link {
    background: var(--theia-titleBar-activeBackground);
    color: var(--theia-titleBar-activeForeground);
-   padding: 1rem;
+   padding: 0.5rem 1rem;
 }
 
 .p-accordion .p-accordion-content {
    background: var(--theia-editor-background);
    color: var(--theia-editor-foreground);
    border: 1px solid var(--theia-widget-border);
-   padding: 1rem;
+   padding: 1rem 0.5rem;
 }
 
 .p-toolbar {
@@ -248,6 +266,9 @@
 .entity-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .entity-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .data-model-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
-.relationship-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext {
+.relationship-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.data-model-dependencies-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.relationship-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
+span.w-full.p-autocomplete {
    width: 100%;
 }
