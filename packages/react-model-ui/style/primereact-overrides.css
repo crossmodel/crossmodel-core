@@ -141,9 +141,13 @@
    height: 20px;
 }
 
-.p-checkbox .p-checkbox-box {
+/* Apply only to dark theme checkbox icon container, var(--surface-card) color makes in invisible in light theme */
+.dark-theme .p-checkbox .p-checkbox-box {
    border: 2px solid var(--surface-border);
    background: var(--surface-card);
+}
+
+.p-checkbox .p-checkbox-box {
    width: 20px;
    height: 20px;
    color: var(--text-color);
