@@ -10,6 +10,8 @@ We believe in open collaboration, respectful communication, and building useful 
 
 ## Getting started
 
+First of, in order to streamline the development, merge and CI/CD processes we adopt the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standard for naming branches, commit messages, etc. This helps being organized and automate the release process.
+
 Depending in your development environment there are different options to work on CrossModel.
 
 ### Work locally

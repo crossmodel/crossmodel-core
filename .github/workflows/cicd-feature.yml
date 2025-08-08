@@ -8,6 +8,7 @@ on:
       - bugfix/*
       - hotfix/*
       - chore/*
+      - refactor/*
 
 jobs:
   check-open-pr:
