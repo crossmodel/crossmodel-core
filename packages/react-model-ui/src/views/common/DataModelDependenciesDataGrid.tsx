@@ -4,6 +4,7 @@
 
 import { CrossReferenceContext, DataModelDependency, DataModelDependencyType } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
+import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDataModel, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
@@ -11,6 +12,7 @@ import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface DataModelDependencyRow extends DataModelDependency {
    idx: number;
+   id: string; // Added id field
 }
 
 interface DataModelDependencyEditorProps {
@@ -78,6 +80,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    const dataModel = useDataModel();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
    const validateField = React.useCallback((rowData: DataModelDependencyRow): Record<string, string> => {
@@ -88,8 +91,32 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       return errors;
    }, []);
 
+   const gridData = React.useMemo(
+      () =>
+         (dataModel.dependencies || []).map((dep, idx) => ({
+            ...dep,
+            idx,
+            id: (dep as any).id || idx.toString() // Ensure id is present for keyField
+         })) as DataModelDependencyRow[],
+      [dataModel.dependencies]
+   );
+
+   const defaultEntry = React.useMemo<Partial<DataModelDependencyRow>>(
+      () => ({
+         $type: DataModelDependencyType,
+         datamodel: '',
+         version: '',
+         id: '' // Default id for new entries
+      }),
+      []
+   );
+
    const onRowUpdate = React.useCallback(
       (dependency: DataModelDependencyRow) => {
+         if (dependency.datamodel === defaultEntry.datamodel && dependency.version === defaultEntry.version) {
+            console.log('Not saving default new dependency.');
+            return;
+         }
          const errors = validateField(dependency);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -102,23 +129,27 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             dependency: dependency
          });
       },
-      [dispatch, validateField]
+      [dispatch, defaultEntry, validateField]
    );
 
    const onRowAdd = React.useCallback(
       (dependency: DataModelDependencyRow) => {
          setValidationErrors({});
-         const dependencyData: DataModelDependency = {
+         const newId = (dependency.id || gridData.length.toString()); // Generate a unique ID
+         const dependencyData: DataModelDependencyRow = {
             $type: DataModelDependencyType,
             datamodel: dependency.datamodel as string,
-            version: dependency.version || ''
+            version: dependency.version || '',
+            id: newId,
+            idx: -1
          };
          dispatch({
             type: 'datamodel:dependency:add-dependency',
             dependency: dependencyData
          });
+         setEditingRows({ [newId]: true });
       },
-      [dispatch]
+      [dispatch, gridData]
    );
 
    const onRowDelete = React.useCallback(
@@ -168,36 +199,16 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       []
    );
 
-   const defaultEntry = React.useMemo<Partial<DataModelDependencyRow>>(
-      () => ({
-         $type: DataModelDependencyType,
-         datamodel: '',
-         version: ''
-      }),
-      []
-   );
-
    if (!dataModel) {
       return <ErrorView errorMessage='No data model available' />;
    }
-
-   const gridData = React.useMemo(
-      () =>
-         (dataModel.dependencies || []).map((dep, idx) => ({
-            ...dep,
-            datamodel: dep.datamodel ?? '',
-            version: dep.version ?? '',
-            idx
-         })),
-      [dataModel.dependencies]
-   );
 
    return (
       <PrimeDataGrid
          className='data-model-dependencies-datatable'
          columns={columns}
          data={gridData}
-         keyField='idx'
+         keyField='id' // Changed keyField to id
          height='300px'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
@@ -209,6 +220,8 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          validationErrors={validationErrors}
          noDataMessage='No dependencies'
          addButtonLabel='Add Dependency'
+         editingRows={editingRows}
+         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
       />
    );
 }

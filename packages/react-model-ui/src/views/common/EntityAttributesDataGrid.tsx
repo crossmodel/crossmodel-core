@@ -3,6 +3,7 @@
  ********************************************************************************/
 import { findNextUnique, identifier, LogicalAttribute, toId } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
+import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
@@ -40,26 +41,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const entity = useEntity();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
-
-   const handleRowUpdate = React.useCallback(
-      (attribute: EntityAttributeRow): void => {
-         console.log('Updating attribute:', attribute);
-         const errors = validateField(attribute);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-            return;
-         }
-         setValidationErrors({});
-
-         dispatch({
-            type: 'entity:attribute:update',
-            attributeIdx: attribute.idx,
-            attribute: attribute
-         });
-      },
-      [dispatch]
-   );
 
    const handleAddAttribute = React.useCallback(
       (attribute: EntityAttributeRow): void => {
@@ -75,9 +58,10 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                type: 'entity:attribute:add-attribute',
                attribute: { ...attribute, id }
             });
+            setEditingRows(prev => ({ ...prev, [id]: true }));
          }
       },
-      [dispatch]
+      [dispatch, entity.attributes]
    );
 
    const handleAttributeUpward = React.useCallback(
@@ -202,12 +186,37 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       return <div className='p-error'>No Entity!</div>;
    }
 
+   const handleRowUpdate = React.useCallback(
+      (attribute: EntityAttributeRow): void => {
+         // Prevent saving if the attribute name is still the default 'New Attribute'
+         if (attribute.name === defaultEntry.name && attribute.datatype === defaultEntry.datatype) {
+            console.log('Not saving default new attribute.');
+            return;
+         }
+
+         console.log('Updating attribute:', attribute);
+         const errors = validateField(attribute);
+         if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            return;
+         }
+         setValidationErrors({});
+
+         dispatch({
+            type: 'entity:attribute:update',
+            attributeIdx: attribute.idx,
+            attribute: attribute
+         });
+      },
+      [dispatch, defaultEntry, validateField]
+   );
+
    return (
       <PrimeDataGrid
          className='entity-attributes-datatable'
          columns={columns}
          data={gridData}
-         keyField='idx'
+         keyField='id'
          height='auto'
          onRowAdd={handleAddAttribute}
          onRowUpdate={handleRowUpdate}
@@ -219,6 +228,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          validationErrors={validationErrors}
          noDataMessage='No attributes defined'
          addButtonLabel='Add Attribute'
+         editingRows={editingRows}
+         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
       />
    );
 }

@@ -2,6 +2,7 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { CustomProperty, CustomPropertyType, findNextUnique, identifier, toId } from '@crossmodel/protocol';
+import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDataModel, useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
@@ -15,10 +16,40 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
    const dataModel = useDataModel();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+   const validateField = React.useCallback((rowData: CustomPropertyRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.name) {
+         errors.name = 'Invalid Name';
+      }
+      return errors;
+   }, []);
+
+   const defaultEntry = React.useMemo<CustomPropertyRow>(
+      () => ({
+         $type: CustomPropertyType,
+         $globalId: 'toBeAssigned',
+         name: findNextUnique('New custom property', dataModel?.customProperties || [], p => p.name || ''),
+         id: findNextUnique('customProperty', dataModel?.customProperties || [], p => p.id || ''),
+         value: '',
+         description: '',
+         idx: -1
+      }),
+      [dataModel?.customProperties]
+   );
 
    const onRowUpdate = React.useCallback(
       (customProperty: CustomPropertyRow) => {
+         if (
+            customProperty.name === defaultEntry.name &&
+            customProperty.value === defaultEntry.value &&
+            customProperty.description === defaultEntry.description
+         ) {
+            console.log('Not saving default new custom property.');
+            return;
+         }
          const errors = validateField(customProperty);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -31,7 +62,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             customProperty: customProperty
          });
       },
-      [dispatch]
+      [dispatch, defaultEntry, validateField]
    );
 
    const onRowAdd = React.useCallback(
@@ -48,6 +79,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
                type: 'datamodel:customProperty:add-customProperty',
                customProperty: { ...customProperty, id }
             });
+            setEditingRows({ [id]: true });
          }
       },
       [dispatch, dataModel?.customProperties]
@@ -83,14 +115,6 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       [dispatch]
    );
 
-   const validateField = React.useCallback((rowData: CustomPropertyRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.name) {
-         errors.name = 'Invalid Name';
-      }
-      return errors;
-   }, []);
-
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
          { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' } },
@@ -98,19 +122,6 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          { field: 'description', header: 'Description', editor: !readonly }
       ],
       [readonly]
-   );
-
-   const defaultEntry = React.useMemo<CustomPropertyRow>(
-      () => ({
-         $type: CustomPropertyType,
-         $globalId: 'toBeAssigned',
-         name: findNextUnique('New custom property', dataModel?.customProperties || [], p => p.name || ''),
-         id: findNextUnique('customProperty', dataModel?.customProperties || [], p => p.id || ''),
-         value: '',
-         description: '',
-         idx: -1
-      }),
-      [dataModel?.customProperties]
    );
 
    if (!dataModel) {
@@ -131,7 +142,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          className='data-model-custom-properties-datatable'
          columns={columns}
          data={gridData}
-         keyField='idx'
+         keyField='id'
          height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
@@ -143,6 +154,8 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          validationErrors={validationErrors}
          noDataMessage='No custom properties'
          addButtonLabel='Add Property'
+         editingRows={editingRows}
+         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
       />
    );
 }

@@ -3,6 +3,7 @@
  ********************************************************************************/
 import { CrossReferenceContext, ModelDiagnostic, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
+import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
@@ -27,6 +28,7 @@ export function AttributeProperty({ field, row, diagnostics, value }: AttributeP
 
 export interface RelationshipAttributeRow extends RelationshipAttribute {
    idx: number;
+   id: string; // Added id field
 }
 
 export interface RelationshipAttributeDataGridProps {
@@ -99,10 +101,47 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
    const relationship = useRelationship();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+   const validateField = React.useCallback((rowData: RelationshipAttributeRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.parent) {
+         errors.parent = 'Invalid Parent';
+      }
+      if (!rowData.child) {
+         errors.child = 'Invalid Child';
+      }
+      return errors;
+   }, []);
+
+   const gridData = React.useMemo(
+      () =>
+         (relationship.attributes || []).map((attr, idx) => ({
+            ...attr,
+            idx,
+            id: (attr as any).id || idx.toString() // Ensure id is present for keyField
+         })) as RelationshipAttributeRow[],
+      [relationship.attributes]
+   );
+
+   const defaultEntry = React.useMemo<RelationshipAttributeRow>(
+      () => ({
+         $type: RelationshipAttributeType,
+         parent: '',
+         child: '',
+         idx: -1,
+         id: '' // Default id for new entries
+      }),
+      []
+   );
 
    const onRowUpdate = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
+         if (attribute.parent === defaultEntry.parent && attribute.child === defaultEntry.child) {
+            console.log('Not saving default new attribute.');
+            return;
+         }
          const errors = validateField(attribute);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -115,7 +154,7 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
             attribute: attribute
          });
       },
-      [dispatch]
+      [dispatch, defaultEntry, validateField]
    );
 
    const onRowAdd = React.useCallback(
@@ -124,18 +163,22 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
          setValidationErrors({});
 
          // Create a new attribute with empty values
-         const attributeData: RelationshipAttribute = {
+         const newId = (attribute.id || gridData.length.toString()); // Generate a unique ID
+         const attributeData: RelationshipAttributeRow = {
             $type: RelationshipAttributeType,
             parent: attribute.parent || '',
-            child: attribute.child || ''
+            child: attribute.child || '',
+            id: newId,
+            idx: -1
          };
 
          dispatch({
             type: 'relationship:attribute:add',
             attribute: attributeData
          });
+         setEditingRows({ [newId]: true });
       },
-      [dispatch]
+      [dispatch, gridData]
    );
 
    const onRowDelete = React.useCallback(
@@ -168,17 +211,6 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
       [dispatch]
    );
 
-   const validateField = React.useCallback((rowData: RelationshipAttributeRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.parent) {
-         errors.parent = 'Invalid Parent';
-      }
-      if (!rowData.child) {
-         errors.child = 'Invalid Child';
-      }
-      return errors;
-   }, []);
-
    const columns = React.useMemo<GridColumn<RelationshipAttributeRow>[]>(
       () => [
          {
@@ -195,35 +227,16 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
       []
    );
 
-   const defaultEntry = React.useMemo<RelationshipAttributeRow>(
-      () => ({
-         $type: RelationshipAttributeType,
-         parent: '',
-         child: '',
-         idx: -1
-      }),
-      []
-   );
-
    if (!relationship) {
       return <ErrorView errorMessage='No relationship available' />;
    }
-
-   const gridData = React.useMemo(
-      () =>
-         (relationship.attributes || []).map((attr, idx) => ({
-            ...attr,
-            idx
-         })),
-      [relationship.attributes]
-   );
 
    return (
       <PrimeDataGrid
          className='relationship-attributes-datatable'
          columns={columns}
          data={gridData}
-         keyField='idx'
+         keyField='id' // Changed keyField to id
          height='300px'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
@@ -235,6 +248,8 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
          validationErrors={validationErrors}
          noDataMessage='No attributes'
          addButtonLabel='Add Attribute'
+         editingRows={editingRows}
+         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
       />
    );
 }

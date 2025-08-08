@@ -1,6 +1,6 @@
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
-import { DataTable, DataTableRowEditCompleteEvent } from 'primereact/datatable';
+import { DataTable, DataTableRowEditCompleteEvent, DataTableRowEditEvent } from 'primereact/datatable';
 import { InputText } from 'primereact/inputtext';
 import { Toolbar } from 'primereact/toolbar';
 import * as React from 'react';
@@ -32,6 +32,8 @@ export interface PrimeDataGridProps<T> {
    readonly?: boolean;
    validationErrors?: Record<string, string>;
    className?: string;
+   editingRows?: Record<string, boolean>;
+   onRowEditChange?: (e: DataTableRowEditEvent) => void;
 }
 
 export function PrimeDataGrid<T extends Record<string, any>>({
@@ -50,12 +52,32 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    editable = true,
    readonly = false,
    validationErrors = {},
-   className
+   className,
+   editingRows,
+   onRowEditChange
 }: PrimeDataGridProps<T>): React.ReactElement {
-   const [editingRows, setEditingRows] = React.useState({});
+   const tableRef = React.useRef<DataTable<T[]>>(null);
+
+   React.useEffect(() => {
+      if (tableRef.current && editingRows && Object.keys(editingRows).length > 0) {
+         const editingRowKey = Object.keys(editingRows)[0];
+         const editingRowIndex = data.findIndex(row => row[keyField] === editingRowKey);
+         if (editingRowIndex !== -1) {
+            setTimeout(() => {
+               const tableElement = tableRef.current?.getElement();
+               const editingCell = tableElement?.querySelector('.p-cell-editing');
+               if (editingCell) {
+                  const input = editingCell.querySelector('input, .p-dropdown, .p-autocomplete-input');
+                  if (input) {
+                     (input as HTMLElement).focus();
+                  }
+               }
+            }, 100);
+         }
+      }
+   }, [editingRows, data, keyField]);
 
    const onRowEditComplete = (e: DataTableRowEditCompleteEvent) => {
-      setEditingRows({});
       if (onRowUpdate) {
          onRowUpdate(e.newData as T);
       }
@@ -122,12 +144,13 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       <div>
          {onRowAdd && !readonly && <Toolbar className='mb-2' left={toolbarContent} />}
          <DataTable
+            ref={tableRef}
             value={data}
             editMode={editable ? 'row' : undefined}
             dataKey={keyField as string}
             onRowEditComplete={onRowEditComplete}
             editingRows={editingRows}
-            onRowEditChange={e => setEditingRows(e.data)}
+            onRowEditChange={onRowEditChange}
             scrollable
             scrollHeight={height}
             className={`p-datatable-sm ${className || ''}`}
