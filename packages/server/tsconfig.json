@@ -1,0 +1,14 @@
+{
+  "extends": "../../configs/base.tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./lib",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2021",
+    "lib": ["ES2021", "ES2020.Promise", "DOM"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["jest"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

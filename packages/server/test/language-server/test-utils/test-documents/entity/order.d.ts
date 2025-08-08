@@ -1,0 +1,5 @@
+/********************************************************************************
+ * Copyright (c) 2024 CrossBreeze.
+ ********************************************************************************/
+export declare const order = "entity:\n    id: Order\n    name: \"Order\"\n    description: \"Order placed by a customer in the Customer table.\"\n    attributes:\n      - id: Id\n        name: \"Id\"\n        datatype: \"Integer\"\n      - id: OrderDate\n        name: \"OrderDate\"\n        datatype: \"Integer\"\n      - id: OrderNumber\n        name: \"OrderNumber\"\n        datatype: \"Text\"\n      - id: CustomerId\n        name: \"CustomerId\"\n        datatype: \"Integer\"\n      - id: TotalAmount\n        name: \"TotalAmount\"\n        datatype: \"Decimal\"";
+//# sourceMappingURL=order.d.ts.map

@@ -37,6 +37,9 @@
       "path": "packages/protocol"
     },
     {
+      "path": "packages/server"
+    },
+    {
       "path": "e2e-tests"
     }
   ]

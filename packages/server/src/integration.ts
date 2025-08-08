@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { CrossModelServices, CrossModelSharedServices } from '@crossmodel/server';
+import { CrossModelServices, CrossModelSharedServices } from './language-server/cross-model-module.js';
 
 /**
  * Language services required in GLSP.
