@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/model-service",
-  "version": "0.6.0",
+  "version": "0.7.1",
   "description": "Model service to talk to the back-end server from the front-end via a JSON-rpc connection",
   "keywords": [
     "theia-extension"
@@ -30,8 +30,8 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/protocol": "0.6.0",
-    "@theia/core": "1.63.3"
+    "@crossmodel/protocol": "0.7.0",
+    "@theia/core": "1.64.0"
   },
   "theiaExtensions": [
     {

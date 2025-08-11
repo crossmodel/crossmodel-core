@@ -1,148 +1,60 @@
-# CrossModel Core Edition
+<br/>
+<div align="center">
+   <img src="./docs/img/crossmodel-logo.svg" alt="CrossModel Logo" style="width: 400px;" />
+   <h3>CrossModel Core Edition</h3>
+</div>
+
+- [What is CrossModel?](#what-is-crossmodel)
+- [Installation](#installation)
+- [Getting started](#getting-started)
+- [Contributing](#contributing)
+
+## What is CrossModel?
+
+CrossModel is a platform for data modeling and model-driven data engineering. It lets you define, structure, and manage your data models in a way that’s intuitive, collaborative, and automation-ready. The Core Edition is the free and open-source version. Besides the Core Edition there are also other editions with more functionality. For more information see the [CrossModel website](https://crossmodel.io).
+
+Whether you're building a data warehouse, generating code for pipelines, or managing metadata for governance, CrossModel helps you move faster by treating your data model as the single source of truth.
+
+With a Git-backed engine, support for custom properties, mappings, versioning, and integrated AI assistance, CrossModel bridges the gap between data design and real-world implementation.
+
+### Data modeling
+
+![CrossModel - Modeling](docs/img/crossmodel-datamodel.png)
+
+### Mapping (Data flow)
+
+![CrossModel - Mapping](docs/img/crossmodel-mapping.png)
+
+## Installation
+
+CrossModel Core Edition is available as a desktop application for Windows, MacOS & Linux. On every release the installers are automatically created. Follow the steps below to install CrossModel Core Edition on your machine.
+
+Steps:
+
+- Click on the latest release under the 'Releases' topic on the right.
+- On the release page, in the 'Assets' section find the installer you need and click on it to download it (you might need to login to see the files).
+   - For **Windows** download the 'Windows-X64-installer'.
+      - Run the CrossModel-Core-X64-<version>.exe file and follow the installation wizard.
+   - For **MacOS**:
+      - For Intel based download the 'macOS-X64-dmg-installer'.
+      - For ARM based (M1, M2, etc.) download the 'macOS-ARM64-dmg-installer'.
+         > The MacOS application is not properly signed yet, which results in a error message when starting
+         > CrossModel after installation. To resolve the error you need to disable the quarantine for CrossModel.
+         > To achieve this execute the following command in the terminal after installation:<br />
+         > `xattr -r -d com.apple.quarantine /Applications/CrossModel-Core.app`
+   - For **Linux**:
+      - For Debian based distributions (Ubuntu, Debian, etc.) download the 'Linux-X64-deb-installer'.
+         - After downloading run the .deb file and follow the installation wizard.
+      - You can also run CrossModel in an isolated AppImage environment, which can also work on non-Debian distributions. To do so, download the the 'Linux-X64-AppImage'.
+         - After downloading make the file executable by running the following command in the terminal (adjust the file path accordingly):<br />
+           `chmod +x "CrossModel-Core-*.AppImage"`
+         - You can now start CrossModel Core by double-clicking on the AppImage file.
+            > Running the AppImage requires FUSE to be installed (<https://github.com/AppImage/AppImageKit/wiki/FUSE>).
 
 ## Getting started
 
-Please install all necessary [prerequisites](https://github.com/eclipse-theia/theia/blob/master/doc/Developing.md#prerequisites) on your system.
+Once you start CrossModel you can open any folder to start modeling, this can either be an empty folder to create new data models or an existing CrossModel workspace folder (like [examples/mapping-example](./examples/mapping-example)).
 
-For detailed instructions for a Windows machine, follow [this](./docs/PrerequisitesWindows.md) guide.
+## Contributing
 
-## Installing the application dependencies
-
-    yarn
-
-## Running the application
-
-### Browser
-
-This will build and start CrossModel as a web application. When the web application is running you can open <http://localhost:3000> in your browser to use CrossModel.
-
-    yarn build:browser &&
-    yarn start:browser
-
-### Electron (desktop application)
-
-This will build and start CrossModel as a native desktop application for the OS (Windows, Linux or MacOS) where the command is started.
-
-    yarn build:electron &&
-    yarn start:electron
-
-## Example Workspace
-
-Under `examples/verdaccio-example/workspace` we provide an example workspace with some demo packages containing entities, relationships and system diagrams.
-Each package represents a dedicated system or library and may depend on other packages.
-
-Using a known package structure - npm in our case - we can re-use large parts of the package management to download dependencies that are not locally available from an external package registry.
-In order to test this behavior, we use verdaccio as a local npm registry that provides some models that are needed by our workspace packages.
-You can start verdaccio using
-
-    yarn start:verdaccio
-
-The local npm registry will be available under `http://localhost:4873/` where we already provide four packages by default.
-
-After opening the workspace, you can install the necessary dependencies in the example workspace by opening a terminal in `examples/verdaccio-example/workspace` and execute
-
-    npm install
-
-This should download all dependencies into dedicated `node_modules` directories within the workspace.
-
-Currently there is still an issue where new files are not recognized automatically, so you need to reload your workspace once for all the dependencies to be properly recognized.
-
-## Developing
-
-Start watching all packages of your application for either browser or electron version.
-
-    yarn watch:browser
-
-_or_
-
-    yarn watch:electron
-
-_or_ watch only specific packages with
-
-    cd packages/<package-name>
-    yarn watch
-
-and the Electron example.
-
-    cd applications/electron-app
-    yarn watch
-
-Run the example as [described above](#running-the-application).
-
-Any code changes will be automatically detected and the application will be re-compiled.
-If you only made changes to the frontend or plugins, simply reloading the running application with `F5` is enough.
-If you also made changes to the backend, you can close and restart the application without manual re-compilation.
-
-### Developing on Windows (in Dev Container)
-
-When developing on Windows you can develop CrossModel from within a Dev Container (using WSL2). The best way to do so is create a new Dev Container and cloning the repository in there. For instructions please consult [this](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-a-git-repository-or-github-pr-in-an-isolated-container-volume) page.
-
-Short steps:
-
-1. Install Docker with WSL 2 engine enabled.
-1. In VS Code press [CTRL] + [SHIFT] + [P] and type 'Dev Container: Clone Repository in Container Volume...' and press [Enter].
-1. Enter the current repository URL and press [Enter]. Now the dev container will be created with the Git repository cloned in it (faster then cloned locally in Windows).
-
-## Packaging
-
-We package CrossModel either for the browser (Docker) or desktop application (Electron).
-
-### Docker
-
-To package the web application we build a docker image. There are currently two Dockerfile definitions, one based on [Alpine Linux](./Dockerfile) and one based on [Debian](./Dockerfile.debian). Some users might prefer Debian over Alpine as based, which is why we have both options.
-
-To create the Alpine based image, execute the following command:
-
-    docker build -t crossmodel:0.0.0-alpine -f .\Dockerfile .
-
-To create the Debian based image, execute the following command:
-
-    docker build -t crossmodel:0.0.0-debian -f .\Dockerfile.debian .
-
-In the main build action we build and publish the Alpine version.
-
-### Electron
-
-To package CrossModel as a desktop application, execute the following command:
-
-    yarn theia:electron package
-
-Depending on the platform, this will produce an executable or an installer for the application under `applications/electron-app/dist`.
-
-Details about the packaging can be configured in `applications/electron-app/electron-builder.yml`.
-
-## Structure
-
-A general overview of the application architecture is provided in the [Architecture Overview](docs/Architecture.md).
-The repository itself contains the following components structured as follows:
-
-    ├── applications
-    │   ├── browser-app              # Browser application
-    │   └── electron-app             # Electron application
-    ├── configs
-    ├── docs                         # Documentation
-    ├── examples
-    │   ├── libraries                # Example libraries referenced in the local npm registry
-    │   ├── registry                 # Local npm registry using Verdaccio
-    │   └── workspace                # Workspace that can be opened in the tool
-    ├── extensions                   # VS Code extensions
-    │   └── crossmodel-lang          # CrossModel language support (through three servers)
-    │       └── src
-    │           ├── glsp-server      # Graphical modelling server based on GLSP
-    │           ├── language-server  # Textual modelling server based on Langium
-    │           ├── model-server     # Custom model server to provide access to the semantic models
-    │           ├── extension.ts     # Extension starting the server process and the language client
-    │           └── main.ts          # Server process starting up all servers
-    └── packages                     # Theia extensions
-            ├── core                 # Core customizations
-            ├── form-client          # Form editor widget connecting to the model server
-            ├── glsp-client          # Diagram configuration and widget using the GLSP server
-            └── product              # Application-level modifications
-
-## Used libraries and license
-
-- mui-x : MUI X is open core—base components are MIT-licensed, while more advanced features require a Pro or Premium commercial license. We are currently only using core-base
-- react-tabs: MIT
-- chevrotain: This library is a dependency of langium. To get the Yaml language working in crossmodel an example implementation of the python language of chevrotain has been used. This example has been modified to make it work for the yaml language.
-   - <https://github.com/Chevrotain/chevrotain>
-   - example that has been used: <https://github.com/Chevrotain/chevrotain/tree/master/examples/lexer/python_indentation>
+Contribution are very welcome. Please read the page on contributions [here](./CONTRIBUTING.md).

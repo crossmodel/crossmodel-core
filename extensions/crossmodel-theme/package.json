@@ -1,7 +1,7 @@
 {
   "name": "crossmodel-theme",
   "displayName": "crossmodel-theme",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "CrossModel Theme",
   "categories": [
@@ -21,7 +21,7 @@
   "scripts": {
     "build": "echo \"Nothing to build\"",
     "clean": "rimraf --glob out *.vsix",
-    "package": "yarn package:vsix",
+    "package": "yarn clean && yarn package:vsix",
     "package:vsix": "vsce package --yarn",
     "symlink": "yarn symlink:browser && yarn symlink:electron",
     "symlink:browser": "symlink-dir . ../../applications/browser-app/plugins/crossmodel-theme",

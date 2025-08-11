@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.1](https://github.com/crossmodel/crossmodel-core/compare/v0.7.0...v0.7.1) (2025-08-05)
+
+**Note:** Version bump only for package crossmodel-core-browser
+
+
+
+
+
+# [0.7.0](https://github.com/crossmodel/crossmodel-core/compare/v0.6.0...v0.7.0) (2025-08-02)
+
+
+### Features
+
+*  Getting started, updated docs & publish installers on release ([#160](https://github.com/crossmodel/crossmodel-core/issues/160)) ([32cc30a](https://github.com/crossmodel/crossmodel-core/commit/32cc30ab2eb15154a409acf1d3e0f52e451bd298))
+
+
+
+
+
 # [0.6.0](https://github.com/crossmodel/crossmodel-core/compare/v0.5.2...v0.6.0) (2025-07-29)
 
 **Note:** Version bump only for package crossmodel-browser-app

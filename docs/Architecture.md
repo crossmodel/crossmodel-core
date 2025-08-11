@@ -2,7 +2,7 @@
 
 The general architecture of CrossModel consists of several parts that aim to share a common data model and support different editing capabilities on that model.
 
-![Architecture Overview](Architecture.png)
+![Architecture Overview](img/crossmodel-architecture.png)
 
 ## Textual Modeling with Langium
 
