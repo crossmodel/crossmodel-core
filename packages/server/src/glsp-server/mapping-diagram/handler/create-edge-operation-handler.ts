@@ -22,7 +22,7 @@ export class MappingEdgeCreationOperationHandler extends JsonCreateEdgeOperation
    @inject(ModelState) declare protected modelState: MappingModelState;
 
    override elementTypeIds = [TARGET_ATTRIBUTE_MAPPING_EDGE_TYPE];
-   override label: string = 'Mapping Edge';
+   override label = 'Mapping Edge';
 
    override createCommand(operation: CreateEdgeOperation): MaybePromise<Command | undefined> {
       return new CrossModelCommand(this.modelState, () => this.createEdge(operation));

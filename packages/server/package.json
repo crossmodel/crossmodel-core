@@ -29,7 +29,7 @@
     "clean": "rimraf lib tsconfig.tsbuildinfo",
     "langium:generate": "langium generate",
     "langium:watch": "langium generate --watch",
-    "lint": "eslint -c ../../.eslintrc.js --ext .ts,.tsx ./src",
+    "lint": "eslint -c ./.eslintrc.cjs --ext .ts,.tsx ./src",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest --passWithNoTests",
     "watch": "tsc -w"
   },
