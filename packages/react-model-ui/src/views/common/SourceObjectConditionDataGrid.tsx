@@ -11,13 +11,122 @@ import {
    ReferenceableElement,
    SourceObjectAttributeReferenceType,
    SourceObjectCondition,
-   StringLiteralType
+   StringLiteralType,
+   quote
 } from '@crossmodel/protocol';
-import { AutoComplete } from 'primereact/autocomplete';
+import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
+import { DataTableRowEditEvent } from 'primereact/datatable';
+import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+
+interface SourceObjectConditionEditorProps {
+   options: any;
+   isLeft: boolean;
+   sourceObject: any;
+}
+
+function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): React.ReactElement {
+   const { options, isLeft, sourceObject } = props;
+   const { editorCallback } = options;
+
+   const [currentValue, setCurrentValue] = React.useState(options.value);
+   const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
+   const queryApi = useModelQueryApi();
+   const readonly = useReadonly();
+   const isDropdownClicked = React.useRef(false);
+
+   const referenceCtx: CrossReferenceContext = React.useMemo(
+      () => ({
+         container: { globalId: sourceObject.$globalId },
+         syntheticElements: [
+            { property: 'conditions', type: JoinConditionType },
+            { property: 'expression', type: BinaryExpressionType },
+            { property: isLeft ? 'left' : 'right', type: SourceObjectAttributeReferenceType }
+         ],
+         property: 'value'
+      }),
+      [sourceObject.$globalId, isLeft]
+   );
+
+   const search = React.useCallback(
+      async (event: AutoCompleteCompleteEvent) => {
+         const elements = await queryApi.findReferenceableElements(referenceCtx);
+         const filteredSuggestions = elements.filter(element =>
+            isDropdownClicked.current ? true : event.query ? (element.label || '').toLowerCase().includes(event.query.toLowerCase()) : true
+         );
+         setSuggestions(filteredSuggestions);
+         isDropdownClicked.current = false;
+      },
+      [queryApi, referenceCtx]
+   );
+
+   const handleValue = React.useCallback((value: ReferenceableElement | string): any => {
+      const literal = typeof value === 'string';
+      const fieldValue = literal ? value : value.label;
+      const $type = literal
+         ? isNaN(parseFloat(value as string))
+            ? StringLiteralType
+            : NumberLiteralType
+         : SourceObjectAttributeReferenceType;
+      return { $type, value: fieldValue };
+   }, []);
+
+   const onSelect = (e: AutoCompleteSelectEvent) => {
+      const newValue = handleValue(e.value);
+      setCurrentValue(newValue);
+      if (editorCallback) {
+         editorCallback(newValue);
+      }
+   };
+
+   const onChange = (e: AutoCompleteChangeEvent) => {
+      const newValue = handleValue(e.value);
+      setCurrentValue(newValue);
+      if (editorCallback) {
+         editorCallback(newValue);
+      }
+   };
+
+   return (
+      <AutoComplete
+         value={currentValue?.value ?? ''}
+         suggestions={suggestions}
+         field='label'
+         completeMethod={search}
+         dropdown
+         className='w-full'
+         onDropdownClick={() => (isDropdownClicked.current = true)}
+         onChange={onChange}
+         onSelect={onSelect}
+         disabled={readonly}
+         autoFocus
+      />
+   );
+}
+
+interface OperatorEditorProps {
+   options: any;
+}
+
+function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
+   const { options } = props;
+   const { editorCallback } = options;
+
+   const operators = React.useMemo(() => ['=', '!=', '<', '<=', '>', '>='], []);
+   const [currentValue, setCurrentValue] = React.useState(options.value);
+
+   const onChange = (e: DropdownChangeEvent) => {
+      setCurrentValue(e.value);
+      if (editorCallback) {
+         editorCallback(e.value);
+      }
+   };
+
+   return <Dropdown value={currentValue} options={operators} onChange={onChange} className='w-full' autoFocus />;
+}
 
 export interface SourceObjectConditionRow {
    $type: typeof BinaryExpressionType;
@@ -31,6 +140,7 @@ export interface SourceObjectConditionRow {
       value: string;
    };
    idx: number;
+   id: string;
 }
 
 export interface SourceObjectConditionDataGridProps {
@@ -40,55 +150,11 @@ export interface SourceObjectConditionDataGridProps {
 
 export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: SourceObjectConditionDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
-   const queryApi = useModelQueryApi();
    const readonly = useReadonly();
-   const [leftSuggestions, setLeftSuggestions] = React.useState<ReferenceableElement[]>([]);
-   const [rightSuggestions, setRightSuggestions] = React.useState<ReferenceableElement[]>([]);
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
    const sourceObject = mapping.sources[sourceObjectIdx];
-
-   const leftReferenceCtx: CrossReferenceContext = React.useMemo(
-      () => ({
-         container: { globalId: sourceObject.$globalId },
-         syntheticElements: [
-            { property: 'conditions', type: JoinConditionType },
-            { property: 'expression', type: BinaryExpressionType },
-            { property: 'left', type: SourceObjectAttributeReferenceType }
-         ],
-         property: 'value'
-      }),
-      [sourceObject.$globalId]
-   );
-
-   const rightReferenceCtx: CrossReferenceContext = React.useMemo(
-      () => ({
-         container: { globalId: sourceObject.$globalId },
-         syntheticElements: [
-            { property: 'conditions', type: JoinConditionType },
-            { property: 'expression', type: BinaryExpressionType },
-            { property: 'right', type: SourceObjectAttributeReferenceType }
-         ],
-         property: 'value'
-      }),
-      [sourceObject.$globalId]
-   );
-
-   const searchLeft = React.useCallback(
-      async (event: { query: string }) => {
-         const elements = await queryApi.findReferenceableElements(leftReferenceCtx);
-         setLeftSuggestions(elements);
-      },
-      [queryApi, leftReferenceCtx]
-   );
-
-   const searchRight = React.useCallback(
-      async (event: { query: string }) => {
-         const elements = await queryApi.findReferenceableElements(rightReferenceCtx);
-         setRightSuggestions(elements);
-      },
-      [queryApi, rightReferenceCtx]
-   );
 
    const onRowUpdate = React.useCallback(
       (condition: SourceObjectConditionRow) => {
@@ -188,56 +254,37 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
       return errors;
    }, []);
 
-   const handleValue = React.useCallback((value: ReferenceableElement | string): any => {
-      const literal = typeof value === 'string';
-      const fieldValue = literal ? value : value.label;
-      const $type = literal
-         ? isNaN(parseFloat(value as string))
-            ? StringLiteralType
-            : NumberLiteralType
-         : SourceObjectAttributeReferenceType;
-      return { $type, value: fieldValue };
-   }, []);
-
    const columns = React.useMemo<GridColumn<SourceObjectConditionRow>[]>(
       () => [
          {
             field: 'left',
             header: 'Left Expression',
-            body: rowData => (
-               <AutoComplete
-                  value={rowData.left?.value}
-                  suggestions={leftSuggestions}
-                  completeMethod={searchLeft}
-                  field='label'
-                  dropdown
-                  onChange={e => onRowUpdate({ ...rowData, left: handleValue(e.value) })}
-                  disabled={readonly}
-               />
-            )
+            body: rowData => {
+               if (rowData.left.$type === StringLiteralType) {
+                  return quote(rowData.left.value);
+               }
+               return rowData.left.value;
+            },
+            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />
          },
          {
             field: 'operator',
             header: 'Operator',
-            editor: true
+            editor: (options: any) => <OperatorEditor options={options} />
          },
          {
             field: 'right',
             header: 'Right Expression',
-            body: rowData => (
-               <AutoComplete
-                  value={rowData.right?.value}
-                  suggestions={rightSuggestions}
-                  completeMethod={searchRight}
-                  field='label'
-                  dropdown
-                  onChange={e => onRowUpdate({ ...rowData, right: handleValue(e.value) })}
-                  disabled={readonly}
-               />
-            )
+            body: rowData => {
+               if (rowData.right.$type === StringLiteralType) {
+                  return quote(rowData.right.value);
+               }
+               return rowData.right.value;
+            },
+            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={false} sourceObject={sourceObject} />
          }
       ],
-      [leftSuggestions, rightSuggestions, searchLeft, searchRight, onRowUpdate, readonly, handleValue]
+      [sourceObject, readonly]
    );
 
    const defaultEntry = React.useMemo<SourceObjectConditionRow>(
@@ -246,7 +293,8 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          left: { $type: SourceObjectAttributeReferenceType, value: '' },
          operator: '=',
          right: { $type: SourceObjectAttributeReferenceType, value: '' },
-         idx: -1
+         idx: -1,
+         id: ''
       }),
       []
    );
@@ -274,16 +322,18 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                   | typeof NumberLiteralType,
                value: typeof condition.expression.right.value === 'string' ? condition.expression.right.value : ''
             },
-            idx
+            idx,
+            id: idx.toString()
          })) || [],
       [sourceObject.conditions]
    );
 
    return (
       <PrimeDataGrid
+         className='source-object-condition-datatable'
          columns={columns}
          data={gridData}
-         keyField='idx'
+         keyField='id'
          height='300px'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
@@ -295,6 +345,8 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          validationErrors={validationErrors}
          noDataMessage='No conditions'
          addButtonLabel='Add Condition'
+         editingRows={editingRows}
+         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
       />
    );
 }

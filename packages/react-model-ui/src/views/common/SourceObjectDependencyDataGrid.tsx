@@ -5,31 +5,30 @@ import {
    CrossReferenceContext,
    Mapping,
    ReferenceableElement,
+   SourceObject,
    SourceObjectDependency,
    SourceObjectDependencyType
 } from '@crossmodel/protocol';
-import { AutoComplete } from 'primereact/autocomplete';
+import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
+import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
-export interface SourceObjectDependencyRow extends SourceObjectDependency {
-   idx: number;
+interface SourceObjectDependencyEditorProps {
+   options: any;
+   sourceObject: SourceObject;
 }
 
-export interface SourceObjectDependencyDataGridProps {
-   mapping: Mapping;
-   sourceObjectIdx: number;
-}
+function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps): React.ReactElement {
+   const { options, sourceObject } = props;
+   const { editorCallback } = options;
 
-export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: SourceObjectDependencyDataGridProps): React.ReactElement {
-   const dispatch = useModelDispatch();
+   const [currentValue, setCurrentValue] = React.useState(options.value);
+   const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
-   const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
-
-   const sourceObject = mapping.sources[sourceObjectIdx];
+   const isDropdownClicked = React.useRef(false);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
@@ -41,11 +40,74 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    );
 
    const search = React.useCallback(
-      async (event: { query: string }) => {
+      async (event: AutoCompleteCompleteEvent) => {
          const elements = await queryApi.findReferenceableElements(referenceCtx);
-         setSuggestions(elements);
+         const filteredSuggestions = elements.filter(element =>
+            isDropdownClicked.current ? true : event.query ? (element.label || '').toLowerCase().includes(event.query.toLowerCase()) : true
+         );
+         setSuggestions(filteredSuggestions);
+         isDropdownClicked.current = false;
       },
       [queryApi, referenceCtx]
+   );
+
+   const onChange = (e: AutoCompleteChangeEvent) => {
+      const value = e.value;
+      if (typeof value === 'object' && value !== null && value.label) {
+         setCurrentValue(value.label);
+         if (editorCallback) {
+            editorCallback(value.label);
+         }
+      } else {
+         setCurrentValue(value);
+         if (editorCallback) {
+            editorCallback(value);
+         }
+      }
+   };
+
+   return (
+      <AutoComplete
+         value={currentValue ?? ''}
+         suggestions={suggestions}
+         field='label'
+         completeMethod={search}
+         dropdown
+         className='w-full'
+         onDropdownClick={() => (isDropdownClicked.current = true)}
+         onChange={onChange}
+         disabled={readonly}
+         autoFocus
+      />
+   );
+}
+
+export interface SourceObjectDependencyRow extends SourceObjectDependency {
+   idx: number;
+   id: string;
+}
+
+export interface SourceObjectDependencyDataGridProps {
+   mapping: Mapping;
+   sourceObjectIdx: number;
+}
+
+export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: SourceObjectDependencyDataGridProps): React.ReactElement {
+   const dispatch = useModelDispatch();
+   const readonly = useReadonly();
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+   const sourceObject = mapping.sources[sourceObjectIdx];
+
+   const gridData = React.useMemo(
+      () =>
+         (sourceObject.dependencies || []).map((dep, idx) => ({
+            ...dep,
+            idx,
+            id: (dep as any).id || idx.toString()
+         })) as SourceObjectDependencyRow[],
+      [sourceObject.dependencies]
    );
 
    const onRowUpdate = React.useCallback(
@@ -56,11 +118,12 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             return;
          }
          setValidationErrors({});
+         const { id, idx, ...dependencyToUpdate } = dependency;
          dispatch({
             type: 'source-object:update-dependency',
             sourceObjectIdx,
             dependencyIdx: dependency.idx,
-            dependency: dependency
+            dependency: dependencyToUpdate
          });
       },
       [dispatch, sourceObjectIdx]
@@ -68,18 +131,21 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const onRowAdd = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
-         if (dependency.source) {
-            dispatch({
-               type: 'source-object:add-dependency',
-               sourceObjectIdx,
-               dependency: {
-                  $type: SourceObjectDependencyType,
-                  source: dependency.source
-               }
-            });
-         }
+         setValidationErrors({});
+         const newId = dependency.id || gridData.length.toString();
+         const dependencyData: SourceObjectDependency = {
+            $type: SourceObjectDependencyType,
+            source: dependency.source
+         };
+
+         dispatch({
+            type: 'source-object:add-dependency',
+            sourceObjectIdx,
+            dependency: dependencyData
+         });
+         setEditingRows({ [newId]: true });
       },
-      [dispatch, sourceObjectIdx]
+      [dispatch, sourceObjectIdx, gridData]
    );
 
    const onRowDelete = React.useCallback(
@@ -128,27 +194,18 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
          {
             field: 'source',
             header: 'Source',
-            body: rowData => (
-               <AutoComplete
-                  value={rowData.source}
-                  suggestions={suggestions}
-                  completeMethod={search}
-                  field='label'
-                  dropdown
-                  onChange={e => onRowUpdate({ ...rowData, source: e.value.uri })}
-                  disabled={readonly}
-               />
-            )
+            body: rowData => rowData.source,
+            editor: (options: any) => <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} />
          }
       ],
-      [suggestions, search, onRowUpdate, readonly]
+      [sourceObject]
    );
 
-   const defaultEntry = React.useMemo<SourceObjectDependencyRow>(
+   const defaultEntry = React.useMemo<Partial<SourceObjectDependencyRow>>(
       () => ({
          $type: SourceObjectDependencyType,
          source: '',
-         idx: -1
+         id: ''
       }),
       []
    );
@@ -157,20 +214,11 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       return <div>No mapping or source object available</div>;
    }
 
-   const gridData = React.useMemo(
-      () =>
-         (sourceObject.dependencies || []).map((dep, idx) => ({
-            ...dep,
-            idx
-         })),
-      [sourceObject.dependencies]
-   );
-
    return (
       <PrimeDataGrid
          columns={columns}
          data={gridData}
-         keyField='idx'
+         keyField='id'
          height='300px'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
@@ -182,6 +230,8 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
          validationErrors={validationErrors}
          noDataMessage='No dependencies'
          addButtonLabel='Add Dependency'
+         editingRows={editingRows}
+         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
       />
    );
 }
