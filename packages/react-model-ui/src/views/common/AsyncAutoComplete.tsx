@@ -35,6 +35,7 @@ export default function AsyncAutoComplete<T = string>({
    const [options, setOptions] = React.useState<T[]>([]);
    const [loading, setLoading] = React.useState(false);
    const readonly = useReadonly() || disabled;
+   const autoCompleteRef = React.useRef<AutoComplete>(null);
 
    const loadSuggestions = async (event: AutoCompleteCompleteEvent) => {
       setLoading(true);
@@ -54,10 +55,31 @@ export default function AsyncAutoComplete<T = string>({
       }
    };
 
+   // Handle click outside to close dropdown
+   React.useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+         if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
+            // Small delay to allow selection to complete first
+            setTimeout(() => {
+               const panel = autoCompleteRef.current?.getOverlay();
+               if (panel && panel.style.display !== 'none') {
+                  autoCompleteRef.current?.hide();
+               }
+            }, 100);
+         }
+      };
+
+      document.addEventListener('mouseup', handleClickOutside);
+      return () => {
+         document.removeEventListener('mouseup', handleClickOutside);
+      };
+   }, []);
+
    return (
       <div className='p-field p-fluid' style={{ marginBottom: '2rem', position: 'relative' }}>
          <span className='p-float-label'>
             <AutoComplete<T>
+               ref={autoCompleteRef}
                value={value}
                suggestions={options as (T extends any[] ? T[number] : T)[]}
                completeMethod={loadSuggestions}

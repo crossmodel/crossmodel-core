@@ -29,6 +29,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
    const isDropdownClicked = React.useRef(false);
+   const autoCompleteRef = React.useRef<AutoComplete>(null);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
@@ -66,8 +67,29 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
       }
    };
 
+   // Handle click outside to close dropdown
+   React.useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+         if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
+            // Small delay to allow selection to complete first
+            setTimeout(() => {
+               const panel = autoCompleteRef.current?.getOverlay();
+               if (panel && panel.style.display !== 'none') {
+                  autoCompleteRef.current?.hide();
+               }
+            }, 100);
+         }
+      };
+
+      document.addEventListener('mouseup', handleClickOutside);
+      return () => {
+         document.removeEventListener('mouseup', handleClickOutside);
+      };
+   }, []);
+
    return (
       <AutoComplete
+         ref={autoCompleteRef}
          value={currentValue ?? ''}
          suggestions={suggestions}
          field='label'

@@ -29,6 +29,7 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
    const dataModel = useDataModel();
    const readonly = useReadonly();
    const isDropdownClicked = React.useRef(false);
+   const autoCompleteRef = React.useRef<AutoComplete>(null);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
@@ -60,8 +61,29 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
       }
    };
 
+   // Handle click outside to close dropdown
+   React.useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+         if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
+            // Small delay to allow selection to complete first
+            setTimeout(() => {
+               const panel = autoCompleteRef.current?.getOverlay();
+               if (panel && panel.style.display !== 'none') {
+                  autoCompleteRef.current?.hide();
+               }
+            }, 100);
+         }
+      };
+
+      document.addEventListener('mouseup', handleClickOutside);
+      return () => {
+         document.removeEventListener('mouseup', handleClickOutside);
+      };
+   }, []);
+
    return (
       <AutoComplete
+         ref={autoCompleteRef}
          value={currentValue ?? ''}
          suggestions={suggestions}
          completeMethod={search}
@@ -135,7 +157,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    const onRowAdd = React.useCallback(
       (dependency: DataModelDependencyRow) => {
          setValidationErrors({});
-         const newId = (dependency.id || gridData.length.toString()); // Generate a unique ID
+         const newId = dependency.id || gridData.length.toString(); // Generate a unique ID
          const dependencyData: DataModelDependencyRow = {
             $type: DataModelDependencyType,
             datamodel: dependency.datamodel as string,
