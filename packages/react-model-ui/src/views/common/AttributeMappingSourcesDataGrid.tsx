@@ -8,34 +8,29 @@ import {
    AttributeMappingType,
    CrossModelElement,
    CrossReferenceContext,
-   NamedObject,
    ReferenceableElement,
    TargetObjectType
 } from '@crossmodel/protocol';
-import { AutoComplete } from 'primereact/autocomplete';
+import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
+import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
-interface AttributeMappingSourcesDataGridProps {
-   attributeMapping: AttributeMapping;
+interface AttributeMappingSourceEditorProps {
+   options: any;
    mappingIdx: number;
 }
 
-export interface AttributeMappingSourceRow extends Omit<AttributeMappingSource & CrossModelElement, 'value'> {
-   idx: number;
-   value: string;
-}
+function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps): React.ReactElement {
+   const { options, mappingIdx } = props;
+   const { editorCallback } = options;
 
-export function AttributeMappingSourcesDataGrid({
-   attributeMapping,
-   mappingIdx
-}: AttributeMappingSourcesDataGridProps): React.ReactElement {
-   const dispatch = useModelDispatch();
+   const [currentValue, setCurrentValue] = React.useState(options.value);
+   const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
-   const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+   const isDropdownClicked = React.useRef(false);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
@@ -51,27 +46,86 @@ export function AttributeMappingSourcesDataGrid({
    );
 
    const search = React.useCallback(
-      async (event: { query: string }) => {
+      async (event: AutoCompleteCompleteEvent) => {
          const elements = await queryApi.findReferenceableElements(referenceCtx);
-         setSuggestions(
-            elements.map(e => ({
-               ...e,
-               label: (e as unknown as NamedObject).name || (e as unknown as NamedObject).$globalId || 'Unnamed Element'
-            }))
+         const filteredSuggestions = elements.filter(element =>
+            isDropdownClicked.current ? true : event.query ? (element.label || '').toLowerCase().includes(event.query.toLowerCase()) : true
          );
+         setSuggestions(filteredSuggestions);
+         isDropdownClicked.current = false;
       },
       [queryApi, referenceCtx]
    );
 
+   const onChange = (e: AutoCompleteChangeEvent) => {
+      const value = e.value;
+      if (typeof value === 'object' && value !== null && value.label) {
+         setCurrentValue(value.label);
+         if (editorCallback) {
+            editorCallback(value.label);
+         }
+      } else {
+         setCurrentValue(value);
+         if (editorCallback) {
+            editorCallback(value);
+         }
+      }
+   };
+
+   return (
+      <AutoComplete
+         value={currentValue ?? ''}
+         suggestions={suggestions}
+         field='label'
+         completeMethod={search}
+         dropdown
+         className='w-full'
+         onDropdownClick={() => (isDropdownClicked.current = true)}
+         onChange={onChange}
+         disabled={readonly}
+         autoFocus
+      />
+   );
+}
+
+interface AttributeMappingSourcesDataGridProps {
+   attributeMapping: AttributeMapping;
+   mappingIdx: number;
+}
+
+export interface AttributeMappingSourceRow extends Omit<AttributeMappingSource & CrossModelElement, 'value'> {
+   idx: number;
+   id: string;
+   value: string;
+}
+
+export function AttributeMappingSourcesDataGrid({
+   attributeMapping,
+   mappingIdx
+}: AttributeMappingSourcesDataGridProps): React.ReactElement {
+   const dispatch = useModelDispatch();
+   const readonly = useReadonly();
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+   const gridData = React.useMemo(
+      () =>
+         (attributeMapping.sources || []).map((source, idx) => ({
+            ...source,
+            idx,
+            id: (source as any).id || idx.toString(),
+            value: String(source.value || '')
+         })) as AttributeMappingSourceRow[],
+      [attributeMapping.sources]
+   );
+
    const onSourceAdd = React.useCallback(
       (sourceToAdd: AttributeMappingSourceRow) => {
-         // Clear any previous validation errors
          setValidationErrors({});
-
-         // Create a new source with empty value
+         const newId = sourceToAdd.id || gridData.length.toString();
          const sourceData: AttributeMappingSource = {
             $type: AttributeMappingSourceType,
-            value: ''
+            value: sourceToAdd.value
          };
 
          dispatch({
@@ -79,8 +133,9 @@ export function AttributeMappingSourcesDataGrid({
             mappingIdx,
             source: sourceData
          });
+         setEditingRows({ [newId]: true });
       },
-      [dispatch, mappingIdx]
+      [dispatch, mappingIdx, gridData]
    );
 
    const onSourceDelete = React.useCallback(
@@ -98,7 +153,8 @@ export function AttributeMappingSourcesDataGrid({
             return;
          }
          setValidationErrors({});
-         dispatch({ type: 'attribute-mapping:update-source', mappingIdx, source: sourceToUpdate, sourceIdx: sourceToUpdate.idx });
+         const { id, idx, ...rest } = sourceToUpdate;
+         dispatch({ type: 'attribute-mapping:update-source', mappingIdx, source: rest, sourceIdx: sourceToUpdate.idx });
       },
       [dispatch, mappingIdx]
    );
@@ -130,29 +186,18 @@ export function AttributeMappingSourcesDataGrid({
          {
             field: 'value',
             header: 'Value',
-            editor: true,
-            body: rowData => (
-               <AutoComplete
-                  value={rowData.value}
-                  suggestions={suggestions}
-                  completeMethod={search}
-                  field='label'
-                  dropdown
-                  forceSelection
-                  onChange={e => onSourceUpdate({ ...rowData, value: e.value.label })}
-                  disabled={readonly}
-               />
-            )
+            body: rowData => rowData.value,
+            editor: (options: any) => <AttributeMappingSourceEditor options={options} mappingIdx={mappingIdx} />
          }
       ],
-      [suggestions, search, onSourceUpdate, readonly]
+      [mappingIdx]
    );
 
-   const defaultEntry = React.useMemo<AttributeMappingSourceRow>(
+   const defaultEntry = React.useMemo<Partial<AttributeMappingSourceRow>>(
       () => ({
          $type: AttributeMappingSourceType,
          value: '',
-         idx: -1
+         id: ''
       }),
       []
    );
@@ -161,21 +206,12 @@ export function AttributeMappingSourcesDataGrid({
       return <></>;
    }
 
-   const gridData = React.useMemo(
-      () =>
-         (attributeMapping.sources || []).map((source: AttributeMappingSource, idx: number) => ({
-            ...source,
-            idx,
-            value: String(source.value || '')
-         })),
-      [attributeMapping.sources]
-   );
-
    return (
       <PrimeDataGrid
+         className='attribute-mapping-sources-datatable'
          columns={columns}
          data={gridData}
-         keyField='idx'
+         keyField='id'
          height='300px'
          onRowAdd={onSourceAdd}
          onRowUpdate={onSourceUpdate}
@@ -187,6 +223,8 @@ export function AttributeMappingSourcesDataGrid({
          validationErrors={validationErrors}
          noDataMessage='No source expressions'
          addButtonLabel='Add Source'
+         editingRows={editingRows}
+         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
       />
    );
 }

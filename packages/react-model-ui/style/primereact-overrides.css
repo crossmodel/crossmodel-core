@@ -269,6 +269,7 @@
 .relationship-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .source-object-condition-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .source-object-dependency-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.attribute-mapping-sources-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .data-model-dependencies-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .relationship-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
 span.w-full.p-autocomplete {
