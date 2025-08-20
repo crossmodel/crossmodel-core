@@ -24,7 +24,7 @@
 /* Global components */
 .p-component {
    font-family: var(--theia-ui-font-family);
-   font-size: 1rem;
+   font-size: 0.8rem;
    color: var(--text-color);
 }
 
@@ -34,7 +34,7 @@
    background: var(--primary-color);
    border: 1px solid var(--primary-color);
    padding: 0.5rem;
-   font-size: 1rem;
+   font-size: 0.8rem;
    transition:
       background-color 0.2s,
       color 0.2s,
@@ -44,6 +44,14 @@
 .p-button:enabled:hover {
    background: var(--primary-color);
    opacity: 0.9;
+}
+.p-icon {
+   width: 0.8rem;
+   height: 0.8rem;
+}
+
+.pi {
+   font-size: 0.8rem;
 }
 
 /* DataGrid styles */
@@ -96,7 +104,7 @@
    color: var(--text-color);
    border: 1px solid var(--surface-border);
    padding: 0.5rem;
-   font-size: 1rem;
+   font-size: 0.8rem;
    transition:
       background-color 0.2s,
       color 0.2s,
@@ -189,12 +197,18 @@
    border-top-right-radius: 6px;
    border-bottom-right-radius: 6px;
 }
+
 .p-autocomplete-dropdown.p-button:hover,
 .p-autocomplete-dropdown.p-button:focus {
    background: var(--surface-card);
    border-color: var(--primary-color);
    outline: 0;
    box-shadow: none;
+}
+
+/* AutoComplete Dropdown Arrow Icon Rotation */
+.autocomplete-dropdown-open .p-autocomplete-dropdown svg {
+   transform: rotate(180deg);
 }
 
 .p-datatable {
@@ -220,6 +234,7 @@
    background: var(--theia-titleBar-activeBackground);
    color: var(--theia-titleBar-activeForeground);
    padding: 0.5rem 1rem;
+   font-size: 0.8rem;
 }
 
 .p-accordion .p-accordion-content {

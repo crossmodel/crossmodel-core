@@ -4,7 +4,13 @@
 
 import { AllDataModelTypeInfos, CrossModelValidationErrors, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
 import { debounce } from 'lodash';
-import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
+import {
+   AutoComplete,
+   AutoCompleteChangeEvent,
+   AutoCompleteCompleteEvent,
+   AutoCompleteDropdownClickEvent,
+   AutoCompleteSelectEvent
+} from 'primereact/autocomplete';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
@@ -29,6 +35,9 @@ export function DataModelForm(): React.ReactElement {
    const [currentTypeValue, setCurrentTypeValue] = React.useState<DataModelTypeInfo | undefined>(
       AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]
    );
+   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+   const autoCompleteRef = React.useRef<AutoComplete>(null);
+   const dropdownJustOpened = React.useRef(false);
 
    React.useEffect(() => {
       setCurrentTypeValue(AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]);
@@ -69,6 +78,7 @@ export function DataModelForm(): React.ReactElement {
          if (e.value) {
             debouncedDispatch(e.value.value);
          }
+         setIsDropdownOpen(false);
       },
       [debouncedDispatch]
    );
@@ -91,6 +101,50 @@ export function DataModelForm(): React.ReactElement {
       }
       setFilteredTypes(_filteredTypes);
    };
+
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+      if (isDropdownOpen && !dropdownJustOpened.current) {
+         // If dropdown is open and wasn't just opened, close it
+         setTimeout(() => {
+            autoCompleteRef.current?.hide();
+            setIsDropdownOpen(false);
+         }, 10);
+      }
+      // Reset the flag after a short delay
+      setTimeout(() => {
+         dropdownJustOpened.current = false;
+      }, 100);
+   };
+
+   const onShow = () => {
+      setIsDropdownOpen(true);
+      dropdownJustOpened.current = true;
+   };
+
+   const onHide = () => {
+      setIsDropdownOpen(false);
+      dropdownJustOpened.current = false;
+   };
+
+   // Handle click outside to close dropdown
+   React.useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+         if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
+            setTimeout(() => {
+               const panel = autoCompleteRef.current?.getOverlay();
+               if (panel && panel.style.display !== 'none') {
+                  autoCompleteRef.current?.hide();
+                  setIsDropdownOpen(false);
+               }
+            }, 100);
+         }
+      };
+
+      document.addEventListener('mouseup', handleClickOutside);
+      return () => {
+         document.removeEventListener('mouseup', handleClickOutside);
+      };
+   }, []);
 
    if (!dataModel) {
       return <div>No data model found</div>;
@@ -131,6 +185,7 @@ export function DataModelForm(): React.ReactElement {
             <div className='p-field p-fluid' style={{ marginBottom: '2rem', marginTop: '1rem' }}>
                <span className='p-float-label'>
                   <AutoComplete<DataModelTypeInfo>
+                     ref={autoCompleteRef}
                      id='type'
                      value={currentTypeValue}
                      suggestions={filteredTypes}
@@ -140,8 +195,11 @@ export function DataModelForm(): React.ReactElement {
                      onSelect={handleTypeSelect}
                      disabled={readonly}
                      required={true}
-                     className={diagnostics.type?.length ? 'p-invalid' : ''}
+                     className={`${diagnostics.type?.length ? 'p-invalid' : ''} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
                      dropdown
+                     onDropdownClick={handleDropdownClick}
+                     onShow={onShow}
+                     onHide={onHide}
                   />
                   <label htmlFor='type'>Type</label>
                </span>

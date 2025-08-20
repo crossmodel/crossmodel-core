@@ -26,6 +26,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
    const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
+   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
    const isDropdownClicked = React.useRef(false);
@@ -78,11 +79,21 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
          if (isVisible) {
             // If visible, hide it
             autoCompleteRef.current?.hide();
+            setIsDropdownOpen(false);
          } else {
             // If not visible, show it by triggering search with empty query
             autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+            setIsDropdownOpen(true);
          }
       }, 10);
+   };
+
+   const onShow = () => {
+      setIsDropdownOpen(true);
+   };
+
+   const onHide = () => {
+      setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
@@ -94,6 +105,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
                const panel = autoCompleteRef.current?.getOverlay();
                if (panel && panel.style.display !== 'none') {
                   autoCompleteRef.current?.hide();
+                  setIsDropdownOpen(false);
                }
             }, 100);
          }
@@ -113,9 +125,11 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
          field='label'
          completeMethod={search}
          dropdown
-         className='w-full'
+         className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
          onDropdownClick={handleDropdownClick}
          onChange={onChange}
+         onShow={onShow}
+         onHide={onHide}
          disabled={readonly}
          autoFocus
       />

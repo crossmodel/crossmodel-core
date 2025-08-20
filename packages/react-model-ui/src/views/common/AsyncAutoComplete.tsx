@@ -36,6 +36,7 @@ export default function AsyncAutoComplete<T = string>({
    const [loading, setLoading] = React.useState(false);
    const readonly = useReadonly() || disabled;
    const autoCompleteRef = React.useRef<AutoComplete>(null);
+   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
    const loadSuggestions = async (event: AutoCompleteCompleteEvent) => {
       setLoading(true);
@@ -64,11 +65,21 @@ export default function AsyncAutoComplete<T = string>({
          if (isVisible) {
             // If visible, hide it
             autoCompleteRef.current?.hide();
+            setIsDropdownOpen(false);
          } else {
             // If not visible, trigger search to show options
             autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+            setIsDropdownOpen(true);
          }
       }, 10);
+   };
+
+   const onShow = () => {
+      setIsDropdownOpen(true);
+   };
+
+   const onHide = () => {
+      setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
@@ -80,6 +91,7 @@ export default function AsyncAutoComplete<T = string>({
                const panel = autoCompleteRef.current?.getOverlay();
                if (panel && panel.style.display !== 'none') {
                   autoCompleteRef.current?.hide();
+                  setIsDropdownOpen(false);
                }
             }, 100);
          }
@@ -101,9 +113,11 @@ export default function AsyncAutoComplete<T = string>({
                completeMethod={loadSuggestions}
                onChange={e => onChange({ value: e.value })}
                disabled={readonly}
-               className={`${className} ${error ? 'p-invalid' : ''}`}
+               className={`${className} ${error ? 'p-invalid' : ''} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
                dropdown
                onDropdownClick={handleDropdownClick}
+               onShow={onShow}
+               onHide={onHide}
                forceSelection={forceSelection}
                field={field ? String(field) : undefined}
             />

@@ -46,6 +46,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
    const [suggestions, setSuggestions] = React.useState<string[]>([]);
+   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
    const relationship = useRelationship();
    const readonly = useReadonly();
@@ -93,11 +94,21 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
          if (isVisible) {
             // If visible, hide it
             autoCompleteRef.current?.hide();
+            setIsDropdownOpen(false);
          } else {
             // If not visible, show it by triggering search with empty query
             autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+            setIsDropdownOpen(true);
          }
       }, 10);
+   };
+
+   const onShow = () => {
+      setIsDropdownOpen(true);
+   };
+
+   const onHide = () => {
+      setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
@@ -109,6 +120,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
                const panel = autoCompleteRef.current?.getOverlay();
                if (panel && panel.style.display !== 'none') {
                   autoCompleteRef.current?.hide();
+                  setIsDropdownOpen(false);
                }
             }, 100);
          }
@@ -127,10 +139,12 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
          suggestions={suggestions}
          completeMethod={search}
          dropdown
-         className='w-full'
+         className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
          onDropdownClick={handleDropdownClick}
          onChange={e => setCurrentValue(e.value)}
          onSelect={onSelect}
+         onShow={onShow}
+         onHide={onHide}
          disabled={readonly}
          autoFocus
       />
