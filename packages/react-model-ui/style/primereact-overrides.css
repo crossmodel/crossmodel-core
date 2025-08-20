@@ -57,6 +57,11 @@
 /* DataGrid styles */
 .p-datatable .p-datatable-tbody > tr > td {
    padding: 0.25rem;
+   padding-left: 0.5rem;
+}
+
+.p-datatable .p-datatable-tbody > tr > td.p-cell-editing {
+   padding-left: 0;
 }
 
 .p-datatable .p-datatable-header {
@@ -115,7 +120,8 @@
    border-color: var(--primary-color);
 }
 
-.p-inputtext:enabled:focus {
+.p-inputtext:enabled:focus,
+.p-inputtext:enabled:focus ~ .p-autocomplete-dropdown {
    outline: 0 none;
    outline-offset: 0;
    box-shadow: 0 0 0 0.2rem var(--focus-ring);
@@ -169,12 +175,6 @@
 .p-checkbox .p-checkbox-box.p-highlight {
    border-color: var(--primary-color);
    background: var(--primary-color);
-}
-.p-autocomplete-input:enabled:focus,
-.p-dropdown:focus,
-.p-multiselect:focus {
-   box-shadow: 0 0 0 1px var(--theia-focusBorder);
-   border-color: var(--theia-focusBorder);
 }
 
 .p-button {

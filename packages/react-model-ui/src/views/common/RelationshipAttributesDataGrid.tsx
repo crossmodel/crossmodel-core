@@ -270,6 +270,7 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
          {
             field: 'parent',
             header: 'Parent',
+            headerStyle: { width: '40%' },
             editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={true} />
          },
          {
