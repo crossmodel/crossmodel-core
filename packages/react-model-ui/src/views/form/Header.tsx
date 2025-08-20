@@ -45,7 +45,7 @@ export function Header({ name, id, iconClass }: HeaderProps): React.ReactElement
    );
 
    return (
-      <div style={{ position: 'sticky', top: 0, zIndex: 1000, backgroundColor: 'var(--surface-b)' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 1000, backgroundColor: 'var(--theia-titleBar-activeBackground)' }}>
          {ModelDiagnostic.hasParseErrors(diagnostics) && createEditorError(ERRONEOUS_MODEL)}
          <Toolbar
             start={startContent}

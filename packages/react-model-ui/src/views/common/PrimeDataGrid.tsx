@@ -142,7 +142,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    return (
       <div>
-         {onRowAdd && !readonly && <Toolbar className='mb-2' left={toolbarContent} />}
+         {onRowAdd && !readonly && <Toolbar start={toolbarContent} />}
          <DataTable
             ref={tableRef}
             value={data}
