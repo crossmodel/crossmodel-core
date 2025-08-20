@@ -292,7 +292,7 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
          columns={columns}
          data={gridData}
          keyField='id' // Changed keyField to id
-         height='300px'
+         height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}

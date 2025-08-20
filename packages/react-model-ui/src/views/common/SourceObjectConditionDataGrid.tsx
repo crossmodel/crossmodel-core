@@ -394,7 +394,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          columns={columns}
          data={gridData}
          keyField='id'
-         height='300px'
+         height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}

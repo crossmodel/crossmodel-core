@@ -273,7 +273,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
          columns={columns}
          data={gridData}
          keyField='id'
-         height='300px'
+         height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}

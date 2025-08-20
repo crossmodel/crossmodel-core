@@ -266,7 +266,7 @@ export function AttributeMappingSourcesDataGrid({
          columns={columns}
          data={gridData}
          keyField='id'
-         height='300px'
+         height='auto'
          onRowAdd={onSourceAdd}
          onRowUpdate={onSourceUpdate}
          onRowDelete={onSourceDelete}
