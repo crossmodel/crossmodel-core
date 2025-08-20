@@ -1,4 +1,4 @@
-import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import * as React from 'react';
 import { useReadonly } from '../../ModelContext';
@@ -55,6 +55,22 @@ export default function AsyncAutoComplete<T = string>({
       }
    };
 
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+      // Check if dropdown is currently visible
+      setTimeout(() => {
+         const panel = autoCompleteRef.current?.getOverlay();
+         const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
+
+         if (isVisible) {
+            // If visible, hide it
+            autoCompleteRef.current?.hide();
+         } else {
+            // If not visible, trigger search to show options
+            autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+         }
+      }, 10);
+   };
+
    // Handle click outside to close dropdown
    React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -87,6 +103,7 @@ export default function AsyncAutoComplete<T = string>({
                disabled={readonly}
                className={`${className} ${error ? 'p-invalid' : ''}`}
                dropdown
+               onDropdownClick={handleDropdownClick}
                forceSelection={forceSelection}
                field={field ? String(field) : undefined}
             />

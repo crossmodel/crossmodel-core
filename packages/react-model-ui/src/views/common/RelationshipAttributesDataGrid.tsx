@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import { CrossReferenceContext, ModelDiagnostic, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
-import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
@@ -82,6 +82,24 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
       }
    };
 
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+      isDropdownClicked.current = true;
+
+      // Check if dropdown is currently visible
+      setTimeout(() => {
+         const panel = autoCompleteRef.current?.getOverlay();
+         const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
+
+         if (isVisible) {
+            // If visible, hide it
+            autoCompleteRef.current?.hide();
+         } else {
+            // If not visible, show it by triggering search with empty query
+            autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+         }
+      }, 10);
+   };
+
    // Handle click outside to close dropdown
    React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -110,7 +128,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
          completeMethod={search}
          dropdown
          className='w-full'
-         onDropdownClick={() => (isDropdownClicked.current = true)}
+         onDropdownClick={handleDropdownClick}
          onChange={e => setCurrentValue(e.value)}
          onSelect={onSelect}
          disabled={readonly}

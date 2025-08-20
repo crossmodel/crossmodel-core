@@ -14,7 +14,13 @@ import {
    StringLiteralType,
    quote
 } from '@crossmodel/protocol';
-import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
+import {
+   AutoComplete,
+   AutoCompleteChangeEvent,
+   AutoCompleteCompleteEvent,
+   AutoCompleteDropdownClickEvent,
+   AutoCompleteSelectEvent
+} from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
@@ -91,6 +97,24 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
       }
    };
 
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+      isDropdownClicked.current = true;
+
+      // Check if dropdown is currently visible
+      setTimeout(() => {
+         const panel = autoCompleteRef.current?.getOverlay();
+         const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
+
+         if (isVisible) {
+            // If visible, hide it
+            autoCompleteRef.current?.hide();
+         } else {
+            // If not visible, show it by triggering search with empty query
+            autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+         }
+      }, 10);
+   };
+
    // Handle click outside to close dropdown
    React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -120,7 +144,7 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
          completeMethod={search}
          dropdown
          className='w-full'
-         onDropdownClick={() => (isDropdownClicked.current = true)}
+         onDropdownClick={handleDropdownClick}
          onChange={onChange}
          onSelect={onSelect}
          disabled={readonly}
