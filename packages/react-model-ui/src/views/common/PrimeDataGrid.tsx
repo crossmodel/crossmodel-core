@@ -1,6 +1,6 @@
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
-import { DataTable, DataTableRowEditCompleteEvent, DataTableRowEditEvent } from 'primereact/datatable';
+import { DataTable, DataTableRowClickEvent, DataTableRowEditCompleteEvent, DataTableRowEditEvent } from 'primereact/datatable';
 import { InputText } from 'primereact/inputtext';
 import { Toolbar } from 'primereact/toolbar';
 import * as React from 'react';
@@ -80,6 +80,28 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const onRowEditComplete = (e: DataTableRowEditCompleteEvent) => {
       if (onRowUpdate) {
          onRowUpdate(e.newData as T);
+      }
+   };
+
+   const handleRowDoubleClick = (e: DataTableRowClickEvent) => {
+      const target = e.originalEvent.target as HTMLElement;
+
+      // Do not trigger edit mode if the double-click was on an interactive element like a button, link, or input.
+      if (target.closest('button, a, input, select, textarea')) {
+         return;
+      }
+
+      if (editable && !readonly && onRowEditChange) {
+         const rowData = e.data as T;
+         const rowKey = rowData[keyField];
+         if (rowKey !== undefined) {
+            const newEditingRows = { [rowKey]: true };
+            onRowEditChange({
+               originalEvent: e.originalEvent,
+               data: newEditingRows,
+               index: e.index
+            });
+         }
       }
    };
 
@@ -176,6 +198,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             editMode={editable ? 'row' : undefined}
             dataKey={keyField as string}
             onRowEditComplete={onRowEditComplete}
+            onRowDoubleClick={handleRowDoubleClick}
             editingRows={editingRows}
             onRowEditChange={onRowEditChange}
             scrollable
