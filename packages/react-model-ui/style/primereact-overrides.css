@@ -238,9 +238,9 @@
 }
 
 .p-accordion .p-accordion-content {
-   background: var(--theia-editor-background);
-   color: var(--theia-editor-foreground);
-   border: 1px solid var(--theia-widget-border);
+   background: var(--surface-section);
+   color: var(--text-color);
+   border: 1px solid var(--surface-border);
    padding: 1rem 0.5rem;
 }
 
