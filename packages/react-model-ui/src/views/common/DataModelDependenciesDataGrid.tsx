@@ -241,13 +241,15 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          {
             field: 'datamodel',
             header: 'Data Model',
-            editor: (options: any) => <DataModelDependencyEditor options={options} />
+            editor: (options: any) => <DataModelDependencyEditor options={options} />,
+            sortable: true
          },
          {
             field: 'version',
             header: 'Version',
             editor: true,
-            headerStyle: { width: '150px' }
+            headerStyle: { width: '150px' },
+            sortable: true
          }
       ],
       []

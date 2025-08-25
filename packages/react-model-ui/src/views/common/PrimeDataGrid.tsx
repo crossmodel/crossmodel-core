@@ -231,13 +231,14 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             showGridlines
             size='small'
             emptyMessage={noDataMessage}
+            removableSort // Enable removable sort
          >
             {columns.map(col => (
                <Column
                   key={col.field as string}
                   field={col.field as string}
                   header={col.header}
-                  sortable={col.sortable}
+                  sortable={col.sortable} // Enable sorting for the column
                   body={col.body}
                   editor={typeof col.editor === 'function' ? col.editor : col.editor ? cellEditor : undefined}
                   headerStyle={col.headerStyle}
