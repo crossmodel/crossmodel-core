@@ -340,7 +340,7 @@ async function parseDataModelFile(uri?: URI, langiumDocuments?: CrossModelLangiu
       return undefined;
    }
    try {
-      const document = await langiumDocuments.getOrCreateDocument(uri);
+      const document = await langiumDocuments.updateOrCreateDocument(uri);
       if (document.parseResult.lexerErrors.length > 0 || document.parseResult.parserErrors.length > 0) {
          console.error('Parse errors in datamodel file:', document.parseResult.lexerErrors, document.parseResult.parserErrors);
          return undefined;
