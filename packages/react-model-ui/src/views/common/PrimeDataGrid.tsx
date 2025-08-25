@@ -108,54 +108,78 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const allActionsTemplate = (rowData: T, props: any) => {
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing;
 
-      return isEditing ? (
-         <div className='flex gap-1'>
+      const buttons: React.ReactElement[] = [];
+
+      if (isEditing) {
+         buttons.push(
             <Button
                icon='pi pi-check'
                className='p-button-text p-button-success p-row-action-button'
                onClick={props.rowEditor.onSaveClick}
                tooltip='Save'
             />
+         );
+         buttons.push(
             <Button
                icon='pi pi-times'
                className='p-button-text p-button-danger p-row-action-button'
                onClick={props.rowEditor.onCancelClick}
                tooltip='Cancel'
             />
-         </div>
-      ) : (
-         <div className='flex gap-1'>
-            {editable && !readonly && props.rowEditor && (
+         );
+      } else {
+         if (editable && !readonly && props.rowEditor) {
+            buttons.push(
                <Button
                   icon='pi pi-pencil'
                   className='p-button-text p-row-action-button'
                   onClick={props.rowEditor.onInitClick}
                   tooltip='Edit'
                />
-            )}
-            {onRowMoveUp && !readonly && (
+            );
+         }
+         if (onRowMoveUp && !readonly) {
+            buttons.push(
                <Button
                   icon='pi pi-arrow-up'
                   className='p-button-text p-row-action-button'
                   onClick={() => onRowMoveUp(rowData)}
                   tooltip='Move Up'
                />
-            )}
-            {onRowMoveDown && !readonly && (
+            );
+         }
+         if (onRowMoveDown && !readonly) {
+            buttons.push(
                <Button
                   icon='pi pi-arrow-down'
                   className='p-button-text p-row-action-button'
                   onClick={() => onRowMoveDown(rowData)}
                   tooltip='Move Down'
                />
-            )}
-            {onRowDelete && !readonly && (
+            );
+         }
+         if (onRowDelete && !readonly) {
+            buttons.push(
                <Button
                   icon='pi pi-trash'
                   className='p-button-text p-button-danger p-row-action-button'
                   onClick={() => onRowDelete(rowData)}
                   tooltip='Delete'
                />
+            );
+         }
+      }
+
+      return (
+         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+            {buttons.map((button, index) =>
+               React.cloneElement(button, {
+                  key: button.key || index, // Ensure a key for React list rendering
+                  style: {
+                     ...button.props.style,
+                     ...(index < buttons.length - 1 ? { marginRight: '0.5rem' } : {})
+                  }
+               })
             )}
          </div>
       );
