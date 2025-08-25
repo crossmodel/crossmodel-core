@@ -159,6 +159,10 @@
    height: 20px;
 }
 
+.p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox {
+   margin-left: 0.3rem;
+}
+
 /* Apply only to dark theme checkbox icon container, var(--surface-card) color makes in invisible in light theme */
 .dark-theme .p-checkbox .p-checkbox-box {
    border: 2px solid var(--surface-border);
