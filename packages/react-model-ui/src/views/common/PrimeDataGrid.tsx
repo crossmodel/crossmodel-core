@@ -83,34 +83,61 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    };
 
-   const actionTemplate = (rowData: T) => (
-      <div className='flex gap-2'>
-         {onRowDelete && !readonly && (
+   const allActionsTemplate = (rowData: T, props: any) => {
+      const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing;
+
+      return isEditing ? (
+         <div className='flex gap-1'>
             <Button
-               icon='pi pi-trash'
-               className='p-button-text p-button-danger p-btn-sm-icon mr-1-rem'
-               onClick={() => onRowDelete(rowData)}
-               tooltip='Delete'
+               icon='pi pi-check'
+               className='p-button-text p-button-success p-row-action-button'
+               onClick={props.rowEditor.onSaveClick}
+               tooltip='Save'
             />
-         )}
-         {onRowMoveUp && !readonly && (
             <Button
-               icon='pi pi-arrow-up'
-               className='p-button-text p-btn-sm-icon mr-1-rem'
-               onClick={() => onRowMoveUp(rowData)}
-               tooltip='Move Up'
+               icon='pi pi-times'
+               className='p-button-text p-button-danger p-row-action-button'
+               onClick={props.rowEditor.onCancelClick}
+               tooltip='Cancel'
             />
-         )}
-         {onRowMoveDown && !readonly && (
-            <Button
-               icon='pi pi-arrow-down'
-               className='p-button-text p-btn-sm-icon mr-1-rem'
-               onClick={() => onRowMoveDown(rowData)}
-               tooltip='Move Down'
-            />
-         )}
-      </div>
-   );
+         </div>
+      ) : (
+         <div className='flex gap-1'>
+            {editable && !readonly && props.rowEditor && (
+               <Button
+                  icon='pi pi-pencil'
+                  className='p-button-text p-row-action-button'
+                  onClick={props.rowEditor.onInitClick}
+                  tooltip='Edit'
+               />
+            )}
+            {onRowMoveUp && !readonly && (
+               <Button
+                  icon='pi pi-arrow-up'
+                  className='p-button-text p-row-action-button'
+                  onClick={() => onRowMoveUp(rowData)}
+                  tooltip='Move Up'
+               />
+            )}
+            {onRowMoveDown && !readonly && (
+               <Button
+                  icon='pi pi-arrow-down'
+                  className='p-button-text p-row-action-button'
+                  onClick={() => onRowMoveDown(rowData)}
+                  tooltip='Move Down'
+               />
+            )}
+            {onRowDelete && !readonly && (
+               <Button
+                  icon='pi pi-trash'
+                  className='p-button-text p-button-danger p-row-action-button'
+                  onClick={() => onRowDelete(rowData)}
+                  tooltip='Delete'
+               />
+            )}
+         </div>
+      );
+   };
 
    const cellEditor = (options: any) => (
       <InputText
@@ -170,8 +197,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   style={col.style}
                />
             ))}
-            {(onRowDelete || onRowMoveUp || onRowMoveDown) && <Column body={actionTemplate} headerStyle={{ width: '8rem' }} />}
-            {editable && !readonly && <Column rowEditor headerStyle={{ width: '7rem' }} />}
+            {(onRowDelete || onRowMoveUp || onRowMoveDown || (editable && !readonly)) && (
+               <Column header='Actions' rowEditor={editable && !readonly} body={allActionsTemplate} style={{ width: '10rem' }} />
+            )}
          </DataTable>
       </div>
    );

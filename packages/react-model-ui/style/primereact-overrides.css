@@ -290,3 +290,25 @@
 span.w-full.p-autocomplete {
    width: 100%;
 }
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-action-button.p-button {
+   width: 2rem;
+   height: 2rem;
+   padding: 0;
+   border-radius: 50%;
+   color: #6b7280;
+   border: 0 none;
+   background: transparent;
+   box-shadow: none;
+   transition:
+      background-color 0.2s,
+      color 0.2s,
+      box-shadow 0.2s;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-action-button.p-button:enabled:hover {
+   color: #374151;
+   background-color: transparent;
+   background: #f3f4f6;
+   box-shadow: none;
+}
