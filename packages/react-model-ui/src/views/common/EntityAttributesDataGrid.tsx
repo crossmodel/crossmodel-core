@@ -137,7 +137,10 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             field: 'name',
             header: 'Name',
             editor: !readonly,
-            headerStyle: { width: '20%' }
+            headerStyle: { width: '20%' },
+            sortable: true,
+            filter: true,
+            filterType: 'text'
          },
          {
             field: 'datatype',
@@ -151,7 +154,12 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   disabled={readonly}
                   className='w-full'
                />
-            )
+            ),
+            sortable: true,
+            filter: true,
+            filterType: 'multiselect',
+            filterOptions: dataTypeOptions,
+            showFilterMatchModes: false
          },
          {
             field: 'identifier',
@@ -171,15 +179,22 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      disabled={readonly}
                   />
                </div>
-            )
+            ),
+            sortable: true,
+            filter: true,
+            filterType: 'boolean',
+            showFilterMatchModes: false
          },
          {
             field: 'description',
             header: 'Description',
-            editor: true
+            editor: true,
+            sortable: true,
+            filter: true,
+            filterType: 'text'
          }
       ],
-      [dataTypeOptions, readonly]
+      [readonly]
    );
 
    if (!entity) {

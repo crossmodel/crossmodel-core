@@ -155,6 +155,11 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       [dataModel.dependencies]
    );
 
+   const datamodelOptions = React.useMemo(() => {
+      const uniqueDatamodels = [...new Set(gridData.map(item => item.datamodel).filter(Boolean))];
+      return uniqueDatamodels.map(dm => ({ label: dm, value: dm }));
+   }, [gridData]);
+
    const defaultEntry = React.useMemo<Partial<DataModelDependencyRow>>(
       () => ({
          $type: DataModelDependencyType,
@@ -243,7 +248,10 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             header: 'Data Model',
             editor: (options: any) => <DataModelDependencyEditor options={options} />,
             sortable: true,
-            filterType: 'text'
+            filter: true,
+            filterType: 'multiselect',
+            filterOptions: datamodelOptions,
+            showFilterMatchModes: false
          },
          {
             field: 'version',
@@ -254,7 +262,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             filterType: 'text'
          }
       ],
-      []
+      [datamodelOptions]
    );
 
    if (!dataModel) {

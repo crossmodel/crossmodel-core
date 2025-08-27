@@ -11,7 +11,9 @@ import {
 } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
+import { MultiSelect } from 'primereact/multiselect';
 import { Toolbar } from 'primereact/toolbar';
+import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
 
 export interface GridColumn<T> {
@@ -22,8 +24,9 @@ export interface GridColumn<T> {
    body?: (rowData: T) => React.ReactNode;
    headerStyle?: React.CSSProperties;
    style?: React.CSSProperties;
-   filterType?: 'text' | 'dropdown';
+   filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean';
    filterOptions?: any[];
+   showFilterMatchModes?: boolean;
 }
 
 export interface PrimeDataGridProps<T> {
@@ -74,9 +77,15 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          global: { value: null, matchMode: FilterMatchMode.CONTAINS }
       };
       columns.forEach(col => {
+         let matchMode = FilterMatchMode.CONTAINS;
+         if (col.filterType === 'dropdown' || col.filterType === 'boolean') {
+            matchMode = FilterMatchMode.EQUALS;
+         } else if (col.filterType === 'multiselect') {
+            matchMode = FilterMatchMode.IN;
+         }
          initialFilters[col.field as string] = {
             value: null,
-            matchMode: col.filterType === 'dropdown' ? FilterMatchMode.EQUALS : FilterMatchMode.CONTAINS
+            matchMode
          };
       });
       return initialFilters;
@@ -235,7 +244,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       </React.Fragment>
    );
 
-   const filterTemplate = (options: any, filterType?: 'text' | 'dropdown', filterOptions?: any[]) => {
+   const filterTemplate = (options: any, filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean', filterOptions?: any[]) => {
       if (filterType === 'dropdown') {
          return (
             <Dropdown
@@ -247,6 +256,26 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                className='p-column-filter'
                showClear
             />
+         );
+      }
+      if (filterType === 'multiselect') {
+         return (
+            <MultiSelect
+               value={options.value}
+               options={filterOptions}
+               onChange={e => options.filterCallback(e.value)}
+               placeholder='Any'
+               className='p-column-filter'
+               maxSelectedLabels={1}
+               showClear
+            />
+         );
+      }
+      if (filterType === 'boolean') {
+         return (
+            <div className='flex align-items-center justify-content-center'>
+               <TriStateCheckbox value={options.value} onChange={e => options.filterCallback(e.value)} />
+            </div>
          );
       }
       return (
@@ -293,8 +322,15 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   headerStyle={col.headerStyle}
                   style={col.style}
                   filter
+                  showFilterMatchModes={col.showFilterMatchModes}
                   filterElement={(options: any) => filterTemplate(options, col.filterType, col.filterOptions)}
-                  filterMatchMode={col.filterType === 'dropdown' ? FilterMatchMode.EQUALS : FilterMatchMode.CONTAINS}
+                  filterMatchMode={
+                     col.filterType === 'dropdown' || col.filterType === 'boolean'
+                        ? FilterMatchMode.EQUALS
+                        : col.filterType === 'multiselect'
+                          ? FilterMatchMode.IN
+                          : FilterMatchMode.CONTAINS
+                  }
                />
             ))}
             {(onRowDelete || onRowMoveUp || onRowMoveDown || (editable && !readonly)) && (

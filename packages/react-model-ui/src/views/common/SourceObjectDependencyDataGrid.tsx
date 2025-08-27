@@ -164,6 +164,11 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       [sourceObject.dependencies]
    );
 
+   const sourceOptions = React.useMemo(() => {
+      const uniqueSources = [...new Set(gridData.map(item => item.source).filter(Boolean))];
+      return uniqueSources.map(s => ({ label: s, value: s }));
+   }, [gridData]);
+
    const onRowUpdate = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
          const errors = validateField(dependency);
@@ -249,10 +254,15 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             field: 'source',
             header: 'Source',
             body: rowData => rowData.source,
-            editor: (options: any) => <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} />
+            editor: (options: any) => <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} />,
+            sortable: true,
+            filter: true,
+            filterType: 'multiselect',
+            filterOptions: sourceOptions,
+            showFilterMatchModes: false
          }
       ],
-      [sourceObject]
+      [sourceObject, sourceOptions]
    );
 
    const defaultEntry = React.useMemo<Partial<SourceObjectDependencyRow>>(

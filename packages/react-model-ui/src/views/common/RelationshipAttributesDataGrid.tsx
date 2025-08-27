@@ -179,6 +179,16 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
       [relationship.attributes]
    );
 
+   const parentOptions = React.useMemo(() => {
+      const uniqueParents = [...new Set(gridData.map(item => item.parent).filter(Boolean))];
+      return uniqueParents.map(p => ({ label: p, value: p }));
+   }, [gridData]);
+
+   const childOptions = React.useMemo(() => {
+      const uniqueChildren = [...new Set(gridData.map(item => item.child).filter(Boolean))];
+      return uniqueChildren.map(c => ({ label: c, value: c }));
+   }, [gridData]);
+
    const defaultEntry = React.useMemo<RelationshipAttributeRow>(
       () => ({
          $type: RelationshipAttributeType,
@@ -271,15 +281,25 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
             field: 'parent',
             header: 'Parent',
             headerStyle: { width: '40%' },
-            editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={true} />
+            editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={true} />,
+            sortable: true,
+            filter: true,
+            filterType: 'multiselect',
+            filterOptions: parentOptions,
+            showFilterMatchModes: false
          },
          {
             field: 'child',
             header: 'Child',
-            editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={false} />
+            editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={false} />,
+            sortable: true,
+            filter: true,
+            filterType: 'multiselect',
+            filterOptions: childOptions,
+            showFilterMatchModes: false
          }
       ],
-      []
+      [parentOptions, childOptions]
    );
 
    if (!relationship) {

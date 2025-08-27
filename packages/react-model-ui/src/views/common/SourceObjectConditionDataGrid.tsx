@@ -171,11 +171,12 @@ interface OperatorEditorProps {
    options: any;
 }
 
+const operatorOptions = ['=', '!=', '<', '<=', '>', '>='].map(op => ({ label: op, value: op }));
+
 function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
    const { options } = props;
    const { editorCallback } = options;
 
-   const operators = React.useMemo(() => ['=', '!=', '<', '<=', '>', '>='], []);
    const [currentValue, setCurrentValue] = React.useState(options.value);
 
    const onChange = (e: DropdownChangeEvent) => {
@@ -185,7 +186,7 @@ function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
       }
    };
 
-   return <Dropdown value={currentValue} options={operators} onChange={onChange} className='w-full' autoFocus />;
+   return <Dropdown value={currentValue} options={operatorOptions} onChange={onChange} className='w-full' autoFocus />;
 }
 
 export interface SourceObjectConditionRow {
@@ -325,12 +326,20 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                }
                return rowData.left.value;
             },
-            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />
+            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />,
+            sortable: true,
+            filter: true,
+            filterType: 'text'
          },
          {
             field: 'operator',
             header: 'Operator',
-            editor: (options: any) => <OperatorEditor options={options} />
+            editor: (options: any) => <OperatorEditor options={options} />,
+            sortable: true,
+            filter: true,
+            filterType: 'multiselect',
+            filterOptions: operatorOptions,
+            showFilterMatchModes: false
          },
          {
             field: 'right',
@@ -341,7 +350,10 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                }
                return rowData.right.value;
             },
-            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={false} sourceObject={sourceObject} />
+            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={false} sourceObject={sourceObject} />,
+            sortable: true,
+            filter: true,
+            filterType: 'text'
          }
       ],
       [sourceObject, readonly]

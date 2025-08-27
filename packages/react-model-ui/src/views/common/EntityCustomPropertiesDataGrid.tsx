@@ -115,20 +115,6 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
       [dispatch]
    );
 
-   const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
-      () => [
-         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' } },
-         { field: '$type', header: 'Data Type', editor: !readonly, style: { width: '15%' } },
-         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' } },
-         { field: 'description', header: 'Description', editor: !readonly }
-      ],
-      [readonly]
-   );
-
-   if (!entity) {
-      return <ErrorView errorMessage='No entity available' />;
-   }
-
    const gridData = React.useMemo(
       () =>
          (entity.customProperties || []).map((prop, idx) => ({
@@ -137,6 +123,35 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
          })),
       [entity.customProperties]
    );
+
+   const dataTypeOptions = React.useMemo(() => {
+      const uniqueDataTypes = [...new Set(gridData.map(item => item.$type).filter(Boolean))];
+      return uniqueDataTypes.map(dt => ({ label: dt, value: dt }));
+   }, [gridData]);
+
+   const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
+      () => [
+         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, sortable: true, filter: true, filterType: 'text' },
+         {
+            field: '$type',
+            header: 'Data Type',
+            editor: !readonly,
+            style: { width: '15%' },
+            sortable: true,
+            filter: true,
+            filterType: 'multiselect',
+            filterOptions: dataTypeOptions,
+            showFilterMatchModes: false
+         },
+         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, sortable: true, filter: true, filterType: 'text' },
+         { field: 'description', header: 'Description', editor: !readonly, sortable: true, filter: true, filterType: 'text' }
+      ],
+      [readonly, dataTypeOptions]
+   );
+
+   if (!entity) {
+      return <ErrorView errorMessage='No entity available' />;
+   }
 
    return (
       <PrimeDataGrid
