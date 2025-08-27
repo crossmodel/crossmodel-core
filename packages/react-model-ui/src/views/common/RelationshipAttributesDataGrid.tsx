@@ -283,7 +283,6 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
             headerStyle: { width: '40%' },
             editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={true} />,
             sortable: true,
-            filter: true,
             filterType: 'multiselect',
             filterOptions: parentOptions,
             showFilterMatchModes: false
@@ -293,7 +292,6 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
             header: 'Child',
             editor: (options: any) => <RelationshipAttributeEditor options={options} isParent={false} />,
             sortable: true,
-            filter: true,
             filterType: 'multiselect',
             filterOptions: childOptions,
             showFilterMatchModes: false

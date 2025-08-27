@@ -24,6 +24,7 @@ export interface GridColumn<T> {
    body?: (rowData: T) => React.ReactNode;
    headerStyle?: React.CSSProperties;
    style?: React.CSSProperties;
+   filter?: boolean;
    filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean';
    filterOptions?: any[];
    showFilterMatchModes?: boolean;
@@ -311,28 +312,32 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onFilter={(e: DataTableFilterEvent) => setFilters(e.filters as DataTableFilterMeta)}
             filterDisplay='menu'
          >
-            {columns.map(col => (
-               <Column
-                  key={col.field as string}
-                  field={col.field as string}
-                  header={col.header}
-                  sortable={col.sortable}
-                  body={col.body}
-                  editor={typeof col.editor === 'function' ? col.editor : col.editor ? cellEditor : undefined}
-                  headerStyle={col.headerStyle}
-                  style={col.style}
-                  filter
-                  showFilterMatchModes={col.showFilterMatchModes}
-                  filterElement={(options: any) => filterTemplate(options, col.filterType, col.filterOptions)}
-                  filterMatchMode={
-                     col.filterType === 'dropdown' || col.filterType === 'boolean'
-                        ? FilterMatchMode.EQUALS
-                        : col.filterType === 'multiselect'
-                          ? FilterMatchMode.IN
-                          : FilterMatchMode.CONTAINS
-                  }
-               />
-            ))}
+            {columns.map(col => {
+               const filter = col.filter ?? col.filterType !== undefined;
+               const showFilterMatchModes = col.showFilterMatchModes === undefined ? col.filterType === 'text' : col.showFilterMatchModes;
+               return (
+                  <Column
+                     key={col.field as string}
+                     field={col.field as string}
+                     header={col.header}
+                     sortable={col.sortable}
+                     body={col.body}
+                     editor={typeof col.editor === 'function' ? col.editor : col.editor ? cellEditor : undefined}
+                     headerStyle={col.headerStyle}
+                     style={col.style}
+                     filter={filter}
+                     showFilterMatchModes={showFilterMatchModes}
+                     filterElement={(options: any) => filterTemplate(options, col.filterType, col.filterOptions)}
+                     filterMatchMode={
+                        col.filterType === 'dropdown' || col.filterType === 'boolean'
+                           ? FilterMatchMode.EQUALS
+                           : col.filterType === 'multiselect'
+                             ? FilterMatchMode.IN
+                             : FilterMatchMode.CONTAINS
+                     }
+                  />
+               );
+            })}
             {(onRowDelete || onRowMoveUp || onRowMoveDown || (editable && !readonly)) && (
                <Column header='Actions' rowEditor={editable && !readonly} body={allActionsTemplate} style={{ width: '10rem' }} />
             )}

@@ -248,7 +248,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             header: 'Data Model',
             editor: (options: any) => <DataModelDependencyEditor options={options} />,
             sortable: true,
-            filter: true,
             filterType: 'multiselect',
             filterOptions: datamodelOptions,
             showFilterMatchModes: false

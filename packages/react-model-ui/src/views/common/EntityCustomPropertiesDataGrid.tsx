@@ -131,20 +131,19 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
 
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
-         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, sortable: true, filter: true, filterType: 'text' },
+         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, sortable: true, filterType: 'text' },
          {
             field: '$type',
             header: 'Data Type',
             editor: !readonly,
             style: { width: '15%' },
             sortable: true,
-            filter: true,
             filterType: 'multiselect',
             filterOptions: dataTypeOptions,
             showFilterMatchModes: false
          },
-         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, sortable: true, filter: true, filterType: 'text' },
-         { field: 'description', header: 'Description', editor: !readonly, sortable: true, filter: true, filterType: 'text' }
+         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, sortable: true, filterType: 'text' },
+         { field: 'description', header: 'Description', editor: !readonly, sortable: true, filterType: 'text' }
       ],
       [readonly, dataTypeOptions]
    );

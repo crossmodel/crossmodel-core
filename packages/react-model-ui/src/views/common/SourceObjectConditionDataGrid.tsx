@@ -328,7 +328,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             },
             editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />,
             sortable: true,
-            filter: true,
             filterType: 'text'
          },
          {
@@ -336,7 +335,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             header: 'Operator',
             editor: (options: any) => <OperatorEditor options={options} />,
             sortable: true,
-            filter: true,
             filterType: 'multiselect',
             filterOptions: operatorOptions,
             showFilterMatchModes: false
@@ -352,7 +350,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             },
             editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={false} sourceObject={sourceObject} />,
             sortable: true,
-            filter: true,
             filterType: 'text'
          }
       ],
