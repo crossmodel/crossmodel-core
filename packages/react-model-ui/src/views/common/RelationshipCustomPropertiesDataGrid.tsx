@@ -117,9 +117,9 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
 
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
-         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' } },
-         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' } },
-         { field: 'description', header: 'Description', editor: !readonly }
+         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, sortable: true, filterType: 'text' },
+         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, sortable: true, filterType: 'text' },
+         { field: 'description', header: 'Description', editor: !readonly, sortable: true, filterType: 'text' }
       ],
       [readonly]
    );
