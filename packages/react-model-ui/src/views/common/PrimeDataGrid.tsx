@@ -1,6 +1,15 @@
+import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
-import { DataTable, DataTableRowClickEvent, DataTableRowEditCompleteEvent, DataTableRowEditEvent } from 'primereact/datatable';
+import {
+   DataTable,
+   DataTableFilterEvent,
+   DataTableFilterMeta,
+   DataTableRowClickEvent,
+   DataTableRowEditCompleteEvent,
+   DataTableRowEditEvent
+} from 'primereact/datatable';
+import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Toolbar } from 'primereact/toolbar';
 import * as React from 'react';
@@ -13,6 +22,8 @@ export interface GridColumn<T> {
    body?: (rowData: T) => React.ReactNode;
    headerStyle?: React.CSSProperties;
    style?: React.CSSProperties;
+   filterType?: 'text' | 'dropdown';
+   filterOptions?: any[];
 }
 
 export interface PrimeDataGridProps<T> {
@@ -58,6 +69,21 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 }: PrimeDataGridProps<T>): React.ReactElement {
    const tableRef = React.useRef<DataTable<T[]>>(null);
 
+   const initFilters = () => {
+      const initialFilters: DataTableFilterMeta = {
+         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+      };
+      columns.forEach(col => {
+         initialFilters[col.field as string] = {
+            value: null,
+            matchMode: col.filterType === 'dropdown' ? FilterMatchMode.EQUALS : FilterMatchMode.CONTAINS
+         };
+      });
+      return initialFilters;
+   };
+
+   const [filters, setFilters] = React.useState<DataTableFilterMeta>(initFilters());
+
    React.useEffect(() => {
       if (tableRef.current && editingRows && Object.keys(editingRows).length > 0) {
          const editingRowKey = Object.keys(editingRows)[0];
@@ -86,7 +112,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const handleRowDoubleClick = (e: DataTableRowClickEvent) => {
       const target = e.originalEvent.target as HTMLElement;
 
-      // Do not trigger edit mode if the double-click was on an interactive element like a button, link, or input.
       if (target.closest('button, a, input, select, textarea')) {
          return;
       }
@@ -107,7 +132,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const allActionsTemplate = (rowData: T, props: any) => {
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing;
-
       const buttons: React.ReactElement[] = [];
 
       if (isEditing) {
@@ -174,7 +198,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
             {buttons.map((button, index) =>
                React.cloneElement(button, {
-                  key: button.key || index, // Ensure a key for React list rendering
+                  key: button.key || index,
                   style: {
                      ...button.props.style,
                      ...(index < buttons.length - 1 ? { marginRight: '0.5rem' } : {})
@@ -195,9 +219,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {
-         // Create a new row with all required fields from columns
          const newRow = { ...defaultNewRow };
-         // Initialize any missing fields from columns
          columns.forEach(col => {
             if (!(col.field in newRow)) {
                (newRow as any)[col.field] = '';
@@ -212,6 +234,30 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          {onRowAdd && !readonly && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} />}
       </React.Fragment>
    );
+
+   const filterTemplate = (options: any, filterType?: 'text' | 'dropdown', filterOptions?: any[]) => {
+      if (filterType === 'dropdown') {
+         return (
+            <Dropdown
+               value={options.value}
+               options={filterOptions}
+               onChange={e => options.filterCallback(e.value, options.index)}
+               itemTemplate={option => <span>{option}</span>}
+               placeholder='Select a value'
+               className='p-column-filter'
+               showClear
+            />
+         );
+      }
+      return (
+         <InputText
+            value={options.value || ''}
+            onChange={e => options.filterCallback(e.target.value)}
+            placeholder={`Search by ${options.field}`}
+            className='p-column-filter'
+         />
+      );
+   };
 
    return (
       <div>
@@ -231,18 +277,24 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             showGridlines
             size='small'
             emptyMessage={noDataMessage}
-            removableSort // Enable removable sort
+            removableSort
+            filters={filters}
+            onFilter={(e: DataTableFilterEvent) => setFilters(e.filters as DataTableFilterMeta)}
+            filterDisplay='menu'
          >
             {columns.map(col => (
                <Column
                   key={col.field as string}
                   field={col.field as string}
                   header={col.header}
-                  sortable={col.sortable} // Enable sorting for the column
+                  sortable={col.sortable}
                   body={col.body}
                   editor={typeof col.editor === 'function' ? col.editor : col.editor ? cellEditor : undefined}
                   headerStyle={col.headerStyle}
                   style={col.style}
+                  filter
+                  filterElement={(options: any) => filterTemplate(options, col.filterType, col.filterOptions)}
+                  filterMatchMode={col.filterType === 'dropdown' ? FilterMatchMode.EQUALS : FilterMatchMode.CONTAINS}
                />
             ))}
             {(onRowDelete || onRowMoveUp || onRowMoveDown || (editable && !readonly)) && (
