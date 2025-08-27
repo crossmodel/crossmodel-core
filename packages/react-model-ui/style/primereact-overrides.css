@@ -320,3 +320,47 @@ span.w-full.p-autocomplete {
    background: #f3f4f6;
    box-shadow: none;
 }
+
+.p-column-filter-menu-button {
+   width: 1rem;
+   height: 1rem;
+}
+
+/* MultiSelect styles */
+.p-multiselect {
+   background: var(--surface-card);
+   border: 1px solid var(--surface-border);
+   transition:
+      background-color 0.2s,
+      border-color 0.2s;
+   border-radius: 4px;
+}
+
+.p-multiselect:not(.p-disabled):hover {
+   border-color: var(--primary-color);
+}
+
+.p-multiselect:not(.p-disabled).p-focus {
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0 0.2rem var(--focus-ring);
+   border-color: var(--primary-color);
+}
+
+.p-multiselect .p-multiselect-label {
+   padding: 0.3rem;
+   font-size: 0.6rem;
+}
+
+.p-multiselect .p-multiselect-trigger {
+   width: 2rem;
+}
+
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item {
+   padding: 0.3rem 0.5rem;
+   font-size: 0.6rem;
+}
+
+.p-multiselect .p-multiselect-clear-icon {
+   margin-top: -0.3rem;
+}
