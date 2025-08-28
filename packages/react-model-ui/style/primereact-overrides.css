@@ -24,7 +24,7 @@
 /* Global components */
 .p-component {
    font-family: var(--theia-ui-font-family);
-   font-size: 0.6rem;
+   font-size: var(--theia-ui-font-size1);
    color: var(--text-color);
 }
 
@@ -34,7 +34,7 @@
    background: var(--primary-color);
    border: 1px solid var(--primary-color);
    padding: 0.3rem;
-   font-size: 0.6rem;
+   font-size: var(--theia-ui-font-size1);
    transition:
       background-color 0.2s,
       color 0.2s,
@@ -51,7 +51,7 @@
 }
 
 .pi {
-   font-size: 0.6rem;
+   font-size: var(--theia-ui-font-size1);
 }
 
 /* DataGrid styles */
@@ -109,7 +109,7 @@
    color: var(--text-color);
    border: 1px solid var(--surface-border);
    padding: 0.3rem;
-   font-size: 0.6rem;
+   font-size: var(--theia-ui-font-size1);
    transition:
       background-color 0.2s,
       color 0.2s,
@@ -126,6 +126,10 @@
    outline-offset: 0;
    box-shadow: 0 0 0 0.2rem var(--focus-ring);
    border-color: var(--primary-color);
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+   padding: 0.3rem 0.5rem;
 }
 
 /* Dropdown styles */
@@ -153,10 +157,14 @@
    width: 2rem;
 }
 
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+   padding: 0.3rem 0.5rem;
+}
+
 /* Checkbox styles */
 .p-checkbox {
-   width: 20px;
-   height: 20px;
+   width: 1rem;
+   height: 1rem;
 }
 
 .p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox {
@@ -242,7 +250,7 @@
    background: var(--theia-titleBar-activeBackground);
    color: var(--theia-titleBar-activeForeground);
    padding: 0.5rem 1rem;
-   font-size: 0.6rem;
+   font-size: var(--theia-ui-font-size1);
 }
 
 .p-accordion .p-accordion-content {
@@ -326,6 +334,13 @@ span.w-full.p-autocomplete {
    height: 1rem;
 }
 
+.p-datatable .p-sortable-column.p-highlight .p-sortable-column-icon,
+.p-datatable .p-sortable-column.p-highlight:not(.p-sortable-disabled):hover .p-sortable-column-icon,
+.p-column-filter-menu-button.p-column-filter-menu-button-active,
+.p-column-filter-menu-button.p-column-filter-menu-button-active:hover {
+   color: var(--theia-button-background);
+}
+
 /* MultiSelect styles */
 .p-multiselect {
    background: var(--surface-card);
@@ -349,7 +364,7 @@ span.w-full.p-autocomplete {
 
 .p-multiselect .p-multiselect-label {
    padding: 0.3rem;
-   font-size: 0.6rem;
+   font-size: var(--theia-ui-font-size1);
 }
 
 .p-multiselect .p-multiselect-trigger {
@@ -358,9 +373,26 @@ span.w-full.p-autocomplete {
 
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item {
    padding: 0.3rem 0.5rem;
-   font-size: 0.6rem;
+   font-size: var(--theia-ui-font-size1);
 }
 
 .p-multiselect .p-multiselect-clear-icon {
    margin-top: -0.3rem;
+   right: 2rem;
+}
+
+.p-multiselect-panel .p-multiselect-header {
+   padding: 0.3rem 0.5rem;
+}
+
+.p-multiselect-label-container {
+   padding-right: 1rem;
+}
+
+.p-multiselect-panel .p-multiselect-items {
+   padding: 0.25rem 0;
+}
+.p-multiselect-panel .p-multiselect-header .p-multiselect-close {
+   width: 1rem;
+   height: 1rem;
 }
