@@ -255,7 +255,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             header: 'Source',
             body: rowData => rowData.source,
             editor: (options: any) => <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} />,
-            sortable: true,
             filterType: 'multiselect',
             filterOptions: sourceOptions,
             showFilterMatchModes: false
