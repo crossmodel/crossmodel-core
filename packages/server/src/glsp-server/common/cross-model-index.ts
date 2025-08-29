@@ -13,7 +13,7 @@ import { CrossModelRoot } from '../../language-server/generated/ast.js';
  */
 @injectable()
 export class CrossModelIndex extends GModelIndex {
-   @inject(CrossModelLSPServices) services!: CrossModelLSPServices;
+   @inject(CrossModelLSPServices) services: CrossModelLSPServices;
 
    protected idToSemanticNode = new Map<string, AstNode>();
 

@@ -15,7 +15,7 @@ import { SystemModelState } from './system-model-state.js';
  */
 @injectable()
 export class SystemDiagramGModelFactory implements GModelFactory {
-   @inject(ModelState) protected readonly modelState!: SystemModelState;
+   @inject(ModelState) protected readonly modelState: SystemModelState;
 
    createModel(): void {
       const newRoot = this.createGraph();

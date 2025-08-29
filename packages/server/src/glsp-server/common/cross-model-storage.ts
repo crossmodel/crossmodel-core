@@ -36,10 +36,10 @@ import { CrossModelState } from './cross-model-state.js';
  */
 @injectable()
 export class CrossModelStorage implements SourceModelStorage, ClientSessionListener {
-   @inject(Logger) protected logger!: Logger;
-   @inject(CrossModelState) protected state!: CrossModelState;
-   @inject(ClientSessionManager) protected sessionManager!: ClientSessionManager;
-   @inject(ModelSubmissionHandler) protected submissionHandler!: ModelSubmissionHandler;
+   @inject(Logger) protected logger: Logger;
+   @inject(CrossModelState) protected state: CrossModelState;
+   @inject(ClientSessionManager) protected sessionManager: ClientSessionManager;
+   @inject(ModelSubmissionHandler) protected submissionHandler: ModelSubmissionHandler;
    @inject(ActionDispatcher) protected actionDispatcher: ActionDispatcher;
 
    protected toDispose = new DisposableCollection();

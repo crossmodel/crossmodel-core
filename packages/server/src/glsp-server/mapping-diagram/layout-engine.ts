@@ -24,7 +24,7 @@ import { GSourceObjectNode, GTargetObjectNode } from './model/nodes.js';
  */
 @injectable()
 export class MappingDiagramLayoutEngine implements LayoutEngine {
-   @inject(MappingModelState) protected modelState!: MappingModelState;
+   @inject(MappingModelState) protected modelState: MappingModelState;
 
    layout(): MaybePromise<GModelRoot> {
       if (!this.modelState.mapping) {

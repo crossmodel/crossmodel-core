@@ -15,7 +15,7 @@ import { SystemModelState } from '../model/system-model-state.js';
 export class SystemDiagramAddEntityActionProvider implements ContextActionsProvider {
    contextId = 'command-palette';
 
-   @inject(ModelState) protected state!: SystemModelState;
+   @inject(ModelState) protected state: SystemModelState;
 
    async getActions(editorContext: EditorContext): Promise<LabeledAction[]> {
       const completionItems = this.state.services.language.references.ScopeProvider.complete({

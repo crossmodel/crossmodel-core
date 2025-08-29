@@ -10,7 +10,7 @@ import { GSourceObjectNode, GTargetObjectNode } from './nodes.js';
 
 @injectable()
 export class MappingDiagramGModelFactory implements GModelFactory {
-   @inject(MappingModelState) protected readonly modelState!: MappingModelState;
+   @inject(MappingModelState) protected readonly modelState: MappingModelState;
 
    createModel(): void {
       const newRoot = this.createGraph();
