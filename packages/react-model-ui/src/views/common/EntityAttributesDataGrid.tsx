@@ -163,9 +163,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             dataType: 'boolean',
             headerStyle: { width: '10%' },
             body: (rowData: EntityAttributeRow) => (
-               <div className='flex align-items-center justify-content-center'>
-                  <Checkbox checked={rowData.identifier ?? false} readOnly />
-               </div>
+               <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
             ),
             editor: (options: any) => (
                <div className='flex align-items-center justify-content-center'>
