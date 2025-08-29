@@ -104,8 +104,9 @@ export default function AsyncAutoComplete<T = string>({
    }, []);
 
    return (
-      <div className='p-field p-fluid' style={{ marginBottom: '2rem', position: 'relative' }}>
-         <span className='p-float-label'>
+      <div className='p-field p-fluid' style={{ position: 'relative' }}>
+         <div>
+            <label htmlFor={label}>{label}</label>
             <AutoComplete<T>
                ref={autoCompleteRef}
                value={value}
@@ -121,8 +122,7 @@ export default function AsyncAutoComplete<T = string>({
                forceSelection={forceSelection}
                field={field ? String(field) : undefined}
             />
-            <label htmlFor={label}>{label}</label>
-         </span>
+         </div>
          {error && helperText && <small className='p-error'>{helperText}</small>}
          {loading && (
             <div

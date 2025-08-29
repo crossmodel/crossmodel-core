@@ -38,8 +38,9 @@ export function EntityForm(): React.ReactElement {
    return (
       <Form id={entity.id} name={entity.name ?? ModelFileType.LogicalEntity} iconClass={ModelStructure.LogicalEntity.ICON_CLASS}>
          <FormSection label='General'>
-            <div className='p-field p-fluid' style={{ marginTop: '1rem', marginBottom: '2rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='name'>Name</label>
                   <InputText
                      id='name'
                      value={entity.name ?? ''}
@@ -48,13 +49,13 @@ export function EntityForm(): React.ReactElement {
                      required={true}
                      className={diagnostics.name?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='name'>Name</label>
-               </span>
+               </div>
                {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
             </div>
 
-            <div className='p-field p-fluid' style={{ marginBottom: '0' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='description'>Description</label>
                   <InputTextarea
                      id='description'
                      value={entity.description ?? ''}
@@ -66,8 +67,7 @@ export function EntityForm(): React.ReactElement {
                      autoResize
                      className={diagnostics.description?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='description'>Description</label>
-               </span>
+               </div>
                {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
             </div>
          </FormSection>

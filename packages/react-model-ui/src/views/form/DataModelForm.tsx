@@ -153,8 +153,9 @@ export function DataModelForm(): React.ReactElement {
    return (
       <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.System.ICON_CLASS}>
          <FormSection label='General'>
-            <div className='p-field p-fluid' style={{ marginTop: '1rem', marginBottom: '2rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='name'>Name</label>
                   <InputText
                      id='name'
                      value={dataModel.name ?? ''}
@@ -163,12 +164,12 @@ export function DataModelForm(): React.ReactElement {
                      required={true}
                      className={diagnostics.name?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='name'>Name</label>
-               </span>
+               </div>
                {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
             </div>
-            <div className='p-field p-fluid' style={{ marginBottom: '2rem', marginTop: '1rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='description'>Description</label>
                   <InputTextarea
                      id='description'
                      value={dataModel.description ?? ''}
@@ -178,12 +179,12 @@ export function DataModelForm(): React.ReactElement {
                      autoResize
                      className={diagnostics.description?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='description'>Description</label>
-               </span>
+               </div>
                {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
             </div>
-            <div className='p-field p-fluid' style={{ marginBottom: '2rem', marginTop: '1rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='type'>Type</label>
                   <AutoComplete<DataModelTypeInfo>
                      ref={autoCompleteRef}
                      id='type'
@@ -201,12 +202,12 @@ export function DataModelForm(): React.ReactElement {
                      onShow={onShow}
                      onHide={onHide}
                   />
-                  <label htmlFor='type'>Type</label>
-               </span>
+               </div>
                {diagnostics.type?.length && <small className='p-error'>{diagnostics.type?.[0]?.message}</small>}
             </div>
-            <div className='p-field p-fluid' style={{ marginBottom: '1rem', marginTop: '1rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='version'>Version</label>
                   <InputText
                      id='version'
                      value={dataModel.version ?? ''}
@@ -214,8 +215,7 @@ export function DataModelForm(): React.ReactElement {
                      disabled={readonly}
                      className={diagnostics.version?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='version'>Version</label>
-               </span>
+               </div>
                {diagnostics.version?.length && <small className='p-error'>{diagnostics.version?.[0]?.message}</small>}
             </div>
          </FormSection>

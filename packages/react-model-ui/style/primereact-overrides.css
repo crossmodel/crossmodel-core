@@ -68,8 +68,10 @@
    background: var(--surface-card);
    border: 1px solid var(--surface-border);
    border-width: 1px 1px 0 1px;
-   padding: 0.25rem 1rem;
+   padding: 0.5rem 1rem;
    font-weight: 600;
+   background: var(--theia-titleBar-activeBackground);
+   color: var(--theia-titleBar-activeForeground);
 }
 
 .p-datatable .p-datatable-thead > tr > th {
@@ -107,27 +109,36 @@
 .p-inputtext {
    background: var(--surface-card);
    color: var(--text-color);
-   border: 1px solid var(--surface-border);
+   border: 1px solid var(--theia-input-border);
    padding: 0.3rem;
    font-size: var(--theia-ui-font-size1);
    transition:
       background-color 0.2s,
       color 0.2s,
       border-color 0.2s;
+   border-radius: 4px;
 }
 
 .p-inputtext:enabled:hover {
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
 }
 
 .p-inputtext:enabled:focus,
-.p-inputtext:enabled:focus ~ .p-autocomplete-dropdown {
+.p-inputtext:enabled:focus ~ .p-autocomplete-dropdown,
+.p-inputwrapper-focus .p-inputtext {
    outline: 0 none;
    outline-offset: 0;
    box-shadow: 0 0 0 0.2rem var(--focus-ring);
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
 }
 
+.p-field:not(:last-child) {
+   margin-bottom: 1rem;
+}
+
+.p-autocomplete-panel.p-component {
+   background-color: var(--surface-card);
+}
 .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
    padding: 0.3rem 0.5rem;
 }
@@ -135,7 +146,7 @@
 /* Dropdown styles */
 .p-dropdown {
    background: var(--surface-card);
-   border: 1px solid var(--surface-border);
+   border: none;
    transition:
       background-color 0.2s,
       border-color 0.2s;
@@ -143,18 +154,24 @@
 }
 
 .p-dropdown:not(.p-disabled):hover {
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
 }
 
 .p-dropdown:not(.p-disabled).p-focus {
    outline: 0 none;
    outline-offset: 0;
    box-shadow: 0 0 0 0.2rem var(--focus-ring);
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
 }
 
 .p-dropdown .p-dropdown-trigger {
    width: 2rem;
+   border: 1px solid var(--theia-input-border);
+   border-left: none;
+}
+
+.p-inputwrapper-focus.p-dropdown .p-dropdown-trigger {
+   border-color: var(--theia-focusBorder);
 }
 
 .p-dropdown-panel .p-dropdown-items .p-dropdown-item {
@@ -189,7 +206,7 @@
 }
 
 .p-checkbox .p-checkbox-box.p-highlight {
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
    background: var(--primary-color);
 }
 
@@ -208,7 +225,7 @@
    background: var(--surface-card);
    color: #6b7280;
    width: 2rem;
-   border: 1px solid var(--surface-border);
+   border: 1px solid var(--theia-input-border);
    border-left: none;
    border-top-right-radius: 6px;
    border-bottom-right-radius: 6px;
@@ -217,7 +234,7 @@
 .p-autocomplete-dropdown.p-button:hover,
 .p-autocomplete-dropdown.p-button:focus {
    background: var(--surface-card);
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
    outline: 0;
    box-shadow: none;
 }
@@ -230,11 +247,6 @@
 .p-datatable {
    background: var(--theia-editor-background);
    color: var(--theia-editor-foreground);
-}
-
-.p-datatable .p-datatable-header {
-   background: var(--theia-titleBar-activeBackground);
-   color: var(--theia-titleBar-activeForeground);
 }
 
 .p-datatable .p-datatable-tbody > tr {
@@ -251,13 +263,14 @@
    color: var(--theia-titleBar-activeForeground);
    padding: 0.5rem 1rem;
    font-size: var(--theia-ui-font-size1);
+   border-color: var(--surface-border);
 }
 
 .p-accordion .p-accordion-content {
    background: var(--surface-section);
    color: var(--text-color);
    border: 1px solid var(--surface-border);
-   padding: 1rem 0.5rem;
+   padding: 0.75rem;
 }
 
 .p-toolbar {
@@ -276,13 +289,20 @@
 }
 
 /* Float label styles */
-.p-float-label input:focus ~ label,
+/* .p-float-label input:focus ~ label,
 .p-float-label input.p-filled ~ label,
 .p-float-label textarea:focus ~ label,
 .p-float-label textarea.p-filled ~ label,
 .p-float-label .p-inputwrapper:focus ~ label,
 .p-float-label .p-inputwrapper ~ label {
-   color: var(--theia-focusBorder);
+   color: var(--text-color);
+   font-weight: 600;
+} */
+
+/* Add spacing between label and input */
+label {
+   display: block;
+   margin-bottom: 0.25rem;
 }
 
 .mr-1-rem {
@@ -352,14 +372,14 @@ span.w-full.p-autocomplete {
 }
 
 .p-multiselect:not(.p-disabled):hover {
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
 }
 
 .p-multiselect:not(.p-disabled).p-focus {
    outline: 0 none;
    outline-offset: 0;
    box-shadow: 0 0 0 0.2rem var(--focus-ring);
-   border-color: var(--primary-color);
+   border-color: var(--theia-focusBorder);
 }
 
 .p-multiselect .p-multiselect-label {

@@ -38,16 +38,17 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
          iconClass='codicon-group-by-ref-type'
       >
          <FormSection label='General'>
-            <div className='p-field p-fluid' style={{ marginTop: '1rem', marginBottom: '2rem' }}>
-               <span className='p-float-label'>
-                  <InputText id='targetAttribute' value={attributeMapping.attribute?.value ?? ''} disabled={true} spellCheck={false} />
+            <div className='p-field p-fluid'>
+               <div>
                   <label htmlFor='targetAttribute'>Target Attribute</label>
-               </span>
+                  <InputText id='targetAttribute' value={attributeMapping.attribute?.value ?? ''} disabled={true} spellCheck={false} />
+               </div>
                {diagnostics.attribute?.length && <small className='p-error'>{diagnostics.attribute?.[0]?.message}</small>}
             </div>
 
-            <div className='p-field p-fluid' style={{ marginBottom: '0' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='expression'>Expression</label>
                   <InputText
                      id='expression'
                      value={attributeMapping.expression ?? ''}
@@ -60,8 +61,7 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
                         })
                      }
                   />
-                  <label htmlFor='expression'>Expression</label>
-               </span>
+               </div>
                {diagnostics.expression?.length && <small className='p-error'>{diagnostics.expression?.[0]?.message}</small>}
             </div>
          </FormSection>

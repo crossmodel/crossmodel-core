@@ -93,8 +93,9 @@ export function RelationshipForm(): React.ReactElement {
    return (
       <Form id={relationship.id} name={relationship.name ?? ModelFileType.Relationship} iconClass={ModelStructure.Relationship.ICON_CLASS}>
          <FormSection label='General'>
-            <div className='p-field p-fluid' style={{ marginTop: '1rem', marginBottom: '2rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='name'>Name</label>
                   <InputText
                      id='name'
                      value={relationship.name ?? ''}
@@ -103,13 +104,13 @@ export function RelationshipForm(): React.ReactElement {
                      required={true}
                      className={diagnostics.name?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='name'>Name</label>
-               </span>
+               </div>
                {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
             </div>
 
-            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='description'>Description</label>
                   <InputTextarea
                      id='description'
                      value={relationship.description ?? ''}
@@ -121,8 +122,7 @@ export function RelationshipForm(): React.ReactElement {
                      autoResize
                      className={diagnostics.description?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='description'>Description</label>
-               </span>
+               </div>
                {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
             </div>
 
@@ -137,8 +137,9 @@ export function RelationshipForm(): React.ReactElement {
                helperText={diagnostics.parent?.[0]?.message}
             />
 
-            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='parentCardinality'>Parent Cardinality</label>
                   <Dropdown
                      id='parentCardinality'
                      options={cardinalities}
@@ -151,12 +152,12 @@ export function RelationshipForm(): React.ReactElement {
                      }
                      disabled={readonly}
                   />
-                  <label htmlFor='parentCardinality'>Parent Cardinality</label>
-               </span>
+               </div>
             </div>
 
-            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='parentRole'>Parent Role</label>
                   <InputTextarea
                      id='parentRole'
                      value={relationship.parentRole ?? ''}
@@ -168,8 +169,7 @@ export function RelationshipForm(): React.ReactElement {
                      autoResize
                      className={diagnostics.parentRole?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='parentRole'>Parent Role</label>
-               </span>
+               </div>
                {diagnostics.parentRole?.length && <small className='p-error'>{diagnostics.parentRole?.[0]?.message}</small>}
             </div>
 
@@ -184,8 +184,9 @@ export function RelationshipForm(): React.ReactElement {
                helperText={diagnostics.child?.[0]?.message}
             />
 
-            <div className='p-field p-fluid' style={{ marginBottom: '2rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='childCardinality'>Child Cardinality</label>
                   <Dropdown
                      id='childCardinality'
                      options={cardinalities}
@@ -198,12 +199,12 @@ export function RelationshipForm(): React.ReactElement {
                      }
                      disabled={readonly}
                   />
-                  <label htmlFor='childCardinality'>Child Cardinality</label>
-               </span>
+               </div>
             </div>
 
-            <div className='p-field p-fluid' style={{ marginBottom: '1rem' }}>
-               <span className='p-float-label'>
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='childRole'>Child Role</label>
                   <InputTextarea
                      id='childRole'
                      value={relationship.childRole ?? ''}
@@ -215,8 +216,7 @@ export function RelationshipForm(): React.ReactElement {
                      autoResize
                      className={diagnostics.childRole?.length ? 'p-invalid' : ''}
                   />
-                  <label htmlFor='childRole'>Child Role</label>
-               </span>
+               </div>
                {diagnostics.childRole?.length && <small className='p-error'>{diagnostics.childRole?.[0]?.message}</small>}
             </div>
          </FormSection>

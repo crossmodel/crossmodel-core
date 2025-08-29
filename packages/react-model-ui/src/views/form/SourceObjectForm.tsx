@@ -39,19 +39,19 @@ export function SourceObjectForm(props: SourceObjectRenderProps): React.ReactEle
    return (
       <Form id={mapping.id} name={sourceObject.id ?? 'Source Object'} iconClass='codicon-group-by-ref-type'>
          <FormSection label='General'>
-            <div className='p-field p-fluid' style={{ marginTop: '1rem', marginBottom: '2rem' }}>
-               <span className='p-float-label'>
-                  <InputText id='id' value={sourceObject.id ?? ''} disabled={true} spellCheck={false} />
+            <div className='p-field p-fluid'>
+               <div>
                   <label htmlFor='id'>ID</label>
-               </span>
+                  <InputText id='id' value={sourceObject.id ?? ''} disabled={true} spellCheck={false} />
+               </div>
                {diagnostics.id?.length && <small className='p-error'>{diagnostics.id?.[0]?.message}</small>}
             </div>
 
-            <div className='p-field p-fluid' style={{ marginBottom: '0' }}>
-               <span className='p-float-label'>
-                  <InputText id='entity' value={sourceObject.entity ?? ''} disabled={true} spellCheck={false} />
+            <div className='p-field p-fluid'>
+               <div>
                   <label htmlFor='entity'>Entity</label>
-               </span>
+                  <InputText id='entity' value={sourceObject.entity ?? ''} disabled={true} spellCheck={false} />
+               </div>
                {diagnostics.entity?.length && <small className='p-error'>{diagnostics.entity?.[0]?.message}</small>}
             </div>
             <Dropdown
