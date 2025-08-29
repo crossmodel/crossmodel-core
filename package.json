@@ -17,7 +17,7 @@
     "format": "yarn prettier-eslint --write '**/*.{ts,tsx,js,cjs,mjs,css}' '**/package.json'",
     "postinstall": "theia check:theia-version && theia-patch",
     "lint": "lerna run lint",
-    "package:extensions": "lerna run --scope={crossmodel-lang,crossmodel-theme} package:vsix",
+    "package:extensions": "lerna run --scope={crossmodel-lang,crossmodel-theme} package",
     "start:browser": "yarn theia:browser start",
     "start:electron": "yarn theia:electron start",
     "start:verdaccio": "yarn verdaccio --config verdaccio-config.yaml",
