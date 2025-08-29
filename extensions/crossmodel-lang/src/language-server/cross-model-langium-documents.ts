@@ -2,6 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import { DefaultLangiumDocuments, DocumentState, LangiumDocument } from 'langium';
+import { CancellationToken } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { CrossModelRoot } from './generated/ast.js';
@@ -37,5 +38,10 @@ export class CrossModelLangiumDocuments extends DefaultLangiumDocuments {
       };
       fixDocument(document.parseResult.value, document);
       return document;
+   }
+
+   async updateOrCreateDocument(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument> {
+      const document = await this.getOrCreateDocument(uri);
+      return this.langiumDocumentFactory.update(document, cancellationToken);
    }
 }
