@@ -1,0 +1,16 @@
+{
+  "extends": "../../configs/base.tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "esModuleInterop": true,
+    "lib": ["ESNext"],
+    "moduleResolution": "Node16",
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib",
+    "isolatedModules": true
+  },
+  "include": ["src"],
+  "references": [{ "path": "../protocol" }]
+}

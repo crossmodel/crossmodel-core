@@ -20,17 +20,12 @@
   "publisher": "CrossBreeze",
   "type": "module",
   "main": "./out/extension.cjs",
-  "bin": {
-    "cross-model-cli": "./bin/cli"
-  },
   "scripts": {
-    "build": "yarn langium:generate && yarn build:esbuild",
+    "build": "yarn build:esbuild",
     "build:esbuild": "node esbuild.mjs",
     "build:tsc": "tsc -b tsconfig.json",
     "build:webpack": "webpack --mode development",
     "clean": "rimraf --glob out *.vsix tsconfig.tsbuildinfo",
-    "langium:generate": "langium generate",
-    "langium:watch": "langium generate --watch",
     "lint": "eslint -c ./.eslintrc.cjs --ext .ts,.tsx ./src",
     "package": "yarn clean && yarn build && yarn package:vsix",
     "package:vsix": "vsce package --yarn --allow-star-activation",
@@ -40,7 +35,7 @@
     "symlink:electron": "symlink-dir . ../../applications/electron-app/plugins/crossmodel-lang",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest --passWithNoTests",
     "vscode:prepublish": "yarn lint",
-    "watch": "yarn watch:esbuild",
+    "watch": "node esbuild.mjs --watch",
     "watch:esbuild": "node esbuild.mjs --watch",
     "watch:tsc": "tsc -b tsconfig.json --watch",
     "watch:webpack": "webpack --mode development --watch"
@@ -67,7 +62,7 @@
       {
         "language": "cross-model",
         "scopeName": "source.cross-model",
-        "path": "./syntaxes/cross-model.tmLanguage.json"
+        "path": "../../packages/server/syntaxes/cross-model.tmLanguage.json"
       }
     ],
     "languages": [
@@ -80,7 +75,7 @@
         "extensions": [
           ".cm"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "../../packages/server/language-configuration.json"
       }
     ]
   },
@@ -89,20 +84,8 @@
   ],
   "dependencies": {
     "@crossmodel/protocol": "0.7.0",
-    "@eclipse-glsp/server": "2.4.0",
-    "chalk": "~5.4.1",
-    "chevrotain": "~11.0.3",
-    "commander": "~14.0.0",
-    "elkjs": "^0.10.0",
-    "langium": "^3.5.0",
-    "p-debounce": "^2.1.0",
-    "prettier": "^3.1.0",
-    "type-fest": "^4.18.2",
-    "uuid": "~11.1.0",
+    "@crossmodel/server": "0.7.0",
     "vscode-languageclient": "9.0.1",
-    "vscode-languageserver": "9.0.1",
-    "vscode-languageserver-protocol": "^3.17.5",
-    "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-uri": "^3.1.0"
   },
   "devDependencies": {
@@ -114,7 +97,6 @@
     "cross-env": "~7.0.3",
     "esbuild": "~0.19.7",
     "eslint": "^8.17.0",
-    "langium-cli": "^3.5.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.3",
     "webpack": "^5.0.0"
