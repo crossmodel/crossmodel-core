@@ -8,14 +8,13 @@
     },
     "version": {
       "conventionalCommits": true,
+      "forcePublish": true,
       "noChangelog": true,
       "push": true,
       "exact": true
     },
     "publish": {
-      "ignoreChanges": [
-        "**/*.md"
-      ]
+      "ignoreChanges": ["**/*.md"]
     }
   }
 }
