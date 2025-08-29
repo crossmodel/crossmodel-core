@@ -3,8 +3,8 @@
  ********************************************************************************/
 
 import { DropEntityOperation } from '@crossmodel/protocol';
-import { Command, JsonOperationHandler, ModelState } from '@eclipse-glsp/server';
-import { inject, injectable } from 'inversify';
+import { Command, JsonOperationHandler } from '@eclipse-glsp/server';
+import { injectable } from 'inversify';
 import { URI } from 'vscode-uri';
 import { createSourceObject } from '../../../language-server/util/ast-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
@@ -18,7 +18,7 @@ import { MappingModelState } from '../model/mapping-model-state.js';
 export class MappingDiagramDropEntityOperationHandler extends JsonOperationHandler {
    override operationType = DropEntityOperation.KIND;
 
-   @inject(ModelState) protected override modelState: MappingModelState = undefined as unknown as MappingModelState;
+   declare protected modelState: MappingModelState;
 
    createCommand(operation: DropEntityOperation): Command {
       return new CrossModelCommand(this.modelState, () => this.createSourceObject(operation));

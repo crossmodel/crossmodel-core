@@ -22,7 +22,7 @@ export interface CrossModelSourceModel {
  */
 @injectable()
 export class CrossModelState extends DefaultModelState implements JsonModelState<CrossModelSourceModel> {
-   @inject(CrossModelIndex) override readonly index: CrossModelIndex = undefined as unknown as CrossModelIndex;
+   declare readonly index: CrossModelIndex;
    @inject(CrossModelLSPServices) readonly services!: CrossModelLSPServices;
 
    protected _semanticUri!: string;

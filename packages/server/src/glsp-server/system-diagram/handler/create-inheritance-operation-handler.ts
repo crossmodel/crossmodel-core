@@ -9,7 +9,6 @@ import {
    CreateEdgeOperation,
    JsonCreateEdgeOperationHandler,
    MaybePromise,
-   ModelState,
    SelectAction,
    getOrThrow
 } from '@eclipse-glsp/server';
@@ -24,7 +23,7 @@ export class SystemDiagramCreateInheritanceOperationHandler extends JsonCreateEd
    override readonly label = 'Inheritance';
    readonly elementTypeIds = [INHERITANCE_EDGE_TYPE];
 
-   @inject(ModelState) protected override modelState: SystemModelState = undefined as unknown as SystemModelState;
+   declare protected modelState: SystemModelState;
    @inject(ActionDispatcher) protected actionDispatcher: ActionDispatcher;
 
    createCommand(operation: CreateEdgeOperation): MaybePromise<Command | undefined> {

@@ -7,10 +7,9 @@ import {
    CreateEdgeOperation,
    JsonCreateEdgeOperationHandler,
    MaybePromise,
-   ModelState,
    TriggerEdgeCreationAction
 } from '@eclipse-glsp/server';
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import { combineIds } from '../../../language-server/cross-model-naming.js';
 import { isSourceObjectAttribute, isTargetObjectAttribute, SourceObject } from '../../../language-server/generated/ast.js';
 import { createAttributeMapping, createAttributeMappingSource, getOwner } from '../../../language-server/util/ast-util.js';
@@ -19,7 +18,7 @@ import { MappingModelState } from '../model/mapping-model-state.js';
 
 @injectable()
 export class MappingEdgeCreationOperationHandler extends JsonCreateEdgeOperationHandler {
-   @inject(ModelState) declare protected modelState: MappingModelState;
+   declare protected modelState: MappingModelState;
 
    override elementTypeIds = [TARGET_ATTRIBUTE_MAPPING_EDGE_TYPE];
    override label = 'Mapping Edge';

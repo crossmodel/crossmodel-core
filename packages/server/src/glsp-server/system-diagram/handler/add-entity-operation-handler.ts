@@ -3,8 +3,8 @@
  ********************************************************************************/
 
 import { AddEntityOperation, toIdReference } from '@crossmodel/protocol';
-import { Command, JsonOperationHandler, ModelState } from '@eclipse-glsp/server';
-import { inject, injectable } from 'inversify';
+import { Command, JsonOperationHandler } from '@eclipse-glsp/server';
+import { injectable } from 'inversify';
 import { LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';
@@ -15,7 +15,7 @@ import { SystemModelState } from '../model/system-model-state.js';
 @injectable()
 export class SystemDiagramAddEntityOperationHandler extends JsonOperationHandler {
    override operationType = AddEntityOperation.KIND;
-   @inject(ModelState) protected override modelState: SystemModelState = undefined as unknown as SystemModelState;
+   declare protected modelState: SystemModelState;
 
    createCommand(operation: AddEntityOperation): Command {
       return new CrossModelCommand(this.modelState, () => this.createEntityNode(operation));

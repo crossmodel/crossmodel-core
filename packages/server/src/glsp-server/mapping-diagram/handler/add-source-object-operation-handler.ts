@@ -3,8 +3,8 @@
  ********************************************************************************/
 
 import { AddSourceObjectOperation } from '@crossmodel/protocol';
-import { Command, JsonOperationHandler, ModelState } from '@eclipse-glsp/server';
-import { inject, injectable } from 'inversify';
+import { Command, JsonOperationHandler } from '@eclipse-glsp/server';
+import { injectable } from 'inversify';
 import { SourceObject } from '../../../language-server/generated/ast.js';
 import { createSourceObject } from '../../../language-server/util/ast-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
@@ -16,7 +16,7 @@ import { MappingModelState } from '../model/mapping-model-state.js';
 @injectable()
 export class MappingDiagramAddSourceObjectOperationHandler extends JsonOperationHandler {
    override operationType = AddSourceObjectOperation.KIND;
-   @inject(ModelState) protected override modelState: MappingModelState = undefined as unknown as MappingModelState;
+   declare protected modelState: MappingModelState;
 
    createCommand(operation: AddSourceObjectOperation): Command {
       return new CrossModelCommand(this.modelState, () => this.addSourceObject(operation));

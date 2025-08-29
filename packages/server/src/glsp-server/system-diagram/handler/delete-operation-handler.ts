@@ -1,8 +1,8 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { Command, DeleteElementOperation, JsonOperationHandler, ModelState, remove } from '@eclipse-glsp/server';
-import { inject, injectable } from 'inversify';
+import { Command, DeleteElementOperation, JsonOperationHandler, remove } from '@eclipse-glsp/server';
+import { injectable } from 'inversify';
 import {
    InheritanceEdge,
    isLogicalEntityNode,
@@ -18,7 +18,7 @@ import { SystemModelState } from '../model/system-model-state.js';
 export class SystemDiagramDeleteOperationHandler extends JsonOperationHandler {
    operationType = DeleteElementOperation.KIND;
 
-   @inject(ModelState) protected override modelState: SystemModelState = undefined as unknown as SystemModelState;
+   declare protected modelState: SystemModelState;
 
    override createCommand(operation: DeleteElementOperation): Command | undefined {
       const deleteInfo = this.findElementsToDelete(operation);

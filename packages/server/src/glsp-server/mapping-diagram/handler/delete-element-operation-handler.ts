@@ -1,8 +1,8 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
-import { Command, DeleteElementOperation, GEdge, GNode, JsonOperationHandler, ModelState, remove } from '@eclipse-glsp/server';
-import { inject, injectable } from 'inversify';
+import { Command, DeleteElementOperation, GEdge, GNode, JsonOperationHandler, remove } from '@eclipse-glsp/server';
+import { injectable } from 'inversify';
 import {
    AttributeMappingSource,
    SourceObject,
@@ -18,7 +18,7 @@ import { MappingModelState } from '../model/mapping-model-state.js';
 export class MappingDiagramDeleteElementOperationHandler extends JsonOperationHandler {
    override operationType = DeleteElementOperation.KIND;
 
-   @inject(ModelState) protected override modelState: MappingModelState = undefined as unknown as MappingModelState;
+   declare protected modelState: MappingModelState;
 
    override createCommand(operation: DeleteElementOperation): Command | undefined {
       const deleteInfo = this.findElementsToDelete(operation);

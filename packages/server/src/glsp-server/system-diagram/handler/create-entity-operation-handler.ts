@@ -9,7 +9,6 @@ import {
    CreateNodeOperation,
    JsonCreateNodeOperationHandler,
    MaybePromise,
-   ModelState,
    Point
 } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
@@ -24,7 +23,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
    override label = 'Create Entity';
    elementTypeIds = [ENTITY_NODE_TYPE];
 
-   @inject(ModelState) protected override modelState: SystemModelState = undefined as unknown as SystemModelState;
+   declare protected modelState: SystemModelState;
    @inject(ActionDispatcher) protected actionDispatcher: ActionDispatcher;
 
    override createCommand(operation: CreateNodeOperation): MaybePromise<Command | undefined> {

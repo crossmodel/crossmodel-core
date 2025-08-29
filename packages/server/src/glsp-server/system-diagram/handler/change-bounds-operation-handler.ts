@@ -1,15 +1,15 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { ChangeBoundsOperation, Command, JsonOperationHandler, ModelState } from '@eclipse-glsp/server';
-import { inject, injectable } from 'inversify';
+import { ChangeBoundsOperation, Command, JsonOperationHandler } from '@eclipse-glsp/server';
+import { injectable } from 'inversify';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';
 
 @injectable()
 export class SystemDiagramChangeBoundsOperationHandler extends JsonOperationHandler {
    operationType = ChangeBoundsOperation.KIND;
-   @inject(ModelState) protected override modelState: SystemModelState = undefined as unknown as SystemModelState;
+   declare protected modelState: SystemModelState;
 
    createCommand(operation: ChangeBoundsOperation): Command {
       return new CrossModelCommand(this.modelState, () => this.changeBounds(operation));

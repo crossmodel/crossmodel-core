@@ -3,14 +3,7 @@
  ********************************************************************************/
 
 import { RELATIONSHIP_EDGE_TYPE, computeRelationshipName, toId, toIdReference } from '@crossmodel/protocol';
-import {
-   ActionDispatcher,
-   Command,
-   CreateEdgeOperation,
-   JsonCreateEdgeOperationHandler,
-   ModelState,
-   SelectAction
-} from '@eclipse-glsp/server';
+import { ActionDispatcher, Command, CreateEdgeOperation, JsonCreateEdgeOperationHandler, SelectAction } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
 import { URI, Utils as UriUtils } from 'vscode-uri';
 import { CrossModelRoot, LogicalEntityNode, Relationship, RelationshipEdge } from '../../../language-server/generated/ast.js';
@@ -23,7 +16,7 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
    override label = '1:1 Relationship';
    elementTypeIds = [RELATIONSHIP_EDGE_TYPE];
 
-   @inject(ModelState) protected override modelState: SystemModelState = undefined as unknown as SystemModelState;
+   declare protected modelState: SystemModelState;
    @inject(ActionDispatcher) protected actionDispatcher: ActionDispatcher;
 
    createCommand(operation: CreateEdgeOperation): Command {
