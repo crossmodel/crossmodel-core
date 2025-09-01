@@ -15,6 +15,7 @@ import { MultiSelect } from 'primereact/multiselect';
 import { Toolbar } from 'primereact/toolbar';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 export interface GridColumn<T> {
    field: keyof T;
@@ -115,7 +116,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const onRowEditComplete = (e: DataTableRowEditCompleteEvent) => {
       if (onRowUpdate) {
-         onRowUpdate(e.newData as T);
+         // don’t mutate e.newData directly
+         // spread into a new object
+         const updated = { ...e.newData } as T;
+         onRowUpdate(updated);
       }
    };
 
@@ -129,7 +133,19 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       if (editable && !readonly && onRowEditChange) {
          const rowData = e.data as T;
          const rowKey = rowData[keyField];
+
          if (rowKey !== undefined) {
+            const tableElement = tableRef.current?.getElement();
+
+            // If some other row is in edit mode -> save it first
+            if (activeRowKey && activeRowKey !== rowKey) {
+               const rowEditorSaveButton = tableElement?.querySelector('.p-row-editor-save');
+               if (rowEditorSaveButton instanceof HTMLElement) {
+                  rowEditorSaveButton.click();
+               }
+            }
+
+            // Then start editing the clicked row
             const newEditingRows = { [rowKey]: true };
             onRowEditChange({
                originalEvent: e.originalEvent,
@@ -140,6 +156,68 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    };
 
+   const handleRowClick = (e: DataTableRowClickEvent) => {
+      if (!activeRowKey) return; // nothing is being edited
+
+      const target = e.originalEvent.target as HTMLElement;
+
+      // Ignore clicks inside editors/controls
+      if (target.closest('button, a, input, select, textarea')) {
+         return;
+      }
+
+      if (editable && !readonly) {
+         const rowData = e.data as T;
+         const rowKey = rowData[keyField];
+
+         // If click is on *another* row while editing → just save & exit
+         if (rowKey !== undefined && rowKey !== activeRowKey) {
+            const tableElement = tableRef.current?.getElement();
+            const rowEditorSaveButton = tableElement?.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               rowEditorSaveButton.click();
+            }
+         }
+      }
+   };
+
+   const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
+
+   React.useEffect(() => {
+      if (!activeRowKey) return;
+
+      const handleClickOutside = (event: MouseEvent) => {
+         const tableElement = tableRef.current?.getElement();
+         if (!tableElement) return;
+
+         const target = event.target as HTMLElement;
+
+         const isInsideTable = tableElement.contains(target);
+
+         // allow clicks inside PrimeReact overlay panels
+         const isInsideOverlay = target.closest(
+            '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
+         );
+
+         if (isInsideOverlay) {
+            return; // selecting from overlay shouldn't exit edit mode
+         }
+
+         if (!isInsideTable) {
+            // Outside table → save & exit
+            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               rowEditorSaveButton.click();
+            }
+         }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+         document.removeEventListener('mousedown', handleClickOutside);
+      };
+   }, [activeRowKey]);
+
    const allActionsTemplate = (rowData: T, props: any) => {
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing;
       const buttons: React.ReactElement[] = [];
@@ -148,7 +226,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          buttons.push(
             <Button
                icon='pi pi-check'
-               className='p-button-text p-button-success p-row-action-button'
+               className='p-button-text p-button-success p-row-action-button p-row-editor-save'
                onClick={props.rowEditor.onSaveClick}
                tooltip='Save'
             />
@@ -156,7 +234,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          buttons.push(
             <Button
                icon='pi pi-times'
-               className='p-button-text p-button-danger p-row-action-button'
+               className='p-button-text p-button-danger p-row-action-button p-row-editor-cancel'
                onClick={props.rowEditor.onCancelClick}
                tooltip='Cancel'
             />
@@ -222,8 +300,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const cellEditor = (options: any) => (
       <InputText
          value={options.value}
-         onChange={e => options.editorCallback(e.target.value)}
+         onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
          className={validationErrors[options.field] ? 'p-invalid' : ''}
+         onKeyDown={handleGridEditorKeyDown}
+         autoFocus
       />
    );
 
@@ -298,6 +378,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             editMode={editable ? 'row' : undefined}
             dataKey={keyField as string}
             onRowEditComplete={onRowEditComplete}
+            onRowClick={handleRowClick}
             onRowDoubleClick={handleRowDoubleClick}
             editingRows={editingRows}
             onRowEditChange={onRowEditChange}

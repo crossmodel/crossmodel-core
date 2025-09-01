@@ -2,6 +2,7 @@ import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent
 import { ProgressSpinner } from 'primereact/progressspinner';
 import * as React from 'react';
 import { useReadonly } from '../../ModelContext';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 export interface AsyncAutoCompleteProps<T = string> {
    label: string;
@@ -121,6 +122,7 @@ export default function AsyncAutoComplete<T = string>({
                onHide={onHide}
                forceSelection={forceSelection}
                field={field ? String(field) : undefined}
+               onKeyDown={handleGridEditorKeyDown}
             />
          </div>
          {error && helperText && <small className='p-error'>{helperText}</small>}

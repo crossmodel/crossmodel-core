@@ -14,6 +14,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 interface SourceObjectDependencyEditorProps {
    options: any;
@@ -132,6 +133,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
          onHide={onHide}
          disabled={readonly}
          autoFocus
+         onKeyDown={handleGridEditorKeyDown}
       />
    );
 }

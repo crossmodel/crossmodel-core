@@ -27,6 +27,7 @@ import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 interface SourceObjectConditionEditorProps {
    options: any;
@@ -163,6 +164,7 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
          onHide={onHide}
          disabled={readonly}
          autoFocus
+         onKeyDown={handleGridEditorKeyDown}
       />
    );
 }
@@ -186,7 +188,16 @@ function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
       }
    };
 
-   return <Dropdown value={currentValue} options={operatorOptions} onChange={onChange} className='w-full' autoFocus />;
+   return (
+      <Dropdown
+         value={currentValue}
+         options={operatorOptions}
+         onChange={onChange}
+         className='w-full'
+         autoFocus
+         onKeyDown={handleGridEditorKeyDown}
+      />
+   );
 }
 
 export interface SourceObjectConditionRow {

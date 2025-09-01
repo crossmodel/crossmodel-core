@@ -8,6 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
    idx: number;
@@ -149,6 +150,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   value={options.value}
                   options={dataTypeOptions}
                   onChange={e => options.editorCallback(e.value)}
+                  onKeyDown={handleGridEditorKeyDown}
                   disabled={readonly}
                   className='w-full'
                />
@@ -170,6 +172,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   <Checkbox
                      checked={options.value ?? false}
                      onChange={e => options.editorCallback(e.checked ?? false)}
+                     onKeyDown={handleGridEditorKeyDown}
                      disabled={readonly}
                   />
                </div>

@@ -9,6 +9,7 @@ import * as React from 'react';
 import { useDataModel, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 export interface DataModelDependencyRow extends DataModelDependency {
    idx: number;
@@ -126,6 +127,7 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
          onHide={onHide}
          disabled={readonly}
          autoFocus
+         onKeyDown={handleGridEditorKeyDown}
       />
    );
 }

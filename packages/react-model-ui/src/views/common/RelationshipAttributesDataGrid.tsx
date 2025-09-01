@@ -8,6 +8,7 @@ import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 function getDiagnosticKey(row: { idx: number }, field: string): string {
    return `attributes[${row.idx}].${field}`;
@@ -147,6 +148,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
          onHide={onHide}
          disabled={readonly}
          autoFocus
+         onKeyDown={handleGridEditorKeyDown}
       />
    );
 }

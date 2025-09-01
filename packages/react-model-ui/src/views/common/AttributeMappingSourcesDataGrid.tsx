@@ -16,6 +16,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 interface AttributeMappingSourceEditorProps {
    options: any;
@@ -138,6 +139,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
          onHide={onHide}
          disabled={readonly}
          autoFocus
+         onKeyDown={handleGridEditorKeyDown}
       />
    );
 }
