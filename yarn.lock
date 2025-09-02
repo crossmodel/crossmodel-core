@@ -1086,10 +1086,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@cypress/request@3.0.8":
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/@cypress/request/-/request-3.0.8.tgz#992f1f42ba03ebb14fa5d97290abe9d015ed0815"
-  integrity sha512-h0NFgh1mJmm1nr4jCwkGHwKneVYKghUyWe6TMNrk0B9zsjAJxpg8C4/+BAcmLgCPa1vj1V8rNUaILl+zYRUWBQ==
+"@cypress/request@3.0.9":
+  version "3.0.9"
+  resolved "https://registry.yarnpkg.com/@cypress/request/-/request-3.0.9.tgz#8ed6e08fea0c62998b5552301023af7268f11625"
+  integrity sha512-I3l7FdGRXluAS44/0NguwWlO83J18p0vlr2FYHrJkWdNYhgVoiYo61IXPqaOsL+vNxU1ZqMACzItGK3/KKDsdw==
   dependencies:
     aws-sign2 "~0.7.0"
     aws4 "^1.8.0"
@@ -1097,7 +1097,7 @@
     combined-stream "~1.0.6"
     extend "~3.0.2"
     forever-agent "~0.6.1"
-    form-data "~4.0.0"
+    form-data "~4.0.4"
     http-signature "~1.4.0"
     is-typedarray "~1.0.0"
     isstream "~0.1.2"
@@ -1948,10 +1948,10 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@lerna/create@8.2.1":
-  version "8.2.1"
-  resolved "https://registry.yarnpkg.com/@lerna/create/-/create-8.2.1.tgz#b9c34b9fbd75035418244e33cf197523a2e10a6e"
-  integrity sha512-Cz2u/fwc03D1EE6VFZCLMmI8FIUtGmxHQ3ECeNblsxv9i0YSKWe4Xm18sjO1xltG/K5ByiH8/HMeY9dlyAv22A==
+"@lerna/create@8.2.3":
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/@lerna/create/-/create-8.2.3.tgz#8e88fedb60eb699f2f5057e7344d9f980b7f9554"
+  integrity sha512-f+68+iojcQ0tZRMfCgQyJdsdz+YPu3/d+0Zo1RJz92bgBxTCiEU+dHACVq1n3sEjm/YWPnFGdag8U5EYYmP3WA==
   dependencies:
     "@npmcli/arborist" "7.5.4"
     "@npmcli/package-json" "5.2.0"
@@ -1976,7 +1976,6 @@
     get-stream "6.0.0"
     git-url-parse "14.0.0"
     glob-parent "6.0.2"
-    globby "11.1.0"
     graceful-fs "4.2.11"
     has-unicode "2.0.1"
     ini "^1.3.8"
@@ -2011,9 +2010,10 @@
     slash "^3.0.0"
     ssri "^10.0.6"
     string-width "^4.2.3"
-    strong-log-transformer "2.1.0"
     tar "6.2.1"
     temp-dir "1.0.0"
+    through "2.3.8"
+    tinyglobby "0.2.12"
     upath "2.0.1"
     uuid "^10.0.0"
     validate-npm-package-license "^3.0.4"
@@ -6804,16 +6804,16 @@ compression-webpack-plugin@^9.0.0:
     schema-utils "^4.0.0"
     serialize-javascript "^6.0.0"
 
-compression@1.8.0:
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/compression/-/compression-1.8.0.tgz#09420efc96e11a0f44f3a558de59e321364180f7"
-  integrity sha512-k6WLKfunuqCYD3t6AsuPGvQWaKwuLLh2/xHNcX4qE+vIfDNXpSqnrhwA7O53R7WVQUnt8dVAIW+YHr7xTgOgGA==
+compression@1.8.1:
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/compression/-/compression-1.8.1.tgz#4a45d909ac16509195a9a28bd91094889c180d79"
+  integrity sha512-9mAqGPHLakhCLeNyxPkK4xVo746zQ/czLH1Ky+vkitMnWfWZps8r0qXuwhwizagCRttsL4lfG4pIOvaWLpAP0w==
   dependencies:
     bytes "3.1.2"
     compressible "~2.0.18"
     debug "2.6.9"
     negotiator "~0.6.4"
-    on-headers "~1.0.2"
+    on-headers "~1.1.0"
     safe-buffer "5.2.1"
     vary "~1.1.2"
 
@@ -7690,7 +7690,7 @@ duplexer2@~0.1.4:
   dependencies:
     readable-stream "^2.0.2"
 
-duplexer@^0.1.1, duplexer@~0.1.1:
+duplexer@~0.1.1:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/duplexer/-/duplexer-0.1.2.tgz#3abe43aef3835f8ae077d136ddce0f276b0400e6"
   integrity sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==
@@ -8708,6 +8708,11 @@ fd-slicer@~1.1.0:
   dependencies:
     pend "~1.2.0"
 
+fdir@^6.4.3:
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
+  integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
+
 fdir@^6.4.4:
   version "6.4.6"
   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.4.6.tgz#2b268c0232697063111bbf3f64810a2a741ba281"
@@ -8927,10 +8932,10 @@ forever-agent@~0.6.1:
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
   integrity sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==
 
-form-data@^4.0.0, form-data@~4.0.0:
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/form-data/-/form-data-4.0.3.tgz#608b1b3f3e28be0fccf5901fc85fb3641e5cf0ae"
-  integrity sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==
+form-data@^4.0.0, form-data@~4.0.4:
+  version "4.0.4"
+  resolved "https://registry.yarnpkg.com/form-data/-/form-data-4.0.4.tgz#784cdcce0669a9d68e94d11ac4eea98088edd2c4"
+  integrity sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==
   dependencies:
     asynckit "^0.4.0"
     combined-stream "^1.0.8"
@@ -9377,7 +9382,7 @@ globalthis@^1.0.1, globalthis@^1.0.4:
     define-properties "^1.2.1"
     gopd "^1.0.1"
 
-globby@11.1.0, globby@^11.0.3, globby@^11.1.0:
+globby@^11.0.3, globby@^11.1.0:
   version "11.1.0"
   resolved "https://registry.yarnpkg.com/globby/-/globby-11.1.0.tgz#bd4be98bb042f83d796f7e3811991fbe82a0d34b"
   integrity sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==
@@ -11142,12 +11147,12 @@ lazy-val@^1.0.5:
   resolved "https://registry.yarnpkg.com/lazy-val/-/lazy-val-1.0.5.tgz#6cf3b9f5bc31cee7ee3e369c0832b7583dcd923d"
   integrity sha512-0/BnGCCfyUMkBpeDgWihanIAF9JmZhHBgUhEqzvf+adhNGLoP6TaiI5oF8oyb3I45P+PcnrqihSf01M0l0G5+Q==
 
-lerna@8.2.1:
-  version "8.2.1"
-  resolved "https://registry.yarnpkg.com/lerna/-/lerna-8.2.1.tgz#30ddc192130dc50cff68951c1e63a74a391c178d"
-  integrity sha512-Xwjv9/4ixp7fpBWhtvp7dz4NoQT8DEf7hzibHKCgu/8kmZUHeXsTn+TKspHqhI+p4YDmdkDnkg8xmymz73kVOg==
+lerna@8.2.3:
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/lerna/-/lerna-8.2.3.tgz#0a9c07eda4cfac84a480b3e66915189ccfb5bd2c"
+  integrity sha512-rmuDU+92eWUnnyaPg3Ise339pTxF+r2hu8ky/soCfbGpUoW4kCwsDza3P/LtQJWrKwZWHcosEitfYvxGUWZ16A==
   dependencies:
-    "@lerna/create" "8.2.1"
+    "@lerna/create" "8.2.3"
     "@npmcli/arborist" "7.5.4"
     "@npmcli/package-json" "5.2.0"
     "@npmcli/run-script" "8.1.0"
@@ -11174,7 +11179,6 @@ lerna@8.2.1:
     get-stream "6.0.0"
     git-url-parse "14.0.0"
     glob-parent "6.0.2"
-    globby "11.1.0"
     graceful-fs "4.2.11"
     has-unicode "2.0.1"
     import-local "3.1.0"
@@ -11214,9 +11218,10 @@ lerna@8.2.1:
     slash "3.0.0"
     ssri "^10.0.6"
     string-width "^4.2.3"
-    strong-log-transformer "2.1.0"
     tar "6.2.1"
     temp-dir "1.0.0"
+    through "2.3.8"
+    tinyglobby "0.2.12"
     typescript ">=3 < 6"
     upath "2.0.1"
     uuid "^10.0.0"
@@ -12178,9 +12183,9 @@ msgpackr@^1.10.2:
     msgpackr-extract "^3.0.2"
 
 multer@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/multer/-/multer-2.0.1.tgz#3ed335ed2b96240e3df9e23780c91cfcf5d29202"
-  integrity sha512-Ug8bXeTIUlxurg8xLTEskKShvcKDZALo1THEX5E41pYCD2sCVub5/kIRIGqWNoqV6szyLyQKV6mD4QUrWE5GCQ==
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/multer/-/multer-2.0.2.tgz#08a8aa8255865388c387aaf041426b0c87bf58dd"
+  integrity sha512-u7f2xaZ/UG8oLXHvtF/oWTRvT44p9ecwBBqTwgJVq0+4BW1g8OW01TyMEGWBHbyMOYVHXslaut7qEQ1meATXgw==
   dependencies:
     append-field "^1.0.0"
     busboy "^1.6.0"
@@ -12658,10 +12663,10 @@ on-finished@2.4.1, on-finished@^2.4.1:
   dependencies:
     ee-first "1.1.1"
 
-on-headers@~1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/on-headers/-/on-headers-1.0.2.tgz#772b0ae6aaa525c399e489adfad90c403eb3c28f"
-  integrity sha512-pZAE+FJLoyITytdqK0U5s+FIpjN0JP3OzFi/u8Rx+EV5/W+JTWGXG8xFzevE7AjBfDqHv/8vL8qQsIhHnqRkrA==
+on-headers@~1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/on-headers/-/on-headers-1.1.0.tgz#59da4f91c45f5f989c6e4bcedc5a3b0aed70ff65"
+  integrity sha512-737ZY3yNnXy37FHkQxPzt4UZ2UWPWiCZWLvFZ4fu5cueciegX0zGPnrlY6bwRg4FdQOe9YU8MkmJwGhoMybl8A==
 
 once@^1.3.0, once@^1.3.1, once@^1.4.0:
   version "1.4.0"
@@ -15360,15 +15365,6 @@ strip-outer@^1.0.1:
   dependencies:
     escape-string-regexp "^1.0.2"
 
-strong-log-transformer@2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/strong-log-transformer/-/strong-log-transformer-2.1.0.tgz#0f5ed78d325e0421ac6f90f7f10e691d6ae3ae10"
-  integrity sha512-B3Hgul+z0L9a236FAUC9iZsL+nVHgoCJnqCbN588DjYxvGXaXaaFbfmQ/JhvKjZwsOukuR72XbHv71Qkug0HxA==
-  dependencies:
-    duplexer "^0.1.1"
-    minimist "^1.2.0"
-    through "^2.3.4"
-
 style-loader@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/style-loader/-/style-loader-2.0.0.tgz#9669602fd4690740eaaec137799a03addbbc393c"
@@ -15594,7 +15590,7 @@ through2@^2.0.0, through2@^2.0.3:
     readable-stream "~2.3.6"
     xtend "~4.0.1"
 
-through@2, "through@>=2.2.7 <3", through@^2.3.4, through@^2.3.6, through@^2.3.8, through@~2.3, through@~2.3.1:
+through@2, through@2.3.8, "through@>=2.2.7 <3", through@^2.3.6, through@^2.3.8, through@~2.3, through@~2.3.1:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
   integrity sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==
@@ -15605,6 +15601,14 @@ tiny-async-pool@1.3.0:
   integrity sha512-01EAw5EDrcVrdgyCLgoSPvqznC0sVxDSVeiOz09FUpjh71G79VCqneOr+xvt7T1r76CF6ZZfPjHorN2+d+3mqA==
   dependencies:
     semver "^5.5.0"
+
+tinyglobby@0.2.12:
+  version "0.2.12"
+  resolved "https://registry.yarnpkg.com/tinyglobby/-/tinyglobby-0.2.12.tgz#ac941a42e0c5773bd0b5d08f32de82e74a1a61b5"
+  integrity sha512-qkf4trmKSIiMTs/E63cxH+ojC2unam7rJ0WrauAzpT3ECNTxGRMlaXxVbfxMUC/w0LaYk6jQ4y/nGR9uBO3tww==
+  dependencies:
+    fdir "^6.4.3"
+    picomatch "^4.0.2"
 
 tinyglobby@^0.2.12:
   version "0.2.14"
@@ -16353,12 +16357,12 @@ verdaccio-htpasswd@13.0.0-next-8.19:
     http-errors "2.0.0"
     unix-crypt-td-js "1.1.4"
 
-verdaccio@^6.1.2:
-  version "6.1.5"
-  resolved "https://registry.yarnpkg.com/verdaccio/-/verdaccio-6.1.5.tgz#dcd17ef57aa42e885490edc4a63f718f99298242"
-  integrity sha512-gXEbG5Oj3SITUOXRQ0KuTtJ/eyhg8ARyaKXQfYOakA1gIxnjCF+SQLYkKe5El4OiDNOPu8QtviKzytRPA+UUag==
+verdaccio@^6.1.6:
+  version "6.1.6"
+  resolved "https://registry.yarnpkg.com/verdaccio/-/verdaccio-6.1.6.tgz#652521a517cee1180db85eda53983639237b0f91"
+  integrity sha512-zUMMKW0hjtOaLIm1cY9AqA0bMjvuGtKJVolzXQacIW9PHTnTjcsWF2+sbNLBhVrHwo+FJ1DzdNVaTWXOBWZgiQ==
   dependencies:
-    "@cypress/request" "3.0.8"
+    "@cypress/request" "3.0.9"
     "@verdaccio/auth" "8.0.0-next-8.19"
     "@verdaccio/config" "8.0.0-next-8.19"
     "@verdaccio/core" "8.0.0-next-8.19"
@@ -16376,7 +16380,7 @@ verdaccio@^6.1.2:
     JSONStream "1.3.5"
     async "3.2.6"
     clipanion "4.0.0-rc.4"
-    compression "1.8.0"
+    compression "1.8.1"
     cors "2.8.5"
     debug "4.4.1"
     envinfo "7.14.0"
