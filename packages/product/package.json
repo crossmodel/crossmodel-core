@@ -38,7 +38,7 @@
     "@theia/scm": "1.64.1",
     "@theia/search-in-workspace": "1.64.1",
     "@theia/workspace": "1.64.1",
-    "markdown-it": "^8.4.1"
+    "markdown-it": "^14.1.0"
   },
   "theiaExtensions": [
     {
