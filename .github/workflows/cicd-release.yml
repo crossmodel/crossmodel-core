@@ -51,6 +51,9 @@ jobs:
   package:
     name: ${{ matrix.os }}
 
+    permissions:
+      contents: read
+
     strategy:
       fail-fast: false
       matrix:

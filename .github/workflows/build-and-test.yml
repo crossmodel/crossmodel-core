@@ -14,6 +14,12 @@ jobs:
   build-and-test:
     name: ${{ matrix.os }}
 
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
+
     strategy:
       fail-fast: false
       matrix:
