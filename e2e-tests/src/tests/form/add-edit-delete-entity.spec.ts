@@ -55,7 +55,7 @@ test.describe('Add/Edit/Delete entity from explorer', () => {
       await savedEditor.saveAndClose();
    });
 
-   test('Edit entity name & description using form editor', async () => {
+      test('Edit entity name & description using form editor', async () => {
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Spaced_Name.entity.cm', 'Form Editor');
       const form = await formEditor.formFor('entity');
       const general = form.generalSection;

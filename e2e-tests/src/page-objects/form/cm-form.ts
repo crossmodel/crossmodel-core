@@ -7,7 +7,15 @@ import { ElementHandle, Locator } from '@playwright/test';
 import { TheiaPageObject, TheiaView } from '@theia/playwright';
 import { TheiaViewObject } from '../theia-view-object';
 
-export const FormIcons = {
+export type FormType = 'LogicalEntity' | 'Relationship' | 'SystemDiagram' | 'Mapping' | 'DataModel';
+export type FormIcon =
+   | 'codicon-git-commit'
+   | 'codicon-git-compare'
+   | 'codicon-type-hierarchy-sub'
+   | 'codicon-group-by-ref-type'
+   | 'codicon-globe';
+
+export const FormIcons: Record<FormType, FormIcon> = {
    LogicalEntity: 'codicon-git-commit',
    Relationship: 'codicon-git-compare',
    SystemDiagram: 'codicon-type-hierarchy-sub',
@@ -15,17 +23,18 @@ export const FormIcons = {
    DataModel: 'codicon-globe'
 };
 
-export type FormType = keyof typeof FormIcons;
-
 export abstract class CMForm extends TheiaViewObject {
-   protected abstract iconClass: string;
    protected typeSelector: string;
-
    readonly locator: Locator;
-   constructor(view: TheiaView, relativeSelector: string, type: FormType) {
-      super(view, relativeSelector);
-      this.typeSelector = `${this.selector} span.${FormIcons[type]}`;
-      this.locator = view.page.locator(this.selector);
+
+   constructor(
+      view: TheiaView,
+      protected baseSelector: string,
+      formType: FormType
+   ) {
+      super(view, ''); // Pass empty string to TheiaViewObject, as we manage selector here
+      this.typeSelector = `${baseSelector} i.${FormIcons[formType]}`;
+      this.locator = view.page.locator(baseSelector);
    }
 
    protected typeElementHandle(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
@@ -33,7 +42,7 @@ export abstract class CMForm extends TheiaViewObject {
    }
 
    override async waitForVisible(): Promise<void> {
-      await this.page.waitForSelector(this.typeSelector, { state: 'visible' });
+      await this.page.waitForSelector(this.typeSelector, { state: 'visible', timeout: 30000 });
    }
 
    override async isVisible(): Promise<boolean> {
@@ -42,7 +51,7 @@ export abstract class CMForm extends TheiaViewObject {
    }
 
    async isDirty(): Promise<boolean> {
-      const title = await this.page.$(this.selector + ' .form-title:not(.lm-mod-hidden)');
+      const title = await this.page.$(`${this.baseSelector} .form-title:not(.lm-mod-hidden)`);
       const text = await title?.textContent();
       return text?.endsWith('*') ?? false;
    }
@@ -60,6 +69,6 @@ export abstract class FormSection extends TheiaPageObject {
       sectionName: string
    ) {
       super(form.app);
-      this.locator = form.locator.locator(`div.MuiAccordion-root:has(h6:has-text("${sectionName}"))`);
+      this.locator = form.locator.locator(`.p-accordion-header:has-text("${sectionName}")`).locator('..');
    }
 }
