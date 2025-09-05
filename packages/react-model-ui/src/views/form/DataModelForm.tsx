@@ -67,12 +67,15 @@ export function DataModelForm(): React.ReactElement {
       setCurrentTypeValue(e.value as DataModelTypeInfo);
    }, []);
 
-   const debouncedDispatch = React.useCallback(
+   const debounceRef = React.useRef(
       debounce((value: string) => {
          dispatch({ type: 'datamodel:change-type', dataModelType: value });
-      }, 300), // Adjust the debounce delay as needed
-      [dispatch, debounce]
+      }, 300)
    );
+
+   const debouncedDispatch = React.useCallback((value: string) => {
+      debounceRef.current(value);
+   }, []);
 
    const handleTypeSelect = React.useCallback(
       (e: AutoCompleteSelectEvent) => {
