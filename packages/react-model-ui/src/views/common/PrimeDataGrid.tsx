@@ -225,6 +225,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       };
    }, [activeRowKey]);
 
+   // eslint-disable-next-line react/prop-types
    const allActionsTemplate = (rowData: T, props: ColumnBodyOptions) => {
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing;
       const buttons: React.ReactElement[] = [];
