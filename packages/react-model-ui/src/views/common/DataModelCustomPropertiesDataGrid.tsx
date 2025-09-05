@@ -117,9 +117,9 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
 
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
-         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, filterType: 'text', sortable: true },
-         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, filterType: 'text', sortable: true },
-         { field: 'description', header: 'Description', editor: !readonly, filterType: 'text', sortable: true }
+         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, filterType: 'text' },
+         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, filterType: 'text' },
+         { field: 'description', header: 'Description', editor: !readonly, filterType: 'text' }
       ],
       [readonly]
    );
