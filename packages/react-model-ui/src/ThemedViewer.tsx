@@ -48,20 +48,12 @@ export interface ThemingProps {
 
 export function themed<P extends object, TP extends ThemingProps>(WrappedComponent: React.ComponentType<P>): React.ComponentType<P & TP> {
    return function ThemedComponent(props: P & TP): React.ReactElement {
-      return React.createElement(
-         'div',
-         {
-            style: getTheme(props.theme),
-            className: `${props.theme === 'dark' ? 'dark' : 'light'}-theme`
-         },
-         React.createElement(
-            PrimeReactProvider,
-            {
-               value: { cssTransition: false, ripple: true },
-               children: undefined
-            },
-            React.createElement(WrappedComponent, props as P)
-         )
+      return (
+         <div style={getTheme(props.theme)} className={`${props.theme === 'dark' ? 'dark' : 'light'}-theme`}>
+            <PrimeReactProvider value={{ cssTransition: false, ripple: true }}>
+               <WrappedComponent {...(props as P)} />
+            </PrimeReactProvider>
+         </div>
       );
    };
 }

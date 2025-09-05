@@ -63,6 +63,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
 
    const onChange = (e: AutoCompleteChangeEvent) => {
       const value = e.value;
+      // eslint-disable-next-line no-null/no-null
       if (typeof value === 'object' && value !== null && value.label) {
          setCurrentValue(value.label);
          if (editorCallback) {

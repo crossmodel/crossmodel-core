@@ -227,7 +227,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    // eslint-disable-next-line react/prop-types
    const allActionsTemplate = (rowData: T, props: ColumnBodyOptions) => {
-      const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing;
+      const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
       const buttons: React.ReactElement[] = [];
 
       if (isEditing) {
@@ -235,7 +235,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             <Button
                icon='pi pi-check'
                className='p-button-text p-button-success p-row-action-button p-row-editor-save'
-               onClick={props.rowEditor?.onSaveClick}
+               onClick={props.rowEditor?.onSaveClick} // eslint-disable-line react/prop-types
                tooltip='Save'
             />
          );
@@ -243,17 +243,18 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             <Button
                icon='pi pi-times'
                className='p-button-text p-button-danger p-row-action-button p-row-editor-cancel'
-               onClick={props.rowEditor?.onCancelClick}
+               onClick={props.rowEditor?.onCancelClick} // eslint-disable-line react/prop-types
                tooltip='Cancel'
             />
          );
       } else {
+         // eslint-disable-next-line react/prop-types
          if (editable && !readonly && props.rowEditor) {
             buttons.push(
                <Button
                   icon='pi pi-pencil'
                   className='p-button-text p-row-action-button'
-                  onClick={props.rowEditor?.onInitClick}
+                  onClick={props.rowEditor?.onInitClick} // eslint-disable-line react/prop-types
                   tooltip='Edit'
                />
             );
