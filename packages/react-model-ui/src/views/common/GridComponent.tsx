@@ -1,3 +1,6 @@
+/********************************************************************************
+ * Copyright (c) 2025 CrossBreeze.
+ ********************************************************************************/
 import { Button } from 'primereact/button';
 import { Column, ColumnEditorOptions } from 'primereact/column';
 import { DataTable, DataTableRowEditCompleteEvent } from 'primereact/datatable';
@@ -69,15 +72,20 @@ export default function GridComponent<T>({
       const index = rows.findIndex(r => r.idx === row.idx);
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
 
-      if (targetIndex < 0 || targetIndex >= rows.length) return;
+      if (targetIndex < 0 || targetIndex >= rows.length) {
+         return;
+      }
 
       const reordered = [...rows];
       const [movedItem] = reordered.splice(index, 1);
       reordered.splice(targetIndex, 0, movedItem);
       setRows(reordered);
 
-      if (direction === 'up') onMoveUp?.(row);
-      else onMoveDown?.(row);
+      if (direction === 'up') {
+         onMoveUp?.(row);
+      } else {
+         onMoveDown?.(row);
+      }
    };
 
    const onRowEditComplete = async (e: DataTableRowEditCompleteEvent) => {
@@ -108,17 +116,21 @@ export default function GridComponent<T>({
       }
    };
 
-   const inputEditor =
-      (field: keyof T) =>
-      (options: ColumnEditorOptions): JSX.Element => (
-         <div className='p-inputgroup'>
-            <InputText
-               value={options.value}
-               onChange={e => options.editorCallback?.({ ...options.rowData, [field]: e.target.value })}
-               className={validationErrors.current[options.rowData.idx]?.[field] ? 'p-invalid' : ''}
-            />
-         </div>
-      );
+   const inputEditor = (field: keyof T) => {
+      function InputEditor(options: ColumnEditorOptions): React.JSX.Element {
+         return (
+            <div className='p-inputgroup'>
+               <InputText
+                  value={options.value}
+                  onChange={e => options.editorCallback?.({ ...options.rowData, [field]: e.target.value })}
+                  className={validationErrors.current[options.rowData.idx]?.[field] ? 'p-invalid' : ''}
+               />
+            </div>
+         );
+      }
+      InputEditor.displayName = 'InputEditor';
+      return InputEditor;
+   };
 
    const renderHeader = () => (
       <Toolbar

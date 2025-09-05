@@ -36,6 +36,7 @@ export function DataModelForm(): React.ReactElement {
       AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]
    );
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+   // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
    const dropdownJustOpened = React.useRef(false);
 
@@ -95,9 +96,7 @@ export function DataModelForm(): React.ReactElement {
       if (!event.query.trim()) {
          _filteredTypes = [...AllDataModelTypeInfos];
       } else {
-         _filteredTypes = AllDataModelTypeInfos.filter(type => {
-            return type.label.toLowerCase().startsWith(event.query.toLowerCase());
-         });
+         _filteredTypes = AllDataModelTypeInfos.filter(type => type.label.toLowerCase().startsWith(event.query.toLowerCase()));
       }
       setFilteredTypes(_filteredTypes);
    };

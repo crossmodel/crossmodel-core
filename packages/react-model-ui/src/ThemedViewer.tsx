@@ -54,10 +54,14 @@ export function themed<P extends object, TP extends ThemingProps>(WrappedCompone
             style: getTheme(props.theme),
             className: `${props.theme === 'dark' ? 'dark' : 'light'}-theme`
          },
-         React.createElement(PrimeReactProvider, {
-            value: { cssTransition: false, ripple: true },
-            children: React.createElement(WrappedComponent, props as P)
-         })
+         React.createElement(
+            PrimeReactProvider,
+            {
+               value: { cssTransition: false, ripple: true },
+               children: undefined
+            },
+            React.createElement(WrappedComponent, props as P)
+         )
       );
    };
 }

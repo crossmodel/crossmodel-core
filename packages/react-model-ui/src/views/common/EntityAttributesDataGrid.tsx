@@ -50,8 +50,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          // Clear any previous validation errors
          setValidationErrors({});
 
-         console.log('Adding attribute:', attribute);
-
          if (attribute.name) {
             const id = findNextUnique(toId(findNextUnique(attribute.name, entity.attributes, identifier)), entity.attributes, identifier);
 
@@ -190,19 +188,13 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       [readonly]
    );
 
-   if (!entity) {
-      return <div className='p-error'>No Entity!</div>;
-   }
-
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow): void => {
          // Prevent saving if the attribute name is still the default 'New Attribute'
          if (attribute.name === defaultEntry.name && attribute.datatype === defaultEntry.datatype) {
-            console.log('Not saving default new attribute.');
             return;
          }
 
-         console.log('Updating attribute:', attribute);
          const errors = validateField(attribute);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -218,6 +210,10 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       },
       [dispatch, defaultEntry, validateField]
    );
+
+   if (!entity) {
+      return <div className='p-error'>No Entity!</div>;
+   }
 
    return (
       <PrimeDataGrid

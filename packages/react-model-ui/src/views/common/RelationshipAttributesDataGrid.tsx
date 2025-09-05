@@ -52,6 +52,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
    const relationship = useRelationship();
    const readonly = useReadonly();
    const isDropdownClicked = React.useRef(false);
+   // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
@@ -90,6 +91,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
       // Check if dropdown is currently visible
       setTimeout(() => {
          const panel = autoCompleteRef.current?.getOverlay();
+         // eslint-disable-next-line no-null/no-null
          const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
 
          if (isVisible) {

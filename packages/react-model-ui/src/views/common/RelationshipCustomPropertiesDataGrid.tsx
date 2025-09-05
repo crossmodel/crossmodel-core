@@ -124,18 +124,18 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
       [readonly]
    );
 
-   if (!relationship) {
-      return <ErrorView errorMessage='No relationship available' />;
-   }
-
    const gridData = React.useMemo(
       () =>
-         (relationship.customProperties || []).map((prop, idx) => ({
+         (relationship?.customProperties || []).map((prop, idx) => ({
             ...prop,
             idx
          })),
-      [relationship.customProperties]
+      [relationship?.customProperties]
    );
+
+   if (!relationship) {
+      return <ErrorView errorMessage='No relationship available' />;
+   }
 
    return (
       <PrimeDataGrid

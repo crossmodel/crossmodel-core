@@ -24,7 +24,7 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
 
    test('Create new entity via toolbox', async () => {
       // --- Part 1: Create entity and save diagram ---
-      let diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       // Create new entity
       await diagramEditor.waitForCreationOfType(LogicalEntity, async () => {
          const existingEntity = await diagramEditor.getLogicalEntity('EmptyEntity');
@@ -111,10 +111,10 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
    test('Hide new entity', async () => {
       // --- Setup: Create and rename entity if it does not exist ---
       let diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      let entity = await diagramEditor.findLogicalEntity(RENAMED_ENTITY_LABEL);
+      const entity = await diagramEditor.findLogicalEntity(RENAMED_ENTITY_LABEL);
 
       if (!entity) {
-         let originalEntity = await diagramEditor.findLogicalEntity(NEW_ENTITY_LABEL);
+         const originalEntity = await diagramEditor.findLogicalEntity(NEW_ENTITY_LABEL);
          if (!originalEntity) {
             // Create NewEntity
             await diagramEditor.waitForCreationOfType(LogicalEntity, async () => {

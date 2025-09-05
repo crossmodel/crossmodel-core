@@ -1,3 +1,6 @@
+/********************************************************************************
+ * Copyright (c) 2025 CrossBreeze.
+ ********************************************************************************/
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import * as React from 'react';
@@ -36,6 +39,7 @@ export default function AsyncAutoComplete<T = string>({
    const [options, setOptions] = React.useState<T[]>([]);
    const [loading, setLoading] = React.useState(false);
    const readonly = useReadonly() || disabled;
+   // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
@@ -61,6 +65,7 @@ export default function AsyncAutoComplete<T = string>({
       // Check if dropdown is currently visible
       setTimeout(() => {
          const panel = autoCompleteRef.current?.getOverlay();
+         // eslint-disable-next-line no-null/no-null
          const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
 
          if (isVisible) {

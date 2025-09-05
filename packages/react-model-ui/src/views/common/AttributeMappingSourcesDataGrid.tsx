@@ -33,6 +33,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
    const isDropdownClicked = React.useRef(false);
+   // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
@@ -81,6 +82,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
       // Check if dropdown is currently visible
       setTimeout(() => {
          const panel = autoCompleteRef.current?.getOverlay();
+         // eslint-disable-next-line no-null/no-null
          const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
 
          if (isVisible) {
@@ -209,7 +211,7 @@ export function AttributeMappingSourcesDataGrid({
             return;
          }
          setValidationErrors({});
-         const { id, idx, ...rest } = sourceToUpdate;
+         const { ...rest } = sourceToUpdate;
          dispatch({ type: 'attribute-mapping:update-source', mappingIdx, source: rest, sourceIdx: sourceToUpdate.idx });
       },
       [dispatch, mappingIdx]

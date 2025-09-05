@@ -1,3 +1,6 @@
+/********************************************************************************
+ * Copyright (c) 2025 CrossBreeze.
+ ********************************************************************************/
 import * as React from 'react';
 
 /**
@@ -20,7 +23,9 @@ export const handleGridEditorKeyDown = (e: React.KeyboardEvent) => {
    }
 
    const editingRow = target.closest('tr');
-   if (!editingRow) return;
+   if (!editingRow) {
+      return;
+   }
 
    if (e.key === 'Enter') {
       e.preventDefault();

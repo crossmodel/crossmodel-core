@@ -124,18 +124,18 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       [readonly]
    );
 
-   if (!dataModel) {
-      return <ErrorView errorMessage='No data model available' />;
-   }
-
    const gridData = React.useMemo(
       () =>
-         (dataModel.customProperties || []).map((prop, idx) => ({
+         (dataModel?.customProperties || []).map((prop, idx) => ({
             ...prop,
             idx
          })),
-      [dataModel.customProperties]
+      [dataModel?.customProperties]
    );
+
+   if (!dataModel) {
+      return <ErrorView errorMessage='No data model available' />;
+   }
 
    return (
       <PrimeDataGrid

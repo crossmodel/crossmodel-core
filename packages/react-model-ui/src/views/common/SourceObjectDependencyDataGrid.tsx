@@ -31,6 +31,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
    const isDropdownClicked = React.useRef(false);
+   // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
@@ -56,6 +57,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
 
    const onChange = (e: AutoCompleteChangeEvent) => {
       const value = e.value;
+      // eslint-disable-next-line no-null/no-null
       if (typeof value === 'object' && value !== null && value.label) {
          setCurrentValue(value.label);
          if (editorCallback) {
@@ -75,6 +77,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
       // Check if dropdown is currently visible
       setTimeout(() => {
          const panel = autoCompleteRef.current?.getOverlay();
+         // eslint-disable-next-line no-null/no-null
          const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
 
          if (isVisible) {
@@ -179,7 +182,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             return;
          }
          setValidationErrors({});
-         const { id, idx, ...dependencyToUpdate } = dependency;
+         const { ...dependencyToUpdate } = dependency;
          dispatch({
             type: 'source-object:update-dependency',
             sourceObjectIdx,

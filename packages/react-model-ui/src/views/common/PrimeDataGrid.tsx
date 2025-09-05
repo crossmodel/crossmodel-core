@@ -1,6 +1,9 @@
+/********************************************************************************
+ * Copyright (c) 2025 CrossBreeze.
+ ********************************************************************************/
 import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
-import { Column } from 'primereact/column';
+import { Column, ColumnBodyOptions } from 'primereact/column';
 import {
    DataTable,
    DataTableFilterEvent,
@@ -72,10 +75,12 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    editingRows,
    onRowEditChange
 }: PrimeDataGridProps<T>): React.ReactElement {
+   // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
 
    const initFilters = () => {
       const initialFilters: DataTableFilterMeta = {
+         // eslint-disable-next-line no-null/no-null
          global: { value: null, matchMode: FilterMatchMode.CONTAINS }
       };
       columns.forEach(col => {
@@ -86,6 +91,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             matchMode = FilterMatchMode.IN;
          }
          initialFilters[col.field as string] = {
+            // eslint-disable-next-line no-null/no-null
             value: null,
             matchMode
          };
@@ -181,6 +187,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    };
 
+   // eslint-disable-next-line no-null/no-null
    const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
 
    React.useEffect(() => {
@@ -218,7 +225,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       };
    }, [activeRowKey]);
 
-   const allActionsTemplate = (rowData: T, props: any) => {
+   const allActionsTemplate = (rowData: T, props: ColumnBodyOptions) => {
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing;
       const buttons: React.ReactElement[] = [];
 
@@ -227,7 +234,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             <Button
                icon='pi pi-check'
                className='p-button-text p-button-success p-row-action-button p-row-editor-save'
-               onClick={props.rowEditor.onSaveClick}
+               onClick={props.rowEditor?.onSaveClick}
                tooltip='Save'
             />
          );
@@ -235,7 +242,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             <Button
                icon='pi pi-times'
                className='p-button-text p-button-danger p-row-action-button p-row-editor-cancel'
-               onClick={props.rowEditor.onCancelClick}
+               onClick={props.rowEditor?.onCancelClick}
                tooltip='Cancel'
             />
          );
@@ -245,7 +252,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                <Button
                   icon='pi pi-pencil'
                   className='p-button-text p-row-action-button'
-                  onClick={props.rowEditor.onInitClick}
+                  onClick={props.rowEditor?.onInitClick}
                   tooltip='Edit'
                />
             );
