@@ -17,7 +17,6 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { Toolbar } from 'primereact/toolbar';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
@@ -303,15 +302,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             )}
          </div>
       );
-   };
-
-   allActionsTemplate.propTypes = {
-      rowEditor: PropTypes.shape({
-         editing: PropTypes.bool,
-         onSaveClick: PropTypes.func,
-         onCancelClick: PropTypes.func,
-         onInitClick: PropTypes.func
-      })
    };
 
    const cellEditor = (options: any) => (
