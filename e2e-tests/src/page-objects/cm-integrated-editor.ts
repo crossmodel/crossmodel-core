@@ -83,7 +83,7 @@ export abstract class IntegratedTextEditor extends TheiaTextEditor {
    ) {
       super(filePath, parent.app);
       this.app = parent.app;
-      this.monacoEditor = new PatchedMonacoEditor(this.viewSelector, parent.app);
+      this.monacoEditor = new PatchedMonacoEditor(this.app.page.locator(this.viewSelector), parent.app);
    }
 
    override async activate(): Promise<void> {
@@ -145,7 +145,10 @@ export abstract class IntegratedTextEditor extends TheiaTextEditor {
 export class PatchedMonacoEditor extends TheiaMonacoEditor {
    override async lineByLineNumber(lineNumber: number): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
       try {
-         const element = await super.lineByLineNumber(lineNumber);
+         const element = await (await super.line(lineNumber)).elementHandle();
+         if (!element) {
+            return undefined;
+         }
          return element;
       } catch (error) {
          // the super implementation may try to access a property of an undefined element, we catch it and simply return undefined

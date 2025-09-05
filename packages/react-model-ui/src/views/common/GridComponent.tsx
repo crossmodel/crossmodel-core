@@ -54,7 +54,7 @@ export default function GridComponent<T>({
       setCounter(initializedRows.length);
    }, [gridData]);
 
-   const addNewRow = () => {
+   const addNewRow = (): void => {
       const newRow: GridComponentRow<T> = { ...defaultEntry, idx: counter };
       setRows([...rows, newRow]);
       setEditingRows({ [newRow.idx]: true });
@@ -62,13 +62,13 @@ export default function GridComponent<T>({
       onAdd?.(newRow);
    };
 
-   const deleteRow = (row: GridComponentRow<T>) => {
+   const deleteRow = (row: GridComponentRow<T>): void => {
       setRows(prev => prev.filter(r => r.idx !== row.idx));
       delete validationErrors.current[row.idx];
       onDelete?.(row);
    };
 
-   const moveRow = (row: GridComponentRow<T>, direction: 'up' | 'down') => {
+   const moveRow = (row: GridComponentRow<T>, direction: 'up' | 'down'): void => {
       const index = rows.findIndex(r => r.idx === row.idx);
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
 
@@ -88,7 +88,7 @@ export default function GridComponent<T>({
       }
    };
 
-   const onRowEditComplete = async (e: DataTableRowEditCompleteEvent) => {
+   const onRowEditComplete = async (e: DataTableRowEditCompleteEvent): Promise<void> => {
       const updatedRow = e.newData as GridComponentRow<T>;
       const index = rows.findIndex(r => r.idx === updatedRow.idx);
 
@@ -116,7 +116,7 @@ export default function GridComponent<T>({
       }
    };
 
-   const inputEditor = (field: keyof T) => {
+   const inputEditor = (field: keyof T): React.JSX.Element => {
       function InputEditor(options: ColumnEditorOptions): React.JSX.Element {
          return (
             <div className='p-inputgroup'>
@@ -129,17 +129,17 @@ export default function GridComponent<T>({
          );
       }
       InputEditor.displayName = 'InputEditor';
-      return InputEditor;
+      return InputEditor as any;
    };
 
-   const renderHeader = () => (
+   const renderHeader = (): React.JSX.Element => (
       <Toolbar
          start={<Button label={newEntryText ?? 'Add'} icon='pi pi-plus' onClick={addNewRow} disabled={readonly || !onAdd} />}
          end={label && <span className='text-blue-700 font-semibold'>{label}</span>}
       />
    );
 
-   const actionTemplate = (row: GridComponentRow<T>) => (
+   const actionTemplate = (row: GridComponentRow<T>): React.JSX.Element => (
       <div className='flex gap-2'>
          <Button
             icon='pi pi-trash'

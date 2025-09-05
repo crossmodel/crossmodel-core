@@ -55,7 +55,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
       [queryApi, referenceCtx]
    );
 
-   const onChange = (e: AutoCompleteChangeEvent) => {
+   const onChange = (e: AutoCompleteChangeEvent): void => {
       const value = e.value;
       // eslint-disable-next-line no-null/no-null
       if (typeof value === 'object' && value !== null && value.label) {
@@ -71,7 +71,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
       }
    };
 
-   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
       isDropdownClicked.current = true;
 
       // Check if dropdown is currently visible
@@ -92,17 +92,17 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
       }, 10);
    };
 
-   const onShow = () => {
+   const onShow = (): void => {
       setIsDropdownOpen(true);
    };
 
-   const onHide = () => {
+   const onHide = (): void => {
       setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
    React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
+      const handleClickOutside = (event: MouseEvent): void => {
          if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
             // Small delay to allow selection to complete first
             setTimeout(() => {
@@ -174,6 +174,14 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       return uniqueSources.map(s => ({ label: s, value: s }));
    }, [gridData]);
 
+   const validateField = React.useCallback((rowData: SourceObjectDependencyRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.source) {
+         errors.source = 'Source is required';
+      }
+      return errors;
+   }, []);
+
    const onRowUpdate = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
          const errors = validateField(dependency);
@@ -190,7 +198,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             dependency: dependencyToUpdate
          });
       },
-      [dispatch, sourceObjectIdx]
+      [dispatch, sourceObjectIdx, validateField]
    );
 
    const onRowAdd = React.useCallback(
@@ -244,14 +252,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       },
       [dispatch, sourceObjectIdx]
    );
-
-   const validateField = React.useCallback((rowData: SourceObjectDependencyRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.source) {
-         errors.source = 'Source is required';
-      }
-      return errors;
-   }, []);
 
    const columns = React.useMemo<GridColumn<SourceObjectDependencyRow>[]>(
       () => [

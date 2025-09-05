@@ -43,7 +43,7 @@ export default function AsyncAutoComplete<T = string>({
    const autoCompleteRef = React.useRef<AutoComplete>(null);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
-   const loadSuggestions = async (event: AutoCompleteCompleteEvent) => {
+   const loadSuggestions = async (event: AutoCompleteCompleteEvent): Promise<void> => {
       setLoading(true);
       try {
          const allOptions = await optionLoader();
@@ -61,7 +61,7 @@ export default function AsyncAutoComplete<T = string>({
       }
    };
 
-   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
       // Check if dropdown is currently visible
       setTimeout(() => {
          const panel = autoCompleteRef.current?.getOverlay();
@@ -80,17 +80,17 @@ export default function AsyncAutoComplete<T = string>({
       }, 10);
    };
 
-   const onShow = () => {
+   const onShow = (): void => {
       setIsDropdownOpen(true);
    };
 
-   const onHide = () => {
+   const onHide = (): void => {
       setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
    React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
+      const handleClickOutside = (event: MouseEvent): void => {
          if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
             // Small delay to allow selection to complete first
             setTimeout(() => {

@@ -8,7 +8,7 @@ import * as React from 'react';
  * - For AutoComplete, it allows the component to handle Enter/Escape when the suggestion panel is open.
  * - For all editors, it triggers row save on Enter and cancel on Escape when the panel is closed.
  */
-export const handleGridEditorKeyDown = (e: React.KeyboardEvent) => {
+export const handleGridEditorKeyDown = (e: React.KeyboardEvent): void => {
    const target = e.target as HTMLElement;
 
    // Special handling for AutoComplete: let it manage its own panel.

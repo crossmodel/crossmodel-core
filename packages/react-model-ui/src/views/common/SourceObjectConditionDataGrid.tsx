@@ -84,7 +84,7 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
       return { $type, value: fieldValue };
    }, []);
 
-   const onSelect = (e: AutoCompleteSelectEvent) => {
+   const onSelect = (e: AutoCompleteSelectEvent): void => {
       const newValue = handleValue(e.value);
       setCurrentValue(newValue);
       if (editorCallback) {
@@ -92,7 +92,7 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
       }
    };
 
-   const onChange = (e: AutoCompleteChangeEvent) => {
+   const onChange = (e: AutoCompleteChangeEvent): void => {
       const newValue = handleValue(e.value);
       setCurrentValue(newValue);
       if (editorCallback) {
@@ -100,7 +100,7 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
       }
    };
 
-   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
       isDropdownClicked.current = true;
 
       // Check if dropdown is currently visible
@@ -121,17 +121,17 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
       }, 10);
    };
 
-   const onShow = () => {
+   const onShow = (): void => {
       setIsDropdownOpen(true);
    };
 
-   const onHide = () => {
+   const onHide = (): void => {
       setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
    React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
+      const handleClickOutside = (event: MouseEvent): void => {
          if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
             // Small delay to allow selection to complete first
             setTimeout(() => {
@@ -183,7 +183,7 @@ function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
 
-   const onChange = (e: DropdownChangeEvent) => {
+   const onChange = (e: DropdownChangeEvent): void => {
       setCurrentValue(e.value);
       if (editorCallback) {
          editorCallback(e.value);
@@ -230,6 +230,20 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
 
    const sourceObject = mapping.sources[sourceObjectIdx];
 
+   const validateField = React.useCallback((rowData: SourceObjectConditionRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.left?.value) {
+         errors.left = 'Left value required';
+      }
+      if (!rowData.operator) {
+         errors.operator = 'Operator required';
+      }
+      if (!rowData.right?.value) {
+         errors.right = 'Right value required';
+      }
+      return errors;
+   }, []);
+
    const onRowUpdate = React.useCallback(
       (condition: SourceObjectConditionRow) => {
          const errors = validateField(condition);
@@ -253,7 +267,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             }
          });
       },
-      [dispatch, sourceObjectIdx]
+      [dispatch, sourceObjectIdx, validateField]
    );
 
    const onRowAdd = React.useCallback(
@@ -314,20 +328,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
       [dispatch, sourceObjectIdx]
    );
 
-   const validateField = React.useCallback((rowData: SourceObjectConditionRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.left?.value) {
-         errors.left = 'Left value required';
-      }
-      if (!rowData.operator) {
-         errors.operator = 'Operator required';
-      }
-      if (!rowData.right?.value) {
-         errors.right = 'Right value required';
-      }
-      return errors;
-   }, []);
-
    const columns = React.useMemo<GridColumn<SourceObjectConditionRow>[]>(
       () => [
          {
@@ -363,7 +363,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             filterType: 'text'
          }
       ],
-      [sourceObject, readonly]
+      [sourceObject]
    );
 
    const defaultEntry = React.useMemo<SourceObjectConditionRow>(

@@ -71,7 +71,7 @@ export function DataModelForm(): React.ReactElement {
       debounce((value: string) => {
          dispatch({ type: 'datamodel:change-type', dataModelType: value });
       }, 300), // Adjust the debounce delay as needed
-      [dispatch]
+      [dispatch, debounce]
    );
 
    const handleTypeSelect = React.useCallback(
@@ -91,7 +91,7 @@ export function DataModelForm(): React.ReactElement {
       [dispatch]
    );
 
-   const searchType = (event: AutoCompleteCompleteEvent) => {
+   const searchType = (event: AutoCompleteCompleteEvent): void => {
       let _filteredTypes;
       if (!event.query.trim()) {
          _filteredTypes = [...AllDataModelTypeInfos];
@@ -101,7 +101,7 @@ export function DataModelForm(): React.ReactElement {
       setFilteredTypes(_filteredTypes);
    };
 
-   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
       if (isDropdownOpen && !dropdownJustOpened.current) {
          // If dropdown is open and wasn't just opened, close it
          setTimeout(() => {
@@ -115,19 +115,19 @@ export function DataModelForm(): React.ReactElement {
       }, 100);
    };
 
-   const onShow = () => {
+   const onShow = (): void => {
       setIsDropdownOpen(true);
       dropdownJustOpened.current = true;
    };
 
-   const onHide = () => {
+   const onHide = (): void => {
       setIsDropdownOpen(false);
       dropdownJustOpened.current = false;
    };
 
    // Handle click outside to close dropdown
    React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
+      const handleClickOutside = (event: MouseEvent): void => {
          if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
             setTimeout(() => {
                const panel = autoCompleteRef.current?.getOverlay();

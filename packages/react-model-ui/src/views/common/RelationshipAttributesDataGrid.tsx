@@ -78,14 +78,14 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
       [queryApi, referenceCtx]
    );
 
-   const onSelect = (e: AutoCompleteSelectEvent) => {
+   const onSelect = (e: AutoCompleteSelectEvent): void => {
       setCurrentValue(e.value);
       if (editorCallback) {
          editorCallback(e.value);
       }
    };
 
-   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
       isDropdownClicked.current = true;
 
       // Check if dropdown is currently visible
@@ -106,17 +106,17 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
       }, 10);
    };
 
-   const onShow = () => {
+   const onShow = (): void => {
       setIsDropdownOpen(true);
    };
 
-   const onHide = () => {
+   const onHide = (): void => {
       setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
    React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
+      const handleClickOutside = (event: MouseEvent): void => {
          if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
             // Small delay to allow selection to complete first
             setTimeout(() => {

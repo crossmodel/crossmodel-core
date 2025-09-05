@@ -61,7 +61,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
       [queryApi, referenceCtx]
    );
 
-   const onChange = (e: AutoCompleteChangeEvent) => {
+   const onChange = (e: AutoCompleteChangeEvent): void => {
       const value = e.value;
       // eslint-disable-next-line no-null/no-null
       if (typeof value === 'object' && value !== null && value.label) {
@@ -77,7 +77,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
       }
    };
 
-   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent) => {
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
       isDropdownClicked.current = true;
 
       // Check if dropdown is currently visible
@@ -98,17 +98,17 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
       }, 10);
    };
 
-   const onShow = () => {
+   const onShow = (): void => {
       setIsDropdownOpen(true);
    };
 
-   const onHide = () => {
+   const onHide = (): void => {
       setIsDropdownOpen(false);
    };
 
    // Handle click outside to close dropdown
    React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
+      const handleClickOutside = (event: MouseEvent): void => {
          if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
             // Small delay to allow selection to complete first
             setTimeout(() => {
@@ -167,6 +167,14 @@ export function AttributeMappingSourcesDataGrid({
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
+   const validateField = React.useCallback((rowData: AttributeMappingSourceRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.value) {
+         errors.value = 'Invalid Value';
+      }
+      return errors;
+   }, []);
+
    const gridData = React.useMemo(
       () =>
          (attributeMapping.sources || []).map((source, idx) => ({
@@ -215,7 +223,7 @@ export function AttributeMappingSourcesDataGrid({
          const { ...rest } = sourceToUpdate;
          dispatch({ type: 'attribute-mapping:update-source', mappingIdx, source: rest, sourceIdx: sourceToUpdate.idx });
       },
-      [dispatch, mappingIdx]
+      [dispatch, mappingIdx, validateField]
    );
 
    const onSourceMoveUp = React.useCallback(
@@ -231,14 +239,6 @@ export function AttributeMappingSourcesDataGrid({
       },
       [dispatch, mappingIdx]
    );
-
-   const validateField = React.useCallback((rowData: AttributeMappingSourceRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.value) {
-         errors.value = 'Invalid Value';
-      }
-      return errors;
-   }, []);
 
    const columns: GridColumn<AttributeMappingSourceRow>[] = React.useMemo(
       () => [

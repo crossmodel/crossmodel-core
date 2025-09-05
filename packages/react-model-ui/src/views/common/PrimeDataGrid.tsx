@@ -78,7 +78,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
 
-   const initFilters = () => {
+   const initFilters = (): DataTableFilterMeta => {
       const initialFilters: DataTableFilterMeta = {
          // eslint-disable-next-line no-null/no-null
          global: { value: null, matchMode: FilterMatchMode.CONTAINS }
@@ -120,7 +120,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    }, [editingRows, data, keyField]);
 
-   const onRowEditComplete = (e: DataTableRowEditCompleteEvent) => {
+   const onRowEditComplete = (e: DataTableRowEditCompleteEvent): void => {
       if (onRowUpdate) {
          // don’t mutate e.newData directly
          // spread into a new object
@@ -129,7 +129,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    };
 
-   const handleRowDoubleClick = (e: DataTableRowClickEvent) => {
+   const handleRowDoubleClick = (e: DataTableRowClickEvent): void => {
       const target = e.originalEvent.target as HTMLElement;
 
       if (target.closest('button, a, input, select, textarea')) {
@@ -162,8 +162,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    };
 
-   const handleRowClick = (e: DataTableRowClickEvent) => {
-      if (!activeRowKey) return; // nothing is being edited
+   const handleRowClick = (e: DataTableRowClickEvent): void => {
+      if (!activeRowKey) {
+         return; // nothing is being edited
+      }
 
       const target = e.originalEvent.target as HTMLElement;
 
@@ -191,11 +193,15 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
 
    React.useEffect(() => {
-      if (!activeRowKey) return;
+      if (!activeRowKey) {
+         return;
+      }
 
-      const handleClickOutside = (event: MouseEvent) => {
+      const handleClickOutside = (event: MouseEvent): void => {
          const tableElement = tableRef.current?.getElement();
-         if (!tableElement) return;
+         if (!tableElement) {
+            return;
+         }
 
          const target = event.target as HTMLElement;
 
@@ -226,7 +232,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    }, [activeRowKey]);
 
    // eslint-disable-next-line react/prop-types
-   const allActionsTemplate = (rowData: T, props: ColumnBodyOptions) => {
+   const allActionsTemplate = (rowData: T, props: ColumnBodyOptions): React.JSX.Element => {
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
       const buttons: React.ReactElement[] = [];
 
@@ -306,7 +312,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       );
    };
 
-   const cellEditor = (options: any) => (
+   const cellEditor = (options: any): React.JSX.Element => (
       <InputText
          value={options.value}
          onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
@@ -334,7 +340,11 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       </React.Fragment>
    );
 
-   const filterTemplate = (options: any, filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean', filterOptions?: any[]) => {
+   const filterTemplate = (
+      options: any,
+      filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean',
+      filterOptions?: any[]
+   ): React.JSX.Element => {
       if (filterType === 'dropdown') {
          return (
             <Dropdown
