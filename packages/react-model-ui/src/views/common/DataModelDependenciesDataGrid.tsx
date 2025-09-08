@@ -289,6 +289,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          addButtonLabel='Add Dependency'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         globalFilterFields={['datamodel', 'version']}
       />
    );
 }

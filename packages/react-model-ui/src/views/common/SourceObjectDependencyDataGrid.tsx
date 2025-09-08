@@ -299,6 +299,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
          addButtonLabel='Add Dependency'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         globalFilterFields={['source']}
       />
    );
 }

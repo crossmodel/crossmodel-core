@@ -284,6 +284,7 @@ export function AttributeMappingSourcesDataGrid({
          addButtonLabel='Add Source'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         globalFilterFields={['value']}
       />
    );
 }

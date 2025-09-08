@@ -234,6 +234,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         globalFilterFields={['name', 'datatype', 'description']}
       />
    );
 }

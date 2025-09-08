@@ -325,6 +325,7 @@ export function RelationshipAttributesDataGrid({ diagnostics }: RelationshipAttr
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         globalFilterFields={['parent', 'child']}
       />
    );
 }

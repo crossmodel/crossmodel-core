@@ -361,6 +361,20 @@ span.w-full.p-autocomplete {
    color: var(--theia-button-background);
 }
 
+.p-datatable .datatable-global-filter {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+}
+
+.p-datatable .datatable-global-filter .p-inputtext {
+   padding-left: 2rem;
+}
+
+.p-datatable .datatable-global-filter .p-icon-field span.pi.pi-search.p-input-icon {
+   margin-top: -0.3rem;
+}
+
 /* MultiSelect styles */
 .p-multiselect {
    background: var(--surface-card);

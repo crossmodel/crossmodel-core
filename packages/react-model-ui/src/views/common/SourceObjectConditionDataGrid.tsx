@@ -426,6 +426,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          addButtonLabel='Add Condition'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         globalFilterFields={['left', 'operator', 'right']}
       />
    );
 }

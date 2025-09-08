@@ -156,6 +156,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          addButtonLabel='Add Property'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         globalFilterFields={['name', 'value', 'description']}
       />
    );
 }

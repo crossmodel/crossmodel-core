@@ -8,11 +8,14 @@ import {
    DataTable,
    DataTableFilterEvent,
    DataTableFilterMeta,
+   DataTableFilterMetaData,
    DataTableRowClickEvent,
    DataTableRowEditCompleteEvent,
    DataTableRowEditEvent
 } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
+import { IconField } from 'primereact/iconfield';
+import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { Toolbar } from 'primereact/toolbar';
@@ -53,6 +56,7 @@ export interface PrimeDataGridProps<T> {
    className?: string;
    editingRows?: Record<string, boolean>;
    onRowEditChange?: (e: DataTableRowEditEvent) => void;
+   globalFilterFields?: (keyof T)[];
 }
 
 export function PrimeDataGrid<T extends Record<string, any>>({
@@ -73,7 +77,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    validationErrors = {},
    className,
    editingRows,
-   onRowEditChange
+   onRowEditChange,
+   globalFilterFields
 }: PrimeDataGridProps<T>): React.ReactElement {
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
@@ -100,6 +105,35 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    };
 
    const [filters, setFilters] = React.useState<DataTableFilterMeta>(initFilters());
+
+   const clearFilters = (): void => {
+      setFilters(initFilters());
+   };
+
+   const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+      const value = e.target.value;
+      const _filters = { ...filters };
+      (_filters['global'] as DataTableFilterMetaData).value = value;
+      setFilters(_filters);
+   };
+
+   const renderHeader = (): React.JSX.Element => {
+      return (
+         <div className='datatable-global-filter'>
+            <Button type='button' icon='pi pi-filter-slash' label='Clear' outlined onClick={clearFilters} />
+            <IconField iconPosition='left'>
+               <InputIcon className='pi pi-search' />
+               <InputText
+                  value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
+                  onChange={onGlobalFilterChange}
+                  placeholder='Keyword Search'
+               />
+            </IconField>
+         </div>
+      );
+   };
+
+   const header = renderHeader();
 
    React.useEffect(() => {
       if (tableRef.current && editingRows && Object.keys(editingRows).length > 0) {
@@ -411,6 +445,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             filters={filters}
             onFilter={(e: DataTableFilterEvent) => setFilters(e.filters as DataTableFilterMeta)}
             filterDisplay='menu'
+            header={header}
+            globalFilterFields={globalFilterFields as string[]}
          >
             {columns.map(col => {
                const filter = col.filter ?? col.filterType !== undefined;
