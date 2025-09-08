@@ -30,7 +30,7 @@ const plugins = [
 
 const ctx = await esbuild.context({
    // Entry points for the vscode extension and the language server and the parser worker threads
-   entryPoints: ['src/extension.ts', 'src/main.ts', 'src/language-server/parser/worker-thread.ts'],
+   entryPoints: ['src/extension.ts', 'src/main.ts'],
    outdir: 'out',
    bundle: true,
    target: 'ES2022',
@@ -41,7 +41,7 @@ const ctx = await esbuild.context({
       '.js': '.cjs'
    },
    loader: { '.ts': 'ts' },
-   external: ['vscode', 'prettier', 'web-worker'],
+   external: ['vscode', 'prettier', 'web-worker', '@crossmodel/server'],
    platform: 'node',
    sourcemap: !minify,
    minify,

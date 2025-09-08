@@ -1,0 +1,56 @@
+{
+  "name": "@crossmodel/server",
+  "version": "0.7.5",
+  "description": "CrossModel language, GLSP and model server components",
+  "homepage": "https://github.com/crossmodel/crossmodel-core",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crossmodel/crossmodel-core.git"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": {
+    "name": "CrossBreeze",
+    "email": "devops@crossbreeze.nl"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "cross-model-cli": "lib/cli/index.js"
+  },
+  "files": [
+    "lib",
+    "src",
+    "langium-config.json",
+    "syntaxes"
+  ],
+  "scripts": {
+    "build": "yarn langium:generate && tsc -b",
+    "clean": "rimraf lib tsconfig.tsbuildinfo",
+    "langium:generate": "langium generate",
+    "langium:watch": "langium generate --watch",
+    "lint": "eslint -c ./.eslintrc.cjs --ext .ts,.tsx ./src",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest --passWithNoTests",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "@crossmodel/protocol": "0.7.5",
+    "@eclipse-glsp/server": "2.4.0",
+    "elkjs": "^0.10.0",
+    "fast-json-patch": "^3.1.0",
+    "langium": "^3.5.0",
+    "p-debounce": "^2.1.0",
+    "prettier": "^3.1.0",
+    "reflect-metadata": "~0.2.2",
+    "type-fest": "^4.18.2",
+    "uuid": "~11.1.0",
+    "vscode-languageserver": "9.0.1",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "vscode-uri": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "langium-cli": "^3.5.0"
+  }
+}

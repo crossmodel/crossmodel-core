@@ -10,6 +10,8 @@ We believe in open collaboration, respectful communication, and building useful 
 
 ## Getting started
 
+First of, in order to streamline the development, merge and CI/CD processes we adopt the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standard for naming branches, commit messages, etc. This helps being organized and automate the release process.
+
 Depending in your development environment there are different options to work on CrossModel.
 
 ### Work locally
@@ -76,24 +78,7 @@ If you also made changes to the backend, you can close and restart the applicati
 
 ## Packaging
 
-We package CrossModel either for the browser (Docker) or desktop application (Electron).
-
-### Docker
-
-To package the web application we build a docker image. There are currently two Dockerfile definitions, one based on [Alpine Linux](./Dockerfile) and one based on [Debian](./Dockerfile.debian). Some users might prefer Debian over Alpine as based, which is why we have both options.
-
-To create the Alpine based image, execute the following command:
-
-    docker build -t crossmodel:0.0.0-alpine -f .\Dockerfile .
-
-To create the Debian based image, execute the following command:
-
-    docker build -t crossmodel:0.0.0-debian -f .\Dockerfile.debian .
-
-In the main build action we build and publish the Alpine version.
-
-### Electron
-
+We package CrossModel as a desktop application (Electron).
 To package CrossModel as a desktop application, execute the following command:
 
     yarn theia:electron package
@@ -101,6 +86,13 @@ To package CrossModel as a desktop application, execute the following command:
 Depending on the platform, this will produce an executable or an installer for the application under `applications/electron-app/dist`.
 
 Details about the packaging can be configured in `applications/electron-app/electron-builder.yml`.
+
+## Conventions
+
+Within the CrossModel project why adopt several conventions to streamline development and integration.
+
+- Branching: [Conventional Branch](https://conventional-branch.github.io/)
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## Structure
 

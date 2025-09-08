@@ -8,6 +8,7 @@ on:
       - bugfix/*
       - hotfix/*
       - chore/*
+      - refactor/*
 
 jobs:
   check-open-pr:
@@ -15,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       open_pr_found: ${{ steps.output-pr-info.outputs.prFound }}
+    permissions:
+      pull-requests: read
     steps:
       # Get open (non-draft) PR info.
       - name: Get PR info
