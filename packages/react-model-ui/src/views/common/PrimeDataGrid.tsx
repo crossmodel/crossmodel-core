@@ -128,32 +128,24 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    }, [onRowAdd, defaultNewRow, columns]);
 
-   const renderHeader = (): React.JSX.Element => {
-      return (
-         <div className='datatable-global-filter'>
-            <div>
-               {onRowAdd && !readonly && (
-                  <Button
-                     label={addButtonLabel}
-                     icon='pi pi-plus'
-                     severity='info'
-                     onClick={handleAddRow}
-                     style={{ marginRight: '0.5rem' }}
-                  />
-               )}
-               <Button type='button' icon='pi pi-filter-slash' label='Clear' outlined onClick={clearFilters} />
-            </div>
-            <IconField iconPosition='left'>
-               <InputIcon className='pi pi-search' />
-               <InputText
-                  value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
-                  onChange={onGlobalFilterChange}
-                  placeholder='Keyword Search'
-               />
-            </IconField>
+   const renderHeader = (): React.JSX.Element => (
+      <div className='datatable-global-filter'>
+         <div>
+            {onRowAdd && !readonly && (
+               <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} style={{ marginRight: '0.5rem' }} />
+            )}
+            <Button type='button' icon='pi pi-filter-slash' label='Clear' outlined onClick={clearFilters} />
          </div>
-      );
-   };
+         <IconField iconPosition='left'>
+            <InputIcon className='pi pi-search' />
+            <InputText
+               value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
+               onChange={onGlobalFilterChange}
+               placeholder='Keyword Search'
+            />
+         </IconField>
+      </div>
+   );
 
    const header = renderHeader();
 
