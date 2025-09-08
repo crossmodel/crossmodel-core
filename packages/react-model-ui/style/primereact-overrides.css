@@ -220,6 +220,12 @@
    background: var(--theia-button-hoverBackground);
 }
 
+.p-button-outlined {
+   background: transparent;
+   color: inherit;
+   border: 1px solid;
+}
+
 /* AutoComplete Dropdown Arrow */
 .p-autocomplete-dropdown.p-button {
    background: var(--surface-card);

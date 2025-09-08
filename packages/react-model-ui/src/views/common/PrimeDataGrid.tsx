@@ -18,7 +18,6 @@ import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
-import { Toolbar } from 'primereact/toolbar';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
@@ -117,10 +116,33 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       setFilters(_filters);
    };
 
+   const handleAddRow = React.useCallback(() => {
+      if (onRowAdd) {
+         const newRow = { ...defaultNewRow };
+         columns.forEach(col => {
+            if (!(col.field in newRow)) {
+               (newRow as any)[col.field] = '';
+            }
+         });
+         onRowAdd(newRow as T);
+      }
+   }, [onRowAdd, defaultNewRow, columns]);
+
    const renderHeader = (): React.JSX.Element => {
       return (
          <div className='datatable-global-filter'>
-            <Button type='button' icon='pi pi-filter-slash' label='Clear' outlined onClick={clearFilters} />
+            <div>
+               {onRowAdd && !readonly && (
+                  <Button
+                     label={addButtonLabel}
+                     icon='pi pi-plus'
+                     severity='info'
+                     onClick={handleAddRow}
+                     style={{ marginRight: '0.5rem' }}
+                  />
+               )}
+               <Button type='button' icon='pi pi-filter-slash' label='Clear' outlined onClick={clearFilters} />
+            </div>
             <IconField iconPosition='left'>
                <InputIcon className='pi pi-search' />
                <InputText
@@ -356,24 +378,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       />
    );
 
-   const handleAddRow = React.useCallback(() => {
-      if (onRowAdd) {
-         const newRow = { ...defaultNewRow };
-         columns.forEach(col => {
-            if (!(col.field in newRow)) {
-               (newRow as any)[col.field] = '';
-            }
-         });
-         onRowAdd(newRow as T);
-      }
-   }, [onRowAdd, defaultNewRow, columns]);
-
-   const toolbarContent = (
-      <React.Fragment>
-         {onRowAdd && !readonly && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} />}
-      </React.Fragment>
-   );
-
    const filterTemplate = (
       options: any,
       filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean',
@@ -424,7 +428,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    return (
       <div>
-         {onRowAdd && !readonly && <Toolbar start={toolbarContent} />}
          <DataTable
             ref={tableRef}
             value={data}
