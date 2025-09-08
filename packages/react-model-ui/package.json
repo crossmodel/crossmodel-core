@@ -30,7 +30,7 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/protocol": "0.7.0",
+    "@crossmodel/protocol": "0.7.5",
     "immer": "^10.1.1",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.6",

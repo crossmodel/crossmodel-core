@@ -1086,10 +1086,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@cypress/request@3.0.8":
-  version "3.0.8"
-  resolved "https://registry.npmjs.org/@cypress/request/-/request-3.0.8.tgz"
-  integrity sha512-h0NFgh1mJmm1nr4jCwkGHwKneVYKghUyWe6TMNrk0B9zsjAJxpg8C4/+BAcmLgCPa1vj1V8rNUaILl+zYRUWBQ==
+"@cypress/request@3.0.9":
+  version "3.0.9"
+  resolved "https://registry.yarnpkg.com/@cypress/request/-/request-3.0.9.tgz#8ed6e08fea0c62998b5552301023af7268f11625"
+  integrity sha512-I3l7FdGRXluAS44/0NguwWlO83J18p0vlr2FYHrJkWdNYhgVoiYo61IXPqaOsL+vNxU1ZqMACzItGK3/KKDsdw==
   dependencies:
     aws-sign2 "~0.7.0"
     aws4 "^1.8.0"
@@ -1929,10 +1929,10 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@lerna/create@8.2.1":
-  version "8.2.1"
-  resolved "https://registry.npmjs.org/@lerna/create/-/create-8.2.1.tgz"
-  integrity sha512-Cz2u/fwc03D1EE6VFZCLMmI8FIUtGmxHQ3ECeNblsxv9i0YSKWe4Xm18sjO1xltG/K5ByiH8/HMeY9dlyAv22A==
+"@lerna/create@8.2.3":
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/@lerna/create/-/create-8.2.3.tgz#8e88fedb60eb699f2f5057e7344d9f980b7f9554"
+  integrity sha512-f+68+iojcQ0tZRMfCgQyJdsdz+YPu3/d+0Zo1RJz92bgBxTCiEU+dHACVq1n3sEjm/YWPnFGdag8U5EYYmP3WA==
   dependencies:
     "@npmcli/arborist" "7.5.4"
     "@npmcli/package-json" "5.2.0"
@@ -6627,11 +6627,6 @@ commander@~11.0.0:
   resolved "https://registry.npmjs.org/commander/-/commander-11.0.0.tgz"
   integrity sha512-9HMlXtt/BNoYr8ooyjjNRdIilOTkVJXB+GhxMTtOKwk0R4j4lS4NpjuqmRxroBfnfTSHQIHQB7wryHhXarNjmQ==
 
-commander@~14.0.0:
-  version "14.0.0"
-  resolved "https://registry.npmjs.org/commander/-/commander-14.0.0.tgz"
-  integrity sha512-2uM9rYjPvyq39NwLRqaiLtWHyDC1FvryJDa2ATTVims5YAS4PupsEQsDvP14FqhFr0P49CYDugi59xaxJlTXRA==
-
 common-ancestor-path@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/common-ancestor-path/-/common-ancestor-path-1.0.1.tgz"
@@ -6675,10 +6670,10 @@ compression-webpack-plugin@^9.0.0:
     schema-utils "^4.0.0"
     serialize-javascript "^6.0.0"
 
-compression@1.8.0:
-  version "1.8.0"
-  resolved "https://registry.npmjs.org/compression/-/compression-1.8.0.tgz"
-  integrity sha512-k6WLKfunuqCYD3t6AsuPGvQWaKwuLLh2/xHNcX4qE+vIfDNXpSqnrhwA7O53R7WVQUnt8dVAIW+YHr7xTgOgGA==
+compression@1.8.1:
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/compression/-/compression-1.8.1.tgz#4a45d909ac16509195a9a28bd91094889c180d79"
+  integrity sha512-9mAqGPHLakhCLeNyxPkK4xVo746zQ/czLH1Ky+vkitMnWfWZps8r0qXuwhwizagCRttsL4lfG4pIOvaWLpAP0w==
   dependencies:
     bytes "3.1.2"
     compressible "~2.0.18"
@@ -8798,10 +8793,21 @@ forever-agent@~0.6.1:
   resolved "https://registry.npmjs.org/forever-agent/-/forever-agent-0.6.1.tgz"
   integrity sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==
 
-form-data@^4.0.0, form-data@~4.0.0:
+form-data@^4.0.0:
   version "4.0.3"
   resolved "https://registry.npmjs.org/form-data/-/form-data-4.0.3.tgz"
   integrity sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==
+  dependencies:
+    asynckit "^0.4.0"
+    combined-stream "^1.0.8"
+    es-set-tostringtag "^2.1.0"
+    hasown "^2.0.2"
+    mime-types "^2.1.12"
+
+form-data@~4.0.4:
+  version "4.0.4"
+  resolved "https://registry.yarnpkg.com/form-data/-/form-data-4.0.4.tgz#784cdcce0669a9d68e94d11ac4eea98088edd2c4"
+  integrity sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==
   dependencies:
     asynckit "^0.4.0"
     combined-stream "^1.0.8"
@@ -11013,10 +11019,10 @@ lazy-val@^1.0.5:
   resolved "https://registry.npmjs.org/lazy-val/-/lazy-val-1.0.5.tgz"
   integrity sha512-0/BnGCCfyUMkBpeDgWihanIAF9JmZhHBgUhEqzvf+adhNGLoP6TaiI5oF8oyb3I45P+PcnrqihSf01M0l0G5+Q==
 
-lerna@8.2.1:
-  version "8.2.1"
-  resolved "https://registry.npmjs.org/lerna/-/lerna-8.2.1.tgz"
-  integrity sha512-Xwjv9/4ixp7fpBWhtvp7dz4NoQT8DEf7hzibHKCgu/8kmZUHeXsTn+TKspHqhI+p4YDmdkDnkg8xmymz73kVOg==
+lerna@8.2.3:
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/lerna/-/lerna-8.2.3.tgz#0a9c07eda4cfac84a480b3e66915189ccfb5bd2c"
+  integrity sha512-rmuDU+92eWUnnyaPg3Ise339pTxF+r2hu8ky/soCfbGpUoW4kCwsDza3P/LtQJWrKwZWHcosEitfYvxGUWZ16A==
   dependencies:
     "@lerna/create" "8.2.3"
     "@npmcli/arborist" "7.5.4"
@@ -12529,10 +12535,10 @@ on-finished@2.4.1, on-finished@^2.4.1:
   dependencies:
     ee-first "1.1.1"
 
-on-headers@~1.0.2:
-  version "1.0.2"
-  resolved "https://registry.npmjs.org/on-headers/-/on-headers-1.0.2.tgz"
-  integrity sha512-pZAE+FJLoyITytdqK0U5s+FIpjN0JP3OzFi/u8Rx+EV5/W+JTWGXG8xFzevE7AjBfDqHv/8vL8qQsIhHnqRkrA==
+on-headers@~1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/on-headers/-/on-headers-1.1.0.tgz#59da4f91c45f5f989c6e4bcedc5a3b0aed70ff65"
+  integrity sha512-737ZY3yNnXy37FHkQxPzt4UZ2UWPWiCZWLvFZ4fu5cueciegX0zGPnrlY6bwRg4FdQOe9YU8MkmJwGhoMybl8A==
 
 once@^1.3.0, once@^1.3.1, once@^1.4.0:
   version "1.4.0"
@@ -15200,15 +15206,6 @@ strip-outer@^1.0.1:
   dependencies:
     escape-string-regexp "^1.0.2"
 
-strong-log-transformer@2.1.0:
-  version "2.1.0"
-  resolved "https://registry.npmjs.org/strong-log-transformer/-/strong-log-transformer-2.1.0.tgz"
-  integrity sha512-B3Hgul+z0L9a236FAUC9iZsL+nVHgoCJnqCbN588DjYxvGXaXaaFbfmQ/JhvKjZwsOukuR72XbHv71Qkug0HxA==
-  dependencies:
-    duplexer "^0.1.1"
-    minimist "^1.2.0"
-    through "^2.3.4"
-
 style-loader@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/style-loader/-/style-loader-2.0.0.tgz"
@@ -16196,10 +16193,10 @@ verdaccio-htpasswd@13.0.0-next-8.19:
     http-errors "2.0.0"
     unix-crypt-td-js "1.1.4"
 
-verdaccio@^6.1.2:
-  version "6.1.5"
-  resolved "https://registry.npmjs.org/verdaccio/-/verdaccio-6.1.5.tgz"
-  integrity sha512-gXEbG5Oj3SITUOXRQ0KuTtJ/eyhg8ARyaKXQfYOakA1gIxnjCF+SQLYkKe5El4OiDNOPu8QtviKzytRPA+UUag==
+verdaccio@^6.1.6:
+  version "6.1.6"
+  resolved "https://registry.yarnpkg.com/verdaccio/-/verdaccio-6.1.6.tgz#652521a517cee1180db85eda53983639237b0f91"
+  integrity sha512-zUMMKW0hjtOaLIm1cY9AqA0bMjvuGtKJVolzXQacIW9PHTnTjcsWF2+sbNLBhVrHwo+FJ1DzdNVaTWXOBWZgiQ==
   dependencies:
     "@cypress/request" "3.0.9"
     "@verdaccio/auth" "8.0.0-next-8.19"
