@@ -340,7 +340,8 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                return rowData.left.value;
             },
             editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />,
-            filterType: 'text'
+            filterType: 'text',
+            filterField: 'left.value'
          },
          {
             field: 'operator',
@@ -360,7 +361,8 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                return rowData.right.value;
             },
             editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={false} sourceObject={sourceObject} />,
-            filterType: 'text'
+            filterType: 'text',
+            filterField: 'right.value'
          }
       ],
       [sourceObject]
@@ -426,7 +428,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          addButtonLabel='Add Condition'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
-         globalFilterFields={['left', 'operator', 'right']}
+         globalFilterFields={['left.value', 'operator', 'right.value']}
       />
    );
 }

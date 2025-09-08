@@ -31,6 +31,7 @@ export interface GridColumn<T> {
    headerStyle?: React.CSSProperties;
    style?: React.CSSProperties;
    filter?: boolean;
+   filterField?: string;
    filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean';
    filterOptions?: any[];
    showFilterMatchModes?: boolean;
@@ -55,7 +56,7 @@ export interface PrimeDataGridProps<T> {
    className?: string;
    editingRows?: Record<string, boolean>;
    onRowEditChange?: (e: DataTableRowEditEvent) => void;
-   globalFilterFields?: (keyof T)[];
+   globalFilterFields?: string[];
 }
 
 export function PrimeDataGrid<T extends Record<string, any>>({
@@ -94,7 +95,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          } else if (col.filterType === 'multiselect') {
             matchMode = FilterMatchMode.IN;
          }
-         initialFilters[col.field as string] = {
+         const filterKey = col.filterField || (col.field as string);
+         initialFilters[filterKey] = {
             // eslint-disable-next-line no-null/no-null
             value: null,
             matchMode
@@ -457,6 +459,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                      headerStyle={col.headerStyle}
                      style={col.style}
                      filter={filter}
+                     filterField={col.filterField}
                      showFilterMatchModes={showFilterMatchModes}
                      filterElement={(options: any) => filterTemplate(options, col.filterType, col.filterOptions)}
                      filterMatchMode={
