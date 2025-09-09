@@ -3,7 +3,6 @@
  ********************************************************************************/
 import 'reflect-metadata';
 
-import { createCrossModelServices, startGLSPServer, startModelServer } from '@crossmodel/server';
 import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
@@ -19,18 +18,24 @@ import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.j
  * - Create a RPC-based model server that exposes an API to access the Langium AST/semantic model on a dedicated port, e.g., for form-access
  */
 
-// Create a connection to the client
-const connection = createConnection(ProposedFeatures.all);
+async function main(): Promise<void> {
+    const { createCrossModelServices, startGLSPServer, startModelServer } = await import('@crossmodel/server');
 
-// Inject the shared services and language-specific services
-const { shared, CrossModel } = createCrossModelServices({ connection, ...NodeFileSystem });
+    // Create a connection to the client
+    const connection = createConnection(ProposedFeatures.all);
 
-// Start the language server with the shared services
-startLanguageServer(shared);
+    // Inject the shared services and language-specific services
+    const { shared, CrossModel } = createCrossModelServices({ connection, ...NodeFileSystem });
 
-shared.workspace.WorkspaceManager.onWorkspaceInitialized(workspaceFolders => {
-   // Start the graphical language server with the shared services
-   startGLSPServer({ shared, language: CrossModel }, workspaceFolders[0]);
-   // Start the JSON server with the shared services
-   startModelServer({ shared, language: CrossModel }, workspaceFolders[0]);
-});
+    // Start the language server with the shared services
+    startLanguageServer(shared);
+
+    shared.workspace.WorkspaceManager.onWorkspaceInitialized(workspaceFolders => {
+        // Start the graphical language server with the shared services
+        startGLSPServer({ shared, language: CrossModel }, workspaceFolders[0]);
+        // Start the JSON server with the shared services
+        startModelServer({ shared, language: CrossModel }, workspaceFolders[0]);
+    });
+}
+
+main();
