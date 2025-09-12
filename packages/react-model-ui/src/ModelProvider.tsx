@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { CrossModelDocument, CrossModelRoot } from '@crossmodel/protocol';
+import { CrossModelRoot } from '@crossmodel/protocol';
 import { URI } from '@theia/core';
 import * as React from 'react';
 import { useImmerReducer } from 'use-immer';
@@ -25,9 +25,7 @@ export type UpdateCallback = (model: CrossModelRoot) => void;
 /**
  * Represents the properties required by the ModelProvider component.
  */
-export interface InternalModelProviderProps extends React.PropsWithChildren, ModelProviderProps {
-   document: CrossModelDocument;
-}
+export interface InternalModelProviderProps extends React.PropsWithChildren, ModelProviderProps {}
 
 /**
  * Based on the following implementation: https://react.dev/learn/scaling-up-with-reducer-and-context
@@ -66,20 +64,13 @@ export function ModelProvider({
       }
    }, [appState, onModelUpdate]);
    const isUntitled = React.useMemo(() => new URI(document.uri).scheme === 'untitled', [document.uri]);
-
-   // Update ModelDiagnosticsContext when document.diagnostics changes
-   const [modelDiagnostics, setModelDiagnostics] = React.useState(document.diagnostics);
-   React.useEffect(() => {
-      setModelDiagnostics(document.diagnostics);
-   }, [document.diagnostics]);
-
    return (
       <ModelContext.Provider value={appState.model}>
          <OpenModelContext.Provider value={onModelOpen}>
             <SaveModelContext.Provider value={onModelSave}>
                <ModelDispatchContext.Provider value={dispatch}>
                   <ModelDirtyContext.Provider value={dirty}>
-                     <ModelDiagnosticsContext.Provider value={modelDiagnostics}>
+                     <ModelDiagnosticsContext.Provider value={document.diagnostics}>
                         <UriContext.Provider value={document.uri}>
                            <UntitledContext.Provider value={isUntitled}>
                               <ModelQueryApiContext.Provider value={modelQueryApi}>{children}</ModelQueryApiContext.Provider>

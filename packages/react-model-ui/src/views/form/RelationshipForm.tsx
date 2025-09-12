@@ -32,12 +32,7 @@ export function RelationshipForm(): React.ReactElement {
    const baseDiagnostics = useDiagnostics();
    const untitled = useUntitled();
    const uri = useUri();
-   // Reactive diagnostics state
-   const [diagnostics, setDiagnostics] = React.useState(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
-   // Update diagnostics whenever baseDiagnostics changes
-   React.useEffect(() => {
-      setDiagnostics(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
-   }, [baseDiagnostics]);
+   const diagnostics = React.useMemo(() => CrossModelValidationErrors.getFieldErrors(baseDiagnostics), [baseDiagnostics]);
 
    const usingDefaultName = React.useMemo(
       () => relationship.name === computeRelationshipName(relationship.parent, relationship.child),

@@ -23,13 +23,7 @@ export function SourceObjectForm(props: SourceObjectRenderProps): React.ReactEle
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const sourceObject = mapping.sources[props.sourceObjectIndex];
-   const baseDiagnostics = useDiagnostics();
-   // Reactive diagnostics state
-   const [diagnostics, setDiagnostics] = React.useState(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
-   // Update diagnostics whenever baseDiagnostics changes
-   React.useEffect(() => {
-      setDiagnostics(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
-   }, [baseDiagnostics]);
+   const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
    if (!sourceObject) {
       return <></>;
    }

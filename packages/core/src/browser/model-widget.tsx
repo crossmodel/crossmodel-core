@@ -121,21 +121,13 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
    }
 
    protected async handleUpdate({ document, reason, sourceClientId }: ModelUpdatedEvent): Promise<void> {
-      if (this.document?.uri === document.uri) {
-         console.debug(`[${this.options.clientId}] Receive update from ${sourceClientId} due to '${reason}'`, document.diagnostics);
-
-         // Always replace diagnostics, even if root is unchanged
-         const rootChanged = !deepEqual(this.document.root, document.root);
-         const diagnosticsChanged = !deepEqual(this.document.diagnostics, document.diagnostics);
-
-         if (rootChanged || diagnosticsChanged) {
-            this.document = document;
-            this.update();
-         } else {
-            // Root is the same, but ensure diagnostics are refreshed
-            this.document.diagnostics = document.diagnostics;
-            this.update();
-         }
+      if (
+         this.document?.uri === document.uri &&
+         (!deepEqual(this.document.root, document.root) || !deepEqual(this.document.diagnostics, document.diagnostics))
+      ) {
+         console.debug(`[${this.options.clientId}] Receive update from ${sourceClientId} due to '${reason}'`);
+         this.document = document;
+         this.update();
       }
    }
 
