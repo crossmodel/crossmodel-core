@@ -24,7 +24,13 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
    const mapping = useMapping();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
+   const baseDiagnostics = useDiagnostics();
+   // Reactive diagnostics state
+   const [diagnostics, setDiagnostics] = React.useState(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
+   // Update diagnostics whenever baseDiagnostics changes
+   React.useEffect(() => {
+      setDiagnostics(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
+   }, [baseDiagnostics]);
 
    const attributeMapping = mapping.target.mappings[props.mappingIndex];
    if (!attributeMapping) {

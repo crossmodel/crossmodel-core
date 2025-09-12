@@ -21,7 +21,13 @@ export function EntityForm(): React.ReactElement {
    const untitled = useUntitled();
    const uri = useUri();
    const readonly = useReadonly();
-   const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
+   const baseDiagnostics = useDiagnostics();
+   // Reactive diagnostics state
+   const [diagnostics, setDiagnostics] = React.useState(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
+   // Update diagnostics whenever baseDiagnostics changes
+   React.useEffect(() => {
+      setDiagnostics(CrossModelValidationErrors.getFieldErrors(baseDiagnostics));
+   }, [baseDiagnostics]);
 
    const handleNameChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
