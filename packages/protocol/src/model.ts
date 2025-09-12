@@ -15,10 +15,10 @@ const ModelFileTypeValues = {
 
 export const ModelFileType = {
    ...ModelFileTypeValues,
-   getIconClass: (type: ModelFileType) => {
+   getIconClass: (type?: ModelFileType) => {
       switch (type) {
          case 'DataModel':
-            return ModelStructure.System.ICON_CLASS;
+            return ModelStructure.DataModel.ICON_CLASS;
          case 'LogicalEntity':
             return ModelStructure.LogicalEntity.ICON_CLASS;
          case 'Relationship':
@@ -31,7 +31,21 @@ export const ModelFileType = {
             return undefined;
       }
    },
-   getFileExtension(type: ModelFileType): string | undefined {
+   getFolder: (fileType?: ModelFileType): string => {
+      switch (fileType) {
+         case 'LogicalEntity':
+            return ModelStructure.LogicalEntity.FOLDER;
+         case 'Relationship':
+            return ModelStructure.Relationship.FOLDER;
+         case 'SystemDiagram':
+            return ModelStructure.SystemDiagram.FOLDER;
+         case 'Mapping':
+            return ModelStructure.Mapping.FOLDER;
+         default:
+            return '';
+      }
+   },
+   getFileExtension: (type?: ModelFileType): string => {
       switch (type) {
          case 'DataModel':
             return ModelFileExtensions.DataModel;
@@ -45,6 +59,8 @@ export const ModelFileType = {
             return ModelFileExtensions.Relationship;
          case 'SystemDiagram':
             return ModelFileExtensions.SystemDiagram;
+         default:
+            return '';
       }
    }
 } as const;
@@ -129,35 +145,18 @@ export const ModelFileExtensions = {
    },
 
    getFileExtension(uri: string): string | undefined {
-      const fileType = this.getFileType(uri);
-      return !fileType ? undefined : ModelFileType.getFileExtension(fileType);
+      return ModelFileType.getFileExtension(this.getFileType(uri));
    },
 
    getIconClass(uri: string): string | undefined {
-      const fileType = this.getFileType(uri);
-      if (!fileType) {
-         return undefined;
-      }
-      switch (fileType) {
-         case 'DataModel':
-            return ModelStructure.System.ICON_CLASS;
-         case 'LogicalEntity':
-            return ModelStructure.LogicalEntity.ICON_CLASS;
-         case 'Relationship':
-            return ModelStructure.Relationship.ICON_CLASS;
-         case 'SystemDiagram':
-            return ModelStructure.SystemDiagram.ICON_CLASS;
-         case 'Mapping':
-            return ModelStructure.Mapping.ICON_CLASS;
-         default:
-            return '';
-      }
+      return ModelFileType.getIconClass(this.getFileType(uri));
+   },
+
+   getFolder(uri: string): string {
+      return ModelFileType.getFolder(this.getFileType(uri));
    },
 
    detectFileType(content: string): ModelFileType | undefined {
-      if (content.startsWith('datamodel')) {
-         return 'DataModel';
-      }
       if (content.startsWith('entity')) {
          return 'LogicalEntity';
       }
@@ -180,10 +179,6 @@ export const ModelFileExtensions = {
 } as const;
 
 export const ModelStructure = {
-   System: {
-      ICON_CLASS: 'codicon codicon-globe',
-      ICON: 'globe'
-   },
    LogicalEntity: {
       FOLDER: 'entities',
       ICON_CLASS: 'codicon codicon-git-commit',
@@ -207,7 +202,6 @@ export const ModelStructure = {
       ICON_CLASS: 'codicon codicon-group-by-ref-type',
       ICON: 'group-by-ref-type'
    },
-
    DataModel: {
       FILE: DATAMODEL_FILE,
       ICON_CLASS: 'codicon codicon-globe',

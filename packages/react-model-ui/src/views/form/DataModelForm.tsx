@@ -15,10 +15,10 @@ import * as React from 'react';
 import { useDataModel, useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly, useUntitled, useUri } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
+import { FormSection } from '../FormSection';
 import AsyncAutoComplete from '../common/AsyncAutoComplete';
 import { DataModelCustomPropertiesDataGrid } from '../common/DataModelCustomPropertiesDataGrid';
 import { DataModelDependenciesDataGrid } from '../common/DataModelDependenciesDataGrid';
-import { FormSection } from '../FormSection';
 import { Form } from './Form';
 
 export function DataModelForm(): React.ReactElement {
@@ -70,7 +70,7 @@ export function DataModelForm(): React.ReactElement {
    }
 
    return (
-      <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.System.ICON_CLASS}>
+      <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.DataModel.ICON_CLASS}>
          <FormSection label='General'>
             <TextField
                fullWidth={true}

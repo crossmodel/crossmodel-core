@@ -10,6 +10,7 @@ import {
    LogicalEntityType,
    MappingType,
    ModelFileExtensions,
+   ModelFileType,
    ModelStructure,
    RelationshipType,
    TargetObjectType,
@@ -50,7 +51,7 @@ const NEW_ELEMENT_MAIN_MENU = [...CommonMenus.FILE, '0_new'];
 interface NewElementTemplate<T extends readonly InputOptions[] = readonly InputOptions[]> extends Command {
    label: string;
    toUri: (parent: URI, name: string) => URI;
-   memberType: string;
+   memberType: ModelFileType;
    content: string | ((parent: URI, model: ModelService, options: FieldValues<T>) => string | Promise<string>);
    validateName?(name: string): string | undefined;
    getInputOptions?(parent: URI, modelService: ModelService): MaybePromise<T>;
@@ -149,7 +150,7 @@ const NEW_ELEMENT_TEMPLATES: ReadonlyArray<NewElementTemplate> = [
       memberType: DataModelType,
       category: TEMPLATE_CATEGORY,
       validateName: validateDataModelName,
-      iconClass: ModelStructure.System.ICON_CLASS,
+      iconClass: ModelStructure.DataModel.ICON_CLASS,
       toUri: (parent, name) => parent.resolve(toId(name)).resolve(DATAMODEL_FILE),
       content: INITIAL_DATAMODEL_CONTENT
    }
@@ -218,94 +219,111 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       registry.registerMenuAction(EditorContextMenu.COMMANDS, { commandId: DERIVE_MAPPING_FROM_ENTITY.id });
    }
 
+   protected async getTargetDirectory(source: URI, targetType: ModelFileType): Promise<URI | undefined> {
+      const selectedDirectory = await this.getDirectory(source);
+      if (!selectedDirectory) {
+         return;
+      }
+      // we allow data models to be created anywhere in the workspace
+      if (targetType === DataModelType) {
+         return selectedDirectory.resource;
+      }
+      // other model elements should be in their respective folder
+      const dataModel = await this.modelService.getDataModelInfo({ contextUri: source.toString() });
+      if (!dataModel) {
+         this.messageService.error('Could not determine data model for ' + source.path.fsPath());
+         return;
+      }
+      const targetTypeDirectory = URI.fromFilePath(dataModel.directory).resolve(ModelFileType.getFolder(targetType));
+      // if the user selected a sub-directory in the correct target type directory, we use that
+      return targetTypeDirectory.isEqualOrParent(selectedDirectory.resource) ? selectedDirectory.resource : targetTypeDirectory;
+   }
+
    protected async deriveNewMappingFile(entityUri: URI): Promise<void> {
-      const parent = await this.getDirectory(entityUri);
-      if (parent) {
-         const parentUri = parent.resource;
-         const dialog = new WorkspaceInputDialog(
-            {
-               title: 'New Mapping...',
-               parentUri: parentUri,
-               initialValue: 'NewMapping',
-               placeholder: 'NewMapping',
-               validate: newName =>
-                  newName && this.validateElementFileName(join(parent.resource, newName, ModelFileExtensions.Mapping), newName)
-            },
-            this.labelProvider
-         );
-         const selectedSource = await dialog.open();
-         if (selectedSource) {
-            const fileName = applyFileExtension(selectedSource, ModelFileExtensions.Mapping);
-            const baseFileName = removeFileExtension(selectedSource, ModelFileExtensions.Mapping);
-            const mappingUri = parentUri.resolve(fileName);
+      const targetDirectory = await this.getTargetDirectory(entityUri, MappingType);
+      if (!targetDirectory) {
+         return;
+      }
+      const dialog = new WorkspaceInputDialog(
+         {
+            title: 'New Mapping...',
+            parentUri: targetDirectory,
+            initialValue: 'NewMapping',
+            placeholder: 'NewMapping',
+            validate: newName =>
+               newName && this.validateElementFileName(join(targetDirectory, newName, ModelFileExtensions.Mapping), newName)
+         },
+         this.labelProvider
+      );
+      const selectedSource = await dialog.open();
+      if (selectedSource) {
+         const fileName = applyFileExtension(selectedSource, ModelFileExtensions.Mapping);
+         const baseFileName = removeFileExtension(selectedSource, ModelFileExtensions.Mapping);
+         const mappingUri = targetDirectory.resolve(fileName);
 
-            const elements = await this.modelService.findReferenceableElements({
-               container: { uri: mappingUri.path.fsPath(), type: MappingType },
-               syntheticElements: [{ property: 'target', type: TargetObjectType }],
-               property: 'entity'
-            });
-            const entityElement = elements.find(element => element.uri === entityUri.toString());
-            if (!entityElement) {
-               this.messageService.error('Could not detect target element at ' + entityUri.path.fsPath());
-               return;
-            }
-
-            const document = await this.modelService.request(entityElement.uri);
-            const entity = document?.root.entity;
-            if (!entity) {
-               this.messageService.error('Could not resolve entity element at ' + entityUri.path.fsPath());
-               return;
-            }
-            const mappingName = toPascal(baseFileName);
-            const mapping = {
-               mapping: {
-                  id: mappingName,
-                  target: {
-                     entity: toIdReference(entityElement.label)
-                  }
-               }
-            };
-            const content = yaml.stringify(mapping, { indent: 4 });
-            await this.fileService.create(mappingUri, content);
-            this.fireCreateNewFile({ parent: parentUri, uri: mappingUri });
-            open(this.openerService, mappingUri);
+         const elements = await this.modelService.findReferenceableElements({
+            container: { uri: mappingUri.path.fsPath(), type: MappingType },
+            syntheticElements: [{ property: 'target', type: TargetObjectType }],
+            property: 'entity'
+         });
+         const entityElement = elements.find(element => element.uri === entityUri.toString());
+         if (!entityElement) {
+            this.messageService.error('Could not detect target element at ' + entityUri.path.fsPath());
+            return;
          }
+
+         const document = await this.modelService.request(entityElement.uri);
+         const entity = document?.root.entity;
+         if (!entity) {
+            this.messageService.error('Could not resolve entity element at ' + entityUri.path.fsPath());
+            return;
+         }
+         const mappingName = toPascal(baseFileName);
+         const mapping = {
+            mapping: {
+               id: mappingName,
+               target: {
+                  entity: toIdReference(entityElement.label)
+               }
+            }
+         };
+         const content = yaml.stringify(mapping, { indent: 4 });
+         await this.fileService.create(mappingUri, content);
+         this.fireCreateNewFile({ parent: targetDirectory, uri: mappingUri });
+         open(this.openerService, mappingUri);
       }
    }
 
    protected async createNewElementFile(uri: URI, template: NewElementTemplate): Promise<void> {
-      const parent = await this.getDirectory(uri);
-      if (parent) {
-         const parentUri = parent.resource;
-         if (
-            template.memberType === LogicalEntityType ||
-            template.memberType === RelationshipType ||
-            template.memberType === DataModelType
-         ) {
-            const fileUri = template.toUri(parent.resource, '');
-            const content =
-               typeof template.content === 'string' ? template.content : await template.content(parent.resource, this.modelService, {});
-            const resource = await this.getUntitledResource(fileUri, content);
-            await open(this.openerService, resource.uri);
-         } else {
-            const options = await this.getMemberOptions(
-               {
-                  title: 'New ' + template.label + '...',
-                  parentUri: parentUri,
-                  initialValue: 'New' + template.memberType,
-                  placeholder: 'New ' + template.memberType
-               },
-               template,
-               parent
-            );
-            if (!options) {
-               return;
-            }
-            const { fileUri, content } = options;
-            await this.fileService.create(fileUri, content);
-            this.fireCreateNewFile({ parent: parentUri, uri: fileUri });
-            open(this.openerService, fileUri);
+      const targetDirectory = await this.getTargetDirectory(uri, template.memberType);
+      if (!targetDirectory) {
+         return;
+      }
+      if (template.memberType === LogicalEntityType || template.memberType === RelationshipType || template.memberType === DataModelType) {
+         const fileUri = template.toUri(targetDirectory, '');
+         const content =
+            typeof template.content === 'string' ? template.content : await template.content(targetDirectory, this.modelService, {});
+         const resource = await this.getUntitledResource(fileUri, content);
+         await open(this.openerService, resource.uri);
+      } else {
+         const targetDirectoryStat = await this.getDirectory(targetDirectory);
+         const options = await this.getMemberOptions(
+            {
+               title: 'New ' + template.label + '...',
+               parentUri: targetDirectory,
+               initialValue: 'New' + template.memberType,
+               placeholder: 'New ' + template.memberType
+            },
+            template,
+            targetDirectoryStat!
+         );
+         if (!options) {
+            return;
          }
+         const { fileUri, content } = options;
+         await this.fileService.create(fileUri, content);
+         this.fireCreateNewFile({ parent: targetDirectory, uri: fileUri });
+         open(this.openerService, fileUri);
       }
    }
 
