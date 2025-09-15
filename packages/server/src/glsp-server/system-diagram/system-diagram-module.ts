@@ -25,16 +25,15 @@ import { CrossModelIndex } from '../common/cross-model-index.js';
 import { CrossModelState } from '../common/cross-model-state.js';
 import { CrossModelStorage } from '../common/cross-model-storage.js';
 import { CrossModelSubmissionHandler } from '../common/cross-model-submission-handler.js';
-import { SystemDiagramAddEntityActionProvider } from './command-palette/add-entity-action-provider.js';
+import { SystemDiagramCommandPaletteActionProvider } from './command-palette/command-palette-action-provider.js';
 import { SystemEdgeCreationChecker } from './edge-checker/edge-checker.js';
-import { SystemDiagramAddEntityOperationHandler } from './handler/add-entity-operation-handler.js';
 import { SystemDiagramApplyLabelEditOperationHandler } from './handler/apply-edit-operation-handler.js';
 import { SystemDiagramChangeBoundsOperationHandler } from './handler/change-bounds-operation-handler.js';
 import { SystemDiagramCreateEntityOperationHandler } from './handler/create-entity-operation-handler.js';
 import { SystemDiagramCreateInheritanceOperationHandler } from './handler/create-inheritance-operation-handler.js';
 import { SystemDiagramCreateRelationshipOperationHandler } from './handler/create-relationship-operation-handler.js';
 import { SystemDiagramDeleteOperationHandler } from './handler/delete-operation-handler.js';
-import { SystemDiagramDropEntityOperationHandler } from './handler/drop-entity-operation-handler.js';
+import { SystemDiagramDropFilesOperationHandler } from './handler/drop-files-operation-handler.js';
 import { SystemDiagramOperationHandler } from './handler/layout-operation-handler.js';
 import { SystemDiagramLayoutEngine } from './layout-engine.js';
 import { SystemDiagramGModelFactory } from './model/system-diagram-gmodel-factory.js';
@@ -67,8 +66,7 @@ export class SystemDiagramModule extends DiagramModule {
       binding.add(SystemDiagramChangeBoundsOperationHandler); // move + resize behavior
       binding.add(SystemDiagramCreateRelationshipOperationHandler); // create relationship
       binding.add(SystemDiagramDeleteOperationHandler); // delete elements
-      binding.add(SystemDiagramDropEntityOperationHandler);
-      binding.add(SystemDiagramAddEntityOperationHandler);
+      binding.add(SystemDiagramDropFilesOperationHandler);
       binding.add(SystemDiagramCreateEntityOperationHandler);
       binding.add(SystemDiagramApplyLabelEditOperationHandler);
       binding.add(SystemDiagramCreateInheritanceOperationHandler);
@@ -77,7 +75,7 @@ export class SystemDiagramModule extends DiagramModule {
 
    protected override configureContextActionProviders(binding: MultiBinding<ContextActionsProvider>): void {
       super.configureContextActionProviders(binding);
-      binding.add(SystemDiagramAddEntityActionProvider);
+      binding.add(SystemDiagramCommandPaletteActionProvider);
    }
 
    protected override bindLayoutEngine(): BindingTarget<LayoutEngine> | undefined {

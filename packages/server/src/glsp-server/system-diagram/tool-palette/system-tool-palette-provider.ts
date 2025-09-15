@@ -58,15 +58,22 @@ export class SystemToolPaletteProvider extends ToolPaletteItemProvider {
                   actions: [TriggerNodeCreationAction.create(ENTITY_NODE_TYPE, { args: { type: 'create' } })]
                },
                {
-                  id: 'relationship-create-tool',
+                  id: 'relationship-show-tool',
                   sortString: '5',
+                  label: 'Show Relationship',
+                  icon: 'eye',
+                  actions: [TriggerEdgeCreationAction.create(RELATIONSHIP_EDGE_TYPE, { args: { type: 'show' } })]
+               },
+               {
+                  id: 'relationship-create-tool',
+                  sortString: '6',
                   label: 'Create Relationship',
                   icon: ModelStructure.Relationship.ICON,
-                  actions: [TriggerEdgeCreationAction.create(RELATIONSHIP_EDGE_TYPE)]
+                  actions: [TriggerEdgeCreationAction.create(RELATIONSHIP_EDGE_TYPE, { args: { type: 'create' } })]
                },
                {
                   id: 'inheritance-create-tool',
-                  sortString: '6',
+                  sortString: '7',
                   label: 'Create Inheritance',
                   icon: 'type-hierarchy-super',
                   actions: [TriggerEdgeCreationAction.create(INHERITANCE_EDGE_TYPE, { args: { cssClasses: 'diagram-edge inheritance' } })]

@@ -25,7 +25,7 @@ import {
 } from '@eclipse-glsp/client';
 import { Message, SingleTextInputDialog, SingleTextInputDialogProps } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CrossModelCommandPalette } from '../../cross-model-command-palette';
+import { EntityCommandPalette } from '../../cross-model-command-palette';
 
 @injectable()
 export class SystemNodeCreationTool extends NodeCreationTool {
@@ -48,7 +48,7 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
    protected override getCreateOperation(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Action {
       if (this.triggerAction.args?.type === 'show') {
          return SetUIExtensionVisibilityAction.create({
-            extensionId: CrossModelCommandPalette.ID,
+            extensionId: EntityCommandPalette.ID,
             visible: true,
             contextElementsId: [this.ghostElementId]
          });

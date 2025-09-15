@@ -24,7 +24,12 @@ import { GlspSelectionDataService } from '@eclipse-glsp/theia-integration';
 import { ContainerModule, injectable, interfaces } from '@theia/core/shared/inversify';
 import { VNode } from 'snabbdom';
 import { CmMetadataPlacer } from './cm-metadata-placer';
-import { CrossModelCommandPalette, CrossModelMousePositionTracker } from './cross-model-command-palette';
+import {
+   CrossModelCommandPalette,
+   CrossModelMousePositionTracker,
+   EntityCommandPalette,
+   RelationshipCommandPalette
+} from './cross-model-command-palette';
 import { CrossModelMouseDeleteTool } from './cross-model-delete-tool';
 import { CrossModelDiagramStartup } from './cross-model-diagram-startup';
 import { CrossModelErrorExtension } from './cross-model-error-extension';
@@ -46,6 +51,8 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       registry(bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation);
       bind(CrossModelCommandPalette).toSelf().inSingletonScope();
       rebind(GlspCommandPalette).toService(CrossModelCommandPalette);
+      bindAsService(bind, TYPES.IUIExtension, EntityCommandPalette);
+      bindAsService(bind, TYPES.IUIExtension, RelationshipCommandPalette);
 
       bind(CrossModelMousePositionTracker).toSelf().inSingletonScope();
       bindOrRebind(context, GLSPMousePositionTracker).toService(CrossModelMousePositionTracker);
