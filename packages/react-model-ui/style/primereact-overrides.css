@@ -375,10 +375,24 @@ span.w-full.p-autocomplete {
 
 .p-datatable .datatable-global-filter .p-inputtext {
    padding-left: 2rem;
+   padding-right: 2rem;
 }
 
 .p-datatable .datatable-global-filter .p-icon-field span.pi.pi-search.p-input-icon {
    margin-top: -0.3rem;
+}
+
+.p-datatable .datatable-global-filter .keyword-search-container {
+   position: relative;
+   display: inline-block;
+}
+
+.p-datatable .datatable-global-filter .keyword-search-container i.pi.pi-times {
+   position: absolute;
+   right: 10px;
+   top: 50%;
+   transform: translateY(-50%);
+   cursor: pointer;
 }
 
 /* MultiSelect styles */

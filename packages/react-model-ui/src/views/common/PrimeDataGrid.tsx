@@ -138,14 +138,26 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             )}
             <Button type='button' icon='pi pi-filter-slash' label='Clear' outlined onClick={clearFilters} />
          </div>
-         <IconField iconPosition='left'>
-            <InputIcon className='pi pi-search' />
-            <InputText
-               value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
-               onChange={onGlobalFilterChange}
-               placeholder='Keyword Search'
-            />
-         </IconField>
+         <div className='keyword-search-container'>
+            <IconField iconPosition='left'>
+               <InputIcon className='pi pi-search' />
+               <InputText
+                  value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
+                  onChange={onGlobalFilterChange}
+                  placeholder='Keyword Search'
+               />
+            </IconField>
+            {(filters['global'] as DataTableFilterMetaData)?.value && (
+               <i
+                  className='pi pi-times'
+                  onClick={() => {
+                     const _filters = { ...filters };
+                     (_filters['global'] as DataTableFilterMetaData).value = '';
+                     setFilters(_filters);
+                  }}
+               />
+            )}
+         </div>
       </div>
    );
 
