@@ -1,3 +1,18 @@
+/** Override primereact color variables to match Theia themes */
+:root {
+   --text-color: var(--theia-foreground);
+   --text-color-secondary: var(--theia-text-color-secondary);
+   --primary-color: var(--theia-editor-background);
+   --primary-color-text: var(--theia-foreground);
+   --font-family: var(--theia-ui-font-family);
+   --inline-spacing: var(--theia-ui-padding);
+   --border-radius: 2px;
+   --focus-ring: var(--theia-textLink-activeForeground);
+   --mask-bg: var(--theia-window-inactiveBorder);
+   --highlight-bg: var(--theia-window-activeBorder);
+   --highlight-text-color: var(--theia-textLink-activeForeground);
+}
+
 /* PrimeReact component styles */
 
 /* Theme-specific styles */
@@ -6,9 +21,9 @@
    --surface-section: #f8f9fa;
    --surface-card: #ffffff;
    --surface-border: #dfe7ef;
-   --text-color: #000000;
-   --primary-color: #007acc;
-   --focus-ring: #007acc40;
+   /* --text-color: #000000; */
+   /* --primary-color: #007acc; */
+   /* --focus-ring: #007acc40; */
 }
 
 .dark-theme {
@@ -16,16 +31,16 @@
    --surface-section: #252526;
    --surface-card: #252526;
    --surface-border: #404040;
-   --text-color: #d4d4d4;
-   --primary-color: #0e639c;
-   --focus-ring: #0e639c40;
+   /* --text-color: #d4d4d4; */
+   /* --primary-color: #0e639c; */
+   /* --focus-ring: #0e639c40; */
 }
 
 /* Global components */
 .p-component {
-   font-family: var(--theia-ui-font-family);
+   /* font-family: var(--theia-ui-font-family); */
    font-size: var(--theia-ui-font-size1);
-   color: var(--text-color);
+   /* color: var(--text-color); */
 }
 
 /* Button styles */
@@ -97,13 +112,6 @@
 .p-datatable .p-datatable-tbody > tr:nth-child(even) {
    background: var(--surface-hover);
 }
-
-/* .p-datatable .p-datatable-tbody > tr > td:empty {
-   background-color: var(--surface-ground);
-   border: 1px solid var(--surface-border);
-   border-radius: 4px;
-   min-height: 2rem;
-} */
 
 /* Input field styles */
 .p-inputtext {
@@ -264,6 +272,10 @@
    background: var(--theia-list-hoverBackground);
 }
 
+.p-accordion .p-accordion-tab {
+   margin-bottom: var(--theia-ui-padding);
+}
+
 .p-accordion .p-accordion-header .p-accordion-header-link {
    background: var(--theia-titleBar-activeBackground);
    color: var(--theia-titleBar-activeForeground);
@@ -293,17 +305,6 @@
 .p-invalid {
    border-color: var(--theia-errorForeground) !important;
 }
-
-/* Float label styles */
-/* .p-float-label input:focus ~ label,
-.p-float-label input.p-filled ~ label,
-.p-float-label textarea:focus ~ label,
-.p-float-label textarea.p-filled ~ label,
-.p-float-label .p-inputwrapper:focus ~ label,
-.p-float-label .p-inputwrapper ~ label {
-   color: var(--text-color);
-   font-weight: 600;
-} */
 
 /* Add spacing between label and input */
 label {
