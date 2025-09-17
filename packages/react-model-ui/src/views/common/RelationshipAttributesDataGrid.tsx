@@ -38,8 +38,8 @@ export function AttributeProperty({ field, row, diagnostics, value }: AttributeP
 
    return (
       <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage || undefined}>
-         <p>{value}</p>
-         {errorMessage && <small className='p-error block'>{errorMessage}</small>}
+         {value}
+         {errorMessage && <p className='p-error block'>{errorMessage}</p>}
       </div>
    );
 }

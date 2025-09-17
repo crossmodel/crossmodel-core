@@ -367,7 +367,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
                const errorMessage = processedDiagnostics[`dependencies[${rowData.idx}].source`];
                return (
                   <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage || undefined}>
-                     <span>{rowData.source}</span>
+                     {rowData.source}
                      {errorMessage && <p className='p-error m-0'>{errorMessage}</p>}
                   </div>
                );
