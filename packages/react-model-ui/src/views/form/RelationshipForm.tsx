@@ -5,6 +5,7 @@
 import {
    computeRelationshipName,
    CrossModelValidationErrors,
+   ModelDiagnostic,
    ModelFileType,
    ModelStructure,
    ReferenceableElement,
@@ -32,7 +33,43 @@ export function RelationshipForm(): React.ReactElement {
    const baseDiagnostics = useDiagnostics();
    const untitled = useUntitled();
    const uri = useUri();
-   const diagnostics = React.useMemo(() => CrossModelValidationErrors.getFieldErrors(baseDiagnostics), [baseDiagnostics]);
+   const diagnostics = React.useMemo(() => {
+      const errors = CrossModelValidationErrors.getFieldErrors(baseDiagnostics);
+
+      // Process raw diagnostics for attributes
+      const attributeDiagnostics: Record<string, ModelDiagnostic[]> = {};
+      relationship?.attributes?.forEach((attr, idx) => {
+         baseDiagnostics.forEach(diagnostic => {
+            if (
+               diagnostic.message.includes('Could not resolve reference') &&
+               ((attr.parent === '_' && diagnostic.code === 'linking-error') || (attr.child === '_' && diagnostic.code === 'linking-error'))
+            ) {
+               if (attr.parent === '_') {
+                  const key = `attributes[${idx}].parent`;
+                  attributeDiagnostics[key] = [
+                     {
+                        ...diagnostic,
+                        message: 'Not a valid parent attribute.'
+                     }
+                  ];
+               }
+               if (attr.child === '_') {
+                  const key = `attributes[${idx}].child`;
+                  attributeDiagnostics[key] = [
+                     {
+                        ...diagnostic,
+                        message: 'Not a valid child attribute.'
+                     }
+                  ];
+               }
+            }
+         });
+      });
+
+      const combinedDiagnostics = { ...errors, ...attributeDiagnostics };
+
+      return combinedDiagnostics;
+   }, [baseDiagnostics]);
 
    const usingDefaultName = React.useMemo(
       () => relationship.name === computeRelationshipName(relationship.parent, relationship.child),
@@ -133,8 +170,8 @@ export function RelationshipForm(): React.ReactElement {
                onChange={handleParentChange}
                disabled={readonly}
                required={true}
-               error={!!diagnostics.parent?.length}
-               helperText={diagnostics.parent?.[0]?.message}
+               error={!!diagnostics[`attributes[0].parent`]?.length}
+               helperText={diagnostics[`attributes[0].parent`]?.[0]?.message}
             />
 
             <div className='p-field p-fluid'>
@@ -180,8 +217,8 @@ export function RelationshipForm(): React.ReactElement {
                onChange={handleChildChange}
                disabled={readonly}
                required={true}
-               error={!!diagnostics.child?.length}
-               helperText={diagnostics.child?.[0]?.message}
+               error={!!diagnostics[`attributes[0].child`]?.length}
+               helperText={diagnostics[`attributes[0].child`]?.[0]?.message}
             />
 
             <div className='p-field p-fluid'>
@@ -221,7 +258,7 @@ export function RelationshipForm(): React.ReactElement {
             </div>
          </FormSection>
          <FormSection label='Attributes'>
-            <RelationshipAttributesDataGrid diagnostics={diagnostics} />
+            <RelationshipAttributesDataGrid />
          </FormSection>
          <FormSection label='Custom properties'>
             <RelationshipCustomPropertiesDataGrid />

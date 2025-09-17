@@ -42,14 +42,26 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (customProperty: CustomPropertyRow) => {
-         if (
-            customProperty.name === defaultEntry.name &&
-            customProperty.value === defaultEntry.value &&
-            customProperty.description === defaultEntry.description
-         ) {
-            console.log('Not saving default new custom property.');
+         console.debug('Updating custom property:', customProperty);
+
+         // Check if the property has a valid name
+         const isValidProperty = customProperty.name && customProperty.name.trim() !== '';
+
+         if (!isValidProperty) {
+            console.debug('Not saving invalid custom property - no valid name');
+
+            // If this was a new row (has default values), remove it
+            if (
+               customProperty.name === defaultEntry.name &&
+               customProperty.value === defaultEntry.value &&
+               customProperty.description === defaultEntry.description
+            ) {
+               console.debug('Removing invalid new custom property');
+               onRowDelete(customProperty);
+            }
             return;
          }
+
          const errors = validateField(customProperty);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);

@@ -1,15 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-
 import { CrossReferenceContext, DataModelDependency, DataModelDependencyType } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
-import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDataModel, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDataModel, useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface DataModelDependencyRow extends DataModelDependency {
    idx: number;
@@ -17,19 +15,28 @@ export interface DataModelDependencyRow extends DataModelDependency {
 }
 
 interface DataModelDependencyEditorProps {
-   options: any;
+   options: {
+      value: string;
+      field: string;
+      rowData: DataModelDependencyRow;
+      editorCallback: (value: string) => void;
+   };
+   validationErrors?: Record<string, string>;
 }
 
 function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React.ReactElement {
-   const { options } = props;
-   const { editorCallback } = options;
+   const { options, validationErrors } = props;
+   const { editorCallback, rowData, field } = options;
 
-   const [currentValue, setCurrentValue] = React.useState(options.value);
+   // Initialize with the actual value based on the field type
+   const initialValue = field === 'datamodel' ? rowData.datamodel : field === 'version' ? rowData.version : '';
+   const [currentValue, setCurrentValue] = React.useState(initialValue || '');
    const [suggestions, setSuggestions] = React.useState<string[]>([]);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
    const dataModel = useDataModel();
    const readonly = useReadonly();
+   const error = validationErrors?.[`${rowData.id}.${field}`];
    const isDropdownClicked = React.useRef(false);
    // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
@@ -115,22 +122,27 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
    }, []);
 
    return (
-      <AutoComplete
-         ref={autoCompleteRef}
-         value={currentValue ?? ''}
-         suggestions={suggestions}
-         completeMethod={search}
-         dropdown
-         className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
-         onDropdownClick={handleDropdownClick}
-         onChange={e => setCurrentValue(e.value)}
-         onSelect={onSelect}
-         onShow={onShow}
-         onHide={onHide}
-         disabled={readonly}
-         autoFocus
-         onKeyDown={handleGridEditorKeyDown}
-      />
+      <div className='grid-editor-container'>
+         <div className={`p-field ${error ? 'p-error' : ''}`}>
+            <AutoComplete
+               ref={autoCompleteRef}
+               value={currentValue ?? ''}
+               suggestions={suggestions}
+               completeMethod={search}
+               dropdown
+               className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''} ${error ? 'p-invalid' : ''}`}
+               onDropdownClick={handleDropdownClick}
+               onChange={e => setCurrentValue(e.value)}
+               onSelect={onSelect}
+               onShow={onShow}
+               onHide={onHide}
+               disabled={readonly}
+               autoFocus
+               onKeyDown={handleGridEditorKeyDown}
+            />
+            {error && <small className='p-error block'>{error}</small>}
+         </div>
+      </div>
    );
 }
 
@@ -138,23 +150,81 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    const dataModel = useDataModel();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const rawDiagnostics = useDiagnostics();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
-   const validateField = React.useCallback((rowData: DataModelDependencyRow): Record<string, string> => {
+   // Update validation errors whenever diagnostics change
+   React.useEffect(() => {
       const errors: Record<string, string> = {};
-      if (!rowData.datamodel) {
-         errors.datamodel = 'Invalid Data Model';
+
+      try {
+         // Process raw diagnostics to find reference errors
+         dataModel?.dependencies?.forEach((dep, idx) => {
+            const rowId = (dep as DataModelDependencyRow).id || `dep${idx}`;
+
+            // Look for diagnostics related to this dependency
+            rawDiagnostics.forEach(diagnostic => {
+               // Check if this diagnostic is about a DataModel reference and belongs to this dependency
+               if (
+                  diagnostic.message.includes('Could not resolve reference') &&
+                  (diagnostic.code?.toString().includes(`dependencies.${idx}`) ||
+                     diagnostic.code?.toString().includes(`dependencies[${idx}]`) ||
+                     (dep.datamodel && diagnostic.message.includes(dep.datamodel)))
+               ) {
+                  errors[`${rowId}.datamodel`] = diagnostic.message;
+               }
+            });
+         });
+
+         // Set validation errors if any were found
+         if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+         }
+      } catch (e) {
+         console.error('Error processing diagnostics:', e);
       }
-      return errors;
-   }, []);
+
+      // Process raw diagnostics looking for model errors
+      rawDiagnostics.forEach(diagnostic => {
+         // Try to find which dependency this error belongs to
+         dataModel?.dependencies?.forEach((dep, idx) => {
+            const rowId = `dep${idx}`; // Use consistent ID format
+            const isErrorForThisDependency =
+               diagnostic.code === `dependencies.${idx}` ||
+               diagnostic.code === `dependencies[${idx}]` ||
+               diagnostic.code === `dependencies.${idx}.datamodel` ||
+               (dep.datamodel && diagnostic.message.includes(`named '${dep.datamodel}'`)) ||
+               (diagnostic.message.includes('Could not resolve reference') && diagnostic.message.includes(`'${dep.datamodel}'`));
+
+            if (isErrorForThisDependency) {
+               // Use the complete message from the language server
+               errors[`${rowId}.datamodel`] = diagnostic.message;
+            }
+         });
+      });
+
+      // Show validation for all rows, including newly added ones
+      dataModel?.dependencies?.forEach((dep, idx) => {
+         const rowId = `dep${idx}`;
+
+         // Always validate if the datamodel is empty or invalid
+         if (!dep.datamodel?.trim() && !errors[`${rowId}.datamodel`]) {
+            errors[`${rowId}.datamodel`] = 'Data Model reference is required';
+         }
+      });
+
+      setValidationErrors(errors);
+   }, [dataModel?.dependencies, rawDiagnostics, editingRows]);
+
+   // Removed validateField as we now rely on language server validation
 
    const gridData = React.useMemo(
       () =>
          (dataModel.dependencies || []).map((dep, idx) => ({
             ...dep,
             idx,
-            id: (dep as any).id || idx.toString() // Ensure id is present for keyField
+            id: `dep${idx}` // Consistent ID format for all dependencies
          })) as DataModelDependencyRow[],
       [dataModel.dependencies]
    );
@@ -174,47 +244,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       []
    );
 
-   const onRowUpdate = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         if (dependency.datamodel === defaultEntry.datamodel && dependency.version === defaultEntry.version) {
-            console.log('Not saving default new dependency.');
-            return;
-         }
-         const errors = validateField(dependency);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-            return;
-         }
-         setValidationErrors({});
-         dispatch({
-            type: 'datamodel:dependency:update',
-            dependencyIdx: dependency.idx,
-            dependency: dependency
-         });
-      },
-      [dispatch, defaultEntry, validateField]
-   );
-
-   const onRowAdd = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         setValidationErrors({});
-         const newId = dependency.id || gridData.length.toString(); // Generate a unique ID
-         const dependencyData: DataModelDependencyRow = {
-            $type: DataModelDependencyType,
-            datamodel: dependency.datamodel as string,
-            version: dependency.version || '',
-            id: newId,
-            idx: -1
-         };
-         dispatch({
-            type: 'datamodel:dependency:add-dependency',
-            dependency: dependencyData
-         });
-         setEditingRows({ [newId]: true });
-      },
-      [dispatch, gridData]
-   );
-
    const onRowDelete = React.useCallback(
       (dependency: DataModelDependencyRow) => {
          dispatch({
@@ -223,6 +252,71 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          });
       },
       [dispatch]
+   );
+
+   const onRowUpdate = React.useCallback(
+      (dependency: DataModelDependencyRow) => {
+         // Check if the dependency has a valid datamodel selected
+         const isValidDatamodel =
+            dependency.datamodel && dependency.datamodel.trim() !== '' && dependency.datamodel !== '_' && dependency.datamodel !== '-';
+
+         if (!isValidDatamodel) {
+            if (dependency.datamodel === defaultEntry.datamodel && dependency.version === defaultEntry.version) {
+               onRowDelete(dependency);
+            }
+
+            return;
+         }
+
+         // Clear any existing validation errors for this row
+         const rowId = dependency.id;
+         setValidationErrors(current => {
+            const updated = { ...current };
+            delete updated[`${rowId}.datamodel`];
+            return updated;
+         });
+
+         dispatch({
+            type: 'datamodel:dependency:update',
+            dependencyIdx: dependency.idx,
+            dependency: dependency
+         });
+
+         // Update editing state to show we're done editing this row
+         setEditingRows(current => {
+            const updated = { ...current };
+            delete updated[rowId];
+            return updated;
+         });
+      },
+      [dispatch, defaultEntry, onRowDelete]
+   );
+
+   const onRowAdd = React.useCallback(
+      (dependency: DataModelDependencyRow) => {
+         const newIdx = dataModel?.dependencies?.length ?? 0;
+         const newId = `dep${newIdx}`;
+
+         const dependencyData: DataModelDependencyRow = {
+            $type: DataModelDependencyType,
+            datamodel: dependency.datamodel as string,
+            version: dependency.version || '',
+            id: newId,
+            idx: newIdx
+         };
+
+         dispatch({
+            type: 'datamodel:dependency:add-dependency',
+            dependency: dependencyData
+         });
+
+         // Explicitly set this row as being edited
+         setEditingRows(current => ({
+            ...current,
+            [newId]: true
+         }));
+      },
+      [dataModel?.dependencies?.length, dispatch]
    );
 
    const onRowMoveUp = React.useCallback(
@@ -250,7 +344,16 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          {
             field: 'datamodel',
             header: 'Data Model',
-            editor: (options: any) => <DataModelDependencyEditor options={options} />,
+            editor: (options: any) => <DataModelDependencyEditor options={options} validationErrors={validationErrors} />,
+            body: (rowData: DataModelDependencyRow) => {
+               const error = validationErrors[`${rowData.id}.datamodel`];
+               return (
+                  <div className={`grid-cell-container ${error && !editingRows[rowData.id] ? 'p-invalid' : ''}`} title={error || undefined}>
+                     <span>{rowData.datamodel || ''}</span>
+                     {error && !editingRows[rowData.id] && <p className='p-error m-0'>{error}</p>}
+                  </div>
+               );
+            },
             filterType: 'multiselect',
             filterOptions: datamodelOptions,
             showFilterMatchModes: false
@@ -263,7 +366,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             filterType: 'text'
          }
       ],
-      [datamodelOptions]
+      [datamodelOptions, validationErrors, editingRows]
    );
 
    if (!dataModel) {
@@ -288,7 +391,26 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          noDataMessage='No dependencies'
          addButtonLabel='Add Dependency'
          editingRows={editingRows}
-         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         onRowEditChange={e => {
+            const rowData = gridData.find(row => row.id === Object.keys(e.data)[0]);
+            const isFinishingEdit = Object.values(e.data)[0] === false;
+
+            if (rowData && isFinishingEdit) {
+               // Check if this is an invalid row that should be removed
+               const isInvalidDatamodel =
+                  !rowData.datamodel || rowData.datamodel.trim() === '' || rowData.datamodel === '_' || rowData.datamodel === '-';
+
+               const isDefaultRow = rowData.datamodel === defaultEntry.datamodel && rowData.version === defaultEntry.version;
+
+               if (isInvalidDatamodel && isDefaultRow) {
+                  console.debug('Removing invalid row on edit completion:', rowData);
+                  onRowDelete(rowData);
+                  return;
+               }
+            }
+
+            setEditingRows(e.data);
+         }}
          globalFilterFields={['datamodel', 'version']}
       />
    );

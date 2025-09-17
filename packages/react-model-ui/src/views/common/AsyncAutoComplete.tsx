@@ -113,24 +113,27 @@ export default function AsyncAutoComplete<T = string>({
       <div className='p-field p-fluid' style={{ position: 'relative' }}>
          <div>
             <label htmlFor={label}>{label}</label>
-            <AutoComplete<T>
-               ref={autoCompleteRef}
-               value={value}
-               suggestions={options as (T extends any[] ? T[number] : T)[]}
-               completeMethod={loadSuggestions}
-               onChange={e => onChange({ value: e.value })}
-               disabled={readonly}
-               className={`${className} ${error ? 'p-invalid' : ''} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
-               dropdown
-               onDropdownClick={handleDropdownClick}
-               onShow={onShow}
-               onHide={onHide}
-               forceSelection={forceSelection}
-               field={field ? String(field) : undefined}
-               onKeyDown={handleGridEditorKeyDown}
-            />
+            <div className='p-inputgroup'>
+               <AutoComplete<T>
+                  ref={autoCompleteRef}
+                  value={value}
+                  suggestions={options as (T extends any[] ? T[number] : T)[]}
+                  completeMethod={loadSuggestions}
+                  onChange={e => onChange({ value: e.value })}
+                  disabled={readonly}
+                  className={`${className} ${error ? 'p-invalid' : ''} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
+                  title={helperText || undefined}
+                  dropdown
+                  onDropdownClick={handleDropdownClick}
+                  onShow={onShow}
+                  onHide={onHide}
+                  forceSelection={forceSelection}
+                  field={field ? String(field) : undefined}
+                  onKeyDown={handleGridEditorKeyDown}
+               />
+            </div>
          </div>
-         {error && helperText && <small className='p-error'>{helperText}</small>}
+         {error && helperText && <small className='p-error block'>{helperText}</small>}
          {loading && (
             <div
                style={{
