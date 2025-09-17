@@ -40,6 +40,16 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       [dataModel?.customProperties]
    );
 
+   const onRowDelete = React.useCallback(
+      (customProperty: CustomPropertyRow) => {
+         dispatch({
+            type: 'datamodel:customProperty:delete-customProperty',
+            customPropertyIdx: customProperty.idx
+         });
+      },
+      [dispatch]
+   );
+
    const onRowUpdate = React.useCallback(
       (customProperty: CustomPropertyRow) => {
          console.debug('Updating custom property:', customProperty);
@@ -74,7 +84,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             customProperty: customProperty
          });
       },
-      [dispatch, defaultEntry, validateField]
+      [dispatch, defaultEntry, validateField, onRowDelete]
    );
 
    const onRowAdd = React.useCallback(
@@ -111,16 +121,6 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       (customProperty: CustomPropertyRow) => {
          dispatch({
             type: 'datamodel:customProperty:move-customProperty-down',
-            customPropertyIdx: customProperty.idx
-         });
-      },
-      [dispatch]
-   );
-
-   const onRowDelete = React.useCallback(
-      (customProperty: CustomPropertyRow) => {
-         dispatch({
-            type: 'datamodel:customProperty:delete-customProperty',
             customPropertyIdx: customProperty.idx
          });
       },

@@ -69,7 +69,7 @@ export function RelationshipForm(): React.ReactElement {
       const combinedDiagnostics = { ...errors, ...attributeDiagnostics };
 
       return combinedDiagnostics;
-   }, [baseDiagnostics]);
+   }, [baseDiagnostics, relationship?.attributes]);
 
    const usingDefaultName = React.useMemo(
       () => relationship.name === computeRelationshipName(relationship.parent, relationship.child),
@@ -170,8 +170,8 @@ export function RelationshipForm(): React.ReactElement {
                onChange={handleParentChange}
                disabled={readonly}
                required={true}
-               error={!!diagnostics[`attributes[0].parent`]?.length}
-               helperText={diagnostics[`attributes[0].parent`]?.[0]?.message}
+               error={!!diagnostics['attributes[0].parent']?.length}
+               helperText={diagnostics['attributes[0].parent']?.[0]?.message}
             />
 
             <div className='p-field p-fluid'>
@@ -217,8 +217,8 @@ export function RelationshipForm(): React.ReactElement {
                onChange={handleChildChange}
                disabled={readonly}
                required={true}
-               error={!!diagnostics[`attributes[0].child`]?.length}
-               helperText={diagnostics[`attributes[0].child`]?.[0]?.message}
+               error={!!diagnostics['attributes[0].child']?.length}
+               helperText={diagnostics['attributes[0].child']?.[0]?.message}
             />
 
             <div className='p-field p-fluid'>

@@ -84,7 +84,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
             if (match) {
                const [, diagnosticIdx, field] = match;
                if (
-                  parseInt(diagnosticIdx) === options.rowData.idx &&
+                  parseInt(diagnosticIdx, 10) === options.rowData.idx &&
                   ((isParent && field === 'parent') || (!isParent && field === 'child'))
                ) {
                   diagnostics[diagnosticKey] = [diagnostic];
@@ -247,7 +247,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
                   const match = diagnosticCode.match(/malformed-attributes\[(\d+)\]\.(\w+)/);
                   if (match) {
                      const [, diagnosticIdx, field] = match;
-                     if (parseInt(diagnosticIdx) === idx) {
+                     if (parseInt(diagnosticIdx, 10) === idx) {
                         const key = `attributes[${idx}].${field}`;
                         diagnostics[key] = [diagnostic];
                      }
@@ -286,7 +286,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
                const match = diagnosticCode.match(/malformed-attributes\[(\d+)\]\.(\w+)/);
                if (match) {
                   const [, diagnosticIdx, field] = match;
-                  if (parseInt(diagnosticIdx) === rowData.idx) {
+                  if (parseInt(diagnosticIdx, 10) === rowData.idx) {
                      errors[field] = diagnostic.message;
                      return true;
                   }

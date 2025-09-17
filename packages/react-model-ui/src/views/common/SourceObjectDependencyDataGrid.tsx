@@ -101,7 +101,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
       // eslint-disable-next-line no-null/no-null
       let finalValue = '_'; // Default value if nothing is selected
 
-      if (typeof value === 'object' && value !== null && value.label) {
+      if (typeof value === 'object' && value !== undefined && value.label) {
          finalValue = value.label;
       } else if (value) {
          finalValue = value;
@@ -378,7 +378,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             showFilterMatchModes: false
          }
       ],
-      [sourceObject, sourceOptions]
+      [sourceObject, sourceOptions, processedDiagnostics]
    );
 
    const defaultEntry = React.useMemo<Partial<SourceObjectDependencyRow>>(
