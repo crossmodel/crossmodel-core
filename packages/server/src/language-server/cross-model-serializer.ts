@@ -237,6 +237,7 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
       }
       if (isAstNode(value)) {
          let isFirstNested = isAstNode(parent);
+         const optionalProperties = new Set(this.getPropertyNames(value.$type, 'optional'));
          const properties = this.getPropertyNames(value.$type)
             .map(prop => {
                const propValue = (value as GenericAstNode)[prop];
@@ -254,6 +255,10 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                }
                if (isLogicalIdentifier(value) && prop === 'primary' && propValue === false) {
                   // special: skip primary property if it is false
+                  return undefined;
+               }
+               if (optionalProperties.has(prop) && typeof propValue === 'boolean' && propValue === false) {
+                  // optional boolean properties should only be serialized when explicitly enabled
                   return undefined;
                }
                // arrays and objects start on a new line -- skip some objects that we do not actually serialize in object structure
