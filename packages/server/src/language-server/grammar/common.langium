@@ -40,10 +40,15 @@ interface DataElement extends NamedObject {
     datatype?: string;
 }
 
+DataElementFragment returns DataElement:
+    NamedObjectFragment
+    ('datatype' ':' datatype=STRING)?
+;
+
 Cardinality returns string: '0..1' | '1' | '0..N' | '1..N';
 
 // Custom properties
-interface WithCustomProperties extends NamedObject {
+interface WithCustomProperties {
     customProperties: CustomProperty[];
 }
 

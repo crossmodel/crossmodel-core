@@ -38,7 +38,8 @@ LogicalEntity returns LogicalEntity:
         DEDENT
 ;
 
-interface LogicalAttribute extends DataElement, WithCustomProperties {
+// For some reason we can't extend WithCustomProperties here, the compiler complains.
+interface LogicalAttribute extends DataElement {
     length?: number;
     precision?: number;
     scale?: number;
@@ -46,11 +47,11 @@ interface LogicalAttribute extends DataElement, WithCustomProperties {
     relatedConceptualAttributes: @ConceptualAttribute[];
     defaultValue?: string;
     nullable?: boolean;
+    customProperties: CustomProperty[];
 }
 
 LogicalAttribute returns LogicalAttribute:
-    NamedObjectFragment
-    ('datatype' ':' datatype=STRING)?
+    DataElementFragment
     ('length' ':' length=NUMBER)?
     ('precision' ':' precision=NUMBER)?
     ('scale' ':' scale=NUMBER)?

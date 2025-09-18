@@ -241,7 +241,7 @@ export function isDataModelDependency(item: unknown): item is DataModelDependenc
 }
 
 export interface IdentifiedObject extends langium.AstNode {
-    readonly $type: 'AttributeMapping' | 'BehaviouralDataElementContainer' | 'ConceptualAttribute' | 'ConceptualBusinessRule' | 'ConceptualEntity' | 'ConceptualRelationship' | 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataElementContainerMapping' | 'DataElementMapping' | 'DataModel' | 'DocumentCollection' | 'DocumentField' | 'ForeignKey' | 'IdentifiedObject' | 'InheritanceEdge' | 'LogicalAttribute' | 'LogicalBusinessRule' | 'LogicalEntity' | 'LogicalEntityNode' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'NamedObject' | 'PhysicalBehaviouralDataElementContainer' | 'PhysicalDataElement' | 'PhysicalRelationship' | 'PhysicalStructuralDataElementContainer' | 'PrimaryKey' | 'RelationalColumn' | 'RelationalKey' | 'RelationalTable' | 'RelationalView' | 'Relationship' | 'RelationshipAttribute' | 'RelationshipEdge' | 'SourceDataElementContainer' | 'SourceObject' | 'SourceObjectAttribute' | 'StructuralDataElementContainer' | 'SystemDiagram' | 'SystemDiagramEdge' | 'TargetObject' | 'TargetObjectAttribute' | 'WithCustomProperties';
+    readonly $type: 'BehaviouralDataElementContainer' | 'ConceptualAttribute' | 'ConceptualBusinessRule' | 'ConceptualEntity' | 'ConceptualRelationship' | 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataElementContainerMapping' | 'DataElementMapping' | 'DataModel' | 'DocumentCollection' | 'DocumentField' | 'ForeignKey' | 'IdentifiedObject' | 'InheritanceEdge' | 'LogicalAttribute' | 'LogicalBusinessRule' | 'LogicalEntity' | 'LogicalEntityNode' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'NamedObject' | 'PhysicalBehaviouralDataElementContainer' | 'PhysicalDataElement' | 'PhysicalRelationship' | 'PhysicalStructuralDataElementContainer' | 'PrimaryKey' | 'RelationalColumn' | 'RelationalKey' | 'RelationalTable' | 'RelationalView' | 'Relationship' | 'RelationshipEdge' | 'SourceDataElementContainer' | 'SourceObject' | 'SourceObjectAttribute' | 'StructuralDataElementContainer' | 'SystemDiagram' | 'SystemDiagramEdge' | 'TargetObjectAttribute';
     id?: string;
 }
 
@@ -311,6 +311,18 @@ export function isStringLiteral(item: unknown): item is StringLiteral {
     return reflection.isInstance(item, StringLiteral);
 }
 
+export interface WithCustomProperties extends langium.AstNode {
+    readonly $container: ConceptualEntity | CrossModelRoot | DocumentCollection | LogicalEntity | Mapping | RelationalTable | RelationalView | Relationship | TargetObject;
+    readonly $type: 'AttributeMapping' | 'ConceptualAttribute' | 'ConceptualBusinessRule' | 'ConceptualEntity' | 'ConceptualRelationship' | 'DataModel' | 'DocumentCollection' | 'DocumentField' | 'ForeignKey' | 'LogicalBusinessRule' | 'LogicalEntity' | 'LogicalIdentifier' | 'Mapping' | 'PhysicalBehaviouralDataElementContainer' | 'PhysicalDataElement' | 'PhysicalRelationship' | 'PhysicalStructuralDataElementContainer' | 'PrimaryKey' | 'RelationalColumn' | 'RelationalKey' | 'RelationalTable' | 'RelationalView' | 'Relationship' | 'RelationshipAttribute' | 'SourceObject' | 'TargetObject' | 'WithCustomProperties';
+    customProperties: Array<CustomProperty>;
+}
+
+export const WithCustomProperties = 'WithCustomProperties';
+
+export function isWithCustomProperties(item: unknown): item is WithCustomProperties {
+    return reflection.isInstance(item, WithCustomProperties);
+}
+
 export interface DataElementContainerMapping extends IdentifiedObject {
     readonly $container: CrossModelRoot;
     readonly $type: 'DataElementContainerMapping' | 'Mapping';
@@ -349,8 +361,8 @@ export function isLogicalEntityNode(item: unknown): item is LogicalEntityNode {
 }
 
 export interface NamedObject extends IdentifiedObject {
-    readonly $container: ConceptualEntity | CrossModelRoot | LogicalEntity | Mapping | RelationalTable | Relationship | TargetObject | WithCustomProperties;
-    readonly $type: 'AttributeMapping' | 'BehaviouralDataElementContainer' | 'ConceptualAttribute' | 'ConceptualBusinessRule' | 'ConceptualEntity' | 'ConceptualRelationship' | 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataModel' | 'DocumentCollection' | 'DocumentField' | 'ForeignKey' | 'LogicalAttribute' | 'LogicalBusinessRule' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'NamedObject' | 'PhysicalBehaviouralDataElementContainer' | 'PhysicalDataElement' | 'PhysicalRelationship' | 'PhysicalStructuralDataElementContainer' | 'PrimaryKey' | 'RelationalColumn' | 'RelationalKey' | 'RelationalTable' | 'RelationalView' | 'Relationship' | 'RelationshipAttribute' | 'SourceObject' | 'SourceObjectAttribute' | 'StructuralDataElementContainer' | 'TargetObject' | 'TargetObjectAttribute' | 'WithCustomProperties';
+    readonly $container: ConceptualEntity | CrossModelRoot | LogicalAttribute | LogicalEntity | RelationalTable | WithCustomProperties;
+    readonly $type: 'BehaviouralDataElementContainer' | 'ConceptualAttribute' | 'ConceptualBusinessRule' | 'ConceptualEntity' | 'ConceptualRelationship' | 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataModel' | 'DocumentCollection' | 'DocumentField' | 'ForeignKey' | 'LogicalAttribute' | 'LogicalBusinessRule' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'NamedObject' | 'PhysicalBehaviouralDataElementContainer' | 'PhysicalDataElement' | 'PhysicalRelationship' | 'PhysicalStructuralDataElementContainer' | 'PrimaryKey' | 'RelationalColumn' | 'RelationalKey' | 'RelationalTable' | 'RelationalView' | 'Relationship' | 'SourceObjectAttribute' | 'StructuralDataElementContainer' | 'TargetObjectAttribute';
     description?: string;
     name?: string;
 }
@@ -395,6 +407,136 @@ export function isSystemDiagramEdge(item: unknown): item is SystemDiagramEdge {
     return reflection.isInstance(item, SystemDiagramEdge);
 }
 
+export interface AttributeMapping extends WithCustomProperties {
+    readonly $container: TargetObject;
+    readonly $type: 'AttributeMapping';
+    attribute?: AttributeMappingTarget;
+    expression: string;
+    sources: Array<AttributeMappingSource>;
+}
+
+export const AttributeMapping = 'AttributeMapping';
+
+export function isAttributeMapping(item: unknown): item is AttributeMapping {
+    return reflection.isInstance(item, AttributeMapping);
+}
+
+export interface ConceptualAttribute extends DataElement, WithCustomProperties {
+    readonly $container: ConceptualEntity;
+    readonly $type: 'ConceptualAttribute';
+    businessDefinition?: string;
+    required: boolean;
+}
+
+export const ConceptualAttribute = 'ConceptualAttribute';
+
+export function isConceptualAttribute(item: unknown): item is ConceptualAttribute {
+    return reflection.isInstance(item, ConceptualAttribute);
+}
+
+export interface ConceptualBusinessRule extends BehaviouralDataElementContainer, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'ConceptualBusinessRule';
+    appliesTo: Array<langium.Reference<ConceptualEntity>>;
+    expression?: string;
+    priority?: number;
+}
+
+export const ConceptualBusinessRule = 'ConceptualBusinessRule';
+
+export function isConceptualBusinessRule(item: unknown): item is ConceptualBusinessRule {
+    return reflection.isInstance(item, ConceptualBusinessRule);
+}
+
+export interface ConceptualEntity extends StructuralDataElementContainer, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'ConceptualEntity';
+    attributes: Array<ConceptualAttribute>;
+    businessOwner?: string;
+    businessRules: Array<langium.Reference<ConceptualBusinessRule>>;
+    domain?: string;
+    status?: string;
+    superEntities: Array<langium.Reference<ConceptualEntity>>;
+}
+
+export const ConceptualEntity = 'ConceptualEntity';
+
+export function isConceptualEntity(item: unknown): item is ConceptualEntity {
+    return reflection.isInstance(item, ConceptualEntity);
+}
+
+export interface ConceptualRelationship extends DataElementContainerLink, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'ConceptualRelationship';
+    child?: langium.Reference<ConceptualEntity>;
+    childCardinality?: string;
+    childRole?: string;
+    parent?: langium.Reference<ConceptualEntity>;
+    parentCardinality?: string;
+    parentRole?: string;
+}
+
+export const ConceptualRelationship = 'ConceptualRelationship';
+
+export function isConceptualRelationship(item: unknown): item is ConceptualRelationship {
+    return reflection.isInstance(item, ConceptualRelationship);
+}
+
+export interface DataModel extends NamedObject, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'DataModel';
+    dependencies: Array<DataModelDependency>;
+    type: string;
+    version?: string;
+}
+
+export const DataModel = 'DataModel';
+
+export function isDataModel(item: unknown): item is DataModel {
+    return reflection.isInstance(item, DataModel);
+}
+
+export interface LogicalBusinessRule extends BehaviouralDataElementContainer, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'LogicalBusinessRule';
+    conceptualRule?: langium.Reference<ConceptualBusinessRule>;
+    expression?: string;
+}
+
+export const LogicalBusinessRule = 'LogicalBusinessRule';
+
+export function isLogicalBusinessRule(item: unknown): item is LogicalBusinessRule {
+    return reflection.isInstance(item, LogicalBusinessRule);
+}
+
+export interface LogicalEntity extends DataElementContainer, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'LogicalEntity';
+    attributes: Array<LogicalAttribute>;
+    identifiers: Array<LogicalIdentifier>;
+    relatedConceptualEntities: Array<langium.Reference<ConceptualEntity>>;
+    superEntities: Array<langium.Reference<LogicalEntity>>;
+}
+
+export const LogicalEntity = 'LogicalEntity';
+
+export function isLogicalEntity(item: unknown): item is LogicalEntity {
+    return reflection.isInstance(item, LogicalEntity);
+}
+
+export interface LogicalIdentifier extends NamedObject, WithCustomProperties {
+    readonly $container: LogicalEntity;
+    readonly $type: 'LogicalIdentifier';
+    attributes: Array<langium.Reference<LogicalAttribute>>;
+    primary: boolean;
+}
+
+export const LogicalIdentifier = 'LogicalIdentifier';
+
+export function isLogicalIdentifier(item: unknown): item is LogicalIdentifier {
+    return reflection.isInstance(item, LogicalIdentifier);
+}
+
 export interface Mapping extends DataElementContainerMapping, WithCustomProperties {
     readonly $container: CrossModelRoot;
     readonly $type: 'Mapping';
@@ -408,8 +550,137 @@ export function isMapping(item: unknown): item is Mapping {
     return reflection.isInstance(item, Mapping);
 }
 
+export interface PhysicalBehaviouralDataElementContainer extends BehaviouralDataElementContainer, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'PhysicalBehaviouralDataElementContainer' | 'RelationalView';
+    relatedLogicalDataElementContainers: Array<langium.Reference<LogicalEntity>>;
+}
+
+export const PhysicalBehaviouralDataElementContainer = 'PhysicalBehaviouralDataElementContainer';
+
+export function isPhysicalBehaviouralDataElementContainer(item: unknown): item is PhysicalBehaviouralDataElementContainer {
+    return reflection.isInstance(item, PhysicalBehaviouralDataElementContainer);
+}
+
+export interface PhysicalDataElement extends DataElement, WithCustomProperties {
+    readonly $container: DocumentCollection | RelationalTable | RelationalView;
+    readonly $type: 'DocumentField' | 'PhysicalDataElement' | 'RelationalColumn';
+    length?: number;
+    precision?: number;
+    relatedLogicalAttributes: Array<langium.Reference<LogicalAttribute>>;
+    scale?: number;
+}
+
+export const PhysicalDataElement = 'PhysicalDataElement';
+
+export function isPhysicalDataElement(item: unknown): item is PhysicalDataElement {
+    return reflection.isInstance(item, PhysicalDataElement);
+}
+
+export interface PhysicalRelationship extends DataElementContainerLink, WithCustomProperties {
+    readonly $container: CrossModelRoot | RelationalTable;
+    readonly $type: 'ForeignKey' | 'PhysicalRelationship';
+    child?: langium.Reference<PhysicalStructuralDataElementContainer>;
+    childCardinality?: string;
+    childRole?: string;
+    parent?: langium.Reference<PhysicalStructuralDataElementContainer>;
+    parentCardinality?: string;
+    parentRole?: string;
+}
+
+export const PhysicalRelationship = 'PhysicalRelationship';
+
+export function isPhysicalRelationship(item: unknown): item is PhysicalRelationship {
+    return reflection.isInstance(item, PhysicalRelationship);
+}
+
+export interface PhysicalStructuralDataElementContainer extends StructuralDataElementContainer, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'DocumentCollection' | 'PhysicalStructuralDataElementContainer' | 'RelationalTable';
+    relatedLogicalEntities: Array<langium.Reference<LogicalEntity>>;
+    storageLocation?: string;
+}
+
+export const PhysicalStructuralDataElementContainer = 'PhysicalStructuralDataElementContainer';
+
+export function isPhysicalStructuralDataElementContainer(item: unknown): item is PhysicalStructuralDataElementContainer {
+    return reflection.isInstance(item, PhysicalStructuralDataElementContainer);
+}
+
+export interface RelationalKey extends NamedObject, WithCustomProperties {
+    readonly $container: CrossModelRoot | RelationalTable;
+    readonly $type: 'PrimaryKey' | 'RelationalKey';
+    columns: Array<langium.Reference<RelationalColumn>>;
+}
+
+export const RelationalKey = 'RelationalKey';
+
+export function isRelationalKey(item: unknown): item is RelationalKey {
+    return reflection.isInstance(item, RelationalKey);
+}
+
+export interface Relationship extends DataElementContainerLink, WithCustomProperties {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'Relationship';
+    attributes: Array<RelationshipAttribute>;
+    child?: langium.Reference<LogicalEntity>;
+    childCardinality?: string;
+    childRole?: string;
+    conceptualRelationship?: langium.Reference<ConceptualRelationship>;
+    parent?: langium.Reference<LogicalEntity>;
+    parentCardinality?: string;
+    parentRole?: string;
+}
+
+export const Relationship = 'Relationship';
+
+export function isRelationship(item: unknown): item is Relationship {
+    return reflection.isInstance(item, Relationship);
+}
+
+export interface RelationshipAttribute extends WithCustomProperties {
+    readonly $container: Relationship;
+    readonly $type: 'RelationshipAttribute';
+    child?: langium.Reference<LogicalAttribute>;
+    parent?: langium.Reference<LogicalAttribute>;
+}
+
+export const RelationshipAttribute = 'RelationshipAttribute';
+
+export function isRelationshipAttribute(item: unknown): item is RelationshipAttribute {
+    return reflection.isInstance(item, RelationshipAttribute);
+}
+
+export interface SourceObject extends SourceDataElementContainer, WithCustomProperties {
+    readonly $container: Mapping;
+    readonly $type: 'SourceObject';
+    conditions: Array<SourceObjectCondition>;
+    dependencies: Array<SourceObjectDependency>;
+    entity?: langium.Reference<LogicalEntity>;
+    join?: string;
+}
+
+export const SourceObject = 'SourceObject';
+
+export function isSourceObject(item: unknown): item is SourceObject {
+    return reflection.isInstance(item, SourceObject);
+}
+
+export interface TargetObject extends WithCustomProperties {
+    readonly $container: Mapping;
+    readonly $type: 'TargetObject';
+    entity?: langium.Reference<LogicalEntity>;
+    mappings: Array<AttributeMapping>;
+}
+
+export const TargetObject = 'TargetObject';
+
+export function isTargetObject(item: unknown): item is TargetObject {
+    return reflection.isInstance(item, TargetObject);
+}
+
 export interface CustomProperty extends NamedObject {
-    readonly $container: WithCustomProperties;
+    readonly $container: LogicalAttribute | WithCustomProperties;
     readonly $type: 'CustomProperty';
     value?: string;
 }
@@ -453,71 +724,6 @@ export function isDataElementContainerLink(item: unknown): item is DataElementCo
     return reflection.isInstance(item, DataElementContainerLink);
 }
 
-export interface DataModel extends NamedObject, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'DataModel';
-    dependencies: Array<DataModelDependency>;
-    type: string;
-    version?: string;
-}
-
-export const DataModel = 'DataModel';
-
-export function isDataModel(item: unknown): item is DataModel {
-    return reflection.isInstance(item, DataModel);
-}
-
-export interface LogicalIdentifier extends NamedObject, WithCustomProperties {
-    readonly $container: LogicalEntity;
-    readonly $type: 'LogicalIdentifier';
-    attributes: Array<langium.Reference<LogicalAttribute>>;
-    primary: boolean;
-}
-
-export const LogicalIdentifier = 'LogicalIdentifier';
-
-export function isLogicalIdentifier(item: unknown): item is LogicalIdentifier {
-    return reflection.isInstance(item, LogicalIdentifier);
-}
-
-export interface RelationalKey extends NamedObject, WithCustomProperties {
-    readonly $container: CrossModelRoot | RelationalTable;
-    readonly $type: 'PrimaryKey' | 'RelationalKey';
-    columns: Array<langium.Reference<RelationalColumn>>;
-}
-
-export const RelationalKey = 'RelationalKey';
-
-export function isRelationalKey(item: unknown): item is RelationalKey {
-    return reflection.isInstance(item, RelationalKey);
-}
-
-export interface WithCustomProperties extends NamedObject {
-    readonly $type: 'AttributeMapping' | 'ConceptualAttribute' | 'ConceptualBusinessRule' | 'ConceptualEntity' | 'ConceptualRelationship' | 'DataModel' | 'DocumentCollection' | 'DocumentField' | 'ForeignKey' | 'LogicalAttribute' | 'LogicalBusinessRule' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'PhysicalBehaviouralDataElementContainer' | 'PhysicalDataElement' | 'PhysicalRelationship' | 'PhysicalStructuralDataElementContainer' | 'PrimaryKey' | 'RelationalColumn' | 'RelationalKey' | 'RelationalTable' | 'RelationalView' | 'Relationship' | 'RelationshipAttribute' | 'SourceObject' | 'SourceObjectAttribute' | 'TargetObject' | 'TargetObjectAttribute' | 'WithCustomProperties';
-    customProperties: Array<CustomProperty>;
-}
-
-export const WithCustomProperties = 'WithCustomProperties';
-
-export function isWithCustomProperties(item: unknown): item is WithCustomProperties {
-    return reflection.isInstance(item, WithCustomProperties);
-}
-
-export interface SourceObject extends SourceDataElementContainer, WithCustomProperties {
-    readonly $container: Mapping;
-    readonly $type: 'SourceObject';
-    conditions: Array<SourceObjectCondition>;
-    dependencies: Array<SourceObjectDependency>;
-    entity?: langium.Reference<LogicalEntity>;
-    join?: string;
-}
-
-export const SourceObject = 'SourceObject';
-
-export function isSourceObject(item: unknown): item is SourceObject {
-    return reflection.isInstance(item, SourceObject);
-}
-
 export interface InheritanceEdge extends SystemDiagramEdge {
     readonly $type: 'InheritanceEdge';
     baseNode: langium.Reference<LogicalEntityNode>;
@@ -543,289 +749,17 @@ export function isRelationshipEdge(item: unknown): item is RelationshipEdge {
     return reflection.isInstance(item, RelationshipEdge);
 }
 
-export interface ConceptualAttribute extends DataElement, WithCustomProperties {
-    readonly $container: ConceptualEntity;
-    readonly $type: 'ConceptualAttribute';
-    businessDefinition?: string;
-    required: boolean;
-}
-
-export const ConceptualAttribute = 'ConceptualAttribute';
-
-export function isConceptualAttribute(item: unknown): item is ConceptualAttribute {
-    return reflection.isInstance(item, ConceptualAttribute);
-}
-
-export interface LogicalAttribute extends DataElement, WithCustomProperties {
-    readonly $type: 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
-    defaultValue?: string;
-    identifier: boolean;
-    length?: number;
-    nullable: boolean;
-    precision?: number;
-    relatedConceptualAttributes: Array<langium.Reference<ConceptualAttribute>>;
-    scale?: number;
-}
-
-export const LogicalAttribute = 'LogicalAttribute';
-
-export function isLogicalAttribute(item: unknown): item is LogicalAttribute {
-    return reflection.isInstance(item, LogicalAttribute);
-}
-
-export interface PhysicalDataElement extends DataElement, WithCustomProperties {
-    readonly $container: DocumentCollection | RelationalTable | RelationalView;
-    readonly $type: 'DocumentField' | 'PhysicalDataElement' | 'RelationalColumn';
-    length?: number;
-    precision?: number;
-    relatedLogicalAttributes: Array<langium.Reference<LogicalAttribute>>;
-    scale?: number;
-}
-
-export const PhysicalDataElement = 'PhysicalDataElement';
-
-export function isPhysicalDataElement(item: unknown): item is PhysicalDataElement {
-    return reflection.isInstance(item, PhysicalDataElement);
-}
-
-export interface BehaviouralDataElementContainer extends DataElementContainer {
+export interface RelationalView extends PhysicalBehaviouralDataElementContainer {
     readonly $container: CrossModelRoot;
-    readonly $type: 'BehaviouralDataElementContainer' | 'ConceptualBusinessRule' | 'LogicalBusinessRule' | 'PhysicalBehaviouralDataElementContainer' | 'RelationalView';
+    readonly $type: 'RelationalView';
+    columns: Array<RelationalColumn>;
+    definition?: string;
 }
 
-export const BehaviouralDataElementContainer = 'BehaviouralDataElementContainer';
+export const RelationalView = 'RelationalView';
 
-export function isBehaviouralDataElementContainer(item: unknown): item is BehaviouralDataElementContainer {
-    return reflection.isInstance(item, BehaviouralDataElementContainer);
-}
-
-export interface LogicalEntity extends DataElementContainer, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'LogicalEntity';
-    attributes: Array<LogicalAttribute>;
-    identifiers: Array<LogicalIdentifier>;
-    relatedConceptualEntities: Array<langium.Reference<ConceptualEntity>>;
-    superEntities: Array<langium.Reference<LogicalEntity>>;
-}
-
-export const LogicalEntity = 'LogicalEntity';
-
-export function isLogicalEntity(item: unknown): item is LogicalEntity {
-    return reflection.isInstance(item, LogicalEntity);
-}
-
-export interface StructuralDataElementContainer extends DataElementContainer {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'ConceptualEntity' | 'DocumentCollection' | 'PhysicalStructuralDataElementContainer' | 'RelationalTable' | 'StructuralDataElementContainer';
-}
-
-export const StructuralDataElementContainer = 'StructuralDataElementContainer';
-
-export function isStructuralDataElementContainer(item: unknown): item is StructuralDataElementContainer {
-    return reflection.isInstance(item, StructuralDataElementContainer);
-}
-
-export interface ConceptualRelationship extends DataElementContainerLink, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'ConceptualRelationship';
-    child?: langium.Reference<ConceptualEntity>;
-    childCardinality?: string;
-    childRole?: string;
-    parent?: langium.Reference<ConceptualEntity>;
-    parentCardinality?: string;
-    parentRole?: string;
-}
-
-export const ConceptualRelationship = 'ConceptualRelationship';
-
-export function isConceptualRelationship(item: unknown): item is ConceptualRelationship {
-    return reflection.isInstance(item, ConceptualRelationship);
-}
-
-export interface PhysicalRelationship extends DataElementContainerLink, WithCustomProperties {
-    readonly $container: CrossModelRoot | RelationalTable;
-    readonly $type: 'ForeignKey' | 'PhysicalRelationship';
-    child?: langium.Reference<PhysicalStructuralDataElementContainer>;
-    childCardinality?: string;
-    childRole?: string;
-    parent?: langium.Reference<PhysicalStructuralDataElementContainer>;
-    parentCardinality?: string;
-    parentRole?: string;
-}
-
-export const PhysicalRelationship = 'PhysicalRelationship';
-
-export function isPhysicalRelationship(item: unknown): item is PhysicalRelationship {
-    return reflection.isInstance(item, PhysicalRelationship);
-}
-
-export interface Relationship extends DataElementContainerLink, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'Relationship';
-    attributes: Array<RelationshipAttribute>;
-    child?: langium.Reference<LogicalEntity>;
-    childCardinality?: string;
-    childRole?: string;
-    conceptualRelationship?: langium.Reference<ConceptualRelationship>;
-    parent?: langium.Reference<LogicalEntity>;
-    parentCardinality?: string;
-    parentRole?: string;
-}
-
-export const Relationship = 'Relationship';
-
-export function isRelationship(item: unknown): item is Relationship {
-    return reflection.isInstance(item, Relationship);
-}
-
-export interface PrimaryKey extends RelationalKey {
-    readonly $container: CrossModelRoot | RelationalTable;
-    readonly $type: 'PrimaryKey';
-}
-
-export const PrimaryKey = 'PrimaryKey';
-
-export function isPrimaryKey(item: unknown): item is PrimaryKey {
-    return reflection.isInstance(item, PrimaryKey);
-}
-
-export interface AttributeMapping extends WithCustomProperties {
-    readonly $container: TargetObject;
-    readonly $type: 'AttributeMapping';
-    attribute?: AttributeMappingTarget;
-    expression: string;
-    sources: Array<AttributeMappingSource>;
-}
-
-export const AttributeMapping = 'AttributeMapping';
-
-export function isAttributeMapping(item: unknown): item is AttributeMapping {
-    return reflection.isInstance(item, AttributeMapping);
-}
-
-export interface ConceptualBusinessRule extends BehaviouralDataElementContainer, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'ConceptualBusinessRule';
-    appliesTo: Array<langium.Reference<ConceptualEntity>>;
-    expression?: string;
-    priority?: number;
-}
-
-export const ConceptualBusinessRule = 'ConceptualBusinessRule';
-
-export function isConceptualBusinessRule(item: unknown): item is ConceptualBusinessRule {
-    return reflection.isInstance(item, ConceptualBusinessRule);
-}
-
-export interface ConceptualEntity extends StructuralDataElementContainer, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'ConceptualEntity';
-    attributes: Array<ConceptualAttribute>;
-    businessOwner?: string;
-    businessRules: Array<langium.Reference<ConceptualBusinessRule>>;
-    domain?: string;
-    status?: string;
-    superEntities: Array<langium.Reference<ConceptualEntity>>;
-}
-
-export const ConceptualEntity = 'ConceptualEntity';
-
-export function isConceptualEntity(item: unknown): item is ConceptualEntity {
-    return reflection.isInstance(item, ConceptualEntity);
-}
-
-export interface LogicalBusinessRule extends BehaviouralDataElementContainer, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'LogicalBusinessRule';
-    conceptualRule?: langium.Reference<ConceptualBusinessRule>;
-    expression?: string;
-}
-
-export const LogicalBusinessRule = 'LogicalBusinessRule';
-
-export function isLogicalBusinessRule(item: unknown): item is LogicalBusinessRule {
-    return reflection.isInstance(item, LogicalBusinessRule);
-}
-
-export interface PhysicalBehaviouralDataElementContainer extends BehaviouralDataElementContainer, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'PhysicalBehaviouralDataElementContainer' | 'RelationalView';
-    relatedLogicalDataElementContainers: Array<langium.Reference<LogicalEntity>>;
-}
-
-export const PhysicalBehaviouralDataElementContainer = 'PhysicalBehaviouralDataElementContainer';
-
-export function isPhysicalBehaviouralDataElementContainer(item: unknown): item is PhysicalBehaviouralDataElementContainer {
-    return reflection.isInstance(item, PhysicalBehaviouralDataElementContainer);
-}
-
-export interface PhysicalStructuralDataElementContainer extends StructuralDataElementContainer, WithCustomProperties {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'DocumentCollection' | 'PhysicalStructuralDataElementContainer' | 'RelationalTable';
-    relatedLogicalEntities: Array<langium.Reference<LogicalEntity>>;
-    storageLocation?: string;
-}
-
-export const PhysicalStructuralDataElementContainer = 'PhysicalStructuralDataElementContainer';
-
-export function isPhysicalStructuralDataElementContainer(item: unknown): item is PhysicalStructuralDataElementContainer {
-    return reflection.isInstance(item, PhysicalStructuralDataElementContainer);
-}
-
-export interface RelationshipAttribute extends WithCustomProperties {
-    readonly $container: Relationship;
-    readonly $type: 'RelationshipAttribute';
-    child?: langium.Reference<LogicalAttribute>;
-    parent?: langium.Reference<LogicalAttribute>;
-}
-
-export const RelationshipAttribute = 'RelationshipAttribute';
-
-export function isRelationshipAttribute(item: unknown): item is RelationshipAttribute {
-    return reflection.isInstance(item, RelationshipAttribute);
-}
-
-export interface TargetObject extends WithCustomProperties {
-    readonly $container: Mapping;
-    readonly $type: 'TargetObject';
-    entity?: langium.Reference<LogicalEntity>;
-    mappings: Array<AttributeMapping>;
-}
-
-export const TargetObject = 'TargetObject';
-
-export function isTargetObject(item: unknown): item is TargetObject {
-    return reflection.isInstance(item, TargetObject);
-}
-
-export interface LogicalEntityNodeAttribute extends LogicalAttribute {
-    readonly $type: 'LogicalEntityNodeAttribute';
-}
-
-export const LogicalEntityNodeAttribute = 'LogicalEntityNodeAttribute';
-
-export function isLogicalEntityNodeAttribute(item: unknown): item is LogicalEntityNodeAttribute {
-    return reflection.isInstance(item, LogicalEntityNodeAttribute);
-}
-
-export interface SourceObjectAttribute extends LogicalAttribute {
-    readonly $type: 'SourceObjectAttribute';
-}
-
-export const SourceObjectAttribute = 'SourceObjectAttribute';
-
-export function isSourceObjectAttribute(item: unknown): item is SourceObjectAttribute {
-    return reflection.isInstance(item, SourceObjectAttribute);
-}
-
-export interface TargetObjectAttribute extends LogicalAttribute {
-    readonly $type: 'TargetObjectAttribute';
-}
-
-export const TargetObjectAttribute = 'TargetObjectAttribute';
-
-export function isTargetObjectAttribute(item: unknown): item is TargetObjectAttribute {
-    return reflection.isInstance(item, TargetObjectAttribute);
+export function isRelationalView(item: unknown): item is RelationalView {
+    return reflection.isInstance(item, RelationalView);
 }
 
 export interface DocumentField extends PhysicalDataElement {
@@ -865,19 +799,6 @@ export function isForeignKey(item: unknown): item is ForeignKey {
     return reflection.isInstance(item, ForeignKey);
 }
 
-export interface RelationalView extends PhysicalBehaviouralDataElementContainer {
-    readonly $container: CrossModelRoot;
-    readonly $type: 'RelationalView';
-    columns: Array<RelationalColumn>;
-    definition?: string;
-}
-
-export const RelationalView = 'RelationalView';
-
-export function isRelationalView(item: unknown): item is RelationalView {
-    return reflection.isInstance(item, RelationalView);
-}
-
 export interface DocumentCollection extends PhysicalStructuralDataElementContainer {
     readonly $container: CrossModelRoot;
     readonly $type: 'DocumentCollection';
@@ -903,6 +824,87 @@ export const RelationalTable = 'RelationalTable';
 
 export function isRelationalTable(item: unknown): item is RelationalTable {
     return reflection.isInstance(item, RelationalTable);
+}
+
+export interface PrimaryKey extends RelationalKey {
+    readonly $container: CrossModelRoot | RelationalTable;
+    readonly $type: 'PrimaryKey';
+}
+
+export const PrimaryKey = 'PrimaryKey';
+
+export function isPrimaryKey(item: unknown): item is PrimaryKey {
+    return reflection.isInstance(item, PrimaryKey);
+}
+
+export interface LogicalAttribute extends DataElement {
+    readonly $type: 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
+    customProperties: Array<CustomProperty>;
+    defaultValue?: string;
+    identifier: boolean;
+    length?: number;
+    nullable: boolean;
+    precision?: number;
+    relatedConceptualAttributes: Array<langium.Reference<ConceptualAttribute>>;
+    scale?: number;
+}
+
+export const LogicalAttribute = 'LogicalAttribute';
+
+export function isLogicalAttribute(item: unknown): item is LogicalAttribute {
+    return reflection.isInstance(item, LogicalAttribute);
+}
+
+export interface BehaviouralDataElementContainer extends DataElementContainer {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'BehaviouralDataElementContainer' | 'ConceptualBusinessRule' | 'LogicalBusinessRule' | 'PhysicalBehaviouralDataElementContainer' | 'RelationalView';
+}
+
+export const BehaviouralDataElementContainer = 'BehaviouralDataElementContainer';
+
+export function isBehaviouralDataElementContainer(item: unknown): item is BehaviouralDataElementContainer {
+    return reflection.isInstance(item, BehaviouralDataElementContainer);
+}
+
+export interface StructuralDataElementContainer extends DataElementContainer {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'ConceptualEntity' | 'DocumentCollection' | 'PhysicalStructuralDataElementContainer' | 'RelationalTable' | 'StructuralDataElementContainer';
+}
+
+export const StructuralDataElementContainer = 'StructuralDataElementContainer';
+
+export function isStructuralDataElementContainer(item: unknown): item is StructuralDataElementContainer {
+    return reflection.isInstance(item, StructuralDataElementContainer);
+}
+
+export interface LogicalEntityNodeAttribute extends LogicalAttribute {
+    readonly $type: 'LogicalEntityNodeAttribute';
+}
+
+export const LogicalEntityNodeAttribute = 'LogicalEntityNodeAttribute';
+
+export function isLogicalEntityNodeAttribute(item: unknown): item is LogicalEntityNodeAttribute {
+    return reflection.isInstance(item, LogicalEntityNodeAttribute);
+}
+
+export interface SourceObjectAttribute extends LogicalAttribute {
+    readonly $type: 'SourceObjectAttribute';
+}
+
+export const SourceObjectAttribute = 'SourceObjectAttribute';
+
+export function isSourceObjectAttribute(item: unknown): item is SourceObjectAttribute {
+    return reflection.isInstance(item, SourceObjectAttribute);
+}
+
+export interface TargetObjectAttribute extends LogicalAttribute {
+    readonly $type: 'TargetObjectAttribute';
+}
+
+export const TargetObjectAttribute = 'TargetObjectAttribute';
+
+export function isTargetObjectAttribute(item: unknown): item is TargetObjectAttribute {
+    return reflection.isInstance(item, TargetObjectAttribute);
 }
 
 export type CrossModelAstType = {
@@ -985,7 +987,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 return this.isSubtype(DataElementContainer, supertype);
             }
             case ConceptualAttribute:
-            case LogicalAttribute:
             case PhysicalDataElement: {
                 return this.isSubtype(DataElement, supertype) || this.isSubtype(WithCustomProperties, supertype);
             }
@@ -1006,8 +1007,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             case CustomProperty:
             case DataElement:
             case DataElementContainer:
-            case DataElementContainerLink:
-            case WithCustomProperties: {
+            case DataElementContainerLink: {
                 return this.isSubtype(NamedObject, supertype);
             }
             case DataElementContainerMapping:
@@ -1041,6 +1041,9 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             }
             case JoinCondition: {
                 return this.isSubtype(SourceObjectCondition, supertype);
+            }
+            case LogicalAttribute: {
+                return this.isSubtype(DataElement, supertype);
             }
             case LogicalEntity: {
                 return this.isSubtype(DataElementContainer, supertype) || this.isSubtype(WithCustomProperties, supertype);
@@ -1261,6 +1264,14 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     ]
                 };
             }
+            case WithCustomProperties: {
+                return {
+                    name: WithCustomProperties,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] }
+                    ]
+                };
+            }
             case DataElementContainerMapping: {
                 return {
                     name: DataElementContainerMapping,
@@ -1326,16 +1337,264 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     ]
                 };
             }
+            case AttributeMapping: {
+                return {
+                    name: AttributeMapping,
+                    properties: [
+                        { name: 'attribute' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'expression' },
+                        { name: 'sources', defaultValue: [] }
+                    ]
+                };
+            }
+            case ConceptualAttribute: {
+                return {
+                    name: ConceptualAttribute,
+                    properties: [
+                        { name: 'businessDefinition' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'datatype' },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'required', defaultValue: false }
+                    ]
+                };
+            }
+            case ConceptualBusinessRule: {
+                return {
+                    name: ConceptualBusinessRule,
+                    properties: [
+                        { name: 'appliesTo', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'expression' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'priority' }
+                    ]
+                };
+            }
+            case ConceptualEntity: {
+                return {
+                    name: ConceptualEntity,
+                    properties: [
+                        { name: 'attributes', defaultValue: [] },
+                        { name: 'businessOwner' },
+                        { name: 'businessRules', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'domain' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'status' },
+                        { name: 'superEntities', defaultValue: [] }
+                    ]
+                };
+            }
+            case ConceptualRelationship: {
+                return {
+                    name: ConceptualRelationship,
+                    properties: [
+                        { name: 'child' },
+                        { name: 'childCardinality' },
+                        { name: 'childRole' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'parent' },
+                        { name: 'parentCardinality' },
+                        { name: 'parentRole' }
+                    ]
+                };
+            }
+            case DataModel: {
+                return {
+                    name: DataModel,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'dependencies', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'type' },
+                        { name: 'version' }
+                    ]
+                };
+            }
+            case LogicalBusinessRule: {
+                return {
+                    name: LogicalBusinessRule,
+                    properties: [
+                        { name: 'conceptualRule' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'expression' },
+                        { name: 'id' },
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case LogicalEntity: {
+                return {
+                    name: LogicalEntity,
+                    properties: [
+                        { name: 'attributes', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'identifiers', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'relatedConceptualEntities', defaultValue: [] },
+                        { name: 'superEntities', defaultValue: [] }
+                    ]
+                };
+            }
+            case LogicalIdentifier: {
+                return {
+                    name: LogicalIdentifier,
+                    properties: [
+                        { name: 'attributes', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'primary', defaultValue: false }
+                    ]
+                };
+            }
             case Mapping: {
                 return {
                     name: Mapping,
                     properties: [
                         { name: 'customProperties', defaultValue: [] },
+                        { name: 'id' },
+                        { name: 'sources', defaultValue: [] },
+                        { name: 'target' }
+                    ]
+                };
+            }
+            case PhysicalBehaviouralDataElementContainer: {
+                return {
+                    name: PhysicalBehaviouralDataElementContainer,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] },
                         { name: 'description' },
                         { name: 'id' },
                         { name: 'name' },
-                        { name: 'sources', defaultValue: [] },
-                        { name: 'target' }
+                        { name: 'relatedLogicalDataElementContainers', defaultValue: [] }
+                    ]
+                };
+            }
+            case PhysicalDataElement: {
+                return {
+                    name: PhysicalDataElement,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'datatype' },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'length' },
+                        { name: 'name' },
+                        { name: 'precision' },
+                        { name: 'relatedLogicalAttributes', defaultValue: [] },
+                        { name: 'scale' }
+                    ]
+                };
+            }
+            case PhysicalRelationship: {
+                return {
+                    name: PhysicalRelationship,
+                    properties: [
+                        { name: 'child' },
+                        { name: 'childCardinality' },
+                        { name: 'childRole' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'parent' },
+                        { name: 'parentCardinality' },
+                        { name: 'parentRole' }
+                    ]
+                };
+            }
+            case PhysicalStructuralDataElementContainer: {
+                return {
+                    name: PhysicalStructuralDataElementContainer,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'relatedLogicalEntities', defaultValue: [] },
+                        { name: 'storageLocation' }
+                    ]
+                };
+            }
+            case RelationalKey: {
+                return {
+                    name: RelationalKey,
+                    properties: [
+                        { name: 'columns', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case Relationship: {
+                return {
+                    name: Relationship,
+                    properties: [
+                        { name: 'attributes', defaultValue: [] },
+                        { name: 'child' },
+                        { name: 'childCardinality' },
+                        { name: 'childRole' },
+                        { name: 'conceptualRelationship' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'parent' },
+                        { name: 'parentCardinality' },
+                        { name: 'parentRole' }
+                    ]
+                };
+            }
+            case RelationshipAttribute: {
+                return {
+                    name: RelationshipAttribute,
+                    properties: [
+                        { name: 'child' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'parent' }
+                    ]
+                };
+            }
+            case SourceObject: {
+                return {
+                    name: SourceObject,
+                    properties: [
+                        { name: 'conditions', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'dependencies', defaultValue: [] },
+                        { name: 'entity' },
+                        { name: 'id' },
+                        { name: 'join' }
+                    ]
+                };
+            }
+            case TargetObject: {
+                return {
+                    name: TargetObject,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'entity' },
+                        { name: 'mappings', defaultValue: [] }
                     ]
                 };
             }
@@ -1381,71 +1640,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     ]
                 };
             }
-            case DataModel: {
-                return {
-                    name: DataModel,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'dependencies', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'type' },
-                        { name: 'version' }
-                    ]
-                };
-            }
-            case LogicalIdentifier: {
-                return {
-                    name: LogicalIdentifier,
-                    properties: [
-                        { name: 'attributes', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'primary', defaultValue: false }
-                    ]
-                };
-            }
-            case RelationalKey: {
-                return {
-                    name: RelationalKey,
-                    properties: [
-                        { name: 'columns', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case WithCustomProperties: {
-                return {
-                    name: WithCustomProperties,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case SourceObject: {
-                return {
-                    name: SourceObject,
-                    properties: [
-                        { name: 'conditions', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'dependencies', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'entity' },
-                        { name: 'id' },
-                        { name: 'join' },
-                        { name: 'name' }
-                    ]
-                };
-            }
             case InheritanceEdge: {
                 return {
                     name: InheritanceEdge,
@@ -1467,17 +1661,113 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     ]
                 };
             }
-            case ConceptualAttribute: {
+            case RelationalView: {
                 return {
-                    name: ConceptualAttribute,
+                    name: RelationalView,
                     properties: [
-                        { name: 'businessDefinition' },
+                        { name: 'columns', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'definition' },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'relatedLogicalDataElementContainers', defaultValue: [] }
+                    ]
+                };
+            }
+            case DocumentField: {
+                return {
+                    name: DocumentField,
+                    properties: [
                         { name: 'customProperties', defaultValue: [] },
                         { name: 'datatype' },
                         { name: 'description' },
                         { name: 'id' },
+                        { name: 'isArray', defaultValue: false },
+                        { name: 'length' },
                         { name: 'name' },
-                        { name: 'required', defaultValue: false }
+                        { name: 'path' },
+                        { name: 'precision' },
+                        { name: 'relatedLogicalAttributes', defaultValue: [] },
+                        { name: 'scale' }
+                    ]
+                };
+            }
+            case RelationalColumn: {
+                return {
+                    name: RelationalColumn,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'datatype' },
+                        { name: 'defaultValue' },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'length' },
+                        { name: 'name' },
+                        { name: 'nullable', defaultValue: false },
+                        { name: 'precision' },
+                        { name: 'relatedLogicalAttributes', defaultValue: [] },
+                        { name: 'scale' }
+                    ]
+                };
+            }
+            case ForeignKey: {
+                return {
+                    name: ForeignKey,
+                    properties: [
+                        { name: 'child' },
+                        { name: 'childCardinality' },
+                        { name: 'childRole' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'parent' },
+                        { name: 'parentCardinality' },
+                        { name: 'parentRole' }
+                    ]
+                };
+            }
+            case DocumentCollection: {
+                return {
+                    name: DocumentCollection,
+                    properties: [
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'documentType' },
+                        { name: 'fields', defaultValue: [] },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'relatedLogicalEntities', defaultValue: [] },
+                        { name: 'storageLocation' }
+                    ]
+                };
+            }
+            case RelationalTable: {
+                return {
+                    name: RelationalTable,
+                    properties: [
+                        { name: 'columns', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'foreignKeys', defaultValue: [] },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'primaryKey' },
+                        { name: 'relatedLogicalEntities', defaultValue: [] },
+                        { name: 'storageLocation' }
+                    ]
+                };
+            }
+            case PrimaryKey: {
+                return {
+                    name: PrimaryKey,
+                    properties: [
+                        { name: 'columns', defaultValue: [] },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' }
                     ]
                 };
             }
@@ -1500,22 +1790,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     ]
                 };
             }
-            case PhysicalDataElement: {
-                return {
-                    name: PhysicalDataElement,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'datatype' },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'length' },
-                        { name: 'name' },
-                        { name: 'precision' },
-                        { name: 'relatedLogicalAttributes', defaultValue: [] },
-                        { name: 'scale' }
-                    ]
-                };
-            }
             case BehaviouralDataElementContainer: {
                 return {
                     name: BehaviouralDataElementContainer,
@@ -1526,201 +1800,12 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     ]
                 };
             }
-            case LogicalEntity: {
-                return {
-                    name: LogicalEntity,
-                    properties: [
-                        { name: 'attributes', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'identifiers', defaultValue: [] },
-                        { name: 'name' },
-                        { name: 'relatedConceptualEntities', defaultValue: [] },
-                        { name: 'superEntities', defaultValue: [] }
-                    ]
-                };
-            }
             case StructuralDataElementContainer: {
                 return {
                     name: StructuralDataElementContainer,
                     properties: [
                         { name: 'description' },
                         { name: 'id' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case ConceptualRelationship: {
-                return {
-                    name: ConceptualRelationship,
-                    properties: [
-                        { name: 'child' },
-                        { name: 'childCardinality' },
-                        { name: 'childRole' },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'parent' },
-                        { name: 'parentCardinality' },
-                        { name: 'parentRole' }
-                    ]
-                };
-            }
-            case PhysicalRelationship: {
-                return {
-                    name: PhysicalRelationship,
-                    properties: [
-                        { name: 'child' },
-                        { name: 'childCardinality' },
-                        { name: 'childRole' },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'parent' },
-                        { name: 'parentCardinality' },
-                        { name: 'parentRole' }
-                    ]
-                };
-            }
-            case Relationship: {
-                return {
-                    name: Relationship,
-                    properties: [
-                        { name: 'attributes', defaultValue: [] },
-                        { name: 'child' },
-                        { name: 'childCardinality' },
-                        { name: 'childRole' },
-                        { name: 'conceptualRelationship' },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'parent' },
-                        { name: 'parentCardinality' },
-                        { name: 'parentRole' }
-                    ]
-                };
-            }
-            case PrimaryKey: {
-                return {
-                    name: PrimaryKey,
-                    properties: [
-                        { name: 'columns', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case AttributeMapping: {
-                return {
-                    name: AttributeMapping,
-                    properties: [
-                        { name: 'attribute' },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'expression' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'sources', defaultValue: [] }
-                    ]
-                };
-            }
-            case ConceptualBusinessRule: {
-                return {
-                    name: ConceptualBusinessRule,
-                    properties: [
-                        { name: 'appliesTo', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'expression' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'priority' }
-                    ]
-                };
-            }
-            case ConceptualEntity: {
-                return {
-                    name: ConceptualEntity,
-                    properties: [
-                        { name: 'attributes', defaultValue: [] },
-                        { name: 'businessOwner' },
-                        { name: 'businessRules', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'domain' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'status' },
-                        { name: 'superEntities', defaultValue: [] }
-                    ]
-                };
-            }
-            case LogicalBusinessRule: {
-                return {
-                    name: LogicalBusinessRule,
-                    properties: [
-                        { name: 'conceptualRule' },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'expression' },
-                        { name: 'id' },
-                        { name: 'name' }
-                    ]
-                };
-            }
-            case PhysicalBehaviouralDataElementContainer: {
-                return {
-                    name: PhysicalBehaviouralDataElementContainer,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'relatedLogicalDataElementContainers', defaultValue: [] }
-                    ]
-                };
-            }
-            case PhysicalStructuralDataElementContainer: {
-                return {
-                    name: PhysicalStructuralDataElementContainer,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'relatedLogicalEntities', defaultValue: [] },
-                        { name: 'storageLocation' }
-                    ]
-                };
-            }
-            case RelationshipAttribute: {
-                return {
-                    name: RelationshipAttribute,
-                    properties: [
-                        { name: 'child' },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'parent' }
-                    ]
-                };
-            }
-            case TargetObject: {
-                return {
-                    name: TargetObject,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'entity' },
-                        { name: 'id' },
-                        { name: 'mappings', defaultValue: [] },
                         { name: 'name' }
                     ]
                 };
@@ -1779,104 +1864,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'precision' },
                         { name: 'relatedConceptualAttributes', defaultValue: [] },
                         { name: 'scale' }
-                    ]
-                };
-            }
-            case DocumentField: {
-                return {
-                    name: DocumentField,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'datatype' },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'isArray', defaultValue: false },
-                        { name: 'length' },
-                        { name: 'name' },
-                        { name: 'path' },
-                        { name: 'precision' },
-                        { name: 'relatedLogicalAttributes', defaultValue: [] },
-                        { name: 'scale' }
-                    ]
-                };
-            }
-            case RelationalColumn: {
-                return {
-                    name: RelationalColumn,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'datatype' },
-                        { name: 'defaultValue' },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'length' },
-                        { name: 'name' },
-                        { name: 'nullable', defaultValue: false },
-                        { name: 'precision' },
-                        { name: 'relatedLogicalAttributes', defaultValue: [] },
-                        { name: 'scale' }
-                    ]
-                };
-            }
-            case ForeignKey: {
-                return {
-                    name: ForeignKey,
-                    properties: [
-                        { name: 'child' },
-                        { name: 'childCardinality' },
-                        { name: 'childRole' },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'parent' },
-                        { name: 'parentCardinality' },
-                        { name: 'parentRole' }
-                    ]
-                };
-            }
-            case RelationalView: {
-                return {
-                    name: RelationalView,
-                    properties: [
-                        { name: 'columns', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'definition' },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'relatedLogicalDataElementContainers', defaultValue: [] }
-                    ]
-                };
-            }
-            case DocumentCollection: {
-                return {
-                    name: DocumentCollection,
-                    properties: [
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'documentType' },
-                        { name: 'fields', defaultValue: [] },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'relatedLogicalEntities', defaultValue: [] },
-                        { name: 'storageLocation' }
-                    ]
-                };
-            }
-            case RelationalTable: {
-                return {
-                    name: RelationalTable,
-                    properties: [
-                        { name: 'columns', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'foreignKeys', defaultValue: [] },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'primaryKey' },
-                        { name: 'relatedLogicalEntities', defaultValue: [] },
-                        { name: 'storageLocation' }
                     ]
                 };
             }
