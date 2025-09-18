@@ -131,7 +131,36 @@
     "terminal.ansiBrightBlue": "#91C9FF",
     "terminal.ansiBrightMagenta": "#EFAEFF",
     "terminal.ansiBrightCyan": "#A5FDE8",
-    "terminal.ansiBrightWhite": "#FFFFFF"
+    "terminal.ansiBrightWhite": "#FFFFFF",
+
+    // Added tokens for PrimeReact semantic mapping
+    "focusBorder": "#C69A2C",
+    "selection.background": "#C69A2C66",
+
+    // Secondary buttons (subtle on dark)
+    "button.secondaryBackground": "#2E2E2E",
+    "button.secondaryForeground": "#FFFFFF",
+    "button.secondaryHoverBackground": "#3A3A3A",
+    "button.border": "#C69A2C33",
+
+    // Badge / tag base
+    "badge.background": "#C69A2C",
+    "badge.foreground": "#1E1E1E",
+
+    // Severity / charts (mirroring existing palette)
+    "charts.red": "#FF6F61",
+    "charts.yellow": "#FFC940",
+    "charts.green": "#9EFFBF",
+    "charts.blue": "#6C8EBF",
+
+    // Notification icon colors (existing base colors referenced)
+    "notificationsErrorIcon.foreground": "#FF6F61",
+    "notificationsWarningIcon.foreground": "#FFC940",
+    "notificationsInfoIcon.foreground": "#6C8EBF",
+
+    // Editor info/hint (not present originally)
+    "editorInfo.foreground": "#6C8EBF",
+    "editorHint.foreground": "#9EFFBF"
   },
   "tokenColors": [
     {

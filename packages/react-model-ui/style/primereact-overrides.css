@@ -1,16 +1,16 @@
 /** Override primereact color variables to match Theia themes */
 :root {
    --text-color: var(--theia-foreground);
-   --text-color-secondary: var(--theia-text-color-secondary);
+   --text-color-secondary: var(--theia-description-foreground);
    --primary-color: var(--theia-editor-background);
    --primary-color-text: var(--theia-foreground);
    --font-family: var(--theia-ui-font-family);
    --inline-spacing: var(--theia-ui-padding);
    --border-radius: 2px;
-   --focus-ring: var(--theia-textLink-activeForeground);
-   --mask-bg: var(--theia-window-inactiveBorder);
-   --highlight-bg: var(--theia-window-activeBorder);
-   --highlight-text-color: var(--theia-textLink-activeForeground);
+   --focus-ring: var(--theia-focus-border);
+   --mask-bg: var(--theia-notifications-background);
+   --highlight-bg: var(--theia-selection-background);
+   --highlight-text-color: var(--theia-foreground);
 }
 
 /* PrimeReact component styles */

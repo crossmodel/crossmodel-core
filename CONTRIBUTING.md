@@ -94,6 +94,8 @@ button:hover {
 
 For CrossModel a [theme](./extensions/crossmodel-theme/) extension has been created consisting of a [light](./extensions/crossmodel-theme/themes/crossmodel-light-color-theme.json) and [dark](./extensions/crossmodel-theme/themes/crossmodel-dark-color-theme.json) theme. Consult/adjust these files for the colors, fonts, etc. to be used within CrossModel.
 
+There are also some other CSS variables available within Theia, for example for font settings. See the Theia's browser [index.css](https://github.com/eclipse-theia/theia/blob/master/packages/core/src/browser/style/index.css) file for more detail.
+
 ## Packaging
 
 We package CrossModel as a desktop application (Electron).

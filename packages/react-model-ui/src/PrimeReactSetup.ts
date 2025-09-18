@@ -1,8 +1,7 @@
 /********************************************************************************
- * Copyright (c) 2024 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
 import 'primeicons/primeicons.css';
-import 'primereact/resources/primereact.min.css';
-import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/themes/lara-light-amber/theme.css';
 import '../style/primereact-overrides.css';
