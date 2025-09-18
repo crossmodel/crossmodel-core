@@ -1,6 +1,8 @@
-import 'terminals'
-import 'common'
-import 'entity'
+import '../terminals'
+import '../common'
+import '../conceptual/entity'
+import '../conceptual/relationship'
+import './entity'
 
 // Relationship definition
 interface Relationship extends DataElementContainerLink, WithCustomProperties {
@@ -11,12 +13,12 @@ interface Relationship extends DataElementContainerLink, WithCustomProperties {
     childRole?: string
     childCardinality?: string
     attributes: RelationshipAttribute[]
+    conceptualRelationship?: @ConceptualRelationship
+    implementationNotes?: string
 }
 
-Cardinality returns string: '0..1' | '1' | '0..N' | '1..N';
-
 Relationship returns Relationship:
-    'relationship' ':' 
+    'relationship' ':'
         INDENT
             NamedObjectFragment
             ('parent' ':' parent=[LogicalEntity:IDReference])?
@@ -26,10 +28,12 @@ Relationship returns Relationship:
             ('childRole' ':' childRole=STRING)?
             ('childCardinality' ':' childCardinality=Cardinality)?
             ('attributes' ':'
-                INDENT 
+                INDENT
                     (LIST_ITEM attributes+=RelationshipAttribute)+
                 DEDENT
             )?
+            ('conceptualRelationship' ':' conceptualRelationship=[ConceptualRelationship:IDReference])?
+            ('implementationNotes' ':' implementationNotes=STRING)?
             CustomPropertiesFragment?
         DEDENT
 ;

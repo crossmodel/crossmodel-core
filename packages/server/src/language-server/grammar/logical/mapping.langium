@@ -1,7 +1,7 @@
-import 'terminals'
-import 'common'
-import 'entity'
-import 'relationship'
+import '../terminals'
+import '../common'
+import './entity'
+import './relationship'
 
 interface SourceObjectAttribute extends LogicalAttribute {
 }

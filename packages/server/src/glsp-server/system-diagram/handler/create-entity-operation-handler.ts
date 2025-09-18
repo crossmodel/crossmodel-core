@@ -76,6 +76,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
          name,
          attributes: [],
          identifiers: [],
+         relatedConceptualEntities: [],
          superEntities: [],
          customProperties: []
       };

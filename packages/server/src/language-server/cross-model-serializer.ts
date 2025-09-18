@@ -9,10 +9,17 @@ import { Serializer } from '../model-server/serializer.js';
 import {
    AttributeMapping,
    BooleanExpression,
+   ConceptualAttribute,
+   ConceptualBusinessRule,
+   ConceptualEntity,
+   ConceptualRelationship,
    CrossModelRoot,
    CustomProperty,
    DataModel,
    DataModelDependency,
+   DocumentCollection,
+   DocumentField,
+   ForeignKey,
    InheritanceEdge,
    isAttributeMappingSource,
    isAttributeMappingTarget,
@@ -26,14 +33,20 @@ import {
    isSourceObjectDependency,
    JoinCondition,
    LogicalAttribute,
+   LogicalBusinessRule,
    LogicalEntity,
    LogicalEntityNode,
    LogicalIdentifier,
    Mapping,
+   PrimaryKey,
    reflection,
    Relationship,
    RelationshipAttribute,
    RelationshipEdge,
+   RelationalColumn,
+   RelationalKey,
+   RelationalTable,
+   RelationalView,
    SourceObject,
    SourceObjectAttribute,
    SourceObjectAttributeReference,
@@ -54,8 +67,64 @@ const CUSTOM_PROPERTIES = ['customProperties'];
  * It cannot be derived for interfaces as the interface order does not reflect property order in grammar due to inheritance.
  */
 const PROPERTY_ORDER = new Map<string, string[]>([
-   [LogicalEntity, [...NAMED_OBJECT_PROPERTIES, 'superEntities', 'attributes', 'identifiers', ...CUSTOM_PROPERTIES]],
-   [LogicalAttribute, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', 'identifier', ...CUSTOM_PROPERTIES]],
+   [
+      ConceptualEntity,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         'domain',
+         'status',
+         'businessOwner',
+         'superEntities',
+         'attributes',
+         'businessRules',
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [ConceptualAttribute, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'required', 'businessDefinition', ...CUSTOM_PROPERTIES]],
+   [
+      ConceptualRelationship,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         'parent',
+         'parentRole',
+         'parentCardinality',
+         'child',
+         'childRole',
+         'childCardinality',
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [ConceptualBusinessRule, [...NAMED_OBJECT_PROPERTIES, 'appliesTo', 'expression', 'priority', ...CUSTOM_PROPERTIES]],
+   [
+      LogicalEntity,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         'superEntities',
+         'attributes',
+         'identifiers',
+         'relatedConceptualEntities',
+         'alias',
+         'classification',
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [
+      LogicalAttribute,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         'datatype',
+         'length',
+         'precision',
+         'scale',
+         'identifier',
+         'relatedConceptualAttributes',
+         'defaultValue',
+         'nullable',
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [LogicalIdentifier, [...NAMED_OBJECT_PROPERTIES, 'primary', 'attributes', ...CUSTOM_PROPERTIES]],
+   [LogicalBusinessRule, [...NAMED_OBJECT_PROPERTIES, 'conceptualRule', 'appliesTo', 'expression', 'priority', ...CUSTOM_PROPERTIES]],
    [
       Relationship,
       [
@@ -67,6 +136,8 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          'childRole',
          'childCardinality',
          'attributes',
+         'conceptualRelationship',
+         'implementationNotes',
          ...CUSTOM_PROPERTIES
       ]
    ],
@@ -80,7 +151,29 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [TargetObject, ['entity', 'mappings', ...CUSTOM_PROPERTIES]],
    [AttributeMapping, ['attribute', 'sources', 'expression', ...CUSTOM_PROPERTIES]],
    [CustomProperty, [...NAMED_OBJECT_PROPERTIES, 'value']],
-   [LogicalIdentifier, [...NAMED_OBJECT_PROPERTIES, 'primary', 'attributes', ...CUSTOM_PROPERTIES]],
+   [RelationalTable, [...NAMED_OBJECT_PROPERTIES, 'database', 'schema', 'relatedLogicalEntities', 'columns', 'primaryKey', 'foreignKeys', ...CUSTOM_PROPERTIES]],
+   [RelationalView, [...NAMED_OBJECT_PROPERTIES, 'relatedLogicalDataElementContainers', 'definition', 'columns', ...CUSTOM_PROPERTIES]],
+   [RelationalColumn, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', 'nullable', 'defaultValue', 'relatedLogicalAttributes', ...CUSTOM_PROPERTIES]],
+   [RelationalKey, [...NAMED_OBJECT_PROPERTIES, 'columns', ...CUSTOM_PROPERTIES]],
+   [PrimaryKey, [...NAMED_OBJECT_PROPERTIES, 'columns', ...CUSTOM_PROPERTIES]],
+   [
+      ForeignKey,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         'parent',
+         'child',
+         'columns',
+         'referencedTable',
+         'referencedColumns',
+         'onUpdate',
+         'onDelete',
+         'parentCardinality',
+         'childCardinality',
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [DocumentCollection, [...NAMED_OBJECT_PROPERTIES, 'documentType', 'relatedLogicalEntities', 'fields', ...CUSTOM_PROPERTIES]],
+   [DocumentField, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'path', 'isArray', 'relatedLogicalAttributes', ...CUSTOM_PROPERTIES]],
    [DataModel, [...NAMED_OBJECT_PROPERTIES, 'type', 'version', 'dependencies', ...CUSTOM_PROPERTIES]],
    [DataModelDependency, ['datamodel', 'version']]
 ]);

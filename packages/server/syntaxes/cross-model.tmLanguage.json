@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.cross-model",
-      "match": "\\b(0\\.\\.N|1\\.\\.N|TRUE|apply|attribute|attributes|baseNode|child|childCardinality|childRole|conceptual|conditions|cross-join|customProperties|datamodel|datatype|dependencies|description|diagram|edges|entity|expression|from|height|id|identifier|identifiers|inherits|inner-join|join|left-join|length|logical|mapping|mappings|name|nodes|parent|parentCardinality|parentRole|precision|primary|relational|relationship|scale|sourceNode|sources|superNode|systemDiagram|target|targetNode|true|type|value|version|width|x|y)\\b"
+      "match": "\\b(0\\.\\.N|1\\.\\.N|TRUE|alias|appliesTo|apply|attribute|attributes|baseNode|businessDefinition|businessOwner|businessRules|child|childCardinality|childRole|classification|columns|conceptual|conceptualBusinessRule|conceptualEntity|conceptualRelationship|conceptualRule|conditions|cross-join|customProperties|database|datamodel|datatype|defaultValue|definition|dependencies|description|diagram|documentCollection|documentType|domain|edges|entity|expression|fields|foreignKey|foreignKeys|from|height|id|identifier|identifiers|implementationNotes|inherits|inner-join|isArray|join|left-join|length|logical|logicalBusinessRule|mapping|mappings|name|nodes|nullable|onDelete|onUpdate|parent|parentCardinality|parentRole|path|precision|primary|primaryKey|priority|referencedColumns|referencedTable|relatedConceptualAttributes|relatedConceptualEntities|relatedLogicalAttributes|relatedLogicalDataElementContainers|relatedLogicalEntities|relational|relationship|required|scale|schema|sourceNode|sources|status|superNode|systemDiagram|table|target|targetNode|true|type|value|version|view|width|x|y)\\b"
     },
     {
       "name": "string.quoted.double.cross-model",

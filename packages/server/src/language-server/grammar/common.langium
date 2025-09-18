@@ -20,29 +20,30 @@ fragment NamedObjectFragment returns NamedObject:
     ('description' ':' description=STRING)?
 ;
 
-interface DataElementContainer extends NamedObject {
-}
+interface DataElementContainer extends NamedObject {}
 
-interface DataElementContainerLink extends NamedObject {
-}
+interface StructuralDataElementContainer extends DataElementContainer {}
 
-interface DataElementContainerMapping extends IdentifiedObject {
-}
+interface BehaviouralDataElementContainer extends DataElementContainer {}
+
+interface DataElementContainerLink extends NamedObject {}
+
+interface DataElementContainerMapping extends IdentifiedObject {}
 
 // The DataElementContainer acting as a source object in a mapping.
 // The name is the alias.
-interface SourceDataElementContainer extends IdentifiedObject {
-}
+interface SourceDataElementContainer extends IdentifiedObject {}
 
-interface DataElementMapping extends IdentifiedObject {
-}
+interface DataElementMapping extends IdentifiedObject {}
 
 interface DataElement extends NamedObject {
     datatype?: string;
 }
 
+Cardinality returns string: '0..1' | '1' | '0..N' | '1..N';
+
 // Custom properties
-interface WithCustomProperties {
+interface WithCustomProperties extends NamedObject {
     customProperties: CustomProperty[];
 }
 

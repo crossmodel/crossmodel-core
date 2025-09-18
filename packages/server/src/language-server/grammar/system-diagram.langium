@@ -1,7 +1,7 @@
 import 'terminals'
 import 'common'
-import 'entity'
-import 'relationship'
+import 'logical/entity'
+import 'logical/relationship'
 
 // Diagram definition
 interface SystemDiagram extends IdentifiedObject {

@@ -112,6 +112,7 @@ export function createLogicalEntity(
       name,
       attributes: [],
       identifiers: [],
+      relatedConceptualEntities: [],
       customProperties: [],
       superEntities: [],
       ...opts
@@ -130,6 +131,8 @@ export function createLogicalAttribute(
       id,
       name,
       identifier: false,
+      nullable: false,
+      relatedConceptualAttributes: [],
       customProperties: [],
       ...opts
    };
