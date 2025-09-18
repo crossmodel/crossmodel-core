@@ -7,8 +7,6 @@ interface LogicalEntity extends DataElementContainer, WithCustomProperties {
     attributes: LogicalAttribute[];
     identifiers: LogicalIdentifier[];
     relatedConceptualEntities: @ConceptualEntity[];
-    alias?: string;
-    classification?: string;
 }
 
 // LogicalEntity definition 
@@ -36,8 +34,6 @@ LogicalEntity returns LogicalEntity:
                     (LIST_ITEM relatedConceptualEntities+=[ConceptualEntity:IDReference])+
                 DEDENT
             )?
-            ('alias' ':' alias=STRING)?
-            ('classification' ':' classification=STRING)?
             CustomPropertiesFragment?
         DEDENT
 ;

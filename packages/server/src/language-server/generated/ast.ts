@@ -35,7 +35,6 @@ export type CrossModelKeywordNames =
     | ">"
     | ">="
     | "TRUE"
-    | "alias"
     | "appliesTo"
     | "apply"
     | "attribute"
@@ -47,7 +46,6 @@ export type CrossModelKeywordNames =
     | "child"
     | "childCardinality"
     | "childRole"
-    | "classification"
     | "columns"
     | "conceptual"
     | "conceptualBusinessRule"
@@ -57,7 +55,6 @@ export type CrossModelKeywordNames =
     | "conditions"
     | "cross-join"
     | "customProperties"
-    | "database"
     | "datamodel"
     | "datatype"
     | "defaultValue"
@@ -79,7 +76,6 @@ export type CrossModelKeywordNames =
     | "id"
     | "identifier"
     | "identifiers"
-    | "implementationNotes"
     | "inherits"
     | "inner-join"
     | "isArray"
@@ -93,8 +89,6 @@ export type CrossModelKeywordNames =
     | "name"
     | "nodes"
     | "nullable"
-    | "onDelete"
-    | "onUpdate"
     | "parent"
     | "parentCardinality"
     | "parentRole"
@@ -103,8 +97,6 @@ export type CrossModelKeywordNames =
     | "primary"
     | "primaryKey"
     | "priority"
-    | "referencedColumns"
-    | "referencedTable"
     | "relatedConceptualAttributes"
     | "relatedConceptualEntities"
     | "relatedLogicalAttributes"
@@ -114,7 +106,6 @@ export type CrossModelKeywordNames =
     | "relationship"
     | "required"
     | "scale"
-    | "schema"
     | "sourceNode"
     | "sources"
     | "status"
@@ -491,7 +482,7 @@ export function isLogicalIdentifier(item: unknown): item is LogicalIdentifier {
 
 export interface RelationalKey extends NamedObject, WithCustomProperties {
     readonly $container: CrossModelRoot | RelationalTable;
-    readonly $type: 'ForeignKey' | 'PrimaryKey' | 'RelationalKey';
+    readonly $type: 'PrimaryKey' | 'RelationalKey';
     columns: Array<langium.Reference<RelationalColumn>>;
 }
 
@@ -611,9 +602,7 @@ export function isBehaviouralDataElementContainer(item: unknown): item is Behavi
 export interface LogicalEntity extends DataElementContainer, WithCustomProperties {
     readonly $container: CrossModelRoot;
     readonly $type: 'LogicalEntity';
-    alias?: string;
     attributes: Array<LogicalAttribute>;
-    classification?: string;
     identifiers: Array<LogicalIdentifier>;
     relatedConceptualEntities: Array<langium.Reference<ConceptualEntity>>;
     superEntities: Array<langium.Reference<LogicalEntity>>;
@@ -678,7 +667,6 @@ export interface Relationship extends DataElementContainerLink, WithCustomProper
     childCardinality?: string;
     childRole?: string;
     conceptualRelationship?: langium.Reference<ConceptualRelationship>;
-    implementationNotes?: string;
     parent?: langium.Reference<LogicalEntity>;
     parentCardinality?: string;
     parentRole?: string;
@@ -688,21 +676,6 @@ export const Relationship = 'Relationship';
 
 export function isRelationship(item: unknown): item is Relationship {
     return reflection.isInstance(item, Relationship);
-}
-
-export interface ForeignKey extends PhysicalRelationship, RelationalKey {
-    readonly $container: CrossModelRoot | RelationalTable;
-    readonly $type: 'ForeignKey';
-    onDelete?: string;
-    onUpdate?: string;
-    referencedColumns: Array<langium.Reference<RelationalColumn>>;
-    referencedTable?: langium.Reference<RelationalTable>;
-}
-
-export const ForeignKey = 'ForeignKey';
-
-export function isForeignKey(item: unknown): item is ForeignKey {
-    return reflection.isInstance(item, ForeignKey);
 }
 
 export interface PrimaryKey extends RelationalKey {
@@ -764,10 +737,8 @@ export function isConceptualEntity(item: unknown): item is ConceptualEntity {
 export interface LogicalBusinessRule extends BehaviouralDataElementContainer, WithCustomProperties {
     readonly $container: CrossModelRoot;
     readonly $type: 'LogicalBusinessRule';
-    appliesTo: Array<langium.Reference<LogicalEntity>>;
     conceptualRule?: langium.Reference<ConceptualBusinessRule>;
     expression?: string;
-    priority?: number;
 }
 
 export const LogicalBusinessRule = 'LogicalBusinessRule';
@@ -883,6 +854,17 @@ export function isRelationalColumn(item: unknown): item is RelationalColumn {
     return reflection.isInstance(item, RelationalColumn);
 }
 
+export interface ForeignKey extends PhysicalRelationship {
+    readonly $container: CrossModelRoot | RelationalTable;
+    readonly $type: 'ForeignKey';
+}
+
+export const ForeignKey = 'ForeignKey';
+
+export function isForeignKey(item: unknown): item is ForeignKey {
+    return reflection.isInstance(item, ForeignKey);
+}
+
 export interface RelationalView extends PhysicalBehaviouralDataElementContainer {
     readonly $container: CrossModelRoot;
     readonly $type: 'RelationalView';
@@ -913,10 +895,8 @@ export interface RelationalTable extends PhysicalStructuralDataElementContainer 
     readonly $container: CrossModelRoot;
     readonly $type: 'RelationalTable';
     columns: Array<RelationalColumn>;
-    database?: string;
     foreignKeys: Array<ForeignKey>;
     primaryKey?: PrimaryKey;
-    schema?: string;
 }
 
 export const RelationalTable = 'RelationalTable';
@@ -1053,7 +1033,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 return this.isSubtype(PhysicalDataElement, supertype);
             }
             case ForeignKey: {
-                return this.isSubtype(PhysicalRelationship, supertype) || this.isSubtype(RelationalKey, supertype);
+                return this.isSubtype(PhysicalRelationship, supertype);
             }
             case InheritanceEdge:
             case RelationshipEdge: {
@@ -1118,7 +1098,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 return DataModel;
             }
             case 'DocumentCollection:relatedLogicalEntities':
-            case 'LogicalBusinessRule:appliesTo':
             case 'LogicalEntity:superEntities':
             case 'LogicalEntityNode:entity':
             case 'PhysicalBehaviouralDataElementContainer:relatedLogicalDataElementContainers':
@@ -1139,15 +1118,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             case 'RelationshipAttribute:parent': {
                 return LogicalAttribute;
             }
-            case 'ForeignKey:referencedColumns':
-            case 'ForeignKey:columns':
-            case 'PrimaryKey:columns':
-            case 'RelationalKey:columns': {
-                return RelationalColumn;
-            }
-            case 'ForeignKey:referencedTable': {
-                return RelationalTable;
-            }
             case 'ForeignKey:child':
             case 'ForeignKey:parent':
             case 'PhysicalRelationship:child':
@@ -1165,6 +1135,10 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             case 'SourceObjectAttribute:relatedConceptualAttributes':
             case 'TargetObjectAttribute:relatedConceptualAttributes': {
                 return ConceptualAttribute;
+            }
+            case 'PrimaryKey:columns':
+            case 'RelationalKey:columns': {
+                return RelationalColumn;
             }
             case 'Relationship:conceptualRelationship': {
                 return ConceptualRelationship;
@@ -1556,9 +1530,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 return {
                     name: LogicalEntity,
                     properties: [
-                        { name: 'alias' },
                         { name: 'attributes', defaultValue: [] },
-                        { name: 'classification' },
                         { name: 'customProperties', defaultValue: [] },
                         { name: 'description' },
                         { name: 'id' },
@@ -1625,33 +1597,10 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'customProperties', defaultValue: [] },
                         { name: 'description' },
                         { name: 'id' },
-                        { name: 'implementationNotes' },
                         { name: 'name' },
                         { name: 'parent' },
                         { name: 'parentCardinality' },
                         { name: 'parentRole' }
-                    ]
-                };
-            }
-            case ForeignKey: {
-                return {
-                    name: ForeignKey,
-                    properties: [
-                        { name: 'child' },
-                        { name: 'childCardinality' },
-                        { name: 'childRole' },
-                        { name: 'columns', defaultValue: [] },
-                        { name: 'customProperties', defaultValue: [] },
-                        { name: 'description' },
-                        { name: 'id' },
-                        { name: 'name' },
-                        { name: 'onDelete' },
-                        { name: 'onUpdate' },
-                        { name: 'parent' },
-                        { name: 'parentCardinality' },
-                        { name: 'parentRole' },
-                        { name: 'referencedColumns', defaultValue: [] },
-                        { name: 'referencedTable' }
                     ]
                 };
             }
@@ -1716,14 +1665,12 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 return {
                     name: LogicalBusinessRule,
                     properties: [
-                        { name: 'appliesTo', defaultValue: [] },
                         { name: 'conceptualRule' },
                         { name: 'customProperties', defaultValue: [] },
                         { name: 'description' },
                         { name: 'expression' },
                         { name: 'id' },
-                        { name: 'name' },
-                        { name: 'priority' }
+                        { name: 'name' }
                     ]
                 };
             }
@@ -1871,6 +1818,23 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     ]
                 };
             }
+            case ForeignKey: {
+                return {
+                    name: ForeignKey,
+                    properties: [
+                        { name: 'child' },
+                        { name: 'childCardinality' },
+                        { name: 'childRole' },
+                        { name: 'customProperties', defaultValue: [] },
+                        { name: 'description' },
+                        { name: 'id' },
+                        { name: 'name' },
+                        { name: 'parent' },
+                        { name: 'parentCardinality' },
+                        { name: 'parentRole' }
+                    ]
+                };
+            }
             case RelationalView: {
                 return {
                     name: RelationalView,
@@ -1906,14 +1870,12 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     properties: [
                         { name: 'columns', defaultValue: [] },
                         { name: 'customProperties', defaultValue: [] },
-                        { name: 'database' },
                         { name: 'description' },
                         { name: 'foreignKeys', defaultValue: [] },
                         { name: 'id' },
                         { name: 'name' },
                         { name: 'primaryKey' },
                         { name: 'relatedLogicalEntities', defaultValue: [] },
-                        { name: 'schema' },
                         { name: 'storageLocation' }
                     ]
                 };

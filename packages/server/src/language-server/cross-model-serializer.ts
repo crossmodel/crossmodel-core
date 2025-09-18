@@ -44,7 +44,6 @@ import {
    RelationshipAttribute,
    RelationshipEdge,
    RelationalColumn,
-   RelationalKey,
    RelationalTable,
    RelationalView,
    SourceObject,
@@ -103,8 +102,6 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          'attributes',
          'identifiers',
          'relatedConceptualEntities',
-         'alias',
-         'classification',
          ...CUSTOM_PROPERTIES
       ]
    ],
@@ -124,7 +121,7 @@ const PROPERTY_ORDER = new Map<string, string[]>([
       ]
    ],
    [LogicalIdentifier, [...NAMED_OBJECT_PROPERTIES, 'primary', 'attributes', ...CUSTOM_PROPERTIES]],
-   [LogicalBusinessRule, [...NAMED_OBJECT_PROPERTIES, 'conceptualRule', 'appliesTo', 'expression', 'priority', ...CUSTOM_PROPERTIES]],
+   [LogicalBusinessRule, [...NAMED_OBJECT_PROPERTIES, 'conceptualRule', 'expression', ...CUSTOM_PROPERTIES]],
    [
       Relationship,
       [
@@ -137,7 +134,6 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          'childCardinality',
          'attributes',
          'conceptualRelationship',
-         'implementationNotes',
          ...CUSTOM_PROPERTIES
       ]
    ],
@@ -151,10 +147,9 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [TargetObject, ['entity', 'mappings', ...CUSTOM_PROPERTIES]],
    [AttributeMapping, ['attribute', 'sources', 'expression', ...CUSTOM_PROPERTIES]],
    [CustomProperty, [...NAMED_OBJECT_PROPERTIES, 'value']],
-   [RelationalTable, [...NAMED_OBJECT_PROPERTIES, 'database', 'schema', 'relatedLogicalEntities', 'columns', 'primaryKey', 'foreignKeys', ...CUSTOM_PROPERTIES]],
+   [RelationalTable, [...NAMED_OBJECT_PROPERTIES, 'relatedLogicalEntities', 'columns', 'primaryKey', 'foreignKeys', ...CUSTOM_PROPERTIES]],
    [RelationalView, [...NAMED_OBJECT_PROPERTIES, 'relatedLogicalDataElementContainers', 'definition', 'columns', ...CUSTOM_PROPERTIES]],
    [RelationalColumn, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', 'nullable', 'defaultValue', 'relatedLogicalAttributes', ...CUSTOM_PROPERTIES]],
-   [RelationalKey, [...NAMED_OBJECT_PROPERTIES, 'columns', ...CUSTOM_PROPERTIES]],
    [PrimaryKey, [...NAMED_OBJECT_PROPERTIES, 'columns', ...CUSTOM_PROPERTIES]],
    [
       ForeignKey,
@@ -162,11 +157,6 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          ...NAMED_OBJECT_PROPERTIES,
          'parent',
          'child',
-         'columns',
-         'referencedTable',
-         'referencedColumns',
-         'onUpdate',
-         'onDelete',
          'parentCardinality',
          'childCardinality',
          ...CUSTOM_PROPERTIES

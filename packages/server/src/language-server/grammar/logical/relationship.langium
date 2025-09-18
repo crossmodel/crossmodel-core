@@ -14,7 +14,6 @@ interface Relationship extends DataElementContainerLink, WithCustomProperties {
     childCardinality?: string
     attributes: RelationshipAttribute[]
     conceptualRelationship?: @ConceptualRelationship
-    implementationNotes?: string
 }
 
 Relationship returns Relationship:
@@ -33,7 +32,6 @@ Relationship returns Relationship:
                 DEDENT
             )?
             ('conceptualRelationship' ':' conceptualRelationship=[ConceptualRelationship:IDReference])?
-            ('implementationNotes' ':' implementationNotes=STRING)?
             CustomPropertiesFragment?
         DEDENT
 ;

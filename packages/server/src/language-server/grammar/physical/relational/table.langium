@@ -9,16 +9,12 @@ interface RelationalTable extends PhysicalStructuralDataElementContainer {
     columns: RelationalColumn[];
     primaryKey?: PrimaryKey;
     foreignKeys: ForeignKey[];
-    database?: string;
-    schema?: string;
 }
 
 RelationalTable returns RelationalTable:
     'table' ':'
         INDENT
             NamedObjectFragment
-            ('database' ':' database=STRING)?
-            ('schema' ':' schema=STRING)?
             ('relatedLogicalEntities' ':'
                 INDENT
                     (LIST_ITEM relatedLogicalEntities+=[LogicalEntity:IDReference])+

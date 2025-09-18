@@ -6,9 +6,7 @@ import './entity'
 
 interface LogicalBusinessRule extends BehaviouralDataElementContainer, WithCustomProperties {
     conceptualRule?: @ConceptualBusinessRule;
-    appliesTo: @LogicalEntity[];
     expression?: string;
-    priority?: number;
 }
 
 LogicalBusinessRule returns LogicalBusinessRule:
@@ -16,13 +14,7 @@ LogicalBusinessRule returns LogicalBusinessRule:
         INDENT
             NamedObjectFragment
             ('conceptualRule' ':' conceptualRule=[ConceptualBusinessRule:IDReference])?
-            ('appliesTo' ':'
-                INDENT
-                    (LIST_ITEM appliesTo+=[LogicalEntity:IDReference])+
-                DEDENT
-            )?
             ('expression' ':' expression=STRING)?
-            ('priority' ':' priority=NUMBER)?
             CustomPropertiesFragment?
         DEDENT
 ;
