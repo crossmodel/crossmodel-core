@@ -157,7 +157,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             <Button
                type='button'
                icon='pi pi-filter-slash'
-               label='Clear'
+               label='Clear Filters'
                outlined
                onClick={clearFilters}
                style={{ marginLeft: '0.5rem' }}
