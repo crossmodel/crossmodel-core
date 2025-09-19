@@ -287,7 +287,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             return updated;
          });
       },
-      [dispatch, defaultEntry, onRowDelete]
+      [dispatch, onRowDelete]
    );
 
    const onRowAdd = React.useCallback(
