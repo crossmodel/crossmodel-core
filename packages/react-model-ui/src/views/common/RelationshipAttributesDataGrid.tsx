@@ -95,7 +95,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
       setProcessedDiagnostics(diagnostics);
    }, [rawDiagnostics, diagnosticKey, isParent, options.rowData]);
 
-   const [currentValue, setCurrentValue] = React.useState(options.value || '_');
+   const [currentValue, setCurrentValue] = React.useState(options.value || '');
    const [suggestions, setSuggestions] = React.useState<string[]>([]);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
@@ -328,8 +328,8 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    const defaultEntry = React.useMemo<RelationshipAttributeRow>(
       () => ({
          $type: RelationshipAttributeType,
-         parent: '_',
-         child: '_',
+         parent: '',
+         child: '',
          idx: -1,
          id: '' // Default id for new entries
       }),
@@ -370,8 +370,8 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          const newId = attribute.id || gridData.length.toString(); // Generate a unique ID
          const attributeData: RelationshipAttributeRow = {
             $type: RelationshipAttributeType,
-            parent: attribute.parent || '_',
-            child: attribute.child || '_',
+            parent: attribute.parent || '',
+            child: attribute.child || '',
             id: newId,
             idx: -1
          };

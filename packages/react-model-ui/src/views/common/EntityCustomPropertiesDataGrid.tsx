@@ -79,7 +79,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
                type: 'entity:customProperty:add-customProperty',
                customProperty: { ...customProperty, id }
             });
-            setEditingRows(prev => ({ ...prev, [id]: true }));
+            setEditingRows({ [id]: true });
          }
       },
       [dispatch, entity?.customProperties]

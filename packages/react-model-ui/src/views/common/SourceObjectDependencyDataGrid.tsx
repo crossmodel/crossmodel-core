@@ -25,7 +25,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
    const { options, sourceObject } = props;
    const { editorCallback } = options;
 
-   const [currentValue, setCurrentValue] = React.useState(options.value || '_');
+   const [currentValue, setCurrentValue] = React.useState(options.value || '');
    const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
@@ -99,7 +99,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
    const onChange = (e: AutoCompleteChangeEvent): void => {
       const value = e.value;
       // eslint-disable-next-line no-null/no-null
-      let finalValue = '_'; // Default value if nothing is selected
+      let finalValue = ''; // Default value if nothing is selected
 
       if (typeof value === 'object' && value !== undefined && value.label) {
          finalValue = value.label;
@@ -281,10 +281,10 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const onRowUpdate = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
-         // Ensure we have a value, defaulting to '_' if empty
+         // Ensure we have a value, defaulting to '' if empty
          const updatedDependency = {
             ...dependency,
-            source: dependency.source || '_'
+            source: dependency.source || ''
          };
 
          const errors = validateField(updatedDependency);

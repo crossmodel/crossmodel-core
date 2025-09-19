@@ -57,7 +57,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                type: 'entity:attribute:add-attribute',
                attribute: { ...attribute, id }
             });
-            setEditingRows(prev => ({ ...prev, [id]: true }));
+            setEditingRows({ [id]: true });
          }
       },
       [dispatch, entity.attributes]

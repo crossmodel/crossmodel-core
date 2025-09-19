@@ -261,10 +261,8 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             dependency.datamodel && dependency.datamodel.trim() !== '' && dependency.datamodel !== '_' && dependency.datamodel !== '-';
 
          if (!isValidDatamodel) {
-            if (dependency.datamodel === defaultEntry.datamodel && dependency.version === defaultEntry.version) {
-               onRowDelete(dependency);
-            }
-
+            // If the datamodel is invalid (empty, '_', or '-'), delete the row.
+            onRowDelete(dependency);
             return;
          }
 
@@ -310,11 +308,9 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             dependency: dependencyData
          });
 
-         // Explicitly set this row as being edited
-         setEditingRows(current => ({
-            ...current,
+         setEditingRows({
             [newId]: true
-         }));
+         });
       },
       [dataModel?.dependencies?.length, dispatch]
    );
