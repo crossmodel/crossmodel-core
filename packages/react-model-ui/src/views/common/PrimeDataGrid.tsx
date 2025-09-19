@@ -132,31 +132,36 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
-         <div>
-            {onRowAdd && !readonly && (
-               <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} style={{ marginRight: '0.5rem' }} />
-            )}
-            <Button type='button' icon='pi pi-filter-slash' label='Clear' outlined onClick={clearFilters} />
-         </div>
-         <div className='keyword-search-container'>
-            <IconField iconPosition='left'>
-               <InputIcon className='pi pi-search' />
-               <InputText
-                  value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
-                  onChange={onGlobalFilterChange}
-                  placeholder='Keyword Search'
-               />
-            </IconField>
-            {(filters['global'] as DataTableFilterMetaData)?.value && (
-               <i
-                  className='pi pi-times'
-                  onClick={() => {
-                     const _filters = { ...filters };
-                     (_filters['global'] as DataTableFilterMetaData).value = '';
-                     setFilters(_filters);
-                  }}
-               />
-            )}
+         {onRowAdd && !readonly && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} />}
+         <div className='datatable-filter-section'>
+            <div className='keyword-search-container'>
+               <IconField iconPosition='left'>
+                  <InputIcon className='pi pi-search' />
+                  <InputText
+                     value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
+                     onChange={onGlobalFilterChange}
+                     placeholder='Keyword Search'
+                  />
+               </IconField>
+               {(filters['global'] as DataTableFilterMetaData)?.value && (
+                  <i
+                     className='pi pi-times'
+                     onClick={() => {
+                        const _filters = { ...filters };
+                        (_filters['global'] as DataTableFilterMetaData).value = '';
+                        setFilters(_filters);
+                     }}
+                  />
+               )}
+            </div>
+            <Button
+               type='button'
+               icon='pi pi-filter-slash'
+               label='Clear'
+               outlined
+               onClick={clearFilters}
+               style={{ marginLeft: '0.5rem' }}
+            />
          </div>
       </div>
    );

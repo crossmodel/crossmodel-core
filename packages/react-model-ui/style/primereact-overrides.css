@@ -372,6 +372,13 @@ span.w-full.p-autocomplete {
    display: flex;
    justify-content: space-between;
    align-items: center;
+   gap: 1rem;
+}
+
+.p-datatable .datatable-global-filter .datatable-filter-section {
+   display: flex;
+   align-items: center;
+   margin-left: auto;
 }
 
 .p-datatable .datatable-global-filter .p-inputtext {
