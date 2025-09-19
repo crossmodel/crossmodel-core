@@ -230,7 +230,7 @@
 
 .p-button-outlined {
    background: transparent;
-   color: inherit;
+   color: var(--theia-focusBorder);
    border: 1px solid;
 }
 
