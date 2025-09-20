@@ -37,7 +37,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Package vs-code extensions.
-        run: yarn package:extensions
+        run: npm run package:extensions
 
       - name: Upload vsix packages
         uses: actions/upload-artifact@v4
@@ -78,7 +78,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://npm.pkg.github.com'
           scope: '@crossmodel'
-          cache: 'yarn'
+          cache: 'npm'
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -88,10 +88,10 @@ jobs:
       - name: Build prod package
         shell: bash
         run: |
-          yarn --skip-integrity-check --network-timeout 100000
-          yarn build:packages
-          yarn theia:electron build:prod
-          yarn theia:electron package:prod
+          npm ci --fetch-timeout=100000
+          npm run build:packages
+          npm run theia:electron -- build:prod
+          npm run theia:electron -- package:prod
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9

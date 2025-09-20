@@ -25,7 +25,7 @@ runs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://npm.pkg.github.com'
           scope: '@crossmodel'
-          cache: 'yarn'
+          cache: 'npm'
 
       # Setup Python
       - name: Setup Python
@@ -36,7 +36,6 @@ runs:
       # Build the code.
       - name: Build
         shell: bash
-        # We set a timeout here as a fix for the timeout issues which sometimes occur when connecting the the npm repo.
         run: |
-          yarn --skip-integrity-check --network-timeout 100000
-          yarn build:browser
+          npm ci
+          npm run build:browser

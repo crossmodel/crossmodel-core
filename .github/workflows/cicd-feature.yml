@@ -9,6 +9,7 @@ on:
       - hotfix/*
       - chore/*
       - refactor/*
+      - codex/*
 
 jobs:
   check-open-pr:
