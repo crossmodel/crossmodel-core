@@ -1,4 +1,4 @@
-import 'terminals'
+import './terminals'
 
 // Common interfaces and fragments.
 

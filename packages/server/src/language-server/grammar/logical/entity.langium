@@ -1,5 +1,5 @@
-import 'terminals'
-import 'common'
+import '../common/terminals'
+import '../common/common'
 
 interface LogicalEntity extends DataElementContainer, WithCustomProperties {
     superEntities: @LogicalEntity[];

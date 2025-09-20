@@ -1,5 +1,5 @@
-import 'terminals'
-import 'common'
+import '../common/terminals'
+import '../common/common'
 
 interface DataModel extends NamedObject, WithCustomProperties {
     type: string;
