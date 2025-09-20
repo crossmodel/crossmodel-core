@@ -32,7 +32,7 @@ export default defineConfig({
    reporter: process.env.CI ? [['list'], ['allure-playwright'], ['github']] : [['list'], ['html']],
    /* Run your local dev server before starting the tests */
    webServer: {
-      command: 'yarn --cwd ../../ start:browser',
+      command: 'npm run start:browser --prefix ../../',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI
    }

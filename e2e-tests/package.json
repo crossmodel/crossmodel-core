@@ -8,12 +8,12 @@
     "email": "devops@crossbreeze.nl"
   },
   "scripts": {
-    "build": "yarn && yarn clean && tsc --incremental && yarn playwright:install",
+    "build": "npm install && npm run clean && tsc --incremental && npm run playwright:install",
     "clean": "rimraf --glob lib *.tsbuildinfo .eslintcache",
     "lint": "eslint -c ../.eslintrc.js --ext .ts ./src",
     "playwright:install": "playwright install chromium --with-deps",
     "test": "",
-    "ui-test": "yarn build && yarn playwright test"
+    "ui-test": "npm run build && npm exec playwright test"
   },
   "dependencies": {
     "@eclipse-glsp/glsp-playwright": "2.4.0",

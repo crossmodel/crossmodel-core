@@ -32,7 +32,7 @@ Short steps:
 
 ## Installing the application dependencies
 
-    yarn
+    npm install
 
 ## Running the application
 
@@ -40,35 +40,35 @@ Short steps:
 
 This will build and start CrossModel as a web application. When the web application is running you can open <http://localhost:3000> in your browser to use CrossModel.
 
-    yarn build:browser &&
-    yarn start:browser
+    npm run build:browser &&
+    npm run start:browser
 
 ### Electron (desktop application)
 
 This will build and start CrossModel as a native desktop application for the OS (Windows, Linux or MacOS) where the command is started.
 
-    yarn build:electron &&
-    yarn start:electron
+    npm run build:electron &&
+    npm run start:electron
 
 ## Developing
 
 Start watching all packages of your application for either browser or electron version.
 
-    yarn watch:browser
+    npm run watch:browser
 
 _or_
 
-    yarn watch:electron
+    npm run watch:electron
 
 _or_ watch only specific packages with
 
     cd packages/<package-name>
-    yarn watch
+    npm run watch
 
 and the Electron example.
 
     cd applications/electron-app
-    yarn watch
+    npm run watch
 
 Run the example as [described above](#running-the-application).
 
@@ -81,7 +81,7 @@ If you also made changes to the backend, you can close and restart the applicati
 We package CrossModel as a desktop application (Electron).
 To package CrossModel as a desktop application, execute the following command:
 
-    yarn theia:electron package
+    npm run theia:electron -- package
 
 Depending on the platform, this will produce an executable or an installer for the application under `applications/electron-app/dist`.
 
@@ -140,7 +140,7 @@ Using a known package structure - npm in our case - we can re-use large parts of
 In order to test this behavior, we use verdaccio as a local npm registry that provides some models that are needed by our workspace packages.
 You can start verdaccio using
 
-    yarn start:verdaccio
+    npm run start:verdaccio
 
 The local npm registry will be available under `http://localhost:4873/` where we already provide four packages by default.
 

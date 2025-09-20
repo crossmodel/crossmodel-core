@@ -25,7 +25,7 @@
     "syntaxes"
   ],
   "scripts": {
-    "build": "yarn langium:generate && tsc -b",
+    "build": "npm run langium:generate && tsc -b",
     "clean": "rimraf lib tsconfig.tsbuildinfo",
     "langium:generate": "langium generate",
     "langium:watch": "langium generate --watch",

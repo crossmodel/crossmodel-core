@@ -6,7 +6,7 @@ The testing framework for this project is Jest. The dev NPM packages are _jest_ 
 
 ## Setting up the tests on your system
 
-Run this command in your terminal: `yarn`
+Run this command in your terminal: `npm install`
 
 It is recommended to run the Jest tests using the VS Code extension: [_Jest_](https://marketplace.visualstudio.com/items?itemName=Orta.vscode-jest). With this extension, tests will automatically run when updated and it is very easy to run the tests from the VS Code GUI (using the button immediately left of the test in question).
 
@@ -23,7 +23,7 @@ Unit test files should have the structure `*.test.ts` as their filename, for cla
 
 Test can be run by using the following command in the root directory or in the sub-directory where the tests are located you want to run.
 
-    yarn test
+    npm test
 
 ### Debugging test
 

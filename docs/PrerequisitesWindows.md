@@ -32,13 +32,12 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser # Optional: Needed to run a 
 irm get.scoop.sh | iex
 ```
 
-### Install Python, Yarn & Node.js
+### Install Python & Node.js
 
 Open a new PowerShell window (this is needed after installing scoop) and execute the following commands:
 
 ```powershell
 scoop install python@3.11.4
-scoop install yarn@1.22.22
 scoop install nvm
 nvm install 22
 nvm use 22
@@ -57,4 +56,4 @@ Save the file and close it.
 
 ### Node-Gyp issue
 
-When you get errors when building (using Yarn) and the error is about node-gyp (for example: common.gypi not found), try removing the C:\Users\{username}\AppData\Local\node-gyp folder.
+When you get errors when building (using npm) and the error is about node-gyp (for example: common.gypi not found), try removing the C:\Users\{username}\AppData\Local\node-gyp folder.

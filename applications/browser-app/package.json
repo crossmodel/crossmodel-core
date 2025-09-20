@@ -14,9 +14,9 @@
     "email": "devops@crossbreeze.nl"
   },
   "scripts": {
-    "build": "yarn -s rebuild && theia build --app-target=\"browser\" --mode development && yarn download:plugins",
+    "build": "npm run rebuild && theia build --app-target=\"browser\" --mode development && npm run download:plugins",
     "postbuild": "shx cp -f ../../node_modules/libavoid-js/dist/libavoid.wasm ./lib/frontend/libavoid.wasm",
-    "build:prod": "yarn -s rebuild && theia build --app-target=\"browser\"",
+    "build:prod": "npm run rebuild && theia build --app-target=\"browser\"",
     "clean": "theia clean && rimraf lib src-gen",
     "download:plugins": "theia download:plugins",
     "rebuild": "theia rebuild:browser --cacheRoot ../..",

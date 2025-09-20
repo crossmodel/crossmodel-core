@@ -1,0 +1,6 @@
+# Agent Guidelines
+
+- Use **npm** as the package manager for this repository. Do not reintroduce Yarn lockfiles or commands.
+- Update documentation and scripts to stay in sync with npm-based workflows when you change tooling or commands.
+- Prefer workspace-aware commands such as `npm run --workspace <package> <script>` when targeting sub-packages.
+- Run the relevant `npm run` scripts and tests that cover the areas you change before opening a pull request.
