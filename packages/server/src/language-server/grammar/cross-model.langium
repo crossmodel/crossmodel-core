@@ -1,10 +1,6 @@
 grammar CrossModel
 
-import 'logical/datamodel'
-import 'logical/entity'
-import 'logical/relationship'
-import 'logical/system-diagram'
-import 'logical/mapping'
+import 'logical/logical'
 
 entry CrossModelRoot:
     (datamodel=DataModel | 
