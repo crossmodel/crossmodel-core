@@ -73,7 +73,8 @@ export class ReverseCompositeSaveable extends CompositeSaveable implements Requi
       }
    }
 
-   serialize(): Promise<BinaryBuffer> {
+   async serialize(): Promise<BinaryBuffer> {
+      await this.editor.idle();
       for (const saveable of this.saveables) {
          if (typeof saveable.createSnapshot === 'function') {
             const snapshot = saveable.createSnapshot();
@@ -195,6 +196,10 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       }
    }
 
+   async idle(): Promise<void> {
+      await Promise.all(this.getCrossModelWidgets().map(widget => widget.idle()));
+   }
+
    getResourceUri(): URI {
       return new URI(this.options.uri);
    }
@@ -204,6 +209,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       if (this.resourceUri.scheme === 'file') {
          return;
       }
+      await this.idle();
       const uri = this.resourceUri.toString();
       const document = await this.modelService.open({ uri, clientId: 'save' });
       try {
@@ -308,6 +314,10 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    getCodeWidget(): EditorWidget | undefined {
       return this.tabPanel.widgets.find<EditorWidget>(toTypeGuard(EditorWidget));
+   }
+
+   getCrossModelWidgets(): CrossModelWidget[] {
+      return this.tabPanel.widgets.filter(toTypeGuard(CrossModelWidget));
    }
 
    createMoveToUri(resourceUri: URI): URI | undefined {

@@ -428,15 +428,17 @@ export class CrossModelFileNavigatorContribution extends FileNavigatorContributi
    }
 }
 
-function doesTemplateFitPackage(target: URI | undefined, modelService: ModelService, template: { memberType: string }): boolean {
+function doesTemplateFitPackage(target: URI | undefined, modelService: ModelService, template: NewElementTemplate): boolean {
    if (!target) {
       return false;
    }
-   const model = modelService.dataModels.find(candidate => URI.fromFilePath(candidate.directory).isEqualOrParent(target));
-   if (!model) {
+   const surroundingDataModel = modelService.dataModels.find(candidate => URI.fromFilePath(candidate.directory).isEqualOrParent(target));
+   if (!surroundingDataModel) {
+      // only data models can be created outside of an existing data model package
       return template.memberType === DataModelType;
    }
-   return isMemberPermittedInModel(model.type, template.memberType);
+   // avoid nesting data models
+   return template.memberType !== DataModelType && isMemberPermittedInModel(surroundingDataModel.type, template.memberType);
 }
 
 function applyFileExtension(name: string, fileExtension: string): string {

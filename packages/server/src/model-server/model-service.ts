@@ -3,21 +3,21 @@
  ********************************************************************************/
 
 import {
-    CloseModelArgs,
-    CrossReference,
-    CrossReferenceContext,
-    DATAMODEL_FILE,
-    DataModelInfo,
-    DataModelInfoArgs,
-    DataModelUpdatedEvent,
-    ModelSavedEvent,
-    ModelUpdatedEvent,
-    OpenModelArgs,
-    ReferenceableElement,
-    SaveModelArgs,
-    UpdateModelArgs
+   CloseModelArgs,
+   CrossReference,
+   CrossReferenceContext,
+   DATAMODEL_FILE,
+   DataModelInfo,
+   DataModelInfoArgs,
+   DataModelUpdatedEvent,
+   ModelSavedEvent,
+   ModelUpdatedEvent,
+   OpenModelArgs,
+   ReferenceableElement,
+   SaveModelArgs,
+   UpdateModelArgs
 } from '@crossmodel/protocol';
-import { AstNode, Deferred, DocumentState, isAstNode, UriUtils } from 'langium';
+import { AstNode, Deferred, DocumentState, UriUtils, isAstNode } from 'langium';
 import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumentEdit, TextEdit, uinteger } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
@@ -39,7 +39,7 @@ export class ModelService {
       protected fileSystemProvider = shared.workspace.FileSystemProvider
    ) {
       // sync updates with language client
-      this.documentBuilder.onBuildPhase(DocumentState.Validated, (allChangedDocuments, _token) => {
+      this.documentBuilder.onBuildPhase(DocumentState.Validated, async (allChangedDocuments, _token) => {
          for (const changedDocument of allChangedDocuments) {
             const sourceClientId = this.documentManager.getSourceClientId(changedDocument, allChangedDocuments);
             if (sourceClientId === LANGUAGE_CLIENT_ID) {
@@ -49,7 +49,7 @@ export class ModelService {
             if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
                // we only want to apply a text edit if the editor is already open
                // because opening and updating at the same time might cause problems as the open call resets the document to filesystem
-               this.shared.lsp.Connection?.workspace.applyEdit({
+               await this.shared.lsp.Connection?.workspace.applyEdit({
                   label: 'Update Model',
                   documentChanges: [
                      // we use a null version to indicate that the version is known
@@ -169,7 +169,7 @@ export class ModelService {
             reject('Update timed out.');
          }, 5000)
       );
-      this.documentManager.update(args.uri, newVersion, text, args.clientId);
+      await this.documentManager.update(args.uri, newVersion, text, args.clientId);
       return Promise.race([pendingUpdate.promise, timeout]);
    }
 
