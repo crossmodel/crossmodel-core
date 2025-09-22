@@ -48,7 +48,7 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
    protected override getCreateOperation(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Action {
       if (this.triggerAction.args?.type === 'show') {
          return SetUIExtensionVisibilityAction.create({
-            extensionId: EntityCommandPalette.ID,
+            extensionId: EntityCommandPalette.PALETTE_ID,
             visible: true,
             contextElementsId: [this.ghostElementId]
          });
