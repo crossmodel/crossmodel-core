@@ -21,9 +21,11 @@
    --surface-section: #f8f9fa;
    --surface-card: #ffffff;
    --surface-border: #dfe7ef;
-   /* --text-color: #000000; */
-   /* --primary-color: #007acc; */
-   /* --focus-ring: #007acc40; */
+   --text-color: #000000;
+   --primary-color: #007acc;
+   --primary-color-text: #ffffff;
+   --surface-hover: #f6f9fc;
+   --focus-ring: 0 0 0 0.2rem #007acc40;
 }
 
 .dark-theme {
@@ -31,9 +33,11 @@
    --surface-section: #252526;
    --surface-card: #252526;
    --surface-border: #404040;
-   /* --text-color: #d4d4d4; */
-   /* --primary-color: #0e639c; */
-   /* --focus-ring: #0e639c40; */
+   --text-color: #d4d4d4;
+   --primary-color: #0e639c;
+   --primary-color-text: #ffffff;
+   --surface-hover: #2a2d2e;
+   --focus-ring: 0 0 0 0.2rem #0e639c40;
 }
 
 /* Global components */
@@ -187,10 +191,6 @@
 }
 
 /* Checkbox styles */
-.p-checkbox {
-   width: 1rem;
-   height: 1rem;
-}
 
 .p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox {
    margin-left: 0.3rem;
@@ -203,8 +203,6 @@
 }
 
 .p-checkbox .p-checkbox-box {
-   width: 20px;
-   height: 20px;
    color: var(--text-color);
    border-radius: 4px;
    transition:
@@ -457,4 +455,49 @@ span.w-full.p-autocomplete {
 .p-multiselect-panel .p-multiselect-header .p-multiselect-close {
    width: 1rem;
    height: 1rem;
+}
+
+/* Form Header styles */
+.form-header {
+   position: sticky;
+   top: 0;
+   z-index: 1000;
+   background-color: var(--theia-titleBar-activeBackground);
+}
+
+.form-header-content {
+   display: flex;
+   flex-grow: 1;
+   gap: 1em;
+   align-items: center;
+}
+
+.form-header-icon {
+   font-size: 1.7em;
+}
+
+.form-title {
+   margin: 0;
+   font-weight: 500;
+}
+
+.form-id {
+   padding-top: 0.25em;
+   margin-left: 1em;
+   font-size: 0.8rem;
+   text-transform: uppercase;
+   opacity: 0.7;
+}
+
+.form-actions {
+   display: flex;
+   gap: 0.5rem;
+}
+
+.form-toolbar {
+   min-height: 40px;
+   padding: 0.5rem 1rem;
+   border-radius: 0;
+   border: none;
+   background: transparent;
 }
