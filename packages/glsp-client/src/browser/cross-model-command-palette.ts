@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AddEntityOperation } from '@crossmodel/protocol';
+import { DropFilesOperation, ModelStructure } from '@crossmodel/protocol';
 import {
    Action,
    GLSPMousePositionTracker,
@@ -59,7 +59,7 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
    }
 
    protected override executeAction(input: LabeledAction | Action | Action[]): void {
-      if (this.creationPosition && LabeledAction.is(input) && AddEntityOperation.is(input.actions[0])) {
+      if (this.creationPosition && LabeledAction.is(input) && DropFilesOperation.is(input.actions[0])) {
          const action = input.actions[0];
          action.position = this.creationPosition;
          return super.executeAction(action);
@@ -71,5 +71,29 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
       super.hide();
       this.creationPosition = undefined;
       this.visible = false;
+   }
+}
+
+export class EntityCommandPalette extends CrossModelCommandPalette {
+   static readonly PALETTE_ID = 'entity-command-palette';
+
+   public override id(): string {
+      return EntityCommandPalette.PALETTE_ID;
+   }
+
+   protected override filterActions(filterText: string, actions: LabeledAction[]): LabeledAction[] {
+      return super.filterActions(filterText, actions).filter(action => action.icon === ModelStructure.LogicalEntity.ICON_CLASS);
+   }
+}
+
+export class RelationshipCommandPalette extends CrossModelCommandPalette {
+   static readonly PALETTE_ID = 'relationship-command-palette';
+
+   public override id(): string {
+      return RelationshipCommandPalette.PALETTE_ID;
+   }
+
+   protected override filterActions(filterText: string, actions: LabeledAction[]): LabeledAction[] {
+      return super.filterActions(filterText, actions).filter(action => action.icon === ModelStructure.Relationship.ICON_CLASS);
    }
 }

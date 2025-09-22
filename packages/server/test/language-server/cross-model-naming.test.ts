@@ -96,8 +96,8 @@ describe('NameUtil', () => {
          };
 
          // Mock the getPackageName method to return the same ID
-         const originalGetPackageName = idProvider.getDataModelId;
-         idProvider.getDataModelId = () => 'example-dwh';
+         const originalGetPackageName = idProvider.getDataModelReferenceName;
+         idProvider.getDataModelReferenceName = () => 'example-dwh';
 
          try {
             const globalId = idProvider.getGlobalId(mockNode);
@@ -105,7 +105,7 @@ describe('NameUtil', () => {
             expect(globalId).toBe('example-dwh');
          } finally {
             // Restore original method
-            idProvider.getDataModelId = originalGetPackageName;
+            idProvider.getDataModelReferenceName = originalGetPackageName;
          }
       });
 
@@ -120,8 +120,8 @@ describe('NameUtil', () => {
          };
 
          // Mock the getPackageName method
-         const originalGetPackageName = idProvider.getDataModelId;
-         idProvider.getDataModelId = () => 'example-dwh';
+         const originalGetPackageName = idProvider.getDataModelReferenceName;
+         idProvider.getDataModelReferenceName = () => 'example-dwh';
 
          try {
             const globalId = idProvider.getGlobalId(mockNode);
@@ -129,7 +129,7 @@ describe('NameUtil', () => {
             expect(globalId).toBe('example-dwh.entity1');
          } finally {
             // Restore original method
-            idProvider.getDataModelId = originalGetPackageName;
+            idProvider.getDataModelReferenceName = originalGetPackageName;
          }
       });
    });

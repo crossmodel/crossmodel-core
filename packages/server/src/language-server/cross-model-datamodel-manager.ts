@@ -137,7 +137,7 @@ export class CrossModelDataModelManager {
       return this.getDataModelInfoByURI(uri)?.id || UNKNOWN_DATAMODEL_ID;
    }
 
-   getDataModelIdByDocument(doc: LangiumDocument): string {
+   getDataModelIdByDocument(doc?: LangiumDocument): string {
       return this.getDataModelInfoByDocument(doc)?.id || UNKNOWN_DATAMODEL_ID;
    }
 
@@ -182,9 +182,11 @@ export class CrossModelDataModelManager {
       return undefined;
    }
 
-   isVisible(sourceDataModelId: string, targetDataModelId: string): boolean {
+   isVisible(sourceDataModelId: string, targetDataModelId: string, includeSource = false): boolean {
       // an unknown data model cannot see anything
-      return !isUnknownDataModel(sourceDataModelId) && this.getVisibleDataModelIds(sourceDataModelId).includes(targetDataModelId);
+      return (
+         !isUnknownDataModel(sourceDataModelId) && this.getVisibleDataModelIds(sourceDataModelId, includeSource).includes(targetDataModelId)
+      );
    }
 
    protected getAllDependencies(dataModelId: string): string[] {

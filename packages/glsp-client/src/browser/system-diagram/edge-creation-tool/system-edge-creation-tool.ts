@@ -30,6 +30,7 @@ import {
    Point,
    RemoveFeedbackEdgeAction,
    RequestCheckEdgeAction,
+   SetUIExtensionVisibilityAction,
    TriggerEdgeCreationAction,
    cursorFeedbackAction,
    defaultFeedbackEdgeSchema,
@@ -42,6 +43,7 @@ import {
 } from '@eclipse-glsp/client';
 
 import { injectable } from '@theia/core/shared/inversify';
+import { RelationshipCommandPalette } from '../../cross-model-command-palette';
 
 const CSS_EDGE_CREATION = 'edge-creation';
 const CSS_SOURCE_HIGHLIGHT = 'source-highlight';
@@ -228,6 +230,14 @@ export class SystemEdgeCreationToolMouseListener extends DragAwareMouseListener 
    override nonDraggingMouseUp(element: GModelElement, event: MouseEvent): Action[] {
       this.dispose();
       this.updateFeedback(element);
+      if (this.triggerAction.args?.type === 'show') {
+         return [
+            SetUIExtensionVisibilityAction.create({
+               extensionId: RelationshipCommandPalette.PALETTE_ID,
+               visible: true
+            })
+         ];
+      }
       return [];
    }
 

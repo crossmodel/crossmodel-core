@@ -3,18 +3,15 @@
  ********************************************************************************/
 
 import {
-   definedAttr,
    EdgeSearchOptions,
-   getPModelElementConstructorOfType,
    GLSPAppOptions,
+   GLSPBaseCommandPalette,
+   GLSPGlobalCommandPalette,
    GLSPIntegrationOptions,
    GLSPLocator,
    GLSPSemanticApp,
    GLSPSemanticGraph,
    GraphConstructorOptions,
-   isEqualLocatorType,
-   isPEdgeConstructor,
-   isPNodeConstructor,
    PEdge,
    PEdgeConstructor,
    PMetadata,
@@ -25,19 +22,29 @@ import {
    SVGMetadata,
    SVGMetadataUtils,
    TypedEdge,
+   definedAttr,
+   getPModelElementConstructorOfType,
+   isEqualLocatorType,
+   isPEdgeConstructor,
+   isPNodeConstructor,
    waitForFunction
 } from '@eclipse-glsp/glsp-playwright';
-import { expect, Locator } from '@playwright/test';
+import { Locator, expect } from '@playwright/test';
 import { SystemToolBox } from './system-tool-box';
 
 export class SystemDiagram extends GLSPSemanticApp {
    override readonly toolPalette: SystemToolBox;
    override readonly graph: SystemDiagramGraph;
 
+   readonly entityCommandPalette: GLSPBaseCommandPalette;
+   readonly relationshipCommandPalette: GLSPBaseCommandPalette;
+
    constructor(options: GLSPIntegrationOptions) {
       super(options);
       this.toolPalette = this.createToolPalette();
       this.graph = this.createGraph(options);
+      this.entityCommandPalette = this.createEntityCommandPalette();
+      this.relationshipCommandPalette = this.createRelationshipCommandPalette();
    }
 
    protected override createGraph(_options: GLSPAppOptions): SystemDiagramGraph {
@@ -46,6 +53,14 @@ export class SystemDiagram extends GLSPSemanticApp {
 
    protected override createToolPalette(): SystemToolBox {
       return new SystemToolBox({ locator: SystemToolBox.locate(this) });
+   }
+
+   protected createRelationshipCommandPalette(): GLSPBaseCommandPalette {
+      return new GLSPGlobalCommandPalette({ locator: this.graph.app.locator.child('[id$="_relationship-command-palette"]') });
+   }
+
+   protected createEntityCommandPalette(): GLSPBaseCommandPalette {
+      return new GLSPGlobalCommandPalette({ locator: this.graph.app.locator.child('[id$="_entity-command-palette"]') });
    }
 }
 export interface WaitForModelUpdateOptions {
