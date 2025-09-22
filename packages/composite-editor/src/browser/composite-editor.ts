@@ -27,6 +27,7 @@ import {
    WidgetManager
 } from '@theia/core/lib/browser';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewWidget } from '@theia/editor-preview/lib/browser/editor-preview-widget';
 import { EditorPreviewWidgetFactory } from '@theia/editor-preview/lib/browser/editor-preview-widget-factory';
@@ -133,6 +134,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    protected tabPanel: TabPanel;
    saveable: CompositeSaveable;
+   protected initialized = new Deferred<void>();
 
    protected _resourceUri?: URI;
    protected get resourceUri(): URI {
@@ -186,6 +188,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       this.addWidget(codeWidget);
 
       this.update();
+      this.initialized.resolve();
    }
 
    protected addWidget(widget: Widget): void {
@@ -238,7 +241,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    protected override onActivateRequest(msg: Message): void {
       super.onActivateRequest(msg);
-      this.tabPanel.currentWidget?.activate();
+      this.initialized.promise.then(() => this.activeWidget()?.activate());
    }
 
    protected handleCurrentWidgetChanged(event: TabPanel.ICurrentChangedArgs): void {
