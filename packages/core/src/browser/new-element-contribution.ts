@@ -38,7 +38,6 @@ import { CommonMenus, DialogError, open } from '@theia/core/lib/browser';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorContextMenu } from '@theia/editor/lib/browser';
-import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FileNavigatorContribution, NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { WorkspaceCommandContribution } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceInputDialog, WorkspaceInputDialogProps } from '@theia/workspace/lib/browser/workspace-input-dialog';
@@ -306,7 +305,6 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
          const resource = await this.getUntitledResource(fileUri, content);
          await open(this.openerService, resource.uri);
       } else {
-         const targetDirectoryStat = await this.getDirectory(targetDirectory);
          const options = await this.getMemberOptions(
             {
                title: 'New ' + template.label + '...',
@@ -315,7 +313,7 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
                placeholder: 'New ' + template.memberType
             },
             template,
-            targetDirectoryStat!
+            targetDirectory
          );
          if (!options) {
             return;
@@ -330,15 +328,15 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
    protected async getMemberOptions(
       baseProps: WorkspaceInputDialogProps,
       template: NewElementTemplate,
-      parent: FileStat
+      parent: URI
    ): Promise<{ fileUri: URI; content: string } | undefined> {
       const options = await getGridInputOptions(
          {
             ...baseProps,
-            inputs: (await template.getInputOptions?.(parent.resource, this.modelService)) ?? [{ id: 'name', label: 'Name' }],
+            inputs: (await template.getInputOptions?.(parent, this.modelService)) ?? [{ id: 'name', label: 'Name' }],
             validate: value => {
                const name = JSON.parse(value).name ?? '';
-               return name && (template.validateName?.(name) || this.validateFile(template.toUri(parent.resource, name)));
+               return name && (template.validateName?.(name) || this.validateFile(template.toUri(parent, name)));
             }
          },
          this.labelProvider
@@ -346,9 +344,8 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       if (!options) {
          return undefined;
       }
-      const fileUri = template.toUri(parent.resource, options.name);
-      const content =
-         typeof template.content === 'string' ? template.content : await template.content(parent.resource, this.modelService, options);
+      const fileUri = template.toUri(parent, options.name);
+      const content = typeof template.content === 'string' ? template.content : await template.content(parent, this.modelService, options);
       return { fileUri, content };
    }
 
