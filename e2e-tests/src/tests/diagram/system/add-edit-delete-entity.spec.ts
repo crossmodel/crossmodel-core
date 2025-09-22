@@ -98,8 +98,8 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
 
       // Check if entity is actually just hidden, i.e. can be shown again
       const position = (await diagramEditor.diagram.graph.bounds()).position('middle_center');
-      await diagramEditor.invokeShowLogicalEntityToolAtPosition(position);
-      const entitySuggestions = await diagramEditor.diagram.globalCommandPalette.suggestions();
+      const commandPalette = await diagramEditor.invokeShowLogicalEntityToolAtPosition(position);
+      const entitySuggestions = await commandPalette.suggestions();
       // The suggestions are Ids and the Id property of the new entity hasn't changed (yet).
       expect(entitySuggestions).toContain(NEW_ENTITY_LABEL);
 
@@ -114,8 +114,8 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
       // Open the system diagram and check the entity is not listed in the suggestions anymore.
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const position = (await diagramEditor.diagram.graph.bounds()).position('middle_center');
-      await diagramEditor.invokeShowLogicalEntityToolAtPosition(position);
-      const entitySuggestions = await diagramEditor.diagram.globalCommandPalette.suggestions();
+      const commandPalette = await diagramEditor.invokeShowLogicalEntityToolAtPosition(position);
+      const entitySuggestions = await commandPalette.suggestions();
       expect(entitySuggestions).not.toContain(NEW_ENTITY_LABEL);
 
       await diagramEditor.close();

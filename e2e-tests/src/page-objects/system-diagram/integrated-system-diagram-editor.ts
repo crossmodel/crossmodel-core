@@ -74,7 +74,7 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
     * Invoke the 'Show Entity` tool at the given position.
     * i.e. select the tool and click at the given position.
     */
-   async invokeShowLogicalEntityToolAtPosition(position: InteractablePosition): Promise<void> {
+   async invokeShowLogicalEntityToolAtPosition(position: InteractablePosition): Promise<GLSPBaseCommandPalette> {
       await this.enableTool('Show Entity');
       // Wait for the insert-indicator to appear
       await this.page.waitForSelector('.insert-indicator', { state: 'attached' });
@@ -93,6 +93,7 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
          { expectedPosition: position.data, tolerance: 20 }
       );
       await position.click();
+      return this.diagram.entityCommandPalette;
    }
 
    waitForModelUpdate(executor: () => Promise<void>, options?: WaitForModelUpdateOptions): Promise<void> {
