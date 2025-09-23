@@ -132,7 +132,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
-         {onRowAdd && !readonly && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} />}
+         {onRowAdd && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} disabled={readonly} />}
          <div className='datatable-filter-section'>
             <div className='keyword-search-container'>
                <IconField iconPosition='left'>
@@ -303,13 +303,14 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
       const buttons: React.ReactElement[] = [];
 
-      if (isEditing) {
+      if (isEditing && !readonly) {
          buttons.push(
             <Button
                icon='pi pi-check'
                className='p-button-text p-button-success p-row-action-button p-row-editor-save'
                onClick={props.rowEditor?.onSaveClick} // eslint-disable-line react/prop-types
                tooltip='Save'
+               disabled={readonly}
             />
          );
          buttons.push(
@@ -318,47 +319,51 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                className='p-button-text p-button-danger p-row-action-button p-row-editor-cancel'
                onClick={props.rowEditor?.onCancelClick} // eslint-disable-line react/prop-types
                tooltip='Cancel'
+               disabled={readonly}
             />
          );
       } else {
-         // eslint-disable-next-line react/prop-types
-         if (editable && !readonly && props.rowEditor) {
+         if (editable) {
             buttons.push(
                <Button
                   icon='pi pi-pencil'
                   className='p-button-text p-row-action-button'
                   onClick={props.rowEditor?.onInitClick} // eslint-disable-line react/prop-types
                   tooltip='Edit'
+                  disabled={readonly}
                />
             );
          }
-         if (onRowMoveUp && !readonly) {
+         if (onRowMoveUp) {
             buttons.push(
                <Button
                   icon='pi pi-arrow-up'
                   className='p-button-text p-row-action-button'
                   onClick={() => onRowMoveUp(rowData)}
                   tooltip='Move Up'
+                  disabled={readonly}
                />
             );
          }
-         if (onRowMoveDown && !readonly) {
+         if (onRowMoveDown) {
             buttons.push(
                <Button
                   icon='pi pi-arrow-down'
                   className='p-button-text p-row-action-button'
                   onClick={() => onRowMoveDown(rowData)}
                   tooltip='Move Down'
+                  disabled={readonly}
                />
             );
          }
-         if (onRowDelete && !readonly) {
+         if (onRowDelete) {
             buttons.push(
                <Button
                   icon='pi pi-trash'
                   className='p-button-text p-button-danger p-row-action-button'
                   onClick={() => onRowDelete(rowData)}
                   tooltip='Delete'
+                  disabled={readonly}
                />
             );
          }
@@ -442,13 +447,13 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          <DataTable
             ref={tableRef}
             value={data}
-            editMode={editable ? 'row' : undefined}
+            editMode={editable && !readonly ? 'row' : undefined}
             dataKey={keyField as string}
-            onRowEditComplete={onRowEditComplete}
-            onRowClick={handleRowClick}
-            onRowDoubleClick={handleRowDoubleClick}
+            onRowEditComplete={!readonly ? onRowEditComplete : undefined}
+            onRowClick={!readonly ? handleRowClick : undefined}
+            onRowDoubleClick={!readonly ? handleRowDoubleClick : undefined}
             editingRows={editingRows}
-            onRowEditChange={onRowEditChange}
+            onRowEditChange={!readonly ? onRowEditChange : undefined}
             scrollable
             scrollHeight={height}
             className={`p-datatable-sm ${className || ''}`}
@@ -489,7 +494,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   />
                );
             })}
-            {(onRowDelete || onRowMoveUp || onRowMoveDown || (editable && !readonly)) && (
+            {(onRowDelete || onRowMoveUp || onRowMoveDown || editable) && (
                <Column header='Actions' rowEditor={editable && !readonly} body={allActionsTemplate} style={{ width: '10rem' }} />
             )}
          </DataTable>
