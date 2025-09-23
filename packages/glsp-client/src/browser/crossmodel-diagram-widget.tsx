@@ -25,6 +25,11 @@ export class CrossModelDiagramWidget extends GLSPDiagramWidget {
       super.onAfterAttach(msg);
    }
 
+   protected override focusDiagram(): void {
+      this.makeFocusable(this.node);
+      super.focusDiagram();
+   }
+
    protected onDrop(event: DragEvent): void {
       const selectedFilePaths = this.getSelectedFilePaths(event);
       if (selectedFilePaths.length > 0) {

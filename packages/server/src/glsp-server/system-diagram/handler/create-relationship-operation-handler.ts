@@ -2,10 +2,10 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { RELATIONSHIP_EDGE_TYPE, computeRelationshipName, toId, toIdReference } from '@crossmodel/protocol';
+import { ModelFileType, ModelStructure, RELATIONSHIP_EDGE_TYPE, computeRelationshipName, toId, toIdReference } from '@crossmodel/protocol';
 import { ActionDispatcher, Command, CreateEdgeOperation, JsonCreateEdgeOperationHandler, SelectAction } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { URI, Utils as UriUtils } from 'vscode-uri';
+import { Utils as UriUtils } from 'vscode-uri';
 import { CrossModelRoot, LogicalEntityNode, Relationship, RelationshipEdge } from '../../../language-server/generated/ast.js';
 import { Utils } from '../../../language-server/util/uri-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
@@ -63,6 +63,10 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
       sourceNode: LogicalEntityNode,
       targetNode: LogicalEntityNode
    ): Promise<Relationship | undefined> {
+      const dataModel = this.modelState.dataModel();
+      if (!dataModel) {
+         return undefined;
+      }
       const source = sourceNode.entity?.ref?.id || sourceNode.entity?.$refText;
       const target = targetNode.entity?.ref?.id || targetNode.entity?.$refText;
 
@@ -83,8 +87,8 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
 
       // search for unique file name for the relationship and use file base name as relationship name
       // if the user doesn't rename any files we should end up with unique names ;-)
-      const dirName = UriUtils.joinPath(UriUtils.dirname(URI.parse(this.modelState.semanticUri)), '..', 'relationships');
-      const targetUri = UriUtils.joinPath(dirName, relationship.id + '.relationship.cm');
+      const dirName = UriUtils.joinPath(dataModel.directory, ModelStructure.Relationship.FOLDER);
+      const targetUri = UriUtils.joinPath(dirName, relationship.id + ModelFileType.getFileExtension(ModelFileType.Relationship));
       const uri = Utils.findNewUri(targetUri);
 
       relationshipRoot.relationship = relationship;

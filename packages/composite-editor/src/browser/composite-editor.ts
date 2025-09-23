@@ -27,6 +27,7 @@ import {
    WidgetManager
 } from '@theia/core/lib/browser';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewWidget } from '@theia/editor-preview/lib/browser/editor-preview-widget';
 import { EditorPreviewWidgetFactory } from '@theia/editor-preview/lib/browser/editor-preview-widget-factory';
@@ -73,7 +74,8 @@ export class ReverseCompositeSaveable extends CompositeSaveable implements Requi
       }
    }
 
-   serialize(): Promise<BinaryBuffer> {
+   async serialize(): Promise<BinaryBuffer> {
+      await this.editor.idle();
       for (const saveable of this.saveables) {
          if (typeof saveable.createSnapshot === 'function') {
             const snapshot = saveable.createSnapshot();
@@ -132,6 +134,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    protected tabPanel: TabPanel;
    saveable: CompositeSaveable;
+   protected initialized = new Deferred<void>();
 
    protected _resourceUri?: URI;
    protected get resourceUri(): URI {
@@ -185,6 +188,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       this.addWidget(codeWidget);
 
       this.update();
+      this.initialized.resolve();
    }
 
    protected addWidget(widget: Widget): void {
@@ -193,6 +197,10 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       if (saveable) {
          this.saveable.add(saveable);
       }
+   }
+
+   async idle(): Promise<void> {
+      await Promise.all(this.getCrossModelWidgets().map(widget => widget.idle()));
    }
 
    getResourceUri(): URI {
@@ -204,6 +212,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       if (this.resourceUri.scheme === 'file') {
          return;
       }
+      await this.idle();
       const uri = this.resourceUri.toString();
       const document = await this.modelService.open({ uri, clientId: 'save' });
       try {
@@ -232,7 +241,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    protected override onActivateRequest(msg: Message): void {
       super.onActivateRequest(msg);
-      this.tabPanel.currentWidget?.activate();
+      this.initialized.promise.then(() => this.activeWidget()?.activate());
    }
 
    protected handleCurrentWidgetChanged(event: TabPanel.ICurrentChangedArgs): void {
@@ -308,6 +317,10 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    getCodeWidget(): EditorWidget | undefined {
       return this.tabPanel.widgets.find<EditorWidget>(toTypeGuard(EditorWidget));
+   }
+
+   getCrossModelWidgets(): CrossModelWidget[] {
+      return this.tabPanel.widgets.filter(toTypeGuard(CrossModelWidget));
    }
 
    createMoveToUri(resourceUri: URI): URI | undefined {
