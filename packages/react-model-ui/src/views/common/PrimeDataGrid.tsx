@@ -390,6 +390,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
          className={validationErrors[options.field] ? 'p-invalid' : ''}
          onKeyDown={handleGridEditorKeyDown}
+         disabled={readonly}
          autoFocus
       />
    );

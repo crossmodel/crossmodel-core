@@ -26,16 +26,6 @@ export function AttributeProperty({ field, row, diagnostics, value }: AttributeP
    const relevantDiagnostics = diagnostics[diagnosticKey];
    const errorMessage = relevantDiagnostics?.[0]?.message;
 
-   React.useEffect(() => {
-      console.log('AttributeProperty rendering:', {
-         field,
-         row,
-         diagnosticKey,
-         relevantDiagnostics,
-         diagnostics
-      });
-   }, [field, row, diagnosticKey, relevantDiagnostics, diagnostics]);
-
    return (
       <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage || undefined}>
          {value}
