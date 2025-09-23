@@ -337,6 +337,9 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                if (rowData.left.$type === StringLiteralType) {
                   return quote(rowData.left.value);
                }
+               if (rowData.left.$type === NumberLiteralType) {
+                  return rowData.left.value.toString();
+               }
                return rowData.left.value;
             },
             editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />,
@@ -357,6 +360,9 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             body: rowData => {
                if (rowData.right.$type === StringLiteralType) {
                   return quote(rowData.right.value);
+               }
+               if (rowData.right.$type === NumberLiteralType) {
+                  return rowData.right.value.toString();
                }
                return rowData.right.value;
             },
@@ -389,7 +395,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                   | typeof SourceObjectAttributeReferenceType
                   | typeof StringLiteralType
                   | typeof NumberLiteralType,
-               value: typeof condition.expression.left.value === 'string' ? condition.expression.left.value : ''
+               value: condition.expression.left.value?.toString() || ''
             },
             operator: condition.expression.op,
             right: {
@@ -397,7 +403,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                   | typeof SourceObjectAttributeReferenceType
                   | typeof StringLiteralType
                   | typeof NumberLiteralType,
-               value: typeof condition.expression.right.value === 'string' ? condition.expression.right.value : ''
+               value: condition.expression.right.value?.toString() || ''
             },
             idx,
             id: idx.toString()
