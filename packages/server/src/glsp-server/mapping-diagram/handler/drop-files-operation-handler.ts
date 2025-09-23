@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { DropEntityOperation } from '@crossmodel/protocol';
+import { DropFilesOperation } from '@crossmodel/protocol';
 import { Command, JsonOperationHandler } from '@eclipse-glsp/server';
 import { injectable } from 'inversify';
 import { URI } from 'vscode-uri';
@@ -15,18 +15,18 @@ import { MappingModelState } from '../model/mapping-model-state.js';
  * creates a new source object in the mapping for each of the found entities.
  */
 @injectable()
-export class MappingDiagramDropEntityOperationHandler extends JsonOperationHandler {
-   override operationType = DropEntityOperation.KIND;
+export class MappingDiagramDropFilesOperationHandler extends JsonOperationHandler {
+   override operationType = DropFilesOperation.KIND;
 
    declare protected modelState: MappingModelState;
 
-   createCommand(operation: DropEntityOperation): Command {
+   createCommand(operation: DropFilesOperation): Command {
       return new CrossModelCommand(this.modelState, () => this.createSourceObject(operation));
    }
 
-   protected async createSourceObject(operation: DropEntityOperation): Promise<void> {
+   protected async createSourceObject(operation: DropFilesOperation): Promise<void> {
       const container = this.modelState.mapping;
-      for (const filePath of operation.filePaths) {
+      for (const filePath of operation.files) {
          const document = await this.modelState.modelService.request(URI.file(filePath).toString());
          if (document?.root?.entity) {
             const sourceObject = createSourceObject(document.root.entity, container, this.modelState.idProvider);

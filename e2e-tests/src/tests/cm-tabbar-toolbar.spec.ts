@@ -47,7 +47,11 @@ test.describe('CrossModel TabBar Toolbar', () => {
 
          explorer = await app.openView(CMExplorerView);
          const file = await explorer.fileStatNode(
-            'ExampleCRM' + OSUtil.fileSeparator + 'diagram-created-from-tabbar-toolbar.system-diagram.cm'
+            'ExampleCRM' +
+               OSUtil.fileSeparator +
+               'diagrams' +
+               OSUtil.fileSeparator +
+               'diagram-created-from-tabbar-toolbar.system-diagram.cm'
          );
          expect(file).toBeDefined();
          expect(await file!.label()).toBe('diagram-created-from-tabbar-toolbar.system-diagram.cm');

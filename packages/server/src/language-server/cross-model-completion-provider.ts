@@ -9,14 +9,14 @@ import { CompletionItemKind, InsertTextFormat, TextEdit } from 'vscode-languages
 import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
-import { AttributeMapping, isAttributeMapping, RelationshipAttribute } from './generated/ast.js';
+import { AttributeMapping, RelationshipAttribute, isAttributeMapping } from './generated/ast.js';
 import { fixDocument } from './util/ast-util.js';
 
 /**
  * Custom completion provider that only shows the short options to the user if a longer, fully-qualified version is also available.
  */
 export class CrossModelCompletionProvider extends DefaultCompletionProvider {
-   protected packageId?: string;
+   protected dataModelId?: string;
 
    override readonly completionOptions = {
       triggerCharacters: ['\n', ' ', '{']
@@ -206,11 +206,11 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
       crossRef: NextFeature<GrammarAST.CrossReference>,
       acceptor: CompletionAcceptor
    ): MaybePromise<void> {
-      this.packageId = this.dataModelManager.getDataModelIdByDocument(context.document);
+      this.dataModelId = this.dataModelManager.getDataModelIdByDocument(context.document);
       try {
          super.completionForCrossReference(context, crossRef, acceptor);
       } finally {
-         this.packageId = undefined;
+         this.dataModelId = undefined;
       }
    }
 

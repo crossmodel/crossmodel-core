@@ -28,14 +28,14 @@ import { MappingDiagramCommandPaletteActionProvider } from './command-palette/ad
 import { MappingDiagramAddSourceObjectOperationHandler } from './handler/add-source-object-operation-handler.js';
 import { MappingEdgeCreationOperationHandler } from './handler/create-edge-operation-handler.js';
 import { MappingDiagramDeleteElementOperationHandler } from './handler/delete-element-operation-handler.js';
-import { MappingDiagramDropEntityOperationHandler } from './handler/drop-entity-operation-handler.js';
+import { MappingDiagramDropFilesOperationHandler } from './handler/drop-files-operation-handler.js';
+import { MappingComputedBoundsActionHandler } from './handler/mapping-computed-bounds-action-handler.js';
 import { MappingDiagramLayoutEngine } from './layout-engine.js';
 import { MappingDiagramConfiguration } from './mapping-diagram-configuration.js';
 import { MappingDiagramGModelFactory } from './model/mapping-diagram-gmodel-factory.js';
 import { MappingModelIndex } from './model/mapping-model-index.js';
 import { MappingModelState } from './model/mapping-model-state.js';
 import { MappingToolPaletteProvider } from './tool-palette/mapping-tool-palette-provider.js';
-import { MappingComputedBoundsActionHandler } from './handler/mapping-computed-bounds-action-handler.js';
 
 /**
  * Provides configuration about our mapping diagrams.
@@ -63,7 +63,7 @@ export class MappingDiagramModule extends DiagramModule {
 
    protected override configureOperationHandlers(binding: InstanceMultiBinding<OperationHandlerConstructor>): void {
       super.configureOperationHandlers(binding);
-      binding.add(MappingDiagramDropEntityOperationHandler);
+      binding.add(MappingDiagramDropFilesOperationHandler);
       binding.add(MappingDiagramAddSourceObjectOperationHandler);
       binding.add(MappingDiagramDeleteElementOperationHandler);
       binding.add(MappingEdgeCreationOperationHandler);

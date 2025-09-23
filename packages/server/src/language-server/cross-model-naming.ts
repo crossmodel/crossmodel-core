@@ -2,10 +2,10 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { findNextUnique, identity } from '@crossmodel/protocol';
-import { AstNode, AstUtils, CstNode, GrammarUtils, isAstNode, NameProvider } from 'langium';
+import { findNextUnique, identity, toIdReference } from '@crossmodel/protocol';
+import { AstNode, AstUtils, CstNode, GrammarUtils, NameProvider, isAstNode } from 'langium';
 import { URI } from 'vscode-uri';
-import { UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
+import { UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
 import { isDataModel } from './generated/ast.js';
 import { findDocument, getOwner } from './util/ast-util.js';
@@ -33,6 +33,7 @@ export interface IdProvider extends NameProvider {
    getNodeId(node?: AstNode): string | undefined;
    getLocalId(node?: AstNode): string | undefined;
    getGlobalId(node?: AstNode): string | undefined;
+   getReferenceId(target?: AstNode, source?: AstNode): string | undefined;
 
    findNextId(type: string, proposal: string | undefined, container?: AstNode): string;
    findNextLocalId(type: string, proposal: string | undefined, container: AstNode): string;
@@ -51,7 +52,7 @@ export function combineIds(...ids: string[]): string {
  * - The Local ID is the Node ID itself plus the Node ID of all it's parents within the same document.
  * - The External ID is the Local ID prefixed with the datamodel reference.
  */
-export class DefaultIdProvider implements NameProvider, IdProvider {
+export class DefaultIdProvider implements IdProvider {
    constructor(
       protected services: CrossModelServices,
       protected dataModelManager = services.shared.workspace.DataModelManager
@@ -102,7 +103,7 @@ export class DefaultIdProvider implements NameProvider, IdProvider {
     * @param dataModelReference datamodel reference
     * @returns fully qualified, datamodel-local name
     */
-   getGlobalId(node?: AstNode, dataModelReference = this.getDataModelId(node)): string | undefined {
+   getGlobalId(node?: AstNode, dataModelReference = this.getDataModelReferenceName(node)): string | undefined {
       const localId = this.getLocalId(node);
       if (!localId) {
          return undefined;
@@ -114,8 +115,25 @@ export class DefaultIdProvider implements NameProvider, IdProvider {
       return combineIds(dataModelReference, localId);
    }
 
-   getDataModelId(node?: AstNode): string {
+   getReferenceId(target?: AstNode, source?: AstNode): string | undefined {
+      if (!target) {
+         return undefined;
+      }
+      const sourceDataModel = this.getDataModelReferenceId(source);
+      const targetDataModel = this.getDataModelReferenceId(target);
+      if (!this.dataModelManager.isVisible(sourceDataModel, targetDataModel, true)) {
+         return undefined;
+      }
+      const id = sourceDataModel === targetDataModel ? this.getLocalId(target) : this.getGlobalId(target);
+      return id ? toIdReference(id) : undefined;
+   }
+
+   getDataModelReferenceName(node?: AstNode): string {
       return this.dataModelManager.getDataModelInfoByDocument(findDocument(node))?.referenceName ?? UNKNOWN_DATAMODEL_REFERENCE;
+   }
+
+   getDataModelReferenceId(node?: AstNode): string {
+      return this.dataModelManager.getDataModelInfoByDocument(findDocument(node))?.id ?? UNKNOWN_DATAMODEL_ID;
    }
 
    getName(node?: AstNode): string | undefined {

@@ -31,9 +31,9 @@ import { LabelProvider, Message, OpenerService, ReactWidget, Saveable, open } fr
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import debounce from '@theia/core/shared/lodash.debounce';
 import * as React from '@theia/core/shared/react';
-import * as deepEqual from 'fast-deep-equal';
-import * as debounce from 'p-debounce';
+import deepEqual from 'fast-deep-equal';
 
 export const CrossModelWidgetOptions = Symbol('FormEditorWidgetOptions');
 export interface CrossModelWidgetOptions {
@@ -116,7 +116,13 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
       this.update();
    }
 
+   async idle(): Promise<void> {
+      // flush and await any pending updates
+      await this.handleUpdateRequest.flush();
+   }
+
    async save(): Promise<void> {
+      await this.idle();
       return this.saveModel();
    }
 
@@ -177,9 +183,7 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
       };
    }
 
-   protected handleUpdateRequest = debounce(async (root: CrossModelRoot): Promise<void> => {
-      await this.sendUpdate(root);
-   }, 200);
+   protected handleUpdateRequest = debounce(async (root: CrossModelRoot): Promise<void> => this.sendUpdate(root), 200);
 
    protected handleSaveRequest?: SaveCallback = () => this.save();
 

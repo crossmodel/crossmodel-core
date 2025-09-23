@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
-import { ENTITY_NODE_TYPE, findNextUnique, toIdReference } from '@crossmodel/protocol';
+import { ENTITY_NODE_TYPE, ModelFileType, ModelStructure, findNextUnique, toIdReference } from '@crossmodel/protocol';
 import {
    Action,
    ActionDispatcher,
@@ -12,7 +12,7 @@ import {
    Point
 } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { URI, Utils as UriUtils } from 'vscode-uri';
+import { Utils as UriUtils } from 'vscode-uri';
 import { CrossModelRoot, LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
 import { Utils } from '../../../language-server/util/uri-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
@@ -61,6 +61,11 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
     * Creates a new entity and stores it on a file on the file system.
     */
    protected async createAndSaveEntity(operation: CreateNodeOperation): Promise<LogicalEntity | undefined> {
+      const dataModel = this.modelState.dataModel();
+      if (!dataModel) {
+         return undefined;
+      }
+
       // create entity, serialize and re-read to ensure everything is up to date and linked properly
       const entityRoot: CrossModelRoot = { $type: 'CrossModelRoot' };
       const name = operation.args?.name?.toString() ?? 'NewEntity';
@@ -80,8 +85,8 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
          customProperties: []
       };
 
-      const dirName = UriUtils.joinPath(UriUtils.dirname(URI.parse(this.modelState.semanticUri)), '..', 'entities');
-      const targetUri = UriUtils.joinPath(dirName, entity.id + '.entity.cm');
+      const dirName = UriUtils.joinPath(dataModel.directory, ModelStructure.LogicalEntity.FOLDER);
+      const targetUri = UriUtils.joinPath(dirName, entity.id + ModelFileType.getFileExtension(ModelFileType.LogicalEntity));
       const uri = Utils.findNewUri(targetUri);
 
       entityRoot.entity = entity;

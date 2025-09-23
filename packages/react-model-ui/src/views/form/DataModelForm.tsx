@@ -153,7 +153,7 @@ export function DataModelForm(): React.ReactElement {
    }
 
    return (
-      <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.System.ICON_CLASS}>
+      <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.DataModel.ICON_CLASS}>
          <FormSection label='General'>
             <div className='p-field p-fluid'>
                <div>

@@ -6,6 +6,7 @@ import { inject, injectable } from 'inversify';
 import { DocumentState } from 'langium';
 import { URI } from 'vscode-uri';
 import { CrossModelLSPServices } from '../../integration.js';
+import { DataModelInfo } from '../../language-server/cross-model-datamodel-manager.js';
 import { IdProvider } from '../../language-server/cross-model-naming.js';
 import { CrossModelRoot } from '../../language-server/generated/ast.js';
 import { ModelService } from '../../model-server/model-service.js';
@@ -27,12 +28,10 @@ export class CrossModelState extends DefaultModelState implements JsonModelState
 
    protected _semanticUri!: string;
    protected _semanticRoot!: CrossModelRoot;
-   protected _packageId!: string;
 
    setSemanticRoot(uri: string, semanticRoot: CrossModelRoot): void {
       this._semanticUri = uri;
       this._semanticRoot = semanticRoot;
-      this._packageId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(URI.parse(uri));
       this.index.indexSemanticRoot(this.semanticRoot);
    }
 
@@ -42,10 +41,6 @@ export class CrossModelState extends DefaultModelState implements JsonModelState
 
    get semanticRoot(): CrossModelRoot {
       return this._semanticRoot;
-   }
-
-   get packageId(): string {
-      return this._packageId;
    }
 
    get modelService(): ModelService {
@@ -62,6 +57,10 @@ export class CrossModelState extends DefaultModelState implements JsonModelState
 
    get sourceModel(): CrossModelSourceModel {
       return { text: this.semanticText() };
+   }
+
+   dataModel(): DataModelInfo | undefined {
+      return this.services.shared.workspace.DataModelManager.getDataModelInfoByURI(URI.parse(this.semanticUri));
    }
 
    async updateSourceModel(sourceModel: CrossModelSourceModel): Promise<void> {

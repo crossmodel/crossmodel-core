@@ -24,8 +24,8 @@ test.describe.serial('Add existing entity to a diagram', () => {
       const diagram = diagramEditor.diagram;
       await diagram.graph.waitForCreationOfType(LogicalEntity, async () => {
          const position = (await diagram.graph.bounds()).position('middle_center');
-         await diagramEditor.invokeShowLogicalEntityToolAtPosition(position);
-         await diagram.globalCommandPalette.search(CUSTOMER_ENTITY_ID, { confirm: true });
+         const commandPalette = await diagramEditor.invokeShowLogicalEntityToolAtPosition(position);
+         await commandPalette.search(CUSTOMER_ENTITY_ID, { confirm: true });
       });
 
       // Verify that the entity node was created as expected

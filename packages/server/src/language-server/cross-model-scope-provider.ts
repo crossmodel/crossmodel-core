@@ -5,10 +5,10 @@ import {
    CrossReference,
    CrossReferenceContainer,
    CrossReferenceContext,
+   ReferenceableElement,
    isGlobalElementReference,
    isRootElementReference,
-   isSyntheticDocument,
-   ReferenceableElement
+   isSyntheticDocument
 } from '@crossmodel/protocol';
 import {
    AstNode,
@@ -20,10 +20,10 @@ import {
    MapScope,
    ReferenceInfo,
    Scope,
-   stream,
    Stream,
    StreamScope,
-   URI
+   URI,
+   stream
 } from 'langium';
 import { CrossModelServices } from './cross-model-module.js';
 import { QUALIFIED_ID_SEPARATOR } from './cross-model-naming.js';
@@ -43,7 +43,7 @@ import { findDocument, fixDocument } from './util/ast-util.js';
  * A custom scope provider that considers the dependencies between packages to indicate which elements form the global scope
  * are actually available from a certain document.
  */
-export class PackageScopeProvider extends DefaultScopeProvider {
+export class DataModelScopeProvider extends DefaultScopeProvider {
    constructor(
       protected services: CrossModelServices,
       protected dataModelManager = services.shared.workspace.DataModelManager,
@@ -122,7 +122,12 @@ export class GlobalScope extends MapScope {
    }
 }
 
-export class CrossModelScopeProvider extends PackageScopeProvider {
+export interface DataModelScopedReferenceInfo extends ReferenceInfo {
+   document: LangiumDocument<AstNode>;
+   dataModelId: string;
+}
+
+export class CrossModelScopeProvider extends DataModelScopeProvider {
    protected resolveCrossReferenceContainer(container: CrossReferenceContainer): AstNode | undefined {
       if (isSyntheticDocument(container)) {
          const document = this.services.shared.workspace.LangiumDocuments.createEmptyDocument(URI.parse(container.uri));
@@ -158,6 +163,12 @@ export class CrossModelScopeProvider extends PackageScopeProvider {
       return referenceInfo;
    }
 
+   scopedReferenceInfo(referenceInfo: ReferenceInfo): DataModelScopedReferenceInfo {
+      const document = AstUtils.getDocument(referenceInfo.container);
+      const dataModelId = this.dataModelManager.getDataModelIdByDocument(document);
+      return { ...referenceInfo, document, dataModelId };
+   }
+
    resolveCrossReference(reference: CrossReference): AstNode | undefined {
       const description = this.getScope(this.referenceContextToInfo(reference))
          .getAllElements()
@@ -180,13 +191,12 @@ export class CrossModelScopeProvider extends PackageScopeProvider {
       return context;
    }
 
-   getCompletionScope(ctx: CrossReferenceContext | ReferenceInfo): CompletionScope {
-      const referenceInfo = 'reference' in ctx ? ctx : this.referenceContextToInfo(ctx);
-      const document = AstUtils.getDocument(referenceInfo.container);
-      const dataModelId = this.dataModelManager.getDataModelIdByDocument(document);
+   getCompletionScope(ctx: CrossReferenceContext | ReferenceInfo, options?: CompletionScopeOptions): CompletionScope {
+      const fullOptions = { filterGlobalForLocal: true, ...options };
+      const referenceInfo = 'reference' in ctx ? this.scopedReferenceInfo(ctx) : this.scopedReferenceInfo(this.referenceContextToInfo(ctx));
       const filteredDescriptions = this.getScope(referenceInfo)
          .getAllElements()
-         .filter(description => this.filterCompletion(description, document, dataModelId, referenceInfo.container, referenceInfo.property))
+         .filter(description => this.filterCompletion(description, referenceInfo, fullOptions))
          .distinct(description => description.name)
          .toArray()
          .sort((left, right) => this.sortText(left).localeCompare(this.sortText(right)));
@@ -210,60 +220,58 @@ export class CrossModelScopeProvider extends PackageScopeProvider {
          .toArray();
    }
 
-   filterCompletion(
-      description: AstNodeDescription,
-      document: LangiumDocument<AstNode>,
-      dataModelId: string,
-      container?: AstNode,
-      property?: string
-   ): boolean {
-      if (isRelationshipAttribute(container)) {
+   filterCompletion(description: AstNodeDescription, reference: DataModelScopedReferenceInfo, options: CompletionScopeOptions): boolean {
+      if (isRelationshipAttribute(reference.container)) {
          // only show relevant attributes depending on the parent or child context
-         if (property === 'child') {
-            return description.name.startsWith(container.$container.child?.$refText + '.');
+         if (reference.property === 'child') {
+            return description.name.startsWith(reference.container.$container.child?.$refText + '.');
          }
-         if (property === 'parent') {
-            return description.name.startsWith(container.$container.parent?.$refText + '.');
+         if (reference.property === 'parent') {
+            return description.name.startsWith(reference.container.$container.parent?.$refText + '.');
          }
       }
       if (
-         isSourceObject(container) &&
-         property === 'entity' &&
-         container.$container.target.entity &&
-         container.$container.target.entity.ref
+         isSourceObject(reference.container) &&
+         reference.property === 'entity' &&
+         reference.container.$container.target.entity &&
+         reference.container.$container.target.entity.ref
       ) {
-         const targetEntity = container.$container.target.entity.ref;
+         const targetEntity = reference.container.$container.target.entity.ref;
          if (description instanceof GlobalAstNodeDescription) {
             return description.name !== this.idProvider.getGlobalId(targetEntity);
          }
          return description.name !== this.idProvider.getLocalId(targetEntity);
       }
-      if (isSourceObjectDependency(container) || (isSourceObject(container) && property === 'dependencies')) {
-         const sourceObject = isSourceObjectDependency(container) ? container.$container : container;
+      if (isSourceObjectDependency(reference.container) || (isSourceObject(reference.container) && reference.property === 'dependencies')) {
+         const sourceObject = isSourceObjectDependency(reference.container) ? reference.container.$container : reference.container;
          return (
             !(description instanceof GlobalAstNodeDescription) &&
             !(description instanceof DataModelScopedAstNodeDescription) &&
             !(description.name === sourceObject.id) &&
-            description.documentUri.toString() === document.uri.toString()
+            description.documentUri.toString() === reference.document.uri.toString()
          );
       }
-      if (isSourceObjectAttributeReference(container)) {
+      if (isSourceObjectAttributeReference(reference.container)) {
          // we are in a join condition of a source object, only show our own and our dependent source object references
-         const sourceObject = container.$container.$container.$container;
+         const sourceObject = reference.container.$container.$container.$container;
          const dependencies = sourceObject.dependencies ?? [];
          const allowedOwners = [sourceObject.id, ...dependencies.map(dependency => dependency.source.$refText)];
          return !!allowedOwners.find(allowedOwner => description.name.startsWith(allowedOwner + '.'));
       }
-      if (isDataModelDependency(container)) {
+      if (isDataModelDependency(reference.container)) {
          // filter ourselves out as we do not want to depend on ourselves
-         const ourselves = container.$container;
-         return !isGlobalDescriptionForDataModel(description, dataModelId) && ourselves.id !== description.name;
+         const ourselves = reference.container.$container;
+         return !isGlobalDescriptionForDataModel(description, reference.dataModelId) && ourselves.id !== description.name;
       }
-      return !isGlobalDescriptionForDataModel(description, dataModelId);
+      return !options.filterGlobalForLocal || !isGlobalDescriptionForDataModel(description, reference.dataModelId);
    }
 }
 
+export interface CompletionScopeOptions {
+   filterGlobalForLocal: boolean;
+}
+
 export interface CompletionScope {
-   source: ReferenceInfo;
+   source: DataModelScopedReferenceInfo;
    elementScope: Scope;
 }
