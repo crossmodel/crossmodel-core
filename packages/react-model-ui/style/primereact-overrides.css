@@ -401,6 +401,50 @@ span.w-full.p-autocomplete {
    cursor: pointer;
 }
 
+/* Dark theme overlay panels (dropdowns, filters, etc.) */
+.dark-theme .p-column-filter-overlay,
+.dark-theme .p-dropdown-panel,
+.dark-theme .p-multiselect-panel,
+.dark-theme .p-autocomplete-panel,
+.dark-theme .p-dialog,
+.dark-theme .p-overlaypanel,
+.dark-theme .p-menu {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 1px solid var(--surface-border);
+   border-radius: 6px;
+   box-shadow:
+      0 2px 4px -1px rgba(0, 0, 0, 0.2),
+      0 4px 5px 0 rgba(0, 0, 0, 0.14),
+      0 1px 10px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Dark theme overlay items (list items in dropdowns, etc.) */
+.dark-theme .p-dropdown-item,
+.dark-theme .p-multiselect-item,
+.dark-theme .p-autocomplete-item,
+.dark-theme .p-column-filter-row,
+.dark-theme .p-menuitem {
+   color: var(--text-color);
+}
+
+/* Dark theme hover states for overlay items */
+.dark-theme .p-dropdown-item:hover:not(.p-disabled),
+.dark-theme .p-multiselect-item:hover:not(.p-disabled),
+.dark-theme .p-autocomplete-item:hover:not(.p-disabled),
+.dark-theme .p-column-filter-row:hover,
+.dark-theme .p-menuitem:hover:not(.p-disabled) {
+   background: var(--surface-hover);
+}
+
+/* Dark theme selected states */
+.dark-theme .p-dropdown-item.p-highlight,
+.dark-theme .p-multiselect-item.p-highlight,
+.dark-theme .p-autocomplete-item.p-highlight {
+   background: var(--primary-color);
+   color: var(--primary-color-text);
+}
+
 /* MultiSelect styles */
 .p-multiselect {
    background: var(--surface-card);
@@ -443,8 +487,11 @@ span.w-full.p-autocomplete {
 
 .p-multiselect-panel .p-multiselect-header {
    padding: 0.3rem 0.5rem;
+   background: var(--surface-card);
 }
-
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):not(.p-disabled).p-focus {
+   background: var(--surface-hover);
+}
 .p-multiselect-label-container {
    padding-right: 1rem;
 }
@@ -455,6 +502,9 @@ span.w-full.p-autocomplete {
 .p-multiselect-panel .p-multiselect-header .p-multiselect-close {
    width: 1rem;
    height: 1rem;
+}
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus {
+   background: var(--surface-hover);
 }
 
 /* Form Header styles */
