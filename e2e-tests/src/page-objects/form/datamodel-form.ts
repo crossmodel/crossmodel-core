@@ -3,15 +3,13 @@
  ********************************************************************************/
 
 import { TheiaView } from '@theia/playwright';
-import { CMForm, FormIcons, FormSection } from './cm-form';
+import { CMForm, FormSection, FormType } from './cm-form';
 
 export class DataModelForm extends CMForm {
-   protected override iconClass = FormIcons.Relationship;
-
    readonly generalSection: DataModelGeneralSection;
 
-   constructor(view: TheiaView, relativeSelector: string) {
-      super(view, relativeSelector, 'DataModel');
+   constructor(view: TheiaView, baseSelector: string, formType: FormType) {
+      super(view, baseSelector, formType);
       this.generalSection = new DataModelGeneralSection(this);
    }
 }
@@ -44,8 +42,13 @@ export class DataModelGeneralSection extends FormSection {
    }
 
    async setType(type: string): Promise<void> {
-      const input = await this.locator.getByLabel('Type');
-      await input.fill(type);
+      const dropdown = this.locator.locator('.p-autocomplete');
+      await dropdown.locator('.p-autocomplete-dropdown').click();
+
+      const dropdownPanel = this.page.locator('.p-autocomplete-panel').first();
+      await dropdownPanel.waitFor({ state: 'visible' });
+
+      await dropdownPanel.getByRole('option', { name: type }).click();
       return this.page.waitForTimeout(250);
    }
 

@@ -76,6 +76,26 @@ Any code changes will be automatically detected and the application will be re-c
 If you only made changes to the frontend or plugins, simply reloading the running application with `F5` is enough.
 If you also made changes to the backend, you can close and restart the application without manual re-compilation.
 
+### Styling
+
+Eclipse Theia allows themes to be used using any [VS Code Theme](https://code.visualstudio.com/docs/configure/themes). There is a [fixed set of theme colors](https://code.visualstudio.com/api/references/theme-color) that can be defined for different components within VS Code. For example, within the [Base colors](https://code.visualstudio.com/api/references/theme-color#base-colors) section there is a `foreground` color defined as the overall foreground color. Another example is the `button.hoverBackground` variable within the [Button control](https://code.visualstudio.com/api/references/theme-color#button-control) section which defines the background color of a button when hovering.
+
+These theme colors are available from within any CSS file within CrossModel as a variable by prefixing the color variable with `--theia-` and replacing any `.` with a `-`. Also if a variable consists of multiple words (like hoverBackground), the words are also separated with a `-` and written in lowercase (so hover-background). See the example below how to use the two mentioned example base colors:
+
+```css
+body {
+   color: var(--theia-foreground);
+}
+
+button:hover {
+   color: var(--theia-button-hover-background);
+}
+```
+
+For CrossModel a [theme](./extensions/crossmodel-theme/) extension has been created consisting of a [light](./extensions/crossmodel-theme/themes/crossmodel-light-color-theme.json) and [dark](./extensions/crossmodel-theme/themes/crossmodel-dark-color-theme.json) theme. Consult/adjust these files for the colors, fonts, etc. to be used within CrossModel.
+
+There are also some other CSS variables available within Theia, for example for font settings. See the Theia's browser [index.css](https://github.com/eclipse-theia/theia/blob/master/packages/core/src/browser/style/index.css) file for more detail.
+
 ## Packaging
 
 We package CrossModel as a desktop application (Electron).

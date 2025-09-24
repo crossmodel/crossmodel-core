@@ -3,15 +3,13 @@
  ********************************************************************************/
 
 import { TheiaView } from '@theia/playwright';
-import { CMForm, FormIcons, FormSection } from './cm-form';
+import { CMForm, FormSection, FormType } from './cm-form';
 
 export class RelationshipForm extends CMForm {
-   protected override iconClass = FormIcons.Relationship;
-
    readonly generalSection: RelationshipGeneralSection;
 
-   constructor(view: TheiaView, relativeSelector: string) {
-      super(view, relativeSelector, 'Relationship');
+   constructor(view: TheiaView, baseSelector: string, formType: FormType) {
+      super(view, baseSelector, formType);
       this.generalSection = new RelationshipGeneralSection(this);
    }
 }

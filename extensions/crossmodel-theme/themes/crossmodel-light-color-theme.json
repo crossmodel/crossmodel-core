@@ -46,7 +46,7 @@
     "editor.foreground": "#333333",
     "editor.lineHighlightBackground": "#F7F7F7",
     "editor.selectionBackground": "#FFE7B8",
-    "editor.selectionHighlightBackground": "#FFF2D8",
+    "editor.selectionHighlightBackground": "#FFF2D899",
     "editorCursor.foreground": "#C69A2C",
     "editorBracketMatch.background": "#E6E6E6",
     "editorBracketMatch.border": "#C69A2C",
@@ -131,7 +131,39 @@
     "terminal.ansiBrightBlue": "#7CAED4",
     "terminal.ansiBrightMagenta": "#C1A3D9",
     "terminal.ansiBrightCyan": "#80CBC4",
-    "terminal.ansiBrightWhite": "#FFFFFF"
+    "terminal.ansiBrightWhite": "#FFFFFF",
+
+    // Added tokens to support PrimeReact semantic mapping
+    // Focus & outline
+    "focusBorder": "#C69A2C",
+    "selection.background": "#FFE7B8",
+
+    // Secondary / subtle buttons (use panel border / muted fg)
+    "button.secondaryBackground": "#FFFFFF",
+    "button.secondaryForeground": "#333333",
+    "button.secondaryHoverBackground": "#F7F7F7",
+    "button.border": "#C69A2C33",
+
+    // Badges / Tags (align to primary + variants)
+    "badge.background": "#C69A2C",
+    "badge.foreground": "#FFFFFF",
+    // (No standard badge.border token in VS Code; using badge.background only)
+
+    // Severity (map to existing palette or create subtle tints)
+    "charts.red": "#D13913",
+    "charts.yellow": "#FFC940",
+    "charts.green": "#007B7B",
+    "charts.blue": "#356E91",
+
+    // Notifications icons (info/warning/error) for message components
+    "notificationsErrorIcon.foreground": "#D13913",
+    "notificationsWarningIcon.foreground": "#FFC940",
+    "notificationsInfoIcon.foreground": "#356E91",
+    // Removed unsupported notificationsBackground/notificationsBorder (VS Code uses notifications.background / .border which already exist above)
+
+    // Input validation colors (VS Code standard already has error/warning; add info/hint)
+    "editorInfo.foreground": "#356E91",
+    "editorHint.foreground": "#007B7B"
   },
   "tokenColors": [
     {

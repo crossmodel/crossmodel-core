@@ -3,33 +3,33 @@
  ********************************************************************************/
 
 import {
-    CloseModel,
-    CloseModelArgs,
-    CrossModelDocument,
-    CrossModelRoot,
-    CrossReference,
-    CrossReferenceContext,
-    DataModelInfo,
-    DataModelInfoArgs,
-    FindIdArgs,
-    FindNextId,
-    FindReferenceableElements,
-    ModelDiagnostic,
-    OnDataModelsUpdated,
-    OnModelSaved,
-    OnModelUpdated,
-    OpenModel,
-    OpenModelArgs,
-    ReferenceableElement,
-    RequestDataModelInfo,
-    RequestDataModelInfos,
-    RequestModel,
-    ResolveReference,
-    ResolvedElement,
-    SaveModel,
-    SaveModelArgs,
-    UpdateModel,
-    UpdateModelArgs
+   CloseModel,
+   CloseModelArgs,
+   CrossModelDocument,
+   CrossModelRoot,
+   CrossReference,
+   CrossReferenceContext,
+   DataModelInfo,
+   DataModelInfoArgs,
+   FindIdArgs,
+   FindNextId,
+   FindReferenceableElements,
+   ModelDiagnostic,
+   OnDataModelsUpdated,
+   OnModelSaved,
+   OnModelUpdated,
+   OpenModel,
+   OpenModelArgs,
+   ReferenceableElement,
+   RequestDataModelInfo,
+   RequestDataModelInfos,
+   RequestModel,
+   ResolveReference,
+   ResolvedElement,
+   SaveModel,
+   SaveModelArgs,
+   UpdateModel,
+   UpdateModelArgs
 } from '@crossmodel/protocol';
 import { AstNode, AstUtils, isReference } from 'langium';
 import { Disposable } from 'vscode-jsonrpc';
@@ -103,6 +103,13 @@ export class ModelServer implements Disposable {
       return this.requestModel(args.uri);
    }
 
+   protected sessionId(args: OpenModelArgs | CloseModelArgs): string {
+      // Create a unique session ID based on the given arguments
+      // This may not be unique if somehow the same client (aka widget on the client-side) opens the same document twice
+      // If we want to allow that, we need an additional unique identifier in the args that is managed by the client
+      return args.clientId + '_' + args.uri;
+   }
+
    protected setupListeners(args: OpenModelArgs): void {
       this.disposeListeners(args);
       const listenersForClient = [];
@@ -121,12 +128,12 @@ export class ModelServer implements Disposable {
             })
          )
       );
-      this.toDisposeForSession.set(args.clientId, listenersForClient);
+      this.toDisposeForSession.set(this.sessionId(args), listenersForClient);
    }
 
    protected disposeListeners(args: CloseModelArgs): void {
-      this.toDisposeForSession.get(args.clientId)?.forEach(disposable => disposable.dispose());
-      this.toDisposeForSession.delete(args.clientId);
+      this.toDisposeForSession.get(this.sessionId(args))?.forEach(disposable => disposable.dispose());
+      this.toDisposeForSession.delete(this.sessionId(args));
    }
 
    protected async closeModel(args: CloseModelArgs): Promise<void> {

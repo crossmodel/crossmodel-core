@@ -38,7 +38,7 @@ export abstract class CMPropertiesView<F extends CMForm> extends TheiaEditor {
 
 export class EntityPropertiesView extends CMPropertiesView<LogicalEntityForm> {
    async form(): Promise<LogicalEntityForm> {
-      const entityForm = new LogicalEntityForm(this, this.modelRootSelector);
+      const entityForm = new LogicalEntityForm(this, '#property-view', 'LogicalEntity');
       await entityForm.waitForVisible();
       return entityForm;
    }
@@ -46,7 +46,7 @@ export class EntityPropertiesView extends CMPropertiesView<LogicalEntityForm> {
 
 export class RelationshipPropertiesView extends CMPropertiesView<RelationshipForm> {
    async form(): Promise<RelationshipForm> {
-      const relationshipForm = new RelationshipForm(this, this.modelRootSelector);
+      const relationshipForm = new RelationshipForm(this, '#property-view', 'Relationship');
       await relationshipForm.waitForVisible();
       return relationshipForm;
    }

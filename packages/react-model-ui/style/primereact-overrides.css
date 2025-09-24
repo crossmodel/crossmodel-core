@@ -1,0 +1,553 @@
+/** Override primereact color variables to match Theia themes */
+:root {
+   --text-color: var(--theia-foreground);
+   --text-color-secondary: var(--theia-description-foreground);
+   --primary-color: var(--theia-editor-background);
+   --primary-color-text: var(--theia-foreground);
+   --font-family: var(--theia-ui-font-family);
+   --inline-spacing: var(--theia-ui-padding);
+   --border-radius: 2px;
+   --focus-ring: var(--theia-focus-border);
+   --mask-bg: var(--theia-notifications-background);
+   --highlight-bg: var(--theia-selection-background);
+   --highlight-text-color: var(--theia-foreground);
+}
+
+/* PrimeReact component styles */
+
+/* Theme-specific styles */
+.crossmodel-light .p-component {
+   --surface-ground: #ffffff;
+   --surface-section: #f8f9fa;
+   --surface-card: #ffffff;
+   --surface-border: #dfe7ef;
+   --text-color: #000000;
+   --primary-color: #007acc;
+   --primary-color-text: #ffffff;
+   --surface-hover: #f6f9fc;
+   --focus-ring: 0 0 0 0.2rem #007acc40;
+}
+
+.crossmodel-dark .p-component {
+   --surface-ground: #1e1e1e;
+   --surface-section: #252526;
+   --surface-card: #252526;
+   --surface-border: #404040;
+   --text-color: #d4d4d4;
+   --primary-color: #0e639c;
+   --primary-color-text: #ffffff;
+   --surface-hover: #2a2d2e;
+   --focus-ring: 0 0 0 0.2rem #0e639c40;
+}
+
+/* Global components */
+.p-component {
+   /* font-family: var(--theia-ui-font-family); */
+   font-size: var(--theia-ui-font-size1);
+   /* color: var(--text-color); */
+}
+
+/* Button styles */
+.p-button {
+   color: #ffffff;
+   background: var(--primary-color);
+   border: 1px solid var(--primary-color);
+   padding: 0.3rem;
+   font-size: var(--theia-ui-font-size1);
+   transition:
+      background-color 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+}
+
+.p-button:enabled:hover {
+   background: var(--primary-color);
+   opacity: 0.9;
+}
+.p-icon {
+   width: 0.6rem;
+   height: 0.6rem;
+}
+
+.pi {
+   font-size: var(--theia-ui-font-size1);
+}
+
+/* DataGrid styles */
+.p-datatable .p-datatable-tbody > tr > td {
+   padding: 0.25rem;
+   padding-left: 0.5rem;
+}
+
+.p-datatable .p-datatable-tbody > tr > td.p-cell-editing {
+   padding-left: 0.2rem;
+}
+
+.p-datatable .p-datatable-header {
+   background: var(--surface-card);
+   border: 1px solid var(--surface-border);
+   border-width: 1px 1px 0 1px;
+   padding: 0.5rem 1rem;
+   font-weight: 600;
+   background: var(--theia-titleBar-activeBackground);
+   color: var(--theia-titleBar-activeForeground);
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 1px solid var(--surface-border);
+   border-width: 0 0 1px 0;
+   padding: 0.25rem 0.5rem 0.25rem;
+   font-weight: 600;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 0 none;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+   border: 1px solid var(--surface-border);
+   border-width: 0 0 1px 0;
+}
+
+.p-datatable .p-datatable-tbody > tr:nth-child(even) {
+   background: var(--surface-hover);
+}
+
+/* Input field styles */
+.p-inputtext {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 1px solid var(--theia-input-border);
+   padding: 0.3rem;
+   font-size: var(--theia-ui-font-size1);
+   transition:
+      background-color 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+   border-radius: 4px;
+}
+
+.p-inputtext:enabled:hover {
+   border-color: var(--theia-focusBorder);
+}
+
+.p-inputtext:enabled:focus,
+.p-inputtext:enabled:focus ~ .p-autocomplete-dropdown,
+.p-inputwrapper-focus .p-inputtext {
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0 0.2rem var(--focus-ring);
+   border-color: var(--theia-focusBorder);
+}
+
+.p-field:not(:last-child) {
+   margin-bottom: 1rem;
+}
+
+.p-autocomplete-panel.p-component {
+   background-color: var(--surface-card);
+}
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+   padding: 0.3rem 0.5rem;
+}
+
+/* Dropdown styles */
+.p-dropdown {
+   background: var(--surface-card);
+   border: none;
+   transition:
+      background-color 0.2s,
+      border-color 0.2s;
+   border-radius: 4px;
+}
+
+.p-dropdown:not(.p-disabled):hover {
+   border-color: var(--theia-focusBorder);
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0 0.2rem var(--focus-ring);
+   border-color: var(--theia-focusBorder);
+}
+
+.p-dropdown .p-dropdown-trigger {
+   width: 2rem;
+   border: 1px solid var(--theia-input-border);
+   border-left: none;
+}
+
+.p-inputwrapper-focus.p-dropdown .p-dropdown-trigger {
+   border-color: var(--theia-focusBorder);
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+   padding: 0.3rem 0.5rem;
+}
+
+/* Checkbox styles */
+
+.p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox {
+   margin-left: 0.3rem;
+}
+
+/* Apply only to dark theme checkbox icon container, var(--surface-card) color makes in invisible in light theme */
+.dark-theme .p-checkbox .p-checkbox-box {
+   border: 2px solid var(--surface-border);
+   background: var(--surface-card);
+}
+
+.p-checkbox .p-checkbox-box {
+   color: var(--text-color);
+   border-radius: 4px;
+   transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      box-shadow 0.2s;
+}
+
+.p-checkbox .p-checkbox-box.p-highlight {
+   border-color: var(--theia-focusBorder);
+   background: var(--primary-color);
+}
+
+.p-button {
+   background: var(--theia-button-background);
+   color: var(--theia-button-foreground);
+   border: 1px solid var(--theia-button-border);
+}
+
+.p-button:enabled:hover {
+   background: var(--theia-button-hoverBackground);
+}
+
+.p-button-outlined {
+   background: transparent;
+   color: var(--theia-focusBorder);
+   border: 1px solid;
+}
+
+/* AutoComplete Dropdown Arrow */
+.p-autocomplete-dropdown.p-button {
+   background: var(--surface-card);
+   color: #6b7280;
+   width: 2rem;
+   border: 1px solid var(--theia-input-border);
+   border-left: none;
+   border-top-right-radius: 6px;
+   border-bottom-right-radius: 6px;
+}
+
+.p-autocomplete-dropdown.p-button:hover,
+.p-autocomplete-dropdown.p-button:focus {
+   background: var(--surface-card);
+   border-color: var(--theia-focusBorder);
+   outline: 0;
+   box-shadow: none;
+}
+
+/* AutoComplete Dropdown Arrow Icon Rotation */
+.autocomplete-dropdown-open .p-autocomplete-dropdown svg {
+   transform: rotate(180deg);
+}
+
+.p-datatable {
+   background: var(--theia-editor-background);
+   color: var(--theia-editor-foreground);
+}
+
+.p-datatable .p-datatable-tbody > tr {
+   background: var(--theia-editor-background);
+   color: var(--theia-editor-foreground);
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+   background: var(--theia-list-hoverBackground);
+}
+
+.p-accordion .p-accordion-tab {
+   margin-bottom: var(--theia-ui-padding);
+}
+
+.p-accordion .p-accordion-header .p-accordion-header-link {
+   background: var(--theia-titleBar-activeBackground);
+   color: var(--theia-titleBar-activeForeground);
+   padding: 0.5rem 1rem;
+   font-size: var(--theia-ui-font-size1);
+   border-color: var(--surface-border);
+}
+
+.p-accordion .p-accordion-content {
+   background: var(--surface-section);
+   color: var(--text-color);
+   border: 1px solid var(--surface-border);
+   padding: 0.75rem;
+}
+
+.p-toolbar {
+   background: var(--theia-titleBar-activeBackground);
+   border: none;
+   padding: 0.5rem;
+}
+
+/* Form validation styles */
+.p-error {
+   color: var(--theia-errorForeground);
+}
+
+.p-invalid {
+   border-color: var(--theia-errorForeground) !important;
+}
+
+/* Add spacing between label and input */
+label {
+   display: block;
+   margin-bottom: 0.25rem;
+}
+
+.mr-1-rem {
+   margin-right: 0.25rem;
+}
+
+.p-btn-sm-icon {
+   width: auto;
+   padding: 0.25rem 0.5rem;
+}
+
+.entity-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.entity-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.data-model-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.relationship-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.source-object-condition-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.source-object-dependency-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.attribute-mapping-sources-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.data-model-dependencies-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.relationship-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
+span.w-full.p-autocomplete {
+   width: 100%;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-action-button.p-button {
+   width: 1rem;
+   height: 1rem;
+   padding: 0;
+   border-radius: 50%;
+   color: #6b7280;
+   border: 0 none;
+   background: transparent;
+   box-shadow: none;
+   transition:
+      background-color 0.2s,
+      color 0.2s,
+      box-shadow 0.2s;
+}
+
+.p-datatable .p-datatable-tbody > tr > td .p-row-action-button.p-button:enabled:hover {
+   color: #374151;
+   background-color: transparent;
+   background: #f3f4f6;
+   box-shadow: none;
+}
+
+.p-column-filter-menu-button {
+   width: 1rem;
+   height: 1rem;
+}
+
+.p-datatable .p-sortable-column.p-highlight .p-sortable-column-icon,
+.p-datatable .p-sortable-column.p-highlight:not(.p-sortable-disabled):hover .p-sortable-column-icon,
+.p-column-filter-menu-button.p-column-filter-menu-button-active,
+.p-column-filter-menu-button.p-column-filter-menu-button-active:hover {
+   color: var(--theia-button-background);
+}
+
+.p-datatable .datatable-global-filter {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   gap: 1rem;
+}
+
+.p-datatable .datatable-global-filter .datatable-filter-section {
+   display: flex;
+   align-items: center;
+   margin-left: auto;
+}
+
+.p-datatable .datatable-global-filter .p-inputtext {
+   padding-left: 2rem;
+   padding-right: 2rem;
+}
+
+.p-datatable .datatable-global-filter .p-icon-field span.pi.pi-search.p-input-icon {
+   margin-top: -0.3rem;
+}
+
+.p-datatable .datatable-global-filter .keyword-search-container {
+   position: relative;
+   display: inline-block;
+}
+
+.p-datatable .datatable-global-filter .keyword-search-container i.pi.pi-times {
+   position: absolute;
+   right: 10px;
+   top: 50%;
+   transform: translateY(-50%);
+   cursor: pointer;
+}
+
+/* Dark theme overlay panels (dropdowns, filters, etc.) */
+.crossmodel-dark .p-column-filter-overlay,
+.crossmodel-dark .p-dropdown-panel,
+.crossmodel-dark .p-multiselect-panel,
+.crossmodel-dark .p-autocomplete-panel,
+.crossmodel-dark .p-dialog,
+.crossmodel-dark .p-overlaypanel,
+.crossmodel-dark .p-menu {
+   background: var(--surface-card);
+   color: var(--text-color);
+   border: 1px solid var(--surface-border);
+   border-radius: 6px;
+   box-shadow:
+      0 2px 4px -1px rgba(0, 0, 0, 0.2),
+      0 4px 5px 0 rgba(0, 0, 0, 0.14),
+      0 1px 10px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Dark theme overlay items (list items in dropdowns, etc.) */
+.crossmodel-dark .p-dropdown-item,
+.crossmodel-dark .p-multiselect-item,
+.crossmodel-dark .p-autocomplete-item,
+.crossmodel-dark .p-column-filter-row,
+.crossmodel-dark .p-menuitem {
+   color: var(--text-color);
+}
+
+/* Dark theme hover states for overlay items */
+.crossmodel-dark .p-dropdown-item:hover:not(.p-disabled),
+.crossmodel-dark .p-multiselect-item:hover:not(.p-disabled),
+.crossmodel-dark .p-autocomplete-item:hover:not(.p-disabled),
+.crossmodel-dark .p-column-filter-row:hover,
+.crossmodel-dark .p-menuitem:hover:not(.p-disabled) {
+   background: var(--surface-hover);
+}
+
+/* Dark theme selected states */
+.crossmodel-dark .p-dropdown-item.p-highlight,
+.crossmodel-dark .p-multiselect-item.p-highlight,
+.crossmodel-dark .p-autocomplete-item.p-highlight {
+   background: var(--primary-color);
+   color: var(--primary-color-text);
+}
+
+/* MultiSelect styles */
+.p-multiselect {
+   background: var(--surface-card);
+   border: 1px solid var(--surface-border);
+   transition:
+      background-color 0.2s,
+      border-color 0.2s;
+   border-radius: 4px;
+}
+
+.p-multiselect:not(.p-disabled):hover {
+   border-color: var(--theia-focusBorder);
+}
+
+.p-multiselect:not(.p-disabled).p-focus {
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0 0.2rem var(--focus-ring);
+   border-color: var(--theia-focusBorder);
+}
+
+.p-multiselect .p-multiselect-label {
+   padding: 0.3rem;
+   font-size: var(--theia-ui-font-size1);
+}
+
+.p-multiselect .p-multiselect-trigger {
+   width: 2rem;
+}
+
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item {
+   padding: 0.3rem 0.5rem;
+   font-size: var(--theia-ui-font-size1);
+}
+
+.p-multiselect .p-multiselect-clear-icon {
+   margin-top: -0.3rem;
+   right: 2rem;
+}
+
+.p-multiselect-panel .p-multiselect-header {
+   padding: 0.3rem 0.5rem;
+   background: var(--surface-card);
+}
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):not(.p-disabled).p-focus {
+   background: var(--surface-hover);
+}
+.p-multiselect-label-container {
+   padding-right: 1rem;
+}
+
+.p-multiselect-panel .p-multiselect-items {
+   padding: 0.25rem 0;
+}
+.p-multiselect-panel .p-multiselect-header .p-multiselect-close {
+   width: 1rem;
+   height: 1rem;
+}
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus {
+   background: var(--surface-hover);
+}
+
+/* Form Header styles */
+.form-header {
+   position: sticky;
+   top: 0;
+   z-index: 1000;
+   background-color: var(--theia-titleBar-activeBackground);
+}
+
+.form-header-content {
+   display: flex;
+   flex-grow: 1;
+   gap: 1em;
+   align-items: center;
+}
+
+.form-header-icon {
+   font-size: 1.7em;
+}
+
+.form-title {
+   margin: 0;
+   font-weight: 500;
+}
+
+.form-id {
+   padding-top: 0.25em;
+   margin-left: 1em;
+   font-size: 0.8rem;
+   text-transform: uppercase;
+   opacity: 0.7;
+}
+
+.form-actions {
+   display: flex;
+   gap: 0.5rem;
+}
+
+.form-toolbar {
+   min-height: 40px;
+   padding: 0.5rem 1rem;
+   border-radius: 0;
+   border: none;
+   background: transparent;
+}

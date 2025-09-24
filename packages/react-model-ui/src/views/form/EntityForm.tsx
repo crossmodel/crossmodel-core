@@ -3,7 +3,8 @@
  ********************************************************************************/
 
 import { CrossModelValidationErrors, ModelFileType, ModelStructure, toId } from '@crossmodel/protocol';
-import { TextField } from '@mui/material';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
 import { useDiagnostics, useEntity, useModelDispatch, useModelQueryApi, useReadonly, useUntitled, useUri } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
@@ -37,32 +38,38 @@ export function EntityForm(): React.ReactElement {
    return (
       <Form id={entity.id} name={entity.name ?? ModelFileType.LogicalEntity} iconClass={ModelStructure.LogicalEntity.ICON_CLASS}>
          <FormSection label='General'>
-            <TextField
-               fullWidth={true}
-               label='Name'
-               margin='normal'
-               variant='outlined'
-               disabled={readonly}
-               required={true}
-               value={entity.name ?? ''}
-               error={!!diagnostics.name?.length}
-               helperText={diagnostics.name?.at(0)?.message}
-               onChange={handleNameChange}
-            />
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='name'>Name</label>
+                  <InputText
+                     id='name'
+                     value={entity.name ?? ''}
+                     onChange={handleNameChange}
+                     disabled={readonly}
+                     required={true}
+                     className={diagnostics.name?.length ? 'p-invalid' : ''}
+                  />
+               </div>
+               {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
+            </div>
 
-            <TextField
-               fullWidth={true}
-               label='Description'
-               margin='normal'
-               variant='outlined'
-               disabled={readonly}
-               multiline={true}
-               rows={2}
-               value={entity.description ?? ''}
-               error={!!diagnostics.description?.length}
-               helperText={diagnostics.description?.at(0)?.message}
-               onChange={event => dispatch({ type: 'entity:change-description', description: event.target.value ?? '' })}
-            />
+            <div className='p-field p-fluid'>
+               <div>
+                  <label htmlFor='description'>Description</label>
+                  <InputTextarea
+                     id='description'
+                     value={entity.description ?? ''}
+                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        dispatch({ type: 'entity:change-description', description: event.target.value ?? '' })
+                     }
+                     disabled={readonly}
+                     rows={3}
+                     autoResize
+                     className={diagnostics.description?.length ? 'p-invalid' : ''}
+                  />
+               </div>
+               {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
+            </div>
          </FormSection>
          <FormSection label='Attributes'>
             <EntityAttributesDataGrid />

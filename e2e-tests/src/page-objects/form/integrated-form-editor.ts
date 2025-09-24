@@ -36,15 +36,15 @@ export class IntegratedFormEditor extends IntegratedEditor {
    async formFor(dataModel: 'dataModel'): Promise<DataModelForm>;
    async formFor(string: 'entity' | 'relationship' | 'dataModel'): Promise<CMForm> {
       if (string === 'entity') {
-         const form = new LogicalEntityForm(this, '');
+         const form = new LogicalEntityForm(this, this.viewSelector, 'LogicalEntity');
          await form.waitForVisible();
          return form;
       } else if (string === 'dataModel') {
-         const form = new DataModelForm(this, '');
+         const form = new DataModelForm(this, this.viewSelector, 'DataModel');
          await form.waitForVisible();
          return form;
       } else {
-         const form = new RelationshipForm(this, '');
+         const form = new RelationshipForm(this, this.viewSelector, 'Relationship');
          await form.waitForVisible();
          return form;
       }

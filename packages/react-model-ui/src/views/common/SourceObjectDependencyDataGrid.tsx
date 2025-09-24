@@ -9,26 +9,71 @@ import {
    SourceObjectDependency,
    SourceObjectDependencyType
 } from '@crossmodel/protocol';
-import { GridColDef, GridRenderEditCellParams, useGridApiContext } from '@mui/x-data-grid';
+import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
+import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
-import AsyncAutoComplete from './AsyncAutoComplete';
-import GridComponent, { GridComponentRow } from './GridComponent';
+import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
-export interface EditSourceObjectDependencySourceComponentProps extends GridRenderEditCellParams<SourceObjectDependency> {
+interface SourceObjectDependencyEditorProps {
+   options: any;
    sourceObject: SourceObject;
 }
 
-export function EditSourceObjectDependencySourceComponent({
-   sourceObject,
-   id,
-   row,
-   field,
-   hasFocus
-}: EditSourceObjectDependencySourceComponentProps): React.ReactElement {
+function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps): React.ReactElement {
+   const { options, sourceObject } = props;
+   const { editorCallback } = options;
+
+   const [currentValue, setCurrentValue] = React.useState(options.value || '');
+   const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
+   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
-   const gridApi = useGridApiContext();
    const readonly = useReadonly();
+   const rawDiagnostics = useDiagnostics();
+   const [processedDiagnostics, setProcessedDiagnostics] = React.useState<Record<string, string>>({});
+
+   // Process diagnostics for this field
+   React.useEffect(() => {
+      try {
+         const diagnostics: Record<string, string> = {};
+         const key = `dependencies[${options.rowData.idx}].source`;
+
+         // Clear previous diagnostics
+         setProcessedDiagnostics({});
+
+         rawDiagnostics.forEach(diagnostic => {
+            const diagnosticCode = String(diagnostic.code);
+
+            if (diagnostic.message.includes('Could not resolve reference')) {
+               // Check if this diagnostic is specifically for this field
+               if (diagnosticCode.includes(key)) {
+                  diagnostics[key] = diagnostic.message;
+               }
+               // Only check the value if we have a non-empty current value
+               else if (
+                  options.rowData.source &&
+                  !options.rowData.source.trim().startsWith('_') &&
+                  diagnostic.message.includes(options.rowData.source)
+               ) {
+                  diagnostics[key] = diagnostic.message;
+               }
+            }
+         });
+
+         setProcessedDiagnostics(diagnostics);
+      } catch (e) {
+         console.error('Error processing diagnostics:', e);
+      }
+
+      // Cleanup function to clear diagnostics when component unmounts
+      return () => {
+         setProcessedDiagnostics({});
+      };
+   }, [rawDiagnostics, options.rowData, currentValue]);
+   const isDropdownClicked = React.useRef(false);
+   // eslint-disable-next-line no-null/no-null
+   const autoCompleteRef = React.useRef<AutoComplete>(null);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
@@ -38,36 +83,119 @@ export function EditSourceObjectDependencySourceComponent({
       }),
       [sourceObject.$globalId]
    );
-   const referenceableElements = React.useCallback(() => queryApi.findReferenceableElements(referenceCtx), [queryApi, referenceCtx]);
 
-   const handleValueChange = React.useCallback(
-      (_evt: React.SyntheticEvent, newValue: ReferenceableElement): void => {
-         const source: Partial<SourceObjectDependency> = { $type: SourceObjectDependencyType, source: newValue.label };
-         gridApi.current.setEditCellValue({ id, field, value: source });
+   const search = React.useCallback(
+      async (event: AutoCompleteCompleteEvent) => {
+         const elements = await queryApi.findReferenceableElements(referenceCtx);
+         const filteredSuggestions = elements.filter(element =>
+            isDropdownClicked.current ? true : event.query ? (element.label || '').toLowerCase().includes(event.query.toLowerCase()) : true
+         );
+         setSuggestions(filteredSuggestions);
+         isDropdownClicked.current = false;
       },
-      [field, gridApi, id]
+      [queryApi, referenceCtx]
    );
 
-   const value = React.useMemo<ReferenceableElement>(() => ({ uri: '', label: row.source ?? '', type: row.$type }), [row]);
+   const onChange = (e: AutoCompleteChangeEvent): void => {
+      const value = e.value;
+      // eslint-disable-next-line no-null/no-null
+      let finalValue = ''; // Default value if nothing is selected
+
+      if (typeof value === 'object' && value !== undefined && value.label) {
+         finalValue = value.label;
+      } else if (value) {
+         finalValue = value;
+      }
+
+      setCurrentValue(finalValue);
+
+      if (editorCallback) {
+         editorCallback(finalValue);
+      }
+   };
+
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
+      isDropdownClicked.current = true;
+
+      // Check if dropdown is currently visible
+      setTimeout(() => {
+         const panel = autoCompleteRef.current?.getOverlay();
+         // eslint-disable-next-line no-null/no-null
+         const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
+
+         if (isVisible) {
+            // If visible, hide it
+            autoCompleteRef.current?.hide();
+            setIsDropdownOpen(false);
+         } else {
+            // If not visible, show it by triggering search with empty query
+            autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+            setIsDropdownOpen(true);
+         }
+      }, 10);
+   };
+
+   const onShow = (): void => {
+      setIsDropdownOpen(true);
+   };
+
+   const onHide = (): void => {
+      setIsDropdownOpen(false);
+   };
+
+   // Handle click outside to close dropdown
+   React.useEffect(() => {
+      const handleClickOutside = (event: MouseEvent): void => {
+         if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
+            // Small delay to allow selection to complete first
+            setTimeout(() => {
+               const panel = autoCompleteRef.current?.getOverlay();
+               if (panel && panel.style.display !== 'none') {
+                  autoCompleteRef.current?.hide();
+                  setIsDropdownOpen(false);
+               }
+            }, 100);
+         }
+      };
+
+      document.addEventListener('mouseup', handleClickOutside);
+      return () => {
+         document.removeEventListener('mouseup', handleClickOutside);
+      };
+   }, []);
+
+   const diagnosticKey = `dependencies[${options.rowData.idx}].source`;
+   const errorMessage = processedDiagnostics[diagnosticKey];
 
    return (
-      <AsyncAutoComplete<ReferenceableElement>
-         openOnFocus={true}
-         fullWidth={true}
-         label=''
-         optionLoader={referenceableElements}
-         onChange={handleValueChange}
-         value={value}
-         clearOnBlur={true}
-         selectOnFocus={true}
-         disabled={readonly}
-         textFieldProps={{ sx: { margin: '0' }, autoFocus: hasFocus, placeholder: 'Select a source object' }}
-         isOptionEqualToValue={(option, val) => option.label === val.label}
-      />
+      <div className='grid-editor-container'>
+         <div className={`p-field ${errorMessage ? 'p-error' : ''}`}>
+            <AutoComplete
+               ref={autoCompleteRef}
+               value={currentValue ?? ''}
+               suggestions={suggestions}
+               field='label'
+               completeMethod={search}
+               dropdown
+               className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''} ${errorMessage ? 'p-invalid' : ''}`}
+               onDropdownClick={handleDropdownClick}
+               onChange={onChange}
+               onShow={onShow}
+               onHide={onHide}
+               disabled={readonly}
+               autoFocus
+               onKeyDown={handleGridEditorKeyDown}
+            />
+            {errorMessage && <small className='p-error block'>{errorMessage}</small>}
+         </div>
+      </div>
    );
 }
 
-export type SourceObjectDependencyRow = GridComponentRow<SourceObjectDependency>;
+export interface SourceObjectDependencyRow extends SourceObjectDependency {
+   idx: number;
+   id: string;
+}
 
 export interface SourceObjectDependencyDataGridProps {
    mapping: Mapping;
@@ -77,88 +205,219 @@ export interface SourceObjectDependencyDataGridProps {
 export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: SourceObjectDependencyDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const rawDiagnostics = useDiagnostics();
+   const sourceObject = mapping.sources[sourceObjectIdx];
+   const [processedDiagnostics, setProcessedDiagnostics] = React.useState<Record<string, string>>({});
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
+   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
-   const sourceObject = React.useMemo<SourceObject>(() => mapping.sources[sourceObjectIdx], [mapping.sources, sourceObjectIdx]);
+   // Process diagnostics for the grid
+   React.useEffect(() => {
+      try {
+         const diagnostics: Record<string, string> = {};
 
-   const dependencies = React.useMemo<SourceObjectDependency[]>(() => sourceObject.dependencies, [sourceObject.dependencies]);
+         // Clear old diagnostics first
+         setProcessedDiagnostics({});
 
-   const defaultDependency = React.useMemo<SourceObjectDependency>(
-      () => ({ $type: SourceObjectDependencyType, source: '', conditions: [] }),
-      []
+         rawDiagnostics.forEach(diagnostic => {
+            const diagnosticCode = String(diagnostic.code);
+
+            // Handle source join type validation
+            if (diagnostic.message.includes('join type "from" cannot have dependencies')) {
+               // This is a general dependencies error, store it with a special key
+               diagnostics['dependencies'] = diagnostic.message;
+            }
+
+            // Handle individual dependency diagnostics
+            sourceObject.dependencies?.forEach((dependency, idx) => {
+               const key = `dependencies[${idx}].source`;
+
+               // Check for reference resolution errors
+               if (diagnostic.message.includes('Could not resolve reference')) {
+                  // Only process if the diagnostic is specifically for this field
+                  if (diagnosticCode.includes(key)) {
+                     diagnostics[key] = diagnostic.message;
+                  }
+                  // Or if the message mentions the current value (for unresolved references)
+                  else if (dependency.source && diagnostic.message.includes(dependency.source)) {
+                     diagnostics[key] = diagnostic.message;
+                  }
+               }
+            });
+         });
+
+         setProcessedDiagnostics(diagnostics);
+      } catch (e) {
+         console.error('Error processing diagnostics:', e);
+      }
+
+      // Cleanup function to clear diagnostics when component unmounts
+      return () => {
+         setProcessedDiagnostics({});
+      };
+   }, [rawDiagnostics, sourceObject.dependencies]);
+   const gridData = React.useMemo(
+      () =>
+         (sourceObject.dependencies || []).map((dep, idx) => ({
+            ...dep,
+            idx,
+            id: (dep as any).id || idx.toString()
+         })) as SourceObjectDependencyRow[],
+      [sourceObject.dependencies]
    );
 
-   const handleDependencyUpdate = React.useCallback(
-      (row: SourceObjectDependencyRow): SourceObjectDependencyRow => {
-         if (row.source === '') {
-            dispatch({ type: 'source-object:delete-dependency', sourceObjectIdx, dependencyIdx: row.idx });
+   const sourceOptions = React.useMemo(() => {
+      const uniqueSources = [...new Set(gridData.map(item => item.source).filter(Boolean))];
+      return uniqueSources.map(s => ({ label: s, value: s }));
+   }, [gridData]);
+
+   const validateField = React.useCallback((rowData: SourceObjectDependencyRow): Record<string, string> => {
+      const errors: Record<string, string> = {};
+      if (!rowData.source) {
+         errors.source = 'Source is required';
+      }
+      return errors;
+   }, []);
+
+   const onRowUpdate = React.useCallback(
+      (dependency: SourceObjectDependencyRow) => {
+         // Ensure we have a value, defaulting to '' if empty
+         const updatedDependency = {
+            ...dependency,
+            source: dependency.source || ''
+         };
+
+         const errors = validateField(updatedDependency);
+         if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
          } else {
-            const dependency: SourceObjectDependency & { idx?: number } = { ...row };
-            delete dependency.idx;
-            dispatch({ type: 'source-object:update-dependency', sourceObjectIdx, dependencyIdx: row.idx, dependency });
+            setValidationErrors({});
          }
-         return row;
+
+         // Always save and let language server handle validation
+         const { ...dependencyToUpdate } = updatedDependency;
+         dispatch({
+            type: 'source-object:update-dependency',
+            sourceObjectIdx,
+            dependencyIdx: updatedDependency.idx,
+            dependency: dependencyToUpdate
+         });
+      },
+      [dispatch, sourceObjectIdx, validateField]
+   );
+
+   const onRowAdd = React.useCallback(
+      (dependency: SourceObjectDependencyRow) => {
+         setValidationErrors({});
+         const newId = dependency.id || gridData.length.toString();
+         const dependencyData: SourceObjectDependency = {
+            $type: SourceObjectDependencyType,
+            source: dependency.source
+         };
+
+         dispatch({
+            type: 'source-object:add-dependency',
+            sourceObjectIdx,
+            dependency: dependencyData
+         });
+         setEditingRows({ [newId]: true });
+      },
+      [dispatch, sourceObjectIdx, gridData]
+   );
+
+   const onRowDelete = React.useCallback(
+      (dependency: SourceObjectDependencyRow) => {
+         dispatch({
+            type: 'source-object:delete-dependency',
+            sourceObjectIdx,
+            dependencyIdx: dependency.idx
+         });
       },
       [dispatch, sourceObjectIdx]
    );
 
-   const handleAddDependency = React.useCallback(
-      (row: SourceObjectDependencyRow): void => {
-         if (row.source !== '') {
-            dispatch({ type: 'source-object:add-dependency', sourceObjectIdx, dependency: row });
-         }
+   const onRowMoveUp = React.useCallback(
+      (dependency: SourceObjectDependencyRow) => {
+         dispatch({
+            type: 'source-object:move-dependency-up',
+            sourceObjectIdx,
+            dependencyIdx: dependency.idx
+         });
       },
       [dispatch, sourceObjectIdx]
    );
 
-   const handleDependencyUpward = React.useCallback(
-      (row: SourceObjectDependencyRow): void =>
-         dispatch({ type: 'source-object:move-dependency-up', sourceObjectIdx, dependencyIdx: row.idx }),
+   const onRowMoveDown = React.useCallback(
+      (dependency: SourceObjectDependencyRow) => {
+         dispatch({
+            type: 'source-object:move-dependency-down',
+            sourceObjectIdx,
+            dependencyIdx: dependency.idx
+         });
+      },
       [dispatch, sourceObjectIdx]
    );
 
-   const handleDependencyDownward = React.useCallback(
-      (row: SourceObjectDependencyRow): void =>
-         dispatch({ type: 'source-object:move-dependency-down', sourceObjectIdx, dependencyIdx: row.idx }),
-      [dispatch, sourceObjectIdx]
-   );
-
-   const handleDependencyDelete = React.useCallback(
-      (row: SourceObjectDependencyRow): void =>
-         dispatch({ type: 'source-object:delete-dependency', sourceObjectIdx, dependencyIdx: row.idx }),
-      [dispatch, sourceObjectIdx]
-   );
-
-   const columns: GridColDef<SourceObjectDependency>[] = React.useMemo(
+   const columns = React.useMemo<GridColumn<SourceObjectDependencyRow>[]>(
       () => [
          {
             field: 'source',
-            flex: 100,
-            editable: !readonly,
-            renderHeader: () => <>Source</>,
-            valueGetter: (_value, row) => row,
-            valueSetter: (value, row) => value,
-            valueFormatter: (value, row) => (value as SourceObjectDependency).source,
-            renderEditCell: params => <EditSourceObjectDependencySourceComponent {...params} sourceObject={sourceObject} />,
-            type: 'singleSelect'
+            header: 'Source',
+            body: (rowData: SourceObjectDependencyRow) => {
+               const errorMessage = processedDiagnostics[`dependencies[${rowData.idx}].source`];
+               return (
+                  <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage || undefined}>
+                     {rowData.source}
+                     {errorMessage && <p className='p-error m-0'>{errorMessage}</p>}
+                  </div>
+               );
+            },
+            editor: (options: any) => <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} />,
+            filterType: 'multiselect',
+            filterOptions: sourceOptions,
+            showFilterMatchModes: false
          }
       ],
-      [readonly, sourceObject]
+      [sourceObject, sourceOptions, processedDiagnostics]
    );
 
+   const defaultEntry = React.useMemo<Partial<SourceObjectDependencyRow>>(
+      () => ({
+         $type: SourceObjectDependencyType,
+         source: '',
+         id: ''
+      }),
+      []
+   );
+
+   if (!mapping || !sourceObject) {
+      return <div>No mapping or source object available</div>;
+   }
+
+   const generalError = processedDiagnostics['dependencies'];
+
    return (
-      <GridComponent
-         key={sourceObject.id + '-dependency-grid'}
-         style={{ flexGrow: 1 }}
-         gridColumns={columns}
-         gridData={dependencies}
-         noEntriesText='No Dependencies'
-         newEntryText='Add Dependency'
-         defaultEntry={defaultDependency}
-         onAdd={handleAddDependency}
-         onDelete={handleDependencyDelete}
-         onUpdate={handleDependencyUpdate}
-         onMoveDown={handleDependencyDownward}
-         onMoveUp={handleDependencyUpward}
-      />
+      <div className='source-dependencies-container'>
+         {generalError && <p className='p-error general-error'>{generalError}</p>}
+         <PrimeDataGrid
+            columns={columns}
+            data={gridData}
+            keyField='id'
+            height='auto'
+            onRowAdd={onRowAdd}
+            onRowUpdate={onRowUpdate}
+            onRowDelete={onRowDelete}
+            onRowMoveUp={onRowMoveUp}
+            onRowMoveDown={onRowMoveDown}
+            defaultNewRow={defaultEntry}
+            readonly={readonly}
+            validationErrors={validationErrors}
+            noDataMessage='No dependencies'
+            addButtonLabel='Add Dependency'
+            editingRows={editingRows}
+            onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+            globalFilterFields={['source']}
+         />
+      </div>
    );
 }

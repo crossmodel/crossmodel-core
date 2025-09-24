@@ -1,85 +1,151 @@
 /********************************************************************************
- * Copyright (c) 2024 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-/* eslint-disable no-null/no-null */
-import { Autocomplete, AutocompleteProps, CircularProgress, TextField, TextFieldProps } from '@mui/material';
+import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
+import { ProgressSpinner } from 'primereact/progressspinner';
+import * as React from 'react';
 import { useReadonly } from '../../ModelContext';
-import React = require('react');
+import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
-export interface AsyncAutoCompleteProps<T> extends Omit<AutocompleteProps<T, false, true, false>, 'renderInput' | 'options'> {
+export interface AsyncAutoCompleteProps<T = string> {
    label: string;
    optionLoader: () => Promise<T[]>;
-   /**
-    * MUI shows a warning if the current value doesn't match an available option.
-    * This callback can be used to synchronize selection state with options.
-    */
-   onOptionsLoaded?: (options: T[]) => unknown;
-   textFieldProps?: TextFieldProps;
+   onOptionsLoaded?: (options: T[]) => void;
+   value: T;
+   onChange: (event: { value: T }) => void;
+   disabled?: boolean;
+   required?: boolean;
+   className?: string;
+   error?: boolean;
+   helperText?: string;
+   forceSelection?: boolean;
+   field?: keyof T;
 }
 
-// Based on https://mui.com/material-ui/react-autocomplete/
-export default function AsyncAutoComplete<T>({
+export default function AsyncAutoComplete<T = string>({
    label,
    optionLoader,
    onOptionsLoaded,
-   textFieldProps,
-   ...props
+   value,
+   onChange,
+   disabled = false,
+   required = false,
+   className = '',
+   error = false,
+   helperText = '',
+   forceSelection = false,
+   field
 }: AsyncAutoCompleteProps<T>): React.ReactElement {
-   const [open, setOpen] = React.useState(!!props.open);
-   const [options, setOptions] = React.useState<readonly T[]>([]);
-   const loading = open && options.length === 0;
-   const readonly = useReadonly();
+   const [options, setOptions] = React.useState<T[]>([]);
+   const [loading, setLoading] = React.useState(false);
+   const readonly = useReadonly() || disabled;
+   // eslint-disable-next-line no-null/no-null
+   const autoCompleteRef = React.useRef<AutoComplete>(null);
+   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
-   React.useEffect(() => {
-      let active = true;
-      if (!loading) {
-         return undefined;
+   const loadSuggestions = async (event: AutoCompleteCompleteEvent): Promise<void> => {
+      setLoading(true);
+      try {
+         const allOptions = await optionLoader();
+         const filtered = !event.query.trim()
+            ? allOptions
+            : allOptions.filter(opt =>
+                 String(field ? opt[field] : opt)
+                    .toLowerCase()
+                    .startsWith(event.query.toLowerCase())
+              );
+         setOptions(filtered);
+         onOptionsLoaded?.(filtered);
+      } finally {
+         setLoading(false);
       }
-      const loadOperation = async (): Promise<void> => {
-         const loadedOptions = await optionLoader();
-         if (active) {
-            onOptionsLoaded?.(loadedOptions);
-            setOptions([...loadedOptions]);
+   };
+
+   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
+      // Check if dropdown is currently visible
+      setTimeout(() => {
+         const panel = autoCompleteRef.current?.getOverlay();
+         // eslint-disable-next-line no-null/no-null
+         const isVisible = panel && panel.style.display !== 'none' && panel.offsetParent !== null;
+
+         if (isVisible) {
+            // If visible, hide it
+            autoCompleteRef.current?.hide();
+            setIsDropdownOpen(false);
+         } else {
+            // If not visible, trigger search to show options
+            autoCompleteRef.current?.search(event.originalEvent, '', 'dropdown');
+            setIsDropdownOpen(true);
+         }
+      }, 10);
+   };
+
+   const onShow = (): void => {
+      setIsDropdownOpen(true);
+   };
+
+   const onHide = (): void => {
+      setIsDropdownOpen(false);
+   };
+
+   // Handle click outside to close dropdown
+   React.useEffect(() => {
+      const handleClickOutside = (event: MouseEvent): void => {
+         if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
+            // Small delay to allow selection to complete first
+            setTimeout(() => {
+               const panel = autoCompleteRef.current?.getOverlay();
+               if (panel && panel.style.display !== 'none') {
+                  autoCompleteRef.current?.hide();
+                  setIsDropdownOpen(false);
+               }
+            }, 100);
          }
       };
-      loadOperation();
 
+      document.addEventListener('mouseup', handleClickOutside);
       return () => {
-         active = false;
+         document.removeEventListener('mouseup', handleClickOutside);
       };
-   }, [loading, optionLoader, onOptionsLoaded]);
+   }, []);
 
    return (
-      <Autocomplete
-         open={open}
-         onOpen={() => setOpen(true)}
-         onClose={() => setOpen(false)}
-         options={options}
-         loading={loading}
-         disabled={readonly}
-         disableClearable={true}
-         handleHomeEndKeys={true}
-         autoSelect={true}
-         autoHighlight={true}
-         autoComplete={true}
-         {...props}
-         renderInput={params => (
-            <TextField
-               {...params}
-               {...textFieldProps}
-               label={label}
-               InputProps={{
-                  ...params.InputProps,
-                  required: textFieldProps?.required,
-                  endAdornment: (
-                     <React.Fragment>
-                        {loading ? <CircularProgress color='inherit' size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                     </React.Fragment>
-                  )
+      <div className='p-field p-fluid' style={{ position: 'relative' }}>
+         <div>
+            <label htmlFor={label}>{label}</label>
+            <div className='p-inputgroup'>
+               <AutoComplete<T>
+                  ref={autoCompleteRef}
+                  value={value}
+                  suggestions={options as (T extends any[] ? T[number] : T)[]}
+                  completeMethod={loadSuggestions}
+                  onChange={e => onChange({ value: e.value })}
+                  disabled={readonly}
+                  className={`${className} ${error ? 'p-invalid' : ''} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
+                  title={helperText || undefined}
+                  dropdown
+                  onDropdownClick={handleDropdownClick}
+                  onShow={onShow}
+                  onHide={onHide}
+                  forceSelection={forceSelection}
+                  field={field ? String(field) : undefined}
+                  onKeyDown={handleGridEditorKeyDown}
+               />
+            </div>
+         </div>
+         {error && helperText && <small className='p-error block'>{helperText}</small>}
+         {loading && (
+            <div
+               style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)'
                }}
-            />
+            >
+               <ProgressSpinner style={{ width: '20px', height: '20px' }} strokeWidth='4' />
+            </div>
          )}
-      />
+      </div>
    );
 }

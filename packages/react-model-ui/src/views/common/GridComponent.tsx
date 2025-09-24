@@ -1,49 +1,21 @@
 /********************************************************************************
- * Copyright (c) 2024 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { DeleteOutlined } from '@mui/icons-material';
-import AddIcon from '@mui/icons-material/Add';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import { Box, Button, Stack, Typography } from '@mui/material';
-import { popoverClasses } from '@mui/material/Popover';
-import {
-   DataGrid,
-   DataGridProps,
-   GridActionsCellItem,
-   GridColDef,
-   GridEditCellProps,
-   GridOverlay,
-   GridPreProcessEditCellProps,
-   GridRowEditStartParams,
-   GridRowEditStopParams,
-   GridRowModes,
-   GridRowModesModel,
-   GridValidRowModel,
-   useGridApiRef
-} from '@mui/x-data-grid';
+import { Button } from 'primereact/button';
+import { Column, ColumnEditorOptions } from 'primereact/column';
+import { DataTable, DataTableRowEditCompleteEvent } from 'primereact/datatable';
+import { InputText } from 'primereact/inputtext';
+import { Toolbar } from 'primereact/toolbar';
 import * as React from 'react';
 import { useReadonly } from '../../ModelContext';
 
-export type GridComponentRow<T> = T &
-   GridValidRowModel & {
-      idx: number;
-   };
-
-export namespace GridComponentRow {
-   export function getData<T>(row: GridComponentRow<T>): T {
-      // we just remove the artificially created index or any other fields we might have added
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { idx, _action, ...data } = row;
-      return data as T;
-   }
-}
+export type GridComponentRow<T> = T & { idx: number };
 
 export type ValidationFunction<T> = <P extends keyof T, V extends T[P]>(field: P, value: V) => string | undefined;
 
-export interface GridComponentProps<T extends GridValidRowModel> extends Omit<DataGridProps<T>, 'rows' | 'columns' | 'processRowUpdate'> {
+export interface GridComponentProps<T> {
    gridData: T[];
-   gridColumns: GridColDef<T>[];
+   gridColumns: { field: keyof T; header: string }[];
    defaultEntry: T;
    label?: string;
    noEntriesText?: string;
@@ -56,305 +28,179 @@ export interface GridComponentProps<T extends GridValidRowModel> extends Omit<Da
    validateField?: ValidationFunction<T>;
 }
 
-export function isChildOf(child: Element, predicate: (parent: Element) => boolean): boolean {
-   let currentElement: Element | null = child;
-   while (currentElement && !predicate(currentElement)) {
-      currentElement = currentElement.parentElement;
-   }
-   return !!currentElement;
-}
-
-export default function GridComponent<T extends GridValidRowModel>({
+export default function GridComponent<T>({
    gridData,
    gridColumns,
    defaultEntry,
    label,
-   noEntriesText,
    newEntryText,
+   noEntriesText,
    onAdd,
    onUpdate,
    onDelete,
    onMoveUp,
    onMoveDown,
-   validateField,
-   ...props
+   validateField
 }: GridComponentProps<T>): React.ReactElement {
-   const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>({});
-   const [columns, setColumns] = React.useState<GridColDef<GridComponentRow<T>>[]>([]);
-   const [rows, setRows] = React.useState<GridComponentRow<T>[]>([]);
-   const editedRow = React.useRef<number | string>();
-   const gridRef = React.useRef<HTMLDivElement>(null); // eslint-disable-line no-null/no-null
-   const gridApi = useGridApiRef();
    const readonly = useReadonly();
+   const [rows, setRows] = React.useState<GridComponentRow<T>[]>([]);
+   const [counter, setCounter] = React.useState(0);
+   const [editingRows, setEditingRows] = React.useState({});
+   const validationErrors = React.useRef<Record<number, Partial<Record<keyof T, string>>>>({});
 
    React.useEffect(() => {
-      // The grid will only handle focus changes if focus moves inside the form or there is a click on another React component.
-      // This ensures that changes of focus to non-React elements are handled as well.
-      const handleFocusChange = (e: FocusEvent): void => {
-         if (
-            !(e.target instanceof Element) ||
-            gridRef.current?.contains(e.target) ||
-            editedRow.current === undefined ||
-            isChildOf(e.target, parent => parent.classList.contains(popoverClasses.root)) // skip popover children to support select list
-         ) {
-            return;
-         }
-         gridApi.current?.stopRowEditMode({ id: editedRow.current });
-         editedRow.current = undefined;
-      };
-      document.addEventListener('focusin', handleFocusChange);
-      return () => document.removeEventListener('focusin', handleFocusChange);
-   }, [gridApi]);
-
-   const handleRowEditStart = React.useCallback((params: GridRowEditStartParams): void => {
-      editedRow.current = params.id;
-   }, []);
-
-   const validateRow = React.useCallback(
-      (params: GridPreProcessEditCellProps, column: GridColDef<T>): GridEditCellProps => {
-         const error = validateField?.(column.field, params.props.value);
-         return { ...params.props, error };
-      },
-      [validateField]
-   );
-
-   const removeSyntheticRows = React.useCallback(() => {
-      if (rows.find(row => row.idx < 0)) {
-         setRows(oldRows => oldRows.filter(row => row.idx >= 0));
-      }
-      if (Object.keys(rowModesModel).find(rowId => Number(rowId) < 0)) {
-         setRowModesModel(oldModel => Object.fromEntries(Object.entries(oldModel).filter(([idx]) => Number(idx) >= 0)));
-      }
-   }, [rowModesModel, rows]);
-
-   const handleRowUpdate = React.useCallback(
-      async (newRow: GridComponentRow<T>, oldRow: GridComponentRow<T>): Promise<GridComponentRow<T>> => {
-         editedRow.current = undefined;
-         const defaultRow: GridComponentRow<T> = { ...defaultEntry, idx: -1 };
-         const updatedRow = mergeRightToLeft(defaultRow, oldRow, newRow);
-         if (updatedRow.idx === undefined || updatedRow.idx < 0) {
-            removeSyntheticRows();
-            await onAdd?.(updatedRow);
-            return { ...updatedRow, idx: -1, _action: 'delete' };
-         } else if (updatedRow.idx >= 0) {
-            await onUpdate?.(updatedRow);
-         }
-         return updatedRow;
-      },
-      [defaultEntry, onAdd, onUpdate, removeSyntheticRows]
-   );
-
-   const handleRowUpdateError = React.useCallback(async (error: any): Promise<void> => console.log(error), []);
-
-   const handleRowModesModelChange = React.useCallback((newRowModesModel: GridRowModesModel): void => {
-      setRowModesModel(newRowModesModel);
-   }, []);
-
-   const handleRowEditStop = React.useCallback(
-      (params: GridRowEditStopParams<T>): void => {
-         removeSyntheticRows();
-         editedRow.current = undefined;
-      },
-      [removeSyntheticRows]
-   );
-
-   const createSyntheticRow = React.useCallback(() => {
-      const id = -1;
-      if (!rows.find(row => row.idx === id)) {
-         const syntheticRow = { ...defaultEntry, idx: id };
-         let _$type = syntheticRow.$type;
-         Object.defineProperty(syntheticRow, '$type', {
-            get() {
-               return _$type;
-            },
-            set(newValue) {
-               console.log(`$type is changing to ${newValue}`);
-               // eslint-disable-next-line no-debugger
-               debugger; // Pauses execution here
-               _$type = newValue;
-            },
-            configurable: true,
-            enumerable: true
-         });
-         setRows(oldRows => [...oldRows, syntheticRow]);
-      }
-
-      // put new row in edit mode
-      const fieldToFocus = columns.length > 0 ? columns[0].field : undefined;
-      setRowModesModel(oldModel => ({ ...oldModel, [id]: { mode: GridRowModes.Edit, fieldToFocus } }));
-      editedRow.current = id;
-   }, [columns, defaultEntry, rows]);
-
-   const deleteEntry = React.useCallback(
-      (row: GridComponentRow<T>) => {
-         if (row.idx < 0) {
-            removeSyntheticRows();
-         } else {
-            onDelete?.(row);
-         }
-      },
-      [onDelete, removeSyntheticRows]
-   );
-
-   const getRowId = React.useCallback((row: GridComponentRow<T>): number => row.idx, []);
-
-   React.useEffect(() => {
-      setRows(gridData.map((data, idx) => ({ ...data, idx })));
+      const initializedRows = gridData.map((row, idx) => ({ ...row, idx }));
+      setRows(initializedRows);
+      setCounter(initializedRows.length);
    }, [gridData]);
 
-   React.useEffect(() => {
-      const allColumns = gridColumns.map(column => ({
-         preProcessEditCellProps: params => validateRow(params, column),
-         ...column
-      })) as GridColDef<GridComponentRow<T>>[];
-      allColumns.push({
-         field: 'actions',
-         type: 'actions',
-         cellClassName: 'actions',
-         getActions: params => [
-            <GridActionsCellItem
-               key='delete'
-               icon={<DeleteOutlined />}
-               label='Delete'
-               onClick={() => deleteEntry(params.row)}
-               color='inherit'
-               disabled={deleteEntry === undefined || readonly}
-            />,
-            <GridActionsCellItem
-               key='move-up'
-               icon={<ArrowUpwardIcon />}
-               label='Move Up'
-               onClick={() => onMoveUp?.(params.row)}
-               color='inherit'
-               disabled={onMoveUp === undefined || params.row.idx === 0 || readonly}
-            />,
-            <GridActionsCellItem
-               key='move-down'
-               icon={<ArrowDownwardIcon />}
-               label='Move Down'
-               onClick={() => onMoveDown?.(params.row)}
-               color='inherit'
-               disabled={onMoveDown === undefined || params.row.idx === rows.length - 1 || readonly}
-            />
-         ]
-      });
-      setColumns(allColumns);
-   }, [gridColumns, deleteEntry, onMoveDown, onMoveUp, rows.length, validateRow, readonly]);
+   const addNewRow = (): void => {
+      const newRow: GridComponentRow<T> = { ...defaultEntry, idx: counter };
+      setRows([...rows, newRow]);
+      setEditingRows({ [newRow.idx]: true });
+      setCounter(prev => prev + 1);
+      onAdd?.(newRow);
+   };
 
-   function EditToolbar(): React.ReactElement {
-      return (
-         <Stack direction='row' spacing={1} sx={{ mb: 1 }}>
-            <Button
-               color='primary'
-               startIcon={<AddIcon />}
-               size='small'
-               onClick={() => createSyntheticRow()}
-               disabled={onAdd === undefined || readonly}
-            >
-               {newEntryText ?? 'Add'}
-            </Button>
-            {label ? (
-               <>
-                  <Box sx={{ flexGrow: 1 }} />
-                  <Typography variant='overline' sx={{ paddingX: '5px', color: '#007acc' }}>
-                     {label}
-                  </Typography>
-               </>
-            ) : (
-               <></>
-            )}
-         </Stack>
-      );
-   }
+   const deleteRow = (row: GridComponentRow<T>): void => {
+      setRows(prev => prev.filter(r => r.idx !== row.idx));
+      delete validationErrors.current[row.idx];
+      onDelete?.(row);
+   };
 
-   const NoRowsOverlay = React.useMemo(() => <GridOverlay>{noEntriesText ?? 'No Entries'}</GridOverlay>, [noEntriesText]);
+   const moveRow = (row: GridComponentRow<T>, direction: 'up' | 'down'): void => {
+      const index = rows.findIndex(r => r.idx === row.idx);
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+      if (targetIndex < 0 || targetIndex >= rows.length) {
+         return;
+      }
+
+      const reordered = [...rows];
+      const [movedItem] = reordered.splice(index, 1);
+      reordered.splice(targetIndex, 0, movedItem);
+      setRows(reordered);
+
+      if (direction === 'up') {
+         onMoveUp?.(row);
+      } else {
+         onMoveDown?.(row);
+      }
+   };
+
+   const onRowEditComplete = async (e: DataTableRowEditCompleteEvent): Promise<void> => {
+      const updatedRow = e.newData as GridComponentRow<T>;
+      const index = rows.findIndex(r => r.idx === updatedRow.idx);
+
+      const validation: Partial<Record<keyof T, string>> = {};
+      let hasError = false;
+
+      for (const col of gridColumns) {
+         const value = updatedRow[col.field];
+         const error = validateField?.(col.field, value);
+         if (error) {
+            validation[col.field] = error;
+            hasError = true;
+         }
+      }
+
+      if (hasError) {
+         validationErrors.current[updatedRow.idx] = validation;
+         setEditingRows({ [updatedRow.idx]: true }); // stay in edit mode
+      } else {
+         delete validationErrors.current[updatedRow.idx];
+         const updated = [...rows];
+         updated[index] = updatedRow;
+         setRows(updated);
+         onUpdate?.(updatedRow);
+      }
+   };
+
+   const inputEditor = (field: keyof T): React.JSX.Element => {
+      function InputEditor(options: ColumnEditorOptions): React.JSX.Element {
+         return (
+            <div className='p-inputgroup'>
+               <InputText
+                  value={options.value}
+                  onChange={e => options.editorCallback?.({ ...options.rowData, [field]: e.target.value })}
+                  className={validationErrors.current[options.rowData.idx]?.[field] ? 'p-invalid' : ''}
+               />
+            </div>
+         );
+      }
+      InputEditor.displayName = 'InputEditor';
+      return InputEditor as any;
+   };
+
+   const renderHeader = (): React.JSX.Element => (
+      <Toolbar
+         start={<Button label={newEntryText ?? 'Add'} icon='pi pi-plus' onClick={addNewRow} disabled={readonly || !onAdd} />}
+         end={label && <span className='text-blue-700 font-semibold'>{label}</span>}
+      />
+   );
+
+   const actionTemplate = (row: GridComponentRow<T>): React.JSX.Element => (
+      <div className='flex gap-2'>
+         <Button
+            icon='pi pi-trash'
+            className='p-button-text p-button-danger'
+            onClick={() => deleteRow(row)}
+            disabled={readonly || !onDelete}
+            tooltip='Delete'
+            tooltipOptions={{ position: 'top' }}
+         />
+         <Button
+            icon='pi pi-arrow-up'
+            className='p-button-text'
+            onClick={() => moveRow(row, 'up')}
+            disabled={readonly || !onMoveUp || rows.findIndex(r => r.idx === row.idx) === 0}
+            tooltip='Move Up'
+         />
+         <Button
+            icon='pi pi-arrow-down'
+            className='p-button-text'
+            onClick={() => moveRow(row, 'down')}
+            disabled={readonly || !onMoveDown || rows.findIndex(r => r.idx === row.idx) === rows.length - 1}
+            tooltip='Move Down'
+         />
+      </div>
+   );
 
    return (
-      <Box sx={{ width: '100%', minHeight: '150px' }}>
-         <EditToolbar />
-         <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DataGrid<GridComponentRow<T>>
-               rows={rows}
-               getRowId={getRowId}
-               columns={columns}
-               editMode='row'
-               rowModesModel={rowModesModel}
-               rowSelection={true}
-               onRowModesModelChange={handleRowModesModelChange}
-               onRowEditStop={handleRowEditStop}
-               processRowUpdate={handleRowUpdate}
-               onProcessRowUpdateError={handleRowUpdateError}
-               hideFooter={true}
-               density='compact'
-               disableColumnFilter={true}
-               disableColumnSelector={true}
-               disableColumnSorting={true}
-               disableMultipleRowSelection={true}
-               disableColumnMenu={true}
-               disableDensitySelector={true}
-               onRowEditStart={handleRowEditStart}
-               apiRef={gridApi}
-               ref={gridRef}
-               slots={{ noRowsOverlay: () => NoRowsOverlay }}
-               sx={{
-                  fontSize: '1em',
-                  width: '100%',
-                  '&.MuiDataGrid-root': {
-                     width: '100%'
-                  },
-                  '& .actions': {
-                     color: 'text.secondary'
-                  },
-                  '& .textPrimary': {
-                     color: 'text.primary'
-                  },
-                  '& :focus': {
-                     outline: 'none !important'
-                  },
-                  '& .MuiOutlinedInput-notchedOutline': {
-                     borderWidth: 0
-                  },
-                  '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-                     borderWidth: '0 !important'
-                  },
-                  '& .MuiDataGrid-row--editing .MuiDataGrid-cell': {
-                     backgroundColor: 'transparent !important'
-                  },
-                  '& .MuiInputBase-input': {
-                     padding: '0 9px',
-                     fontSize: '13px'
-                  },
-                  '& .MuiAutocomplete-input, & .MuiAutocomplete-input': {
-                     padding: '2px 3px !important',
-                     fontSize: '13px'
-                  },
-                  '& .MuiSelect-select': {
-                     paddingTop: '1px'
-                  },
-                  '& .Mui-error': {
-                     backgroundColor: 'var(--theia-inputValidation-errorBackground)',
-                     color: 'var(--theia-inputValidation-errorBorder)'
-                  },
-                  '& .MuiDataGrid-columnHeader': {
-                     textTransform: 'uppercase',
-                     fontSize: '0.75em',
-                     letterSpacing: '0.1em'
-                  }
-               }}
-               {...props}
-            />
-         </div>
-      </Box>
+      <div style={{ width: '100%' }}>
+         {renderHeader()}
+         <DataTable
+            value={rows}
+            editMode='row'
+            dataKey='idx'
+            onRowEditComplete={onRowEditComplete}
+            editingRows={editingRows}
+            onRowEditCancel={() => setEditingRows({})}
+            emptyMessage={noEntriesText ?? 'No entries'}
+            tableStyle={{ minWidth: '100%' }}
+            size='small'
+         >
+            {gridColumns.map(col => (
+               <Column
+                  key={String(col.field)}
+                  field={String(col.field)}
+                  header={col.header}
+                  editor={inputEditor(col.field)}
+                  // editorValidator is not a valid prop for Column, use cellEditValidator if needed
+                  body={(rowData: GridComponentRow<T>) => {
+                     const error = validationErrors.current[rowData.idx]?.[col.field];
+                     return (
+                        <div>
+                           {String(rowData[col.field])}
+                           {error && <small className='p-error block'>{error}</small>}
+                        </div>
+                     );
+                  }}
+               />
+            ))}
+            <Column rowEditor header='Edit' bodyStyle={{ textAlign: 'center' }} style={{ width: '5rem' }} />
+            <Column body={actionTemplate} header='Actions' style={{ width: '10rem' }} />
+         </DataTable>
+      </div>
    );
-}
-
-function mergeRightToLeft<T extends Record<string, any>>(one: T, ...more: T[]): T {
-   let result = { ...one };
-   more
-      // eslint-disable-next-line no-null/no-null
-      .filter(entry => entry !== undefined && entry !== null)
-      .forEach(
-         right => (result = Object.entries(right).reduce((acc, [key, value]) => ({ ...acc, [key]: value ?? acc[key] }), { ...result }))
-      );
-   return result;
 }

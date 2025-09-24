@@ -23,6 +23,7 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
    });
 
    test('Create new entity via toolbox', async () => {
+      // --- Part 1: Create entity and save diagram ---
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       // Create new entity
       await diagramEditor.waitForCreationOfType(LogicalEntity, async () => {
@@ -37,8 +38,12 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
       const newEntity = await diagramEditor.getLogicalEntity(NEW_ENTITY_LABEL);
       expect(newEntity).toBeDefined();
 
-      // Switch to diagram code editor and check the file contains the new entity node
-      const diagramCodeEditor = await diagramEditor.parent.switchToCodeEditor();
+      // Save and close the diagram to ensure persistence
+      await diagramEditor.parent.saveAndClose();
+
+      // --- Part 2: Verify diagram file content ---
+      const diagramEditorForVerification = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramCodeEditor = await diagramEditorForVerification.parent.switchToCodeEditor();
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(10)).toMatch(`- id: ${NEW_ENTITY_LABEL}Node`);
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(11)).toMatch(`entity: ${NEW_ENTITY_LABEL}`);
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(12)).toMatch(/x:\s*\d+/);
@@ -47,6 +52,7 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(15)).toMatch(/height:\s*\d+/);
       await diagramCodeEditor.saveAndClose();
 
+      // --- Part 3: Verify new entity file ---
       // Verify that the entity file is listed in the explorer view
       const explorer = await app.openExplorerView();
       expect(await explorer.existsFileNode(NEW_ENTITY_PATH)).toBeTruthy();
@@ -61,8 +67,25 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
    });
 
    test('Edit entity name & description via properties', async () => {
-      // Open the system diagram with the new entity
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // --- Setup: Create entity if it does not exist ---
+      let diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const entity = await diagramEditor.findLogicalEntity(NEW_ENTITY_LABEL);
+      if (!entity) {
+         await diagramEditor.waitForCreationOfType(LogicalEntity, async () => {
+            const existingEntity = await diagramEditor.getLogicalEntity('EmptyEntity');
+            await diagramEditor.enableTool('Create Entity');
+            const taskBounds = await existingEntity.bounds();
+            await taskBounds.position('top_center').moveRelative(0, -100).click();
+            await new TheiaMinimalDialog(app).confirm();
+         });
+         await diagramEditor.parent.saveAndClose();
+         diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      }
+
+      // --- Test ---
+      await diagramEditor.waitForVisible();
+      // Poll until the entity is found, to avoid race conditions on diagram load
+      await expect.poll(async () => diagramEditor.findLogicalEntity(NEW_ENTITY_LABEL)).toBeDefined();
       // Open the property widget of the new entity and update it's name and description
       const properties = await diagramEditor.selectLogicalEntityAndOpenProperties(NEW_ENTITY_LABEL);
       const form = await properties.form();
@@ -86,8 +109,40 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
    });
 
    test('Hide new entity', async () => {
-      // Open the system diagram with the renamed entity node
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // --- Setup: Create and rename entity if it does not exist ---
+      let diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const entity = await diagramEditor.findLogicalEntity(RENAMED_ENTITY_LABEL);
+
+      if (!entity) {
+         const originalEntity = await diagramEditor.findLogicalEntity(NEW_ENTITY_LABEL);
+         if (!originalEntity) {
+            // Create NewEntity
+            await diagramEditor.waitForCreationOfType(LogicalEntity, async () => {
+               const existingEntity = await diagramEditor.getLogicalEntity('EmptyEntity');
+               await diagramEditor.enableTool('Create Entity');
+               const taskBounds = await existingEntity.bounds();
+               await taskBounds.position('top_center').moveRelative(0, -100).click();
+               await new TheiaMinimalDialog(app).confirm();
+            });
+            await diagramEditor.parent.saveAndClose();
+            diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+         }
+
+         // Now, rename NewEntity to NewEntityRenamed
+         const properties = await diagramEditor.selectLogicalEntityAndOpenProperties(NEW_ENTITY_LABEL);
+         const form = await properties.form();
+         await form.generalSection.setName(RENAMED_ENTITY_LABEL);
+         await form.generalSection.setDescription(RENAMED_ENTITY_DESCRIPTION);
+         await form.waitForDirty();
+         await properties.saveAndClose();
+         await diagramEditor.parent.saveAndClose();
+      } else {
+         // If renamed entity already exists, just close the editor
+         await diagramEditor.parent.saveAndClose();
+      }
+
+      // --- Test ---
+      diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       await diagramEditor.activate();
       const renamedEntity = await diagramEditor.getLogicalEntity(RENAMED_ENTITY_LABEL);
       // Hide the entity node
