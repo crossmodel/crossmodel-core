@@ -16,7 +16,7 @@
 /* PrimeReact component styles */
 
 /* Theme-specific styles */
-.light-theme {
+.crossmodel-light .p-component {
    --surface-ground: #ffffff;
    --surface-section: #f8f9fa;
    --surface-card: #ffffff;
@@ -28,7 +28,7 @@
    --focus-ring: 0 0 0 0.2rem #007acc40;
 }
 
-.dark-theme {
+.crossmodel-dark .p-component {
    --surface-ground: #1e1e1e;
    --surface-section: #252526;
    --surface-card: #252526;
@@ -402,13 +402,13 @@ span.w-full.p-autocomplete {
 }
 
 /* Dark theme overlay panels (dropdowns, filters, etc.) */
-.dark-theme .p-column-filter-overlay,
-.dark-theme .p-dropdown-panel,
-.dark-theme .p-multiselect-panel,
-.dark-theme .p-autocomplete-panel,
-.dark-theme .p-dialog,
-.dark-theme .p-overlaypanel,
-.dark-theme .p-menu {
+.crossmodel-dark .p-column-filter-overlay,
+.crossmodel-dark .p-dropdown-panel,
+.crossmodel-dark .p-multiselect-panel,
+.crossmodel-dark .p-autocomplete-panel,
+.crossmodel-dark .p-dialog,
+.crossmodel-dark .p-overlaypanel,
+.crossmodel-dark .p-menu {
    background: var(--surface-card);
    color: var(--text-color);
    border: 1px solid var(--surface-border);
@@ -420,27 +420,27 @@ span.w-full.p-autocomplete {
 }
 
 /* Dark theme overlay items (list items in dropdowns, etc.) */
-.dark-theme .p-dropdown-item,
-.dark-theme .p-multiselect-item,
-.dark-theme .p-autocomplete-item,
-.dark-theme .p-column-filter-row,
-.dark-theme .p-menuitem {
+.crossmodel-dark .p-dropdown-item,
+.crossmodel-dark .p-multiselect-item,
+.crossmodel-dark .p-autocomplete-item,
+.crossmodel-dark .p-column-filter-row,
+.crossmodel-dark .p-menuitem {
    color: var(--text-color);
 }
 
 /* Dark theme hover states for overlay items */
-.dark-theme .p-dropdown-item:hover:not(.p-disabled),
-.dark-theme .p-multiselect-item:hover:not(.p-disabled),
-.dark-theme .p-autocomplete-item:hover:not(.p-disabled),
-.dark-theme .p-column-filter-row:hover,
-.dark-theme .p-menuitem:hover:not(.p-disabled) {
+.crossmodel-dark .p-dropdown-item:hover:not(.p-disabled),
+.crossmodel-dark .p-multiselect-item:hover:not(.p-disabled),
+.crossmodel-dark .p-autocomplete-item:hover:not(.p-disabled),
+.crossmodel-dark .p-column-filter-row:hover,
+.crossmodel-dark .p-menuitem:hover:not(.p-disabled) {
    background: var(--surface-hover);
 }
 
 /* Dark theme selected states */
-.dark-theme .p-dropdown-item.p-highlight,
-.dark-theme .p-multiselect-item.p-highlight,
-.dark-theme .p-autocomplete-item.p-highlight {
+.crossmodel-dark .p-dropdown-item.p-highlight,
+.crossmodel-dark .p-multiselect-item.p-highlight,
+.crossmodel-dark .p-autocomplete-item.p-highlight {
    background: var(--primary-color);
    color: var(--primary-color-text);
 }
