@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/composite-editor",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "CrossModel Editor Contribution",
   "keywords": [
     "theia-extension"
@@ -27,9 +27,9 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/core": "0.9.2",
-    "@crossmodel/form-client": "0.9.2",
-    "@crossmodel/glsp-client": "0.9.2",
+    "@crossmodel/core": "0.9.3",
+    "@crossmodel/form-client": "0.9.3",
+    "@crossmodel/glsp-client": "0.9.3",
     "@eclipse-glsp/theia-integration": "2.4.0",
     "@theia/core": "1.64.1",
     "@theia/editor": "1.64.1",
