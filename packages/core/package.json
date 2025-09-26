@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/core",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "CrossModel Core Contribution",
   "keywords": [
     "theia-extension"
@@ -28,9 +28,9 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/model-service": "0.9.1",
-    "@crossmodel/protocol": "0.9.1",
-    "@crossmodel/react-model-ui": "0.9.1",
+    "@crossmodel/model-service": "0.9.2",
+    "@crossmodel/protocol": "0.9.2",
+    "@crossmodel/react-model-ui": "0.9.2",
     "@theia/core": "1.64.1",
     "@theia/filesystem": "1.64.1",
     "@theia/markers": "1.64.1",
