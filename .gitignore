@@ -21,3 +21,5 @@ dist
 **/allure-results
 *.vsix
 applications/electron-app/resources/license_en.txt
+extensions/crossmodel-lang/cross-model.tmLanguage.json
+extensions/crossmodel-lang/language-configuration.json

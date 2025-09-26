@@ -21,7 +21,8 @@
   "type": "module",
   "main": "./out/extension.cjs",
   "scripts": {
-    "build": "yarn build:esbuild",
+    "build": "yarn build:esbuild && yarn build:copy-language-config",
+    "build:copy-language-config": "shx cp ../../packages/server/syntaxes/cross-model.tmLanguage.json . && shx cp ../../packages/server/language-configuration.json .",
     "build:esbuild": "node esbuild.mjs",
     "build:tsc": "tsc -b tsconfig.json",
     "build:webpack": "webpack --mode development",
@@ -62,7 +63,7 @@
       {
         "language": "cross-model",
         "scopeName": "source.cross-model",
-        "path": "../../packages/server/syntaxes/cross-model.tmLanguage.json"
+        "path": "cross-model.tmLanguage.json"
       }
     ],
     "languages": [
@@ -75,7 +76,7 @@
         "extensions": [
           ".cm"
         ],
-        "configuration": "../../packages/server/language-configuration.json"
+        "configuration": "language-configuration.json"
       }
     ]
   },
