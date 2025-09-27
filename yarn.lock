@@ -1136,10 +1136,10 @@
     snabbdom "~3.5.1"
     vscode-jsonrpc "8.2.0"
 
-"@eclipse-glsp/glsp-playwright@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/glsp-playwright/-/glsp-playwright-2.4.0.tgz#f0f8a6426f4f656af8dbe039ad134e68a84e5208"
-  integrity sha512-hr2m7wYA7a3vy4CxjxEJREanA3V9AzxobKrt1epBDUrAVCctsrAhZ7khJ0lRRr4e3uP7brQV2rhLq2DJ2KHmFw==
+"@eclipse-glsp/glsp-playwright@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/glsp-playwright/-/glsp-playwright-2.5.0.tgz#73cde02a2d8cb71b5b29b4d747fff4179e113588"
+  integrity sha512-HKh1TuZSDdAJO5Ws2Qesufyx6hFU/3RmEcJ1honay5IgVDbbae1tpVNr5Z02IN8EFSLAZVPMhOnCiaktEytHxA==
   dependencies:
     "@vscode/test-electron" "^2.3.2"
     ts-dedent "^2.2.0"
