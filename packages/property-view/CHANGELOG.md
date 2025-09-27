@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.9.4](https://github.com/crossmodel/crossmodel-core/compare/v0.9.3...v0.9.4) (2025-09-27)
+
+
+### Bug Fixes
+
+* Fixed crossmodel-lang packaging & language configuration; Upgraded GLSP to v2.5.0 ([#178](https://github.com/crossmodel/crossmodel-core/issues/178)) ([0a1c95e](https://github.com/crossmodel/crossmodel-core/commit/0a1c95e040e2ae6fbb514602b749bd6f84a4e6c7))
+
+
+
+
+
 ## [0.9.3](https://github.com/crossmodel/crossmodel-core/compare/v0.9.2...v0.9.3) (2025-09-26)
 
 **Note:** Version bump only for package @crossmodel/property-view
