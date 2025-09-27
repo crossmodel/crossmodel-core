@@ -1124,50 +1124,50 @@
   resolved "https://registry.yarnpkg.com/@discoveryjs/json-ext/-/json-ext-0.5.7.tgz#1d572bfbbe14b7704e0ba0f39b74815b84870d70"
   integrity sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==
 
-"@eclipse-glsp/client@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/client/-/client-2.4.0.tgz#b4ef78cb82c93e43298c6eed9941f037ad329e7c"
-  integrity sha512-NAWab8EDc3GkqXUH/pr0fbLH3pIShT/N0myliPYEXl/m3NYM4WAtn6HoMypBP2D8amd/PRLayXBxThTcsPofxw==
+"@eclipse-glsp/client@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/client/-/client-2.5.0.tgz#cbaf931214177ead720d492e23cab6590ed31d76"
+  integrity sha512-5uIyxXcUBxfGpvX/N8gIFvZnRmY19kjv2QAPt/polCcMLVSc2zRDXrF5OMvubf1K+bN1AJBNkLQhnFmg4FFAAg==
   dependencies:
-    "@eclipse-glsp/sprotty" "2.4.0"
+    "@eclipse-glsp/sprotty" "2.5.0"
     autocompleter "^9.1.2"
     file-saver "^2.0.5"
     lodash "4.17.21"
     snabbdom "~3.5.1"
     vscode-jsonrpc "8.2.0"
 
-"@eclipse-glsp/glsp-playwright@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/glsp-playwright/-/glsp-playwright-2.4.0.tgz#f0f8a6426f4f656af8dbe039ad134e68a84e5208"
-  integrity sha512-hr2m7wYA7a3vy4CxjxEJREanA3V9AzxobKrt1epBDUrAVCctsrAhZ7khJ0lRRr4e3uP7brQV2rhLq2DJ2KHmFw==
+"@eclipse-glsp/glsp-playwright@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/glsp-playwright/-/glsp-playwright-2.5.0.tgz#73cde02a2d8cb71b5b29b4d747fff4179e113588"
+  integrity sha512-HKh1TuZSDdAJO5Ws2Qesufyx6hFU/3RmEcJ1honay5IgVDbbae1tpVNr5Z02IN8EFSLAZVPMhOnCiaktEytHxA==
   dependencies:
     "@vscode/test-electron" "^2.3.2"
     ts-dedent "^2.2.0"
     uuid "^9.0.0"
 
-"@eclipse-glsp/graph@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/graph/-/graph-2.4.0.tgz#3f5fc5bf5684d2540e7051a2b6712362adaadeed"
-  integrity sha512-ppCYuz5cQcBpkle9l0tjsaUJth6MKAiiur62svpoXyKrQaEHB/ze1HsECak+b2Bc3h79xC+frFdp1CMdvqvKpg==
+"@eclipse-glsp/graph@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/graph/-/graph-2.5.0.tgz#c8cb5c997268bae4e37804c271ad4d5a2ca8c7fa"
+  integrity sha512-ig53vY1/HAXXj/w92Vn8tpZVWKRONINPTCxFPUPVegsGCL3B2rvsOw7gmVZ7cKcJ1XPh3nfQ0JSUV3uzNX/ujw==
   dependencies:
-    "@eclipse-glsp/protocol" "2.4.0"
+    "@eclipse-glsp/protocol" "2.5.0"
 
-"@eclipse-glsp/protocol@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/protocol/-/protocol-2.4.0.tgz#ac1192a367cefb7c654d0055d7403c3377ff4fe9"
-  integrity sha512-JFu3D51i/mw19WOk4v+m3JoPQpQPZTKcfL6zvsukQkx3rEqi0f1is+PRmJBwlLRZJU6UXGuIKXDo+ubvQUm8Aw==
+"@eclipse-glsp/protocol@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/protocol/-/protocol-2.5.0.tgz#4c0325783bf296a8bdcef483cd0da96b760b35e3"
+  integrity sha512-bPHGamXtkbhFqV+2LAzrkOWw7iUmFIdYT+5uPdGqo3BPITiAA2cyE3iRuePwqgiqidhZrhPW60vL0GRgvgZ3TQ==
   dependencies:
     sprotty-protocol "1.4.0"
     uuid "~10.0.0"
     vscode-jsonrpc "8.2.0"
 
-"@eclipse-glsp/server@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/server/-/server-2.4.0.tgz#f13a98bcecfb7e0eff086f8d09f2144d0db51dec"
-  integrity sha512-NOdS254tGMiXVb7ApKfykQJJ/c6fDgolRhE3SM94erVQTkuHfQWZRxSoWQHBBmmTizNHshumPRI2AYpORKCArg==
+"@eclipse-glsp/server@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/server/-/server-2.5.0.tgz#df3f817d4dd63eaf3104cea7b9e70e67d2141ed7"
+  integrity sha512-oXx8Pul8zZm6IKYu02CukPbGT/HNgIzMnouNCUxe1lQfpl7GGmeRd1kamr/Gg6VweKayVeiLHX+Y5qTSnM7iUg==
   dependencies:
-    "@eclipse-glsp/graph" "2.4.0"
-    "@eclipse-glsp/protocol" "2.4.0"
+    "@eclipse-glsp/graph" "2.5.0"
+    "@eclipse-glsp/protocol" "2.5.0"
     "@types/uuid" "8.3.1"
     commander "^8.3.0"
     fast-json-patch "^3.1.0"
@@ -1176,25 +1176,25 @@
     winston "^3.3.3"
     ws "^8.12.1"
 
-"@eclipse-glsp/sprotty@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/sprotty/-/sprotty-2.4.0.tgz#8155c14321d95401b4e0cc08694762d7136f594c"
-  integrity sha512-vVc2+mTEj3YHH3hX82OQB+2cSaY02uRHQz3Ed6QIB2MsPuKOgVU4SNI3bnPfJvtqsxlpjF5gMPISI9lM82krpw==
+"@eclipse-glsp/sprotty@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/sprotty/-/sprotty-2.5.0.tgz#0f83bec254717cc0bb16308babcf1c23de62d9bd"
+  integrity sha512-pjVoa0iXoRPivFuKxmxYETGlIIwVmW1tKVd2jKauci4m11a48yenaFGqEtlxHJPRBnXrRKTPdoSmTtovKM5lhA==
   dependencies:
-    "@eclipse-glsp/protocol" "2.4.0"
+    "@eclipse-glsp/protocol" "2.5.0"
     autocompleter "^9.1.0"
     snabbdom "~3.5.1"
     sprotty "1.4.0"
     sprotty-protocol "1.4.0"
     vscode-jsonrpc "8.2.0"
 
-"@eclipse-glsp/theia-integration@2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-glsp/theia-integration/-/theia-integration-2.4.0.tgz#ced92162fc9b969d3570d1c727e3e90d40f156fd"
-  integrity sha512-1hmZxE57Fqd4KivTGvzktDWXYtFTPnbfONpRYSS/eKqG+l/1JQYearE4zrnthuvud5DRb2fNXtJE//hZgg5YeQ==
+"@eclipse-glsp/theia-integration@2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@eclipse-glsp/theia-integration/-/theia-integration-2.5.0.tgz#bb19617ae60d614590b5593274d6bea196d76db8"
+  integrity sha512-FNhkPWxvT91NtXN/CuVIZQXFNWLOIgkXyaWA6Mi7aPEyd8pPrjK6Al/h8W/9AwLHSDS0gajf0dKgYXCXih2BRg==
   dependencies:
-    "@eclipse-glsp/client" "2.4.0"
-    ws "~8.11.0"
+    "@eclipse-glsp/client" "2.5.0"
+    ws "^8.17.1"
 
 "@electron/asar@3.2.18":
   version "3.2.18"
@@ -16620,11 +16620,6 @@ ws@^8.12.1, ws@^8.17.1, ws@^8.18.0:
   version "8.18.3"
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.3.tgz#b56b88abffde62791c639170400c93dcb0c95472"
   integrity sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==
-
-ws@~8.11.0:
-  version "8.11.0"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-8.11.0.tgz#6a0d36b8edfd9f96d8b25683db2f8d7de6e8e143"
-  integrity sha512-HPG3wQd9sNQoT9xHyNCXoDUa+Xw/VevmY9FoHyQ+g+rrMn4j6FB4np7Z0OhdTgjx6MgQLK7jwSy1YecU1+4Asg==
 
 ws@~8.17.1:
   version "8.17.1"

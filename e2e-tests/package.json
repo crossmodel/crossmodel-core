@@ -16,7 +16,7 @@
     "ui-test": "yarn build && yarn playwright test"
   },
   "dependencies": {
-    "@eclipse-glsp/glsp-playwright": "2.4.0",
+    "@eclipse-glsp/glsp-playwright": "2.5.0",
     "@playwright/test": "^1.47.0",
     "@theia/playwright": "1.64.1",
     "ts-dedent": "^2.2.0"
