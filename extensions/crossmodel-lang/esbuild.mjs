@@ -41,7 +41,7 @@ const ctx = await esbuild.context({
       '.js': '.cjs'
    },
    loader: { '.ts': 'ts' },
-   external: ['vscode', 'prettier', 'web-worker', '@crossmodel/server'],
+   external: ['vscode', 'prettier', 'web-worker'],
    platform: 'node',
    sourcemap: !minify,
    minify,
