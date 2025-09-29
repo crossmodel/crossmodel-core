@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { findNextUnique, identifier, LogicalAttribute, toId } from '@crossmodel/protocol';
+import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
@@ -10,7 +10,10 @@ import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
-export interface EntityAttributeRow extends LogicalAttribute {
+export interface EntityAttributeRow {
+   $type: 'LogicalAttribute';
+   $globalId: Reference<'LogicalAttribute'>;
+   id: string;
    idx: number;
    name: string;
    datatype: string;
@@ -51,7 +54,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          setValidationErrors({});
 
          if (attribute.name) {
-            const id = findNextUnique(toId(findNextUnique(attribute.name, entity.attributes, identifier)), entity.attributes, identifier);
+            const id = findNextUnique(
+               toId(findNextUnique(attribute.name, entity.attributes, attr => attr.name || '')),
+               entity.attributes,
+               attr => attr.id || ''
+            );
 
             dispatch({
                type: 'entity:attribute:add-attribute',
@@ -103,17 +110,21 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const gridData = React.useMemo(
       () =>
-         (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => ({
-            idx,
-            name: attr.name || '',
-            datatype: attr.datatype || 'string',
-            description: attr.description || '',
-            identifier: (attr as any).identifier || false,
-            id: attr.id || '',
-            $type: 'LogicalAttribute',
-            $globalId: attr.id || ''
-         })) as EntityAttributeRow[],
-      [entity.attributes]
+         (entity.attributes || []).map((attr: LogicalAttribute, idx) => {
+            const primaryIdentifier = entity.identifiers?.find(i => i.primary);
+            const identifier = primaryIdentifier?.attributes.some(a => a.id === attr.id) || false;
+            return {
+               idx,
+               name: attr.name || '',
+               datatype: attr.datatype || 'string',
+               description: attr.description || '',
+               identifier,
+               id: attr.id,
+               $type: 'LogicalAttribute',
+               $globalId: attr.$globalId
+            };
+         }) as EntityAttributeRow[],
+      [entity.attributes, entity.identifiers]
    );
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
@@ -202,13 +213,47 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          }
          setValidationErrors({});
 
+         // Get old attribute state
+         const oldAttribute = entity.attributes[attribute.idx];
+
+         // First update just the basic attribute properties
          dispatch({
             type: 'entity:attribute:update',
             attributeIdx: attribute.idx,
-            attribute: attribute
+            attribute: {
+               ...oldAttribute,
+               name: attribute.name,
+               datatype: attribute.datatype,
+               description: attribute.description
+            }
          });
+
+         // Handle identifier changes separately
+         const identifierChanged = attribute.identifier !== oldAttribute.identifier;
+         if (identifierChanged && attribute.identifier) {
+            // Check if the attribute is already part of any identifier
+            const existingIdentifier = entity.identifiers?.find(identifier =>
+               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id))
+            );
+
+            // Only create a new identifier if the attribute isn't already part of one
+            if (!existingIdentifier) {
+               dispatch({
+                  type: 'entity:identifier:add-identifier',
+                  identifier: {
+                     id: `ID_${oldAttribute.id}`,
+                     name: `Identifier ${oldAttribute.name}`,
+                     primary: !entity.identifiers || entity.identifiers.length === 0,
+                     attributes: [oldAttribute.id] as any,
+                     $type: 'LogicalIdentifier',
+                     customProperties: [],
+                     $globalId: `${entity.id}.${oldAttribute.id}`
+                  }
+               });
+            }
+         }
       },
-      [dispatch, defaultEntry, validateField]
+      [dispatch, defaultEntry, validateField, entity]
    );
 
    if (!entity) {
