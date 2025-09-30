@@ -111,14 +111,17 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const gridData = React.useMemo(
       () =>
          (entity.attributes || []).map((attr: LogicalAttribute, idx) => {
-            const primaryIdentifier = entity.identifiers?.find(i => i.primary);
-            const identifier = primaryIdentifier?.attributes.some(a => a.id === attr.id) || false;
+            // Check if this attribute is part of any identifier
+            const isIdentifier =
+               entity.identifiers?.some(identifier =>
+                  identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
+               ) || false;
             return {
                idx,
                name: attr.name || '',
                datatype: attr.datatype || 'string',
                description: attr.description || '',
-               identifier,
+               identifier: isIdentifier,
                id: attr.id,
                $type: 'LogicalAttribute',
                $globalId: attr.$globalId
@@ -229,15 +232,14 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          });
 
          // Handle identifier changes separately
-         const identifierChanged = attribute.identifier !== oldAttribute.identifier;
-         if (identifierChanged && attribute.identifier) {
-            // Check if the attribute is already part of any identifier
-            const existingIdentifier = entity.identifiers?.find(identifier =>
-               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id))
-            );
+         const isCurrentlyIdentifier = entity.identifiers?.some(identifier =>
+            identifier.attributes.some(attr => (typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id))
+         );
+         const identifierChanged = attribute.identifier !== isCurrentlyIdentifier;
 
-            // Only create a new identifier if the attribute isn't already part of one
-            if (!existingIdentifier) {
+         if (identifierChanged) {
+            if (attribute.identifier) {
+               // Add new identifier
                dispatch({
                   type: 'entity:identifier:add-identifier',
                   identifier: {
@@ -250,6 +252,17 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      $globalId: `${entity.id}.${oldAttribute.id}`
                   }
                });
+            } else {
+               // Remove identifier that contains this attribute
+               const identifierToRemove = entity.identifiers?.find(identifier =>
+                  identifier.attributes.some(attr => (typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id))
+               );
+               if (identifierToRemove) {
+                  dispatch({
+                     type: 'entity:identifier:delete-identifier',
+                     identifierIdx: entity.identifiers.indexOf(identifierToRemove)
+                  });
+               }
             }
          }
       },
