@@ -92,12 +92,26 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleAttributeDelete = React.useCallback(
       (attribute: EntityAttributeRow): void => {
+         // First find if this attribute is part of any identifier
+         const identifierIdx = entity.identifiers?.findIndex(identifier =>
+            identifier.attributes.some(attr => (typeof attr === 'string' ? attr === attribute.id : attr.id === attribute.id))
+         );
+
+         // If it is part of an identifier, delete the identifier first
+         if (identifierIdx !== undefined && identifierIdx !== -1) {
+            dispatch({
+               type: 'entity:identifier:delete-identifier',
+               identifierIdx
+            });
+         }
+
+         // Then delete the attribute
          dispatch({
             type: 'entity:attribute:delete-attribute',
             attributeIdx: attribute.idx
          });
       },
-      [dispatch]
+      [dispatch, entity.identifiers]
    );
 
    const validateField = React.useCallback((rowData: EntityAttributeRow): Record<string, string> => {
