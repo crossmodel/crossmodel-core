@@ -292,9 +292,42 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          }
       };
 
+      const handleFocusOut = (event: FocusEvent): void => {
+         const tableElement = tableRef.current?.getElement();
+         if (!tableElement) {
+            return;
+         }
+
+         const relatedTarget = event.relatedTarget as HTMLElement;
+         if (!relatedTarget) {
+            return; // Exit if there's no related target (e.g., when switching windows)
+         }
+
+         const isInsideTable = tableElement.contains(relatedTarget);
+
+         // allow focus moves to PrimeReact overlay panels
+         const isInsideOverlay = relatedTarget.closest(
+            '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
+         );
+
+         if (isInsideOverlay) {
+            return; // focusing into overlay shouldn't exit edit mode
+         }
+
+         if (!isInsideTable) {
+            // Outside table → save & exit
+            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               rowEditorSaveButton.click();
+            }
+         }
+      };
+
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('focusout', handleFocusOut);
       return () => {
          document.removeEventListener('mousedown', handleClickOutside);
+         document.removeEventListener('focusout', handleFocusOut);
       };
    }, [activeRowKey]);
 
