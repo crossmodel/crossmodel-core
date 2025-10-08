@@ -8,6 +8,14 @@ import { createFileNavigatorContainer } from '@theia/navigator/lib/browser/navig
 
 @injectable()
 export class CrossModelFileNavigatorWidget extends FileNavigatorWidget {
+   protected override createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+      const attrs = super.createContainerAttributes();
+      return {
+         ...attrs,
+         onClick: event => this.handleClickEvent(this.model.root, event)
+      };
+   }
+
    protected override toContextMenuArgs(node: SelectableTreeNode): any[] | undefined {
       const uris = this.model.selectedFileStatNodes.map(selected => selected.uri);
       if (uris.length > 0) {
