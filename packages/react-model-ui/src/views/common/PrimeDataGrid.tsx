@@ -300,12 +300,30 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
          const relatedTarget = event.relatedTarget as HTMLElement;
          if (!relatedTarget) {
-            return; // Exit if there's no related target (e.g., when switching windows)
+            return; // Exit if there's no related target
          }
 
-         const isInsideTable = tableElement.contains(relatedTarget);
+         // Check if we're in Properties View context
+         const propertyView = tableElement.closest('#model-property-view');
+         if (propertyView) {
+            // Check if the focus is still within the Properties View or its overlays
+            const isStillInPropertyView = propertyView.contains(relatedTarget);
+            const isInsideOverlay = relatedTarget.closest(
+               '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
+            );
 
-         // allow focus moves to PrimeReact overlay panels
+            // Only save if we're leaving the Properties View completely
+            if (!isStillInPropertyView && !isInsideOverlay) {
+               const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+               if (rowEditorSaveButton instanceof HTMLElement) {
+                  rowEditorSaveButton.click();
+               }
+            }
+            return;
+         }
+
+         // Regular form editor handling
+         const isInsideTable = tableElement.contains(relatedTarget);
          const isInsideOverlay = relatedTarget.closest(
             '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
          );
