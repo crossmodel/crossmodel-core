@@ -427,7 +427,8 @@ export class CrossModelFileNavigatorContribution extends FileNavigatorContributi
 
 function doesTemplateFitPackage(target: URI | undefined, modelService: ModelService, template: NewElementTemplate): boolean {
    if (!target) {
-      return false;
+      // no selection equals root level, where we allow only data models
+      return template.memberType === DataModelType;
    }
    const surroundingDataModel = modelService.dataModels.find(candidate => URI.fromFilePath(candidate.directory).isEqualOrParent(target));
    if (!surroundingDataModel) {
