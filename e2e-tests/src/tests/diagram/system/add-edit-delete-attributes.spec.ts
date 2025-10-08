@@ -114,6 +114,51 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       await propertyViewForCleanup.saveAndClose();
    });
 
+   test('Edit attribute and verify changes in code editor before saving', async () => {
+      // Add attribute first to ensure it exists for editing
+      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForAdd = await propertyViewForAdd.form();
+      await formForAdd.attributesSection.addAttribute();
+      await formForAdd.waitForDirty();
+      await propertyViewForAdd.saveAndClose();
+
+      // Now, open the system diagram again and edit the attribute
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const form = await propertyView.form();
+      const attribute = await form.attributesSection.getAttribute('New Attribute');
+
+      // Make changes but don't save
+      await attribute.setName(RENAMED_ATTRIBUTE_LABEL);
+      await attribute.setDatatype('Boolean');
+      await attribute.toggleIdentifier();
+      await attribute.setDescription('New Description');
+      await form.waitForDirty();
+
+      // We need to switch to the entity editor specifically
+      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
+      await entityEditor.waitForVisible();
+
+      // Verify changes are present in code editor - note that attributes start after the entity header
+      expect(await entityEditor.textContentOfLineByLineNumber(6)).toMatch(`name: "${RENAMED_ATTRIBUTE_LABEL}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch('description: "New Description"');
+      expect(await entityEditor.textContentOfLineByLineNumber(8)).toMatch('datatype: "Boolean"');
+      expect(await entityEditor.textContentOfLineByLineNumber(9)).toMatch('identifier: true');
+
+      await entityEditor.saveAndClose();
+
+      // Cleanup for next test
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForCleanup = await propertyViewForCleanup.form();
+      await diagramEditorForCleanup.waitForModelUpdate(async () => {
+         await formForCleanup.attributesSection.deleteAttribute(RENAMED_ATTRIBUTE_LABEL);
+         await formForCleanup.waitForDirty();
+      });
+      await propertyViewForCleanup.saveAndClose();
+   });
+
    test('Delete the attribute via properties view', async () => {
       // Add and edit attribute first to ensure it exists for deletion
       const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
