@@ -82,6 +82,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 }: PrimeDataGridProps<T>): React.ReactElement {
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
+   // eslint-disable-next-line no-null/no-null
+   const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
 
    const initFilters = (): DataTableFilterMeta => {
       const initialFilters: DataTableFilterMeta = {
@@ -120,6 +122,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {
+         // First check if we have any active edits that need to be saved
+         const tableElement = tableRef.current?.getElement();
+         if (tableElement && activeRowKey) {
+            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               rowEditorSaveButton.click();
+            }
+         }
+
+         // Then add the new row
          const newRow = { ...defaultNewRow };
          columns.forEach(col => {
             if (!(col.field in newRow)) {
@@ -128,7 +140,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          });
          onRowAdd(newRow as T);
       }
-   }, [onRowAdd, defaultNewRow, columns]);
+   }, [onRowAdd, defaultNewRow, columns, activeRowKey]);
 
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
@@ -256,9 +268,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    };
 
-   // eslint-disable-next-line no-null/no-null
-   const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
-
    React.useEffect(() => {
       if (!activeRowKey) {
          return;
@@ -308,12 +317,12 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          if (propertyView) {
             // Check if the focus is still within the Properties View or its overlays
             const isStillInPropertyView = propertyView.contains(relatedTarget);
-            const isInsideOverlay = relatedTarget.closest(
+            const isInOverlayPanel = relatedTarget.closest(
                '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
             );
 
             // Only save if we're leaving the Properties View completely
-            if (!isStillInPropertyView && !isInsideOverlay) {
+            if (!isStillInPropertyView && !isInOverlayPanel) {
                const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
                if (rowEditorSaveButton instanceof HTMLElement) {
                   rowEditorSaveButton.click();
