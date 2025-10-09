@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { findNextUnique, identifier, LogicalAttribute, toId } from '@crossmodel/protocol';
+import { findNextUnique, LogicalAttribute, toId } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
@@ -51,9 +51,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          setValidationErrors({});
 
          if (attribute.name) {
-            const id = findNextUnique(toId(findNextUnique(attribute.name, entity.attributes, identifier)), entity.attributes, identifier);
-            // Use a temporary ID for the new attribute
-            const tempId = 'new-' + id;
+            // Clear any existing edit states first
+            setEditingRows({});
+
+            // Create a new attribute with a temporary ID
+            const tempId = 'new-' + Date.now();
 
             dispatch({
                type: 'entity:attribute:add-attribute',
@@ -62,7 +64,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch, entity.attributes]
+      [dispatch]
    );
 
    const handleAttributeUpward = React.useCallback(
@@ -216,15 +218,13 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             attribute: attribute
          });
 
-         // Update editing rows with the new ID if it changed
-         if (editingRows && Object.keys(editingRows).length > 0) {
-            const oldId = Object.keys(editingRows)[0];
-            if (oldId !== attribute.id) {
-               setEditingRows({ [attribute.id]: true });
-            }
+         // Clear editing state after successful update
+         if (attribute.id.startsWith('new-')) {
+            // Only clear editing state if this was a newly added row
+            setEditingRows({});
          }
       },
-      [dispatch, defaultEntry, validateField, editingRows, entity]
+      [dispatch, defaultEntry, validateField, entity]
    );
 
    if (!entity) {

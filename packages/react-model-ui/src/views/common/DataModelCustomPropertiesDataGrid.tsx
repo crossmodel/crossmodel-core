@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, CustomPropertyType, findNextUnique, identifier, toId } from '@crossmodel/protocol';
+import { CustomProperty, CustomPropertyType, findNextUnique, toId } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDataModel, useModelDispatch, useReadonly } from '../../ModelContext';
@@ -60,12 +60,8 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          if (!isValidProperty) {
             console.debug('Not saving invalid custom property - no valid name');
 
-            // If this was a new row (has default values), remove it
-            if (
-               customProperty.name === defaultEntry.name &&
-               customProperty.value === defaultEntry.value &&
-               customProperty.description === defaultEntry.description
-            ) {
+            // If this was a new row with empty values, remove it
+            if (customProperty.value === '' && customProperty.description === '' && customProperty.id.startsWith('new-')) {
                console.debug('Removing invalid new custom property');
                onRowDelete(customProperty);
             }
@@ -91,15 +87,13 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             customProperty: customProperty
          });
 
-         // Update editing rows with the new ID if it changed
-         if (editingRows && Object.keys(editingRows).length > 0) {
-            const oldId = Object.keys(editingRows)[0];
-            if (oldId !== customProperty.id) {
-               setEditingRows({ [customProperty.id]: true });
-            }
+         // Clear editing state after successful update
+         if (customProperty.id.startsWith('new-')) {
+            // Only clear editing state if this was a newly added row
+            setEditingRows({});
          }
       },
-      [dispatch, defaultEntry, validateField, onRowDelete, editingRows, dataModel]
+      [dispatch, validateField, onRowDelete, dataModel]
    );
 
    const onRowAdd = React.useCallback(
@@ -108,11 +102,11 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          setValidationErrors({});
 
          if (customProperty.name) {
-            // Create a new custom property with empty values
-            const existingIds = dataModel?.customProperties || [];
-            const id = findNextUnique(toId(findNextUnique(customProperty.name, existingIds, identifier)), existingIds, identifier);
-            // Use a temporary ID for the new custom property
-            const tempId = 'new-' + id;
+            // Clear any existing edit states first
+            setEditingRows({});
+
+            // Create a new custom property with empty values and a temporary ID
+            const tempId = 'new-' + Date.now();
 
             dispatch({
                type: 'datamodel:customProperty:add-customProperty',
@@ -121,7 +115,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch, dataModel?.customProperties]
+      [dispatch]
    );
 
    const onRowMoveUp = React.useCallback(

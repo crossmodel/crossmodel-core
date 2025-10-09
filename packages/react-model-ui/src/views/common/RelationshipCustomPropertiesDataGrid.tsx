@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, CustomPropertyType, findNextUnique, identifier, toId } from '@crossmodel/protocol';
+import { CustomProperty, CustomPropertyType, findNextUnique, toId } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useReadonly, useRelationship } from '../../ModelContext';
@@ -69,15 +69,13 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
             customProperty: customProperty
          });
 
-         // Update editing rows with the new ID if it changed
-         if (editingRows && Object.keys(editingRows).length > 0) {
-            const oldId = Object.keys(editingRows)[0];
-            if (oldId !== customProperty.id) {
-               setEditingRows({ [customProperty.id]: true });
-            }
+         // Clear editing state after successful update
+         if (customProperty.id.startsWith('new-')) {
+            // Only clear editing state if this was a newly added row
+            setEditingRows({});
          }
       },
-      [dispatch, defaultEntry, validateField, editingRows, relationship]
+      [dispatch, defaultEntry, validateField, relationship]
    );
 
    const onRowAdd = React.useCallback(
@@ -87,10 +85,11 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
 
          if (customProperty.name) {
             // Create a new custom property with empty values
-            const existingIds = relationship?.customProperties || [];
-            const id = findNextUnique(toId(findNextUnique(customProperty.name, existingIds, identifier)), existingIds, identifier);
-            // Use a temporary ID for the new custom property
-            const tempId = 'new-' + id;
+            // Clear any existing edit states first
+            setEditingRows({});
+
+            // Create a new custom property with a temporary ID
+            const tempId = 'new-' + Date.now();
 
             dispatch({
                type: 'relationship:customProperty:add-customProperty',
@@ -99,7 +98,7 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
             setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch, relationship?.customProperties]
+      [dispatch]
    );
 
    const onRowMoveUp = React.useCallback(
