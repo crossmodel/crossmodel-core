@@ -78,13 +78,28 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             return;
          }
          setValidationErrors({});
+
+         // Generate a unique ID based on the edited name if this is a new custom property
+         if (customProperty.id.startsWith('new-')) {
+            const newId = findNextUnique(toId(customProperty.name || ''), dataModel?.customProperties || [], prop => prop.id || '');
+            customProperty = { ...customProperty, id: newId };
+         }
+
          dispatch({
             type: 'datamodel:customProperty:update',
             customPropertyIdx: customProperty.idx,
             customProperty: customProperty
          });
+
+         // Update editing rows with the new ID if it changed
+         if (editingRows && Object.keys(editingRows).length > 0) {
+            const oldId = Object.keys(editingRows)[0];
+            if (oldId !== customProperty.id) {
+               setEditingRows({ [customProperty.id]: true });
+            }
+         }
       },
-      [dispatch, defaultEntry, validateField, onRowDelete]
+      [dispatch, defaultEntry, validateField, onRowDelete, dataModel?.customProperties, editingRows]
    );
 
    const onRowAdd = React.useCallback(
@@ -96,15 +111,17 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             // Create a new custom property with empty values
             const existingIds = dataModel?.customProperties || [];
             const id = findNextUnique(toId(findNextUnique(customProperty.name, existingIds, identifier)), existingIds, identifier);
+            // Use a temporary ID for the new custom property
+            const tempId = 'new-' + id;
 
             dispatch({
                type: 'datamodel:customProperty:add-customProperty',
-               customProperty: { ...customProperty, id }
+               customProperty: { ...customProperty, id: tempId }
             });
-            setEditingRows({ [id]: true });
+            setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch, dataModel?.customProperties]
+      [dispatch]
    );
 
    const onRowMoveUp = React.useCallback(

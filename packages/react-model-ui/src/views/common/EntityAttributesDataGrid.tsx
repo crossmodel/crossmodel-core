@@ -52,15 +52,17 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
          if (attribute.name) {
             const id = findNextUnique(toId(findNextUnique(attribute.name, entity.attributes, identifier)), entity.attributes, identifier);
+            // Use a temporary ID for the new attribute
+            const tempId = 'new-' + id;
 
             dispatch({
                type: 'entity:attribute:add-attribute',
-               attribute: { ...attribute, id }
+               attribute: { ...attribute, id: tempId }
             });
-            setEditingRows({ [id]: true });
+            setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch, entity.attributes]
+      [dispatch]
    );
 
    const handleAttributeUpward = React.useCallback(
@@ -202,13 +204,27 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          }
          setValidationErrors({});
 
+         // Generate a unique ID based on the edited name if this is a new attribute
+         if (attribute.id.startsWith('new-')) {
+            const newId = findNextUnique(toId(attribute.name), entity.attributes, attr => attr.id || '');
+            attribute = { ...attribute, id: newId };
+         }
+
          dispatch({
             type: 'entity:attribute:update',
             attributeIdx: attribute.idx,
             attribute: attribute
          });
+
+         // Update editing rows with the new ID if it changed
+         if (editingRows && Object.keys(editingRows).length > 0) {
+            const oldId = Object.keys(editingRows)[0];
+            if (oldId !== attribute.id) {
+               setEditingRows({ [attribute.id]: true });
+            }
+         }
       },
-      [dispatch, defaultEntry, validateField]
+      [dispatch, defaultEntry, validateField, entity.attributes, editingRows]
    );
 
    if (!entity) {
