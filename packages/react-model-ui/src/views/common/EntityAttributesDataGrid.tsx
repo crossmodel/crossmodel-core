@@ -62,7 +62,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch]
+      [dispatch, entity.attributes]
    );
 
    const handleAttributeUpward = React.useCallback(
@@ -224,7 +224,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             }
          }
       },
-      [dispatch, defaultEntry, validateField, entity.attributes, editingRows]
+      [dispatch, defaultEntry, validateField, editingRows, entity]
    );
 
    if (!entity) {

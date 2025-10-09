@@ -77,7 +77,7 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
             }
          }
       },
-      [dispatch, defaultEntry, validateField, relationship?.customProperties, editingRows]
+      [dispatch, defaultEntry, validateField, editingRows, relationship]
    );
 
    const onRowAdd = React.useCallback(
@@ -99,7 +99,7 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
             setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch]
+      [dispatch, relationship?.customProperties]
    );
 
    const onRowMoveUp = React.useCallback(

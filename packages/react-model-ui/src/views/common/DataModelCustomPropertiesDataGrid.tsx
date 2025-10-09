@@ -99,7 +99,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             }
          }
       },
-      [dispatch, defaultEntry, validateField, onRowDelete, dataModel?.customProperties, editingRows]
+      [dispatch, defaultEntry, validateField, onRowDelete, editingRows, dataModel]
    );
 
    const onRowAdd = React.useCallback(
@@ -121,7 +121,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
             setEditingRows({ [tempId]: true });
          }
       },
-      [dispatch]
+      [dispatch, dataModel?.customProperties]
    );
 
    const onRowMoveUp = React.useCallback(
