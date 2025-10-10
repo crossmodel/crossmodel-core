@@ -140,27 +140,13 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
       [entity.customProperties]
    );
 
-   const dataTypeOptions = React.useMemo(() => {
-      const uniqueDataTypes = [...new Set(gridData.map(item => item.$type).filter(Boolean))];
-      return uniqueDataTypes.map(dt => ({ label: dt, value: dt }));
-   }, [gridData]);
-
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
          { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, filterType: 'text' },
-         {
-            field: '$type',
-            header: 'Data Type',
-            editor: !readonly,
-            style: { width: '15%' },
-            filterType: 'multiselect',
-            filterOptions: dataTypeOptions,
-            showFilterMatchModes: false
-         },
          { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, filterType: 'text' },
          { field: 'description', header: 'Description', editor: !readonly, filterType: 'text' }
       ],
-      [readonly, dataTypeOptions]
+      [readonly]
    );
 
    if (!entity) {
@@ -186,7 +172,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
          addButtonLabel='Add Property'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
-         globalFilterFields={['name', '$type', 'value', 'description']}
+         globalFilterFields={['name', 'value', 'description']}
       />
    );
 }
