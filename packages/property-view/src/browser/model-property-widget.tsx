@@ -19,8 +19,6 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    protected renderData?: PropertiesRenderData;
 
-   protected override handleOpenRequest = undefined;
-
    constructor() {
       super();
       this.node.tabIndex = 0;
@@ -70,6 +68,7 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
       return undefined;
    }
 
-  
-   
+   protected override focusInput(): void {
+      // do nothing, we properties are based on selection so we do not want to steal focus
+   }
 }
