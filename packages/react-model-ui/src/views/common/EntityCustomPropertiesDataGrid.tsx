@@ -10,6 +10,7 @@ import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface CustomPropertyRow extends CustomProperty {
    idx: number;
+   _uncommitted?: boolean;
 }
 
 export function EntityCustomPropertiesDataGrid(): React.ReactElement {
@@ -20,25 +21,19 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);
 
-   // Update grid data when entity changes, preserving any rows being edited
+   // Update grid data when entity changes, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Get any rows currently being edited
-         const editingRow = editingRows ? Object.keys(editingRows)[0] : undefined;
-         const currentEditingData = editingRow ? current.find(row => row.id === editingRow) : undefined;
-
-         // Map the new properties
-         const newData = (entity.customProperties || []).map((prop, idx) => ({
+         // Map the committed properties from the entity
+         const committedData = (entity.customProperties || []).map((prop, idx) => ({
             ...prop,
             idx
          }));
 
-         // If we have an editing row that's temporary (new-temp-), preserve it
-         if (currentEditingData && currentEditingData.id.startsWith('new-temp-')) {
-            return [...newData, currentEditingData];
-         }
+         // Preserve any uncommitted rows that are currently being edited
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return newData;
+         return [...committedData, ...uncommittedRows];
       });
    }, [entity.customProperties, editingRows]);
 
@@ -65,6 +60,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (customProperty: CustomPropertyRow) => {
+         // Handle validation
          const errors = validateField(customProperty);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -72,36 +68,36 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
          }
          setValidationErrors({});
 
-         // Check if this is an update to an existing row or a new row
-         const isNewRow = customProperty.id.startsWith('new-temp-');
-         const existingRow = gridData.find(row => row.id === customProperty.id);
+         if (customProperty._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
+            const hasChanges =
+               customProperty.name !== defaultEntry.name ||
+               customProperty.value !== defaultEntry.value ||
+               customProperty.description !== defaultEntry.description;
 
-         if (isNewRow) {
-            // This is a new row being added
-            if (
-               customProperty.name === defaultEntry.name &&
-               customProperty.value === defaultEntry.value &&
-               customProperty.description === defaultEntry.description
-            ) {
-               // If nothing was changed, just remove the temporary row
-               setGridData(data => data.filter(row => row.id !== customProperty.id));
+            if (!hasChanges) {
+               // Remove the row if nothing changed
+               setGridData(current => current.filter(row => row.id !== customProperty.id));
                setEditingRows({});
                return;
             }
 
-            // Generate a proper ID for the new custom property that won't conflict with temporary IDs
+            // Only dispatch if there are actual changes
+            // Generate a proper ID for the new custom property
             const baseId = toId(customProperty.name || '');
-            // Ensure the generated ID doesn't start with 'new-' to avoid conflicts with temporary rows
-            const safeBaseId = baseId.startsWith('new-') ? 'property-' + baseId.slice(4) : baseId;
-            const newId = findNextUnique(safeBaseId, entity?.customProperties || [], prop => prop.id || '');
-            const finalProperty = { ...customProperty, id: newId };
+            const newId = findNextUnique(baseId, entity?.customProperties || [], prop => prop.id || '');
+
+            // Create the final property without temporary fields
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { _uncommitted, id: tempId, ...propertyData } = customProperty;
+            const finalProperty = { ...propertyData, id: newId };
 
             // Add the new property through dispatch
             dispatch({
                type: 'entity:customProperty:add-customProperty',
                customProperty: finalProperty
             });
-         } else if (existingRow) {
+         } else {
             // This is an existing row being updated
             dispatch({
                type: 'entity:customProperty:update',
@@ -113,7 +109,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
          // Clear editing state after successful update
          setEditingRows({});
       },
-      [dispatch, defaultEntry, validateField, entity, gridData]
+      [dispatch, defaultEntry, validateField, entity]
    );
 
    const onRowAdd = React.useCallback((): void => {
@@ -123,13 +119,16 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
       // Clear any existing edit states first
       setEditingRows({});
 
-      // Create a temporary ID for the new row being edited
-      const tempId = 'new-temp-' + Date.now(); // Changed prefix to be more unique
-      setEditingRows({ [tempId]: true });
+      // Create a new uncommitted row with a temporary ID for grid management
+      const tempRow: CustomPropertyRow = {
+         ...defaultEntry,
+         id: 'temp-' + Date.now(), // Temporary ID for grid management
+         _uncommitted: true
+      };
 
-      // Add a temporary row to the grid data without dispatching to the store
-      const tempRow: CustomPropertyRow = { ...defaultEntry, id: tempId };
+      // Add to grid data and set it to editing mode
       setGridData(current => [...current, tempRow]);
+      setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
@@ -198,34 +197,32 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
             const newEditingId = Object.keys(newEditingRows)[0];
             const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
 
-            // Handle cleanup of current editing state
+            // If we're stopping editing a row (either by cancelling or completing)
             if (currentEditingId && !newEditingRows[currentEditingId]) {
-               if (currentEditingId.startsWith('new-temp-')) {
-                  // Remove temporary row from grid data immediately
+               const currentRow = gridData.find(row => row.id === currentEditingId);
+
+               // Always remove uncommitted rows when editing stops
+               if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
+
                // Clear validation errors
                setValidationErrors({});
             }
 
-            // Prevent editing a regular row as if it were new
-            if (newEditingId && !newEditingId.startsWith('new-temp-')) {
-               // Find the row in the current data
-               const rowToEdit = gridData.find(row => row.id === newEditingId);
-               if (rowToEdit) {
-                  // Update editing state without modifying the row
-                  setEditingRows(newEditingRows);
-                  return;
-               }
-            }
-
-            // Update editing state for new rows or cleared states
+            // Update editing state
             setEditingRows(newEditingRows);
 
-            // Clean up any stale temporary rows when starting to edit a new row
-            if (newEditingId && newEditingId.startsWith('new-temp-')) {
-               setGridData(current => current.filter(row => !row.id.startsWith('new-temp-') || row.id === newEditingId));
-            }
+            // Clean up any stale uncommitted rows
+            setGridData(current => {
+               // Keep all committed rows
+               const committedRows = current.filter(row => !row._uncommitted);
+
+               // For uncommitted rows, only keep the one being edited (if any)
+               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
+
+               return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+            });
          }}
          globalFilterFields={['name', 'value', 'description']}
       />

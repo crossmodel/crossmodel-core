@@ -10,6 +10,7 @@ import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface CustomPropertyRow extends CustomProperty {
    idx: number;
+   _uncommitted?: boolean;
 }
 
 export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
@@ -20,25 +21,19 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);
 
-   // Update grid data when dataModel changes, preserving any rows being edited
+   // Update grid data when dataModel changes, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Get any rows currently being edited
-         const editingRow = editingRows ? Object.keys(editingRows)[0] : undefined;
-         const currentEditingData = editingRow ? current.find(row => row.id === editingRow) : undefined;
-
-         // Map the new properties
-         const newData = (dataModel?.customProperties || []).map((prop, idx) => ({
+         // Map the committed properties from the dataModel
+         const committedData = (dataModel?.customProperties || []).map((prop, idx) => ({
             ...prop,
             idx
          }));
 
-         // If we have an editing row that's temporary (new-temp-), preserve it
-         if (currentEditingData && currentEditingData.id.startsWith('new-temp-')) {
-            return [...newData, currentEditingData];
-         }
+         // Preserve any uncommitted rows that are currently being edited
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return newData;
+         return [...committedData, ...uncommittedRows];
       });
    }, [dataModel?.customProperties, editingRows]);
 
@@ -75,6 +70,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (customProperty: CustomPropertyRow) => {
+         // Handle validation
          const errors = validateField(customProperty);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -82,36 +78,36 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          }
          setValidationErrors({});
 
-         // Check if this is an update to an existing row or a new row
-         const isNewRow = customProperty.id.startsWith('new-temp-');
-         const existingRow = gridData.find(row => row.id === customProperty.id);
+         if (customProperty._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
+            const hasChanges =
+               customProperty.name !== defaultEntry.name ||
+               customProperty.value !== defaultEntry.value ||
+               customProperty.description !== defaultEntry.description;
 
-         if (isNewRow) {
-            // This is a new row being added
-            if (
-               customProperty.name === defaultEntry.name &&
-               customProperty.value === defaultEntry.value &&
-               customProperty.description === defaultEntry.description
-            ) {
-               // If nothing was changed, just remove the temporary row
-               setGridData(data => data.filter(row => row.id !== customProperty.id));
+            if (!hasChanges) {
+               // Remove the row if nothing changed
+               setGridData(current => current.filter(row => row.id !== customProperty.id));
                setEditingRows({});
                return;
             }
 
-            // Generate a proper ID for the new custom property that won't conflict with temporary IDs
+            // Only dispatch if there are actual changes
+            // Generate a proper ID for the new custom property
             const baseId = toId(customProperty.name || '');
-            // Ensure the generated ID doesn't start with 'new-' to avoid conflicts with temporary rows
-            const safeBaseId = baseId.startsWith('new-') ? 'property-' + baseId.slice(4) : baseId;
-            const newId = findNextUnique(safeBaseId, dataModel?.customProperties || [], prop => prop.id || '');
-            const finalProperty = { ...customProperty, id: newId };
+            const newId = findNextUnique(baseId, dataModel?.customProperties || [], prop => prop.id || '');
+
+            // Create the final property without temporary fields
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { _uncommitted, id: tempId, ...propertyData } = customProperty;
+            const finalProperty = { ...propertyData, id: newId };
 
             // Add the new property through dispatch
             dispatch({
                type: 'datamodel:customProperty:add-customProperty',
                customProperty: finalProperty
             });
-         } else if (existingRow) {
+         } else {
             // This is an existing row being updated
             dispatch({
                type: 'datamodel:customProperty:update',
@@ -123,23 +119,18 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          // Clear editing state after successful update
          setEditingRows({});
       },
-      [dispatch, defaultEntry, validateField, dataModel, gridData]
+      [dispatch, defaultEntry, validateField, dataModel]
    );
 
-   const onRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
-      // Clear any existing edit states first
-      setEditingRows({});
-
-      // Create a temporary ID for the new row being edited
-      const tempId = 'new-temp-' + Date.now();
-      setEditingRows({ [tempId]: true });
-
-      // Add a temporary row to the grid data without dispatching to the store
-      const tempRow: CustomPropertyRow = { ...defaultEntry, id: tempId };
-      setGridData(current => [...current, tempRow]);
+   const onRowAdd = React.useCallback(() => {
+      const newTempId = `new-temp-${Date.now()}`;
+      const newProperty: CustomPropertyRow = {
+         ...defaultEntry,
+         id: newTempId,
+         _uncommitted: true
+      };
+      setGridData(currentData => [...currentData, newProperty]);
+      setEditingRows(prev => ({ ...prev, [newTempId]: true }));
    }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
