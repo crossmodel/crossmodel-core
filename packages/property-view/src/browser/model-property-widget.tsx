@@ -70,9 +70,6 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
       return undefined;
    }
 
-   protected override focusInput(): void {
-   }
-
    getDocumentUri(): string | undefined {
       return this.document?.uri?.toString();
    }

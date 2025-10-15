@@ -21,7 +21,7 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
    protected readonly commandService: CommandService;
 
    protected override handleOpenRequest = undefined; // we do not need to support opening in editor, we are the editor
-   protected override handleSaveRequest = () => this.save();
+   protected override handleSaveRequest: () => Promise<void> = () => this.save();
 
    protected override getModelProviderProps(): any {
       const props = super.getModelProviderProps();
