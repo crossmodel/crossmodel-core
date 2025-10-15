@@ -155,9 +155,9 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
       if (doc === undefined) {
          throw new Error('Cannot save undefined model');
       }
-      if (ModelDiagnostic.hasErrors(doc.diagnostics)) {
-         // we do not support saving erroneous models in model widgets as we cannot deal with them properly, fixes are done via code editor
-         console.debug(`[${this.options.clientId}] Abort Save as we have an erroneous model`);
+      if (ModelDiagnostic.hasParseErrors(doc.diagnostics)) {
+        
+         console.debug(`[${this.options.clientId}] Abort Save as we have parse errors in the model`);
          return;
       }
       console.debug(`[${this.options.clientId}] Save model`);
