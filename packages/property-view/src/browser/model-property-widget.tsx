@@ -70,7 +70,6 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
       return undefined;
    }
 
-   getDocumentUri(): string | undefined {
-      return this.document?.uri?.toString();
-   }
+  
+   
 }
