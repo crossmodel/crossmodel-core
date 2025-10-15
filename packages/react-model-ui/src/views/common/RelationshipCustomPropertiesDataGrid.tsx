@@ -18,6 +18,29 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+   const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);
+
+   // Update grid data when relationship changes, preserving any rows being edited
+   React.useEffect(() => {
+      setGridData(current => {
+         // Get any rows currently being edited
+         const editingRow = editingRows ? Object.keys(editingRows)[0] : undefined;
+         const currentEditingData = editingRow ? current.find(row => row.id === editingRow) : undefined;
+
+         // Map the new properties
+         const newData = (relationship?.customProperties || []).map((prop, idx) => ({
+            ...prop,
+            idx
+         }));
+
+         // If we have an editing row that's temporary (new-temp-), preserve it
+         if (currentEditingData && currentEditingData.id.startsWith('new-temp-')) {
+            return [...newData, currentEditingData];
+         }
+
+         return newData;
+      });
+   }, [relationship?.customProperties, editingRows]);
 
    const validateField = React.useCallback((rowData: CustomPropertyRow): Record<string, string> => {
       const errors: Record<string, string> = {};
@@ -42,14 +65,6 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (customProperty: CustomPropertyRow) => {
-         if (
-            customProperty.name === defaultEntry.name &&
-            customProperty.value === defaultEntry.value &&
-            customProperty.description === defaultEntry.description
-         ) {
-            console.log('Not saving default new custom property.');
-            return;
-         }
          const errors = validateField(customProperty);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
@@ -57,49 +72,65 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
          }
          setValidationErrors({});
 
-         // Generate a unique ID based on the edited name if this is a new custom property
-         if (customProperty.id.startsWith('new-')) {
-            const newId = findNextUnique(toId(customProperty.name || ''), relationship?.customProperties || [], prop => prop.id || '');
-            customProperty = { ...customProperty, id: newId };
-         }
+         // Check if this is an update to an existing row or a new row
+         const isNewRow = customProperty.id.startsWith('new-temp-');
+         const existingRow = gridData.find(row => row.id === customProperty.id);
 
-         dispatch({
-            type: 'relationship:customProperty:update',
-            customPropertyIdx: customProperty.idx,
-            customProperty: customProperty
-         });
+         if (isNewRow) {
+            // This is a new row being added
+            if (
+               customProperty.name === defaultEntry.name &&
+               customProperty.value === defaultEntry.value &&
+               customProperty.description === defaultEntry.description
+            ) {
+               // If nothing was changed, just remove the temporary row
+               setGridData(data => data.filter(row => row.id !== customProperty.id));
+               setEditingRows({});
+               return;
+            }
 
-         // Clear editing state after successful update
-         if (customProperty.id.startsWith('new-')) {
-            // Only clear editing state if this was a newly added row
-            setEditingRows({});
-         }
-      },
-      [dispatch, defaultEntry, validateField, relationship]
-   );
+            // Generate a proper ID for the new custom property that won't conflict with temporary IDs
+            const baseId = toId(customProperty.name || '');
+            // Ensure the generated ID doesn't start with 'new-' to avoid conflicts with temporary rows
+            const safeBaseId = baseId.startsWith('new-') ? 'property-' + baseId.slice(4) : baseId;
+            const newId = findNextUnique(safeBaseId, relationship?.customProperties || [], prop => prop.id || '');
+            const finalProperty = { ...customProperty, id: newId };
 
-   const onRowAdd = React.useCallback(
-      (customProperty: CustomPropertyRow) => {
-         // Clear any previous validation errors
-         setValidationErrors({});
-
-         if (customProperty.name) {
-            // Create a new custom property with empty values
-            // Clear any existing edit states first
-            setEditingRows({});
-
-            // Create a new custom property with a temporary ID
-            const tempId = 'new-' + Date.now();
-
+            // Add the new property through dispatch
             dispatch({
                type: 'relationship:customProperty:add-customProperty',
-               customProperty: { ...customProperty, id: tempId }
+               customProperty: finalProperty
             });
-            setEditingRows({ [tempId]: true });
+         } else if (existingRow) {
+            // This is an existing row being updated
+            dispatch({
+               type: 'relationship:customProperty:update',
+               customPropertyIdx: customProperty.idx,
+               customProperty: customProperty
+            });
          }
+
+         // Clear editing state after successful update
+         setEditingRows({});
       },
-      [dispatch]
+      [dispatch, defaultEntry, validateField, relationship, gridData]
    );
+
+   const onRowAdd = React.useCallback((): void => {
+      // Clear any previous validation errors
+      setValidationErrors({});
+
+      // Clear any existing edit states first
+      setEditingRows({});
+
+      // Create a temporary ID for the new row being edited
+      const tempId = 'new-temp-' + Date.now();
+      setEditingRows({ [tempId]: true });
+
+      // Add a temporary row to the grid data without dispatching to the store
+      const tempRow: CustomPropertyRow = { ...defaultEntry, id: tempId };
+      setGridData(current => [...current, tempRow]);
+   }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
       (customProperty: CustomPropertyRow) => {
@@ -140,15 +171,6 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
       [readonly]
    );
 
-   const gridData = React.useMemo(
-      () =>
-         (relationship?.customProperties || []).map((prop, idx) => ({
-            ...prop,
-            idx
-         })),
-      [relationship?.customProperties]
-   );
-
    if (!relationship) {
       return <ErrorView errorMessage='No relationship available' />;
    }
@@ -171,7 +193,40 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
          noDataMessage='No custom properties'
          addButtonLabel='Add Property'
          editingRows={editingRows}
-         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         onRowEditChange={(e: DataTableRowEditEvent) => {
+            const newEditingRows = e.data as Record<string, boolean>;
+            const newEditingId = Object.keys(newEditingRows)[0];
+            const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+
+            // Handle cleanup of current editing state
+            if (currentEditingId && !newEditingRows[currentEditingId]) {
+               if (currentEditingId.startsWith('new-temp-')) {
+                  // Remove temporary row from grid data immediately
+                  setGridData(current => current.filter(row => row.id !== currentEditingId));
+               }
+               // Clear validation errors
+               setValidationErrors({});
+            }
+
+            // Prevent editing a regular row as if it were new
+            if (newEditingId && !newEditingId.startsWith('new-temp-')) {
+               // Find the row in the current data
+               const rowToEdit = gridData.find(row => row.id === newEditingId);
+               if (rowToEdit) {
+                  // Update editing state without modifying the row
+                  setEditingRows(newEditingRows);
+                  return;
+               }
+            }
+
+            // Update editing state for new rows or cleared states
+            setEditingRows(newEditingRows);
+
+            // Clean up any stale temporary rows when starting to edit a new row
+            if (newEditingId && newEditingId.startsWith('new-temp-')) {
+               setGridData(current => current.filter(row => !row.id.startsWith('new-temp-') || row.id === newEditingId));
+            }
+         }}
          globalFilterFields={['name', 'value', 'description']}
       />
    );
