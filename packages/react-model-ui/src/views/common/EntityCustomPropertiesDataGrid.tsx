@@ -49,7 +49,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
       () => ({
          $type: CustomPropertyType,
          $globalId: 'toBeAssigned',
-         name: 'New custom property',
+         name: findNextUnique('New custom property', entity?.customProperties || [], p => p.name || ''),
          id: findNextUnique('customProperty', entity?.customProperties || [], p => p.id || ''),
          value: '',
          description: '',
@@ -75,8 +75,8 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
                customProperty.value !== defaultEntry.value ||
                customProperty.description !== defaultEntry.description;
 
-            if (!hasChanges) {
-               // Remove the row if nothing changed
+            if (!hasChanges || !customProperty.name) {
+               // Remove the row if no changes or no name
                setGridData(current => current.filter(row => row.id !== customProperty.id));
                setEditingRows({});
                return;
@@ -84,8 +84,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
 
             // Only dispatch if there are actual changes
             // Generate a proper ID for the new custom property
-            const baseId = toId(customProperty.name || '');
-            const newId = findNextUnique(baseId, entity?.customProperties || [], prop => prop.id || '');
+            const newId = findNextUnique(toId(customProperty.name || ''), entity?.customProperties || [], prop => prop.id || '');
 
             // Create the final property without temporary fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -119,10 +118,10 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
       // Clear any existing edit states first
       setEditingRows({});
 
-      // Create a new uncommitted row with a temporary ID for grid management
+      // Create a new uncommitted row with a proper ID
       const tempRow: CustomPropertyRow = {
          ...defaultEntry,
-         id: 'temp-' + Date.now(), // Temporary ID for grid management
+         id: findNextUnique(toId(defaultEntry.name || ''), entity?.customProperties || [], prop => prop.id || ''),
          _uncommitted: true
       };
 

@@ -84,9 +84,7 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
 
             // Only dispatch if there are actual changes
             // Generate a proper ID for the new custom property
-            const baseId = toId(customProperty.name);
-            const existingIds = relationship?.customProperties || [];
-            const newId = findNextUnique(baseId, existingIds, prop => prop.id || '');
+            const newId = findNextUnique(toId(customProperty.name || ''), relationship?.customProperties || [], prop => prop.id || '');
 
             // Create the final property without temporary fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -119,17 +117,14 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
       // Clear any existing edit states first
       setEditingRows({});
 
-      // Create a temporary ID for the new row being edited
-      const tempId = 'new-temp-' + Date.now();
-      setEditingRows({ [tempId]: true });
-
-      // Create a new uncommitted row with a temporary ID for grid management
+      // Create a new uncommitted row with a proper ID
       const tempRow: CustomPropertyRow = {
          ...defaultEntry,
-         id: tempId,
+         id: findNextUnique(toId(defaultEntry.name || ''), relationship?.customProperties || [], prop => prop.id || ''),
          _uncommitted: true
       };
       setGridData(current => [...current, tempRow]);
+      setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
@@ -200,10 +195,10 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
 
             // If we're stopping editing a row (either by cancelling or completing)
             if (currentEditingId && !newEditingRows[currentEditingId]) {
-               const row = gridData.find(r => r.id === currentEditingId);
+               const currentRow = gridData.find(row => row.id === currentEditingId);
                // Always remove uncommitted rows when editing stops
-               if (row?._uncommitted) {
-                  setGridData(current => current.filter(r => r.id !== currentEditingId));
+               if (currentRow?._uncommitted) {
+                  setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
                // Clear validation errors
                setValidationErrors({});
