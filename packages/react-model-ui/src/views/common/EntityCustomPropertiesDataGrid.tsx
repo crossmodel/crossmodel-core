@@ -128,7 +128,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
       // Add to grid data and set it to editing mode
       setGridData(current => [...current, tempRow]);
       setEditingRows({ [tempRow.id]: true });
-   }, [defaultEntry]);
+   }, [defaultEntry, entity?.customProperties]);
 
    const onRowMoveUp = React.useCallback(
       (customProperty: CustomPropertyRow): void => {

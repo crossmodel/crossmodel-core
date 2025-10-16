@@ -136,7 +136,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       };
       setGridData(current => [...current, tempRow]);
       setEditingRows({ [tempRow.id]: true });
-   }, [defaultEntry]);
+   }, [defaultEntry, dataModel?.customProperties]);
 
    const onRowMoveUp = React.useCallback(
       (customProperty: CustomPropertyRow) => {
