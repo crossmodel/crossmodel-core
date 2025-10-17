@@ -1,0 +1,117 @@
+{
+  "name": "crossmodel-merge",
+  "private": true,
+  "displayName": "CrossModel Merge Assistant",
+  "description": "Langium-powered 3-way merge for CrossModel files.",
+  "version": "0.0.1",
+  "publisher": "crossmodel",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:crossmodelMergeView",
+    "onCommand:crossmodel.previewDiff",
+    "onCommand:crossmodel.mergeFromRef",
+    "onCommand:crossmodel.applySelected",
+    "onCommand:crossmodel.submitChanges"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "CrossModel Merge",
+      "properties": {
+        "crossmodelMerge.modelGlob": {
+          "type": "string",
+          "default": "**/*.cmodel.yaml",
+          "description": "Glob pattern selecting CrossModel documents in the workspace."
+        },
+        "crossmodelMerge.git.targetRef": {
+          "type": "string",
+          "default": "",
+          "description": "Default target ref for merges. Leave empty to prompt each time."
+        }
+      }
+    },
+    "views": {
+      "scm": [
+        {
+          "id": "crossmodelMergeView",
+          "name": "CrossModel Changes"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "crossmodelMergeViewExplorer",
+          "name": "CrossModel Changes"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "crossmodel.previewDiff",
+        "title": "CrossModel: Preview AST Diff"
+      },
+      {
+        "command": "crossmodel.mergeFromRef",
+        "title": "CrossModel: Merge From Ref"
+      },
+      {
+        "command": "crossmodel.applySelected",
+        "title": "CrossModel: Apply Selected Changes"
+      },
+      {
+        "command": "crossmodel.submitChanges",
+        "title": "CrossModel: Submit CrossModel Changes"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "crossmodel.refreshView",
+          "group": "navigation",
+          "when": "view == crossmodelMergeView"
+        },
+        {
+          "command": "crossmodel.acceptAllOurs",
+          "group": "navigation",
+          "when": "view == crossmodelMergeView"
+        },
+        {
+          "command": "crossmodel.acceptAllTheirs",
+          "group": "navigation",
+          "when": "view == crossmodelMergeView"
+        },
+        {
+          "command": "crossmodel.applySelected",
+          "group": "navigation",
+          "when": "view == crossmodelMergeView"
+        },
+        {
+          "command": "crossmodel.showRawDiff",
+          "group": "navigation",
+          "when": "view == crossmodelMergeView"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "yarn run compile",
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "package": "yarn run build",
+    "symlink:browser": "node -e \"process.exit(0)\"",
+    "symlink:electron": "node -e \"process.exit(0)\""
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^20.14.8",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "langium": "^1.2.0",
+    "vscode-uri": "^3.0.8"
+  }
+}
