@@ -1,54 +1,24 @@
 {
   "name": "crossmodel-merge",
-  "private": true,
   "displayName": "CrossModel Merge Assistant",
-  "description": "Langium-powered 3-way merge for CrossModel files.",
   "version": "0.0.1",
-  "publisher": "crossmodel",
-  "engines": {
-    "vscode": "^1.80.0"
-  },
+  "private": true,
+  "description": "Langium-powered 3-way merge for CrossModel files.",
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onView:crossmodelMergeView",
-    "onCommand:crossmodel.previewDiff",
-    "onCommand:crossmodel.mergeFromRef",
-    "onCommand:crossmodel.applySelected",
-    "onCommand:crossmodel.submitChanges"
-  ],
+  "publisher": "crossmodel",
   "main": "./out/extension.js",
+  "scripts": {
+    "build": "yarn run compile",
+    "compile": "tsc -p .",
+    "package": "yarn clean && yarn build && yarn package:vsix",
+    "package:vsix": "vsce package --yarn --allow-star-activation",
+    "symlink:browser": "symlink-dir . ../../applications/browser-app/plugins/crossmodel-merge",
+    "symlink:electron": "symlink-dir . ../../applications/electron-app/plugins/crossmodel-merge",
+    "watch": "tsc -w -p ."
+  },
   "contributes": {
-    "configuration": {
-      "title": "CrossModel Merge",
-      "properties": {
-        "crossmodelMerge.modelGlob": {
-          "type": "string",
-          "default": "**/*.cmodel.yaml",
-          "description": "Glob pattern selecting CrossModel documents in the workspace."
-        },
-        "crossmodelMerge.git.targetRef": {
-          "type": "string",
-          "default": "",
-          "description": "Default target ref for merges. Leave empty to prompt each time."
-        }
-      }
-    },
-    "views": {
-      "scm": [
-        {
-          "id": "crossmodelMergeView",
-          "name": "CrossModel Changes"
-        }
-      ],
-      "explorer": [
-        {
-          "id": "crossmodelMergeViewExplorer",
-          "name": "CrossModel Changes"
-        }
-      ]
-    },
     "commands": [
       {
         "command": "crossmodel.previewDiff",
@@ -67,6 +37,21 @@
         "title": "CrossModel: Submit CrossModel Changes"
       }
     ],
+    "configuration": {
+      "title": "CrossModel Merge",
+      "properties": {
+        "crossmodelMerge.modelGlob": {
+          "type": "string",
+          "default": "**/*.cm",
+          "description": "Glob pattern selecting CrossModel documents in the workspace."
+        },
+        "crossmodelMerge.git.targetRef": {
+          "type": "string",
+          "default": "",
+          "description": "Default target ref for merges. Leave empty to prompt each time."
+        }
+      }
+    },
     "menus": {
       "view/title": [
         {
@@ -95,23 +80,40 @@
           "when": "view == crossmodelMergeView"
         }
       ]
+    },
+    "views": {
+      "scm": [
+        {
+          "id": "crossmodelMergeView",
+          "name": "CrossModel Changes"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "crossmodelMergeViewExplorer",
+          "name": "CrossModel Changes"
+        }
+      ]
     }
   },
-  "scripts": {
-    "build": "yarn run compile",
-    "compile": "tsc -p .",
-    "watch": "tsc -w -p .",
-    "package": "yarn run build",
-    "symlink:browser": "node -e \"process.exit(0)\"",
-    "symlink:electron": "node -e \"process.exit(0)\""
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.80.0",
-    "@types/node": "^20.14.8",
-    "typescript": "^5.4.0"
-  },
+  "activationEvents": [
+    "onView:crossmodelMergeView",
+    "onCommand:crossmodel.previewDiff",
+    "onCommand:crossmodel.mergeFromRef",
+    "onCommand:crossmodel.applySelected",
+    "onCommand:crossmodel.submitChanges"
+  ],
   "dependencies": {
     "langium": "^1.2.0",
     "vscode-uri": "^3.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.8",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.32.1-0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
   }
 }
