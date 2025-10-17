@@ -50,7 +50,7 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
          $type: CustomPropertyType,
          $globalId: 'toBeAssigned',
          name: findNextUnique('New custom property', entity?.customProperties || [], p => p.name || ''),
-         id: findNextUnique('customProperty', entity?.customProperties || [], p => p.id || ''),
+         id: '', // ID will be assigned when adding the row
          value: '',
          description: '',
          idx: -1
@@ -118,17 +118,17 @@ export function EntityCustomPropertiesDataGrid(): React.ReactElement {
       // Clear any existing edit states first
       setEditingRows({});
 
-      // Create a new uncommitted row with a proper ID
+      // Create a new uncommitted row with a unique temporary ID
       const tempRow: CustomPropertyRow = {
          ...defaultEntry,
-         id: findNextUnique(toId(defaultEntry.name || ''), entity?.customProperties || [], prop => prop.id || ''),
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
          _uncommitted: true
       };
 
       // Add to grid data and set it to editing mode
       setGridData(current => [...current, tempRow]);
       setEditingRows({ [tempRow.id]: true });
-   }, [defaultEntry, entity?.customProperties]);
+   }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
       (customProperty: CustomPropertyRow): void => {

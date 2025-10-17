@@ -50,7 +50,7 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
          $type: CustomPropertyType,
          $globalId: 'toBeAssigned',
          name: findNextUnique('New custom property', dataModel?.customProperties || [], p => p.name || ''),
-         id: findNextUnique('customProperty', dataModel?.customProperties || [], p => p.id || ''),
+         id: '', // ID will be assigned when adding the row
          value: '',
          description: '',
          idx: -1
@@ -131,12 +131,12 @@ export function DataModelCustomPropertiesDataGrid(): React.ReactElement {
       // Create a new uncommitted row with a proper ID
       const tempRow: CustomPropertyRow = {
          ...defaultEntry,
-         id: findNextUnique(toId(defaultEntry.name || ''), dataModel?.customProperties || [], prop => prop.id || ''),
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
          _uncommitted: true
       };
       setGridData(current => [...current, tempRow]);
       setEditingRows({ [tempRow.id]: true });
-   }, [defaultEntry, dataModel?.customProperties]);
+   }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
       (customProperty: CustomPropertyRow) => {
