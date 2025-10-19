@@ -7,9 +7,10 @@ import { LangiumDocument } from 'langium/lsp';
 import * as vscode from 'vscode';
 import { URI } from 'vscode-uri';
 
-// TODO: Fix the import path to match the actual location in the repository
-import { createCrossModelServices } from '../../../packages/server/src/language-server/cross-model-module.js';
-import type { CrossModelServices } from '../../../packages/server/src/language-server/cross-model-module.js';
+// Import CrossModel services from the server package
+// This uses workspace references from tsconfig.json
+import { createCrossModelServices } from '@crossmodel/server';
+import type { CrossModelServices } from '@crossmodel/server';
 
 let servicesInstance: { shared: any; CrossModel: CrossModelServices } | undefined;
 

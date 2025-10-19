@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { discoverProps } from '../reflection/discover.js';
 import { resolveId } from '../reflection/ids.js';
 import { Hints } from '../reflection/hints.js';
-import { Change, ChangeKind } from '../types/change.js';
+import { Change } from '../types/change.js';
 import { diffScalarProps, hasConflicts } from './diff-values.js';
 
 /**

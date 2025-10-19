@@ -190,7 +190,7 @@ export class MergeTreeDataProvider implements vscode.TreeDataProvider<ChangeTree
       return [];
    }
    
-   getParent(element: ChangeTreeItem): vscode.ProviderResult<ChangeTreeItem> {
+   getParent(_element: ChangeTreeItem): vscode.ProviderResult<ChangeTreeItem> {
       // Not implemented - not required for basic functionality
       return undefined;
    }

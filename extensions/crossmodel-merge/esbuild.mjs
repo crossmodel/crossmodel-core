@@ -41,7 +41,7 @@ const ctx = await esbuild.context({
       '.js': '.cjs'
    },
    loader: { '.ts': 'ts' },
-   external: ['vscode'],
+   external: ['vscode', '@crossmodel/server', '@crossmodel/protocol', 'langium', 'vscode-uri'],
    platform: 'node',
    sourcemap: !minify,
    minify,

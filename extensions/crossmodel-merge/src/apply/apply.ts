@@ -101,7 +101,7 @@ function applyChildChange(
    // Handle additions
    if (childChange.kind === 'add') {
       // Find the array property that should contain this child
-      for (const [arrayKey, arrayValue] of props.arrays) {
+      for (const [_arrayKey, arrayValue] of props.arrays) {
          // Check if any existing child has the same type
          if (arrayValue.length > 0 && (arrayValue[0] as any).$type === childChange.nodeKind) {
             // This is the right array, but we need the actual node from theirs
@@ -115,7 +115,7 @@ function applyChildChange(
 
    // Handle removals
    if (childChange.kind === 'remove') {
-      for (const [arrayKey, arrayValue] of props.arrays) {
+      for (const [_arrayKey, arrayValue] of props.arrays) {
          const index = arrayValue.findIndex(n => {
             const type = (n as any).$type;
             const hint = hints[type];
@@ -128,11 +128,11 @@ function applyChildChange(
       }
       
       // Check singletons
-      for (const [singletonKey, singletonValue] of props.singletons) {
+      for (const [_singletonKey, singletonValue] of props.singletons) {
          const type = (singletonValue as any).$type;
          const hint = hints[type];
          if (resolveId(singletonValue, hint) === childChange.id) {
-            (parentNode as any)[singletonKey] = undefined;
+            (parentNode as any)[_singletonKey] = undefined;
             return;
          }
       }
@@ -141,7 +141,7 @@ function applyChildChange(
    // Handle updates
    if (childChange.kind === 'update') {
       // Find the child node by ID
-      for (const [arrayKey, arrayValue] of props.arrays) {
+      for (const [_arrayKey, arrayValue] of props.arrays) {
          const child = arrayValue.find(n => {
             const type = (n as any).$type;
             const hint = hints[type];
@@ -154,7 +154,7 @@ function applyChildChange(
       }
       
       // Check singletons
-      for (const [singletonKey, singletonValue] of props.singletons) {
+      for (const [_singletonKey, singletonValue] of props.singletons) {
          const type = (singletonValue as any).$type;
          const hint = hints[type];
          if (resolveId(singletonValue, hint) === childChange.id) {
