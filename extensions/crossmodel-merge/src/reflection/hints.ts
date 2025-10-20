@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode } from 'langium';
+import type { AstNode } from 'langium';
 
 export type NodeHint = {
    keyProp?: string; // identity override if not 'id'

@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode } from 'langium';
+import type { AstNode } from 'langium';
 import * as vscode from 'vscode';
 import { getCrossModelServices } from './parse.js';
 import type { CrossModelSerializer } from '../types/langium-bridge.js';

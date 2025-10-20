@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode, AstReflection } from 'langium';
+import type { AstNode, AstReflection } from 'langium';
 import { discoverProps } from '../reflection/discover.js';
 import { resolveId } from '../reflection/ids.js';
 import { Hints } from '../reflection/hints.js';

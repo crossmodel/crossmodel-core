@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode } from 'langium';
+import type { AstNode } from 'langium';
 import { NodeHint } from './hints.js';
 
 /**

@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode } from 'langium';
+import type { AstNode } from 'langium';
 import * as vscode from 'vscode';
 import { applySelected } from '../apply/apply.js';
 import { diff3Node } from '../diff3/diff-nodes.js';

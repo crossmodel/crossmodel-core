@@ -2,8 +2,8 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode } from 'langium';
-import { LangiumDocument } from 'langium/lsp';
+import type { AstNode } from 'langium';
+import type { LangiumDocument } from 'langium/lsp';
 import * as vscode from 'vscode';
 import { URI } from 'vscode-uri';
 

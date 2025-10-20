@@ -2,8 +2,16 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode, AstReflection, isAstNode } from 'langium';
+import type { AstNode, AstReflection } from 'langium';
 import { Hints } from './hints.js';
+
+/**
+ * Check if a value is an AST node by checking for the $type property.
+ * This replaces langium's isAstNode to avoid runtime dependency.
+ */
+function isAstNode(value: unknown): value is AstNode {
+   return typeof value === 'object' && value !== null && '$type' in value;
+}
 
 export interface DiscoveredProps {
    scalars: Map<string, unknown>; // property name -> scalar value
