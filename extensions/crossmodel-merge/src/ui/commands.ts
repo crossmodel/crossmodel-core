@@ -74,8 +74,9 @@ async function previewDiff(treeProvider: MergeTreeDataProvider): Promise<void> {
                      base = undefined;
                   }
                   
-                  // Compute 2-way diff (treating working tree as "theirs")
-                  const change = diff3Node(base, base || ours, ours, fileUri, reflection, HINTS);
+                  // Compute 2-way diff (base=HEAD, ours=HEAD, theirs=working tree)
+                  // For 2-way diff, we use base and ours as HEAD, theirs as working tree
+                  const change = diff3Node(base, base, ours, fileUri, reflection, HINTS);
                   if (change) {
                      changes.push(change);
                   }
