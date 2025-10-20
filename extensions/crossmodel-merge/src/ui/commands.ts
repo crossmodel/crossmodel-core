@@ -52,7 +52,7 @@ async function previewDiff(treeProvider: MergeTreeDataProvider): Promise<void> {
             const changes: Change[] = [];
             
             const services = getCrossModelServices();
-            const reflection = services.CrossModel.reflection.AstReflection;
+            const reflection = services.shared.AstReflection;
             
             for (const fileUri of files) {
                try {
@@ -124,7 +124,7 @@ async function mergeFromRef(treeProvider: MergeTreeDataProvider): Promise<void> 
             const changes: Change[] = [];
             
             const services = getCrossModelServices();
-            const reflection = services.CrossModel.reflection.AstReflection;
+            const reflection = services.shared.AstReflection;
             
             // Get merge base
             const mergeBase = await getMergeBase('HEAD', ref);
@@ -194,7 +194,7 @@ async function applySelectedChanges(treeProvider: MergeTreeDataProvider): Promis
          },
          async () => {
             const services = getCrossModelServices();
-            const reflection = services.CrossModel.reflection.AstReflection;
+            const reflection = services.shared.AstReflection;
             const fileChanges = new Map<vscode.Uri, string | null>();
             
             for (const change of changes) {
