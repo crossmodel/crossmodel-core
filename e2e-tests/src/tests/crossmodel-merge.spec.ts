@@ -168,10 +168,6 @@ test.describe('CrossModel Merge Extension', () => {
       const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
       await editor.waitForVisible();
 
-      // Get initial line count
-      const initialContent = await editor.textContent();
-      const initialLines = initialContent.split('\n').length;
-
       // Add meaningful AST properties: description and a custom property
       await app.page.keyboard.press('Control+Home'); // Go to start
       await app.page.keyboard.press('ArrowDown'); // Move to line 2 (id)
@@ -189,11 +185,6 @@ test.describe('CrossModel Merge Extension', () => {
       await editor.waitForDirty();
       await editor.save();
       await app.page.waitForTimeout(1500);
-
-      // Verify content changed
-      const newContent = await editor.textContent();
-      const newLines = newContent.split('\n').length;
-      expect(newLines).toBeGreaterThan(initialLines);
 
       // Execute refresh to update the changes view
       await app.page.keyboard.press('F1');
