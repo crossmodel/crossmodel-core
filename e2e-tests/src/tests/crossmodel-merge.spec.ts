@@ -59,10 +59,28 @@ test.describe('CrossModel Merge Extension', () => {
       const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
       await editor.waitForVisible();
 
-      // Make a change to the file
+      // Make meaningful AST changes: add description and custom property
+      // Position cursor after the name line (line 3) to add description
+      await app.page.keyboard.press('Control+Home'); // Go to start
+      await app.page.keyboard.press('ArrowDown'); // Move to line 2 (id)
+      await app.page.keyboard.press('ArrowDown'); // Move to line 3 (name)
+      await app.page.keyboard.press('End'); // Go to end of line
+      await app.page.keyboard.press('Enter'); // New line
+      await app.page.keyboard.type('    description: "Test customer entity with updated description"');
+      
+      // Add custom properties at the end (before last line)
       await app.page.keyboard.press('Control+End'); // Go to end of file
+      await app.page.keyboard.press('ArrowUp'); // Move up from last line
+      await app.page.keyboard.press('End'); // Go to end of line
       await app.page.keyboard.press('Enter');
-      await app.page.keyboard.type('# Test comment for merge extension');
+      await app.page.keyboard.type('    customProperties:');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('      - id: test_prop');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        name: "Test Property"');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        value: "test_value"');
+      
       await editor.waitForDirty();
 
       // Save the file
@@ -91,7 +109,15 @@ test.describe('CrossModel Merge Extension', () => {
       // The view should be visible after refresh
       expect(hasChangesView).toBeTruthy();
 
-      // Close the editor and revert changes
+      // Revert the changes (undo multiple times to undo all changes)
+      for (let i = 0; i < 8; i++) {
+         await app.page.keyboard.press('Control+Z');
+         await app.page.waitForTimeout(100);
+      }
+      await editor.save();
+      await app.page.waitForTimeout(500);
+
+      // Close the editor
       await editor.close();
    });
 
@@ -100,10 +126,13 @@ test.describe('CrossModel Merge Extension', () => {
       const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
       await editor.waitForVisible();
 
-      // Make a minor change
-      await app.page.keyboard.press('Control+End');
-      await app.page.keyboard.press('Enter');
-      await app.page.keyboard.type('# Another test');
+      // Make a meaningful AST change - modify the description
+      await app.page.keyboard.press('Control+Home'); // Go to start
+      await app.page.keyboard.press('ArrowDown'); // Move to line 2 (id)
+      await app.page.keyboard.press('ArrowDown'); // Move to line 3 (name)
+      await app.page.keyboard.press('End'); // Go to end of line
+      await app.page.keyboard.press('Enter'); // New line
+      await app.page.keyboard.type('    description: "Modified for diff test"');
       await editor.waitForDirty();
       await editor.save();
       await app.page.waitForTimeout(1000);
@@ -127,6 +156,10 @@ test.describe('CrossModel Merge Extension', () => {
          expect(isCritical).toBeFalsy();
       }
 
+      // Revert changes
+      await app.page.keyboard.press('Control+Z');
+      await editor.save();
+
       // Close the editor
       await editor.close();
    });
@@ -140,12 +173,22 @@ test.describe('CrossModel Merge Extension', () => {
       const initialContent = await editor.textContent();
       const initialLines = initialContent.split('\n').length;
 
-      // Add multiple lines
+      // Add meaningful AST properties: description and a custom property
+      await app.page.keyboard.press('Control+Home'); // Go to start
+      await app.page.keyboard.press('ArrowDown'); // Move to line 2 (id)
+      await app.page.keyboard.press('ArrowDown'); // Move to line 3 (name)
+      await app.page.keyboard.press('End'); // Go to end of line
+      await app.page.keyboard.press('Enter'); // New line
+      await app.page.keyboard.type('    description: "Multi-change test entity"');
       await app.page.keyboard.press('Control+End');
+      await app.page.keyboard.press('ArrowUp');
+      await app.page.keyboard.press('End');
       await app.page.keyboard.press('Enter');
-      await app.page.keyboard.type('# Line 1');
+      await app.page.keyboard.type('    customProperties:');
       await app.page.keyboard.press('Enter');
-      await app.page.keyboard.type('# Line 2');
+      await app.page.keyboard.type('      - id: multi_test');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        name: "Multi Test"');
       await editor.waitForDirty();
       await editor.save();
       await app.page.waitForTimeout(1500);
@@ -168,10 +211,11 @@ test.describe('CrossModel Merge Extension', () => {
       const errorCount = await errorNotifications.count();
       expect(errorCount).toBe(0);
 
-      // Revert the file to original state
-      await app.page.keyboard.press('Control+Z'); // Undo
-      await app.page.keyboard.press('Control+Z'); // Undo
-      await app.page.keyboard.press('Control+Z'); // Undo
+      // Revert the file to original state (undo all changes)
+      for (let i = 0; i < 6; i++) {
+         await app.page.keyboard.press('Control+Z');
+         await app.page.waitForTimeout(100);
+      }
       await editor.save();
       await editor.close();
    });
