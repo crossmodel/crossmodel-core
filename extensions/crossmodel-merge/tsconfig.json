@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "lib": ["ESNext"],
+    "sourceMap": true,
+    "outDir": "out",
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "useDefineForClassFields": false,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "moduleResolution": "Node16",
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["out", "node_modules"],
+  "references": [{ "path": "../../packages/protocol" }, { "path": "../../packages/server" }]
+}

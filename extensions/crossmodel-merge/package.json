@@ -1,0 +1,164 @@
+{
+  "name": "crossmodel-merge",
+  "displayName": "CrossModel Merge",
+  "version": "0.9.5",
+  "private": true,
+  "description": "3-way merge tool for CrossModel files",
+  "categories": [
+    "Other"
+  ],
+  "homepage": "https://github.com/crossmodel/crossmodel-core",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crossmodel/crossmodel-core.git"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": {
+    "name": "CrossBreeze",
+    "email": "devops@crossbreeze.nl"
+  },
+  "publisher": "CrossBreeze",
+  "type": "module",
+  "main": "./out/extension.cjs",
+  "scripts": {
+    "build": "yarn build:esbuild",
+    "build:esbuild": "node esbuild.mjs",
+    "build:tsc": "tsc -b tsconfig.json",
+    "clean": "rimraf --glob out *.vsix tsconfig.tsbuildinfo",
+    "lint": "eslint -c ./.eslintrc.cjs --ext .ts,.tsx ./src",
+    "package": "yarn clean && yarn build && yarn package:vsix",
+    "package:vsix": "vsce package --yarn --allow-star-activation",
+    "symlink": "yarn symlink:browser && yarn symlink:electron",
+    "symlink:browser": "symlink-dir . ../../applications/browser-app/plugins/crossmodel-merge",
+    "symlink:electron": "symlink-dir . ../../applications/electron-app/plugins/crossmodel-merge",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest --passWithNoTests",
+    "vscode:prepublish": "yarn lint",
+    "watch": "node esbuild.mjs --watch"
+  },
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "CrossModel Merge configuration",
+      "properties": {
+        "crossmodelMerge.modelGlob": {
+          "type": "string",
+          "default": "**/*.cm",
+          "description": "Glob pattern for CrossModel files"
+        },
+        "crossmodelMerge.git.targetRef": {
+          "type": "string",
+          "default": "",
+          "description": "Target ref/branch for merge (empty = prompt)"
+        }
+      }
+    },
+    "views": {
+      "scm": [
+        {
+          "id": "crossmodelChanges",
+          "name": "CrossModel Changes"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "crossmodel.previewDiff",
+        "title": "CrossModel: Preview Diff",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "crossmodel.mergeFromRef",
+        "title": "CrossModel: Merge from Ref",
+        "icon": "$(git-merge)"
+      },
+      {
+        "command": "crossmodel.applySelected",
+        "title": "CrossModel: Apply Selected",
+        "icon": "$(check)"
+      },
+      {
+        "command": "crossmodel.submitChanges",
+        "title": "CrossModel: Submit Changes",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "crossmodel.refreshChanges",
+        "title": "CrossModel: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "crossmodel.acceptAllOurs",
+        "title": "CrossModel: Accept All Ours",
+        "icon": "$(arrow-left)"
+      },
+      {
+        "command": "crossmodel.acceptAllTheirs",
+        "title": "CrossModel: Accept All Theirs",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "crossmodel.showRawDiff",
+        "title": "CrossModel: Show Raw Diff",
+        "icon": "$(file-code)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "crossmodel.refreshChanges",
+          "when": "view == crossmodelChanges",
+          "group": "navigation@1"
+        },
+        {
+          "command": "crossmodel.acceptAllOurs",
+          "when": "view == crossmodelChanges",
+          "group": "navigation@2"
+        },
+        {
+          "command": "crossmodel.acceptAllTheirs",
+          "when": "view == crossmodelChanges",
+          "group": "navigation@3"
+        },
+        {
+          "command": "crossmodel.applySelected",
+          "when": "view == crossmodelChanges",
+          "group": "navigation@4"
+        },
+        {
+          "command": "crossmodel.showRawDiff",
+          "when": "view == crossmodelChanges",
+          "group": "navigation@5"
+        }
+      ]
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "dependencies": {
+    "@crossmodel/protocol": "0.9.5",
+    "@crossmodel/server": "0.9.5",
+    "vscode-uri": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "~6.4.1",
+    "@typescript-eslint/parser": "~6.4.1",
+    "@vscode/vsce": "^2.32.1-0",
+    "cross-env": "~7.0.3",
+    "esbuild": "~0.25.10",
+    "eslint": "^8.17.0",
+    "langium": "^3.0.0",
+    "rimraf": "~5.0.5",
+    "symlink-dir": "~5.2.1",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com"
+  }
+}

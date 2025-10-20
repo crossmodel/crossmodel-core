@@ -1,0 +1,110 @@
+/********************************************************************************
+ * Copyright (c) 2024 CrossBreeze.
+ ********************************************************************************/
+
+import type { AstNode } from 'langium';
+import type { LangiumDocument } from 'langium/lsp';
+import * as vscode from 'vscode';
+import { URI } from 'vscode-uri';
+
+// Import CrossModel services from the server package
+// This uses workspace references from tsconfig.json
+import { createCrossModelServices } from '@crossmodel/server';
+import type { CrossModelServices } from '@crossmodel/server';
+
+let servicesInstance: { shared: any; CrossModel: CrossModelServices } | undefined;
+
+/**
+ * Simple empty file system provider for Langium.
+ * We handle file I/O through VS Code API, so this just provides stubs.
+ */
+const emptyFileSystemProvider = {
+   readFile: async (_uri: URI): Promise<string> => '',
+   readDirectory: async (_uri: URI): Promise<any[]> => []
+};
+
+/**
+ * Empty file system context for creating Langium services.
+ * Matches the structure of Langium's EmptyFileSystem.
+ */
+const EmptyFileSystem = {
+   fileSystemProvider: () => emptyFileSystemProvider
+};
+
+/**
+ * Get or create the CrossModel services instance.
+ */
+function getServices(): { shared: any; CrossModel: CrossModelServices } {
+   if (!servicesInstance) {
+      // Create services with empty file system since we handle file I/O through VS Code API
+      servicesInstance = createCrossModelServices(EmptyFileSystem);
+   }
+   return servicesInstance;
+}
+
+/**
+ * Parse a CrossModel file from text.
+ * 
+ * @param text File content
+ * @param uri File URI
+ * @returns The root AST node, or undefined if parsing failed
+ */
+export async function parseText(text: string, uri: vscode.Uri): Promise<AstNode | undefined> {
+   const services = getServices();
+   const documents = services.shared.workspace.LangiumDocuments;
+   const documentBuilder = services.shared.workspace.DocumentBuilder;
+   
+   // Create or get the document
+   const langiumUri = URI.parse(uri.toString());
+   let document = documents.getDocument(langiumUri) as LangiumDocument | undefined;
+   
+   if (!document) {
+      // Create a new document
+      document = services.shared.workspace.LangiumDocumentFactory.fromString(text, langiumUri);
+      documents.addDocument(document);
+   } else {
+      // Update existing document
+      document = services.shared.workspace.LangiumDocumentFactory.fromString(text, langiumUri);
+      documents.addDocument(document);
+   }
+   
+   // Build and link the document
+   await documentBuilder.build([document], { validation: false });
+   
+   if (document.parseResult.parserErrors.length > 0) {
+      console.error('Parse errors:', document.parseResult.parserErrors);
+      return undefined;
+   }
+   
+   // Return the actual root node (entity, relationship, etc.)
+   const root = document.parseResult.value;
+   if (!root) {
+      return undefined;
+   }
+   
+   // CrossModelRoot is a wrapper; extract the actual content
+   const crossModelRoot = root as any;
+   return (
+      crossModelRoot.entity ||
+      crossModelRoot.relationship ||
+      crossModelRoot.systemDiagram ||
+      crossModelRoot.mapping ||
+      crossModelRoot.datamodel
+   );
+}
+
+/**
+ * Parse a file from the workspace (working tree).
+ */
+export async function parseFile(uri: vscode.Uri): Promise<AstNode | undefined> {
+   const content = await vscode.workspace.fs.readFile(uri);
+   const text = Buffer.from(content).toString('utf-8');
+   return parseText(text, uri);
+}
+
+/**
+ * Get the CrossModel services instance for accessing the serializer.
+ */
+export function getCrossModelServices(): { shared: any; CrossModel: CrossModelServices } {
+   return getServices();
+}
