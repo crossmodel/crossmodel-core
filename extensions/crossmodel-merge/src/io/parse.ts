@@ -15,12 +15,29 @@ import type { CrossModelServices } from '@crossmodel/server';
 let servicesInstance: { shared: any; CrossModel: CrossModelServices } | undefined;
 
 /**
+ * Simple empty file system provider for Langium.
+ * We handle file I/O through VS Code API, so this just provides stubs.
+ */
+const emptyFileSystemProvider = {
+   readFile: async (_uri: URI): Promise<string> => '',
+   readDirectory: async (_uri: URI): Promise<any[]> => []
+};
+
+/**
+ * Empty file system context for creating Langium services.
+ * Matches the structure of Langium's EmptyFileSystem.
+ */
+const EmptyFileSystem = {
+   fileSystemProvider: () => emptyFileSystemProvider
+};
+
+/**
  * Get or create the CrossModel services instance.
  */
 function getServices(): { shared: any; CrossModel: CrossModelServices } {
    if (!servicesInstance) {
-      // Create services without a connection (for standalone parsing)
-      servicesInstance = createCrossModelServices({ connection: undefined });
+      // Create services with empty file system since we handle file I/O through VS Code API
+      servicesInstance = createCrossModelServices(EmptyFileSystem);
    }
    return servicesInstance;
 }
