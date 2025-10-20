@@ -10,6 +10,9 @@
       "path": "extensions/crossmodel-lang"
     },
     {
+      "path": "extensions/crossmodel-merge"
+    },
+    {
       "path": "packages/core"
     },
     {
