@@ -68,11 +68,9 @@ test.describe('CrossModel Merge Extension', () => {
       await app.page.keyboard.press('Enter'); // New line
       await app.page.keyboard.type('    description: "Test customer entity with updated description"');
       
-      // Add custom properties at the end (before last line)
+      // Add custom properties at the same level as attributes (at the end)
       await app.page.keyboard.press('Control+End'); // Go to end of file
-      await app.page.keyboard.press('ArrowUp'); // Move up from last line
-      await app.page.keyboard.press('End'); // Go to end of line
-      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.press('Enter'); // New line at the end
       await app.page.keyboard.type('    customProperties:');
       await app.page.keyboard.press('Enter');
       await app.page.keyboard.type('      - id: test_prop');
@@ -110,7 +108,8 @@ test.describe('CrossModel Merge Extension', () => {
       expect(hasChangesView).toBeTruthy();
 
       // Revert the changes (undo multiple times to undo all changes)
-      for (let i = 0; i < 8; i++) {
+      // We added: 1 description line + 1 customProperties line + 3 property lines = 5 lines total
+      for (let i = 0; i < 5; i++) {
          await app.page.keyboard.press('Control+Z');
          await app.page.waitForTimeout(100);
       }
@@ -181,9 +180,7 @@ test.describe('CrossModel Merge Extension', () => {
       await app.page.keyboard.press('Enter'); // New line
       await app.page.keyboard.type('    description: "Multi-change test entity"');
       await app.page.keyboard.press('Control+End');
-      await app.page.keyboard.press('ArrowUp');
-      await app.page.keyboard.press('End');
-      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.press('Enter'); // New line at the end
       await app.page.keyboard.type('    customProperties:');
       await app.page.keyboard.press('Enter');
       await app.page.keyboard.type('      - id: multi_test');
@@ -212,7 +209,8 @@ test.describe('CrossModel Merge Extension', () => {
       expect(errorCount).toBe(0);
 
       // Revert the file to original state (undo all changes)
-      for (let i = 0; i < 6; i++) {
+      // We added: 1 description line + 1 customProperties line + 2 property lines = 4 lines total
+      for (let i = 0; i < 4; i++) {
          await app.page.keyboard.press('Control+Z');
          await app.page.waitForTimeout(100);
       }
