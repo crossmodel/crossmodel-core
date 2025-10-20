@@ -11,18 +11,22 @@ test.describe('CrossModel Merge Extension', () => {
       app = await CMApp.load({ browser, playwright });
    });
 
+   test.afterAll(async () => {
+      await app.page.close();
+   });
+
    test('extension is loaded and commands are available', async () => {
       // Open the command palette
       await app.page.keyboard.press('F1');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       // Type to search for CrossModel merge commands
       await app.page.keyboard.type('CrossModel:');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       // Check if the command palette shows our commands
       const commandList = app.page.locator('.quick-input-list');
-      await expect(commandList).toBeVisible();
+      await expect(commandList).toBeVisible({ timeout: 5000 });
 
       // Verify that CrossModel commands are present
       const commands = await app.page.locator('.quick-input-list .monaco-highlighted-label').allTextContents();
@@ -33,6 +37,7 @@ test.describe('CrossModel Merge Extension', () => {
 
       // Close the command palette
       await app.page.keyboard.press('Escape');
+      await app.page.waitForTimeout(500);
    });
 
    test('SCM view contains CrossModel Changes view', async () => {
@@ -40,7 +45,7 @@ test.describe('CrossModel Merge Extension', () => {
       const scmButton = app.page.locator('.theia-app-left .p-TabBar-tab[title="Source Control"]');
       if (await scmButton.count() > 0) {
          await scmButton.click();
-         await app.page.waitForTimeout(500);
+         await app.page.waitForTimeout(1000);
 
          // Check if the SCM view is visible
          const scmView = app.page.locator('.theia-scm-container');
@@ -59,15 +64,15 @@ test.describe('CrossModel Merge Extension', () => {
    test('Preview Diff command can be executed', async () => {
       // Execute the preview diff command via command palette
       await app.page.keyboard.press('F1');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       // Type the command
       await app.page.keyboard.type('CrossModel: Preview Diff');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       // Press Enter to execute
       await app.page.keyboard.press('Enter');
-      await app.page.waitForTimeout(1000);
+      await app.page.waitForTimeout(2000);
 
       // The command should execute without error
       // Check if any error notifications appeared
@@ -82,13 +87,13 @@ test.describe('CrossModel Merge Extension', () => {
    test('Merge from Ref command prompts for input', async () => {
       // Execute the merge from ref command
       await app.page.keyboard.press('F1');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       await app.page.keyboard.type('CrossModel: Merge from Ref');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       await app.page.keyboard.press('Enter');
-      await app.page.waitForTimeout(1000);
+      await app.page.waitForTimeout(2000);
 
       // Should either show an input prompt or an error about no git repo
       const inputBox = app.page.locator('.theia-input');
@@ -108,13 +113,13 @@ test.describe('CrossModel Merge Extension', () => {
    test('Refresh Changes command can be executed', async () => {
       // Execute the refresh command
       await app.page.keyboard.press('F1');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       await app.page.keyboard.type('CrossModel: Refresh');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       await app.page.keyboard.press('Enter');
-      await app.page.waitForTimeout(1000);
+      await app.page.waitForTimeout(2000);
 
       // The command should execute
       // No need to verify specific output - just that it doesn't crash
@@ -127,19 +132,19 @@ test.describe('CrossModel Merge Extension', () => {
    test('configuration settings are available', async () => {
       // Open settings
       await app.page.keyboard.press('F1');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       await app.page.keyboard.type('Preferences: Open Settings');
-      await app.page.waitForTimeout(500);
+      await app.page.waitForTimeout(1000);
 
       await app.page.keyboard.press('Enter');
-      await app.page.waitForTimeout(1000);
+      await app.page.waitForTimeout(2000);
 
       // Search for crossmodel merge settings
       const searchBox = app.page.locator('.settings-header input[placeholder*="Search"]');
       if (await searchBox.count() > 0) {
          await searchBox.fill('crossmodelMerge');
-         await app.page.waitForTimeout(500);
+         await app.page.waitForTimeout(1000);
 
          // Look for our settings
          const settingsContent = app.page.locator('.settings-body');
@@ -155,5 +160,6 @@ test.describe('CrossModel Merge Extension', () => {
 
       // Close settings
       await app.page.keyboard.press('Escape');
+      await app.page.waitForTimeout(500);
    });
 });
