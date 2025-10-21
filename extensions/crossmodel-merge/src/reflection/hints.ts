@@ -39,11 +39,58 @@ export const HINTS: Hints = {
    },
    SourceObject: {
       unorderedChildren: ['dependencies', 'conditions'],
-      label: (node: AstNode) => (node as any).id || 'Source'
+      label: (node: AstNode) => {
+         const anyNode = node as any;
+         if (anyNode.id) return anyNode.id;
+         // Check first property for reference
+         const entity = anyNode.entity;
+         if (entity && typeof entity === 'object' && '$refText' in entity) {
+            return entity.$refText;
+         }
+         return 'Source';
+      }
    },
    TargetObject: {
       unorderedChildren: ['mappings'],
-      label: (node: AstNode) => (node as any).id || 'Target'
+      label: (node: AstNode) => {
+         const anyNode = node as any;
+         if (anyNode.id) return anyNode.id;
+         // Check first property for reference
+         const entity = anyNode.entity;
+         if (entity && typeof entity === 'object' && '$refText' in entity) {
+            return entity.$refText;
+         }
+         return 'Target';
+      }
+   },
+   AttributeMapping: {
+      unorderedChildren: ['sources'],
+      label: (node: AstNode) => {
+         const anyNode = node as any;
+         if (anyNode.id) return anyNode.id;
+         // AttributeMapping has 'attribute' which is an AttributeMappingTarget
+         // AttributeMappingTarget has 'value' which is the reference
+         const attribute = anyNode.attribute;
+         if (attribute && typeof attribute === 'object') {
+            const value = attribute.value;
+            if (value && typeof value === 'object' && '$refText' in value) {
+               return value.$refText;
+            }
+         }
+         return 'AttributeMapping';
+      }
+   },
+   AttributeMappingSource: {
+      label: (node: AstNode) => {
+         const anyNode = node as any;
+         if (anyNode.id) return anyNode.id;
+         // Check first property for reference
+         const value = anyNode.value;
+         if (value && typeof value === 'object' && '$refText' in value) {
+            return value.$refText;
+         }
+         return 'AttributeMappingSource';
+      }
    },
    DataModel: {
       label: (node: AstNode) => (node as any).id || 'DataModel'

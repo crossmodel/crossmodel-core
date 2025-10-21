@@ -9,7 +9,7 @@ import { Hints } from './hints.js';
  * Check if a value is an AST node by checking for the $type property.
  * This replaces langium's isAstNode to avoid runtime dependency.
  */
-function isAstNode(value: unknown): value is AstNode {
+export function isAstNode(value: unknown): value is AstNode {
    return typeof value === 'object' && value !== null && '$type' in value;
 }
 
@@ -23,7 +23,7 @@ export interface DiscoveredProps {
  * Discover properties of an AST node using Langium reflection.
  * Categorizes properties into scalars, singletons, and arrays.
  * Ignores properties starting with '$' (metadata).
- * 
+ *
  * @param node The AST node to analyze
  * @param reflection Langium AST reflection
  * @param hints Optional hints for the node type
@@ -47,13 +47,19 @@ export function discoverProps(node: AstNode, reflection: AstReflection, hints?: 
       if (value === null || value === undefined) {
          scalars.set(key, value);
       } else if (Array.isArray(value)) {
-         // Check if it's an array of AST nodes
-         const astNodes = value.filter(isAstNode);
-         if (astNodes.length > 0) {
-            arrays.set(key, astNodes);
+         // For merge purposes, treat all arrays as potential node arrays
+         // Empty arrays need to be tracked for reconciliation
+         if (value.length === 0) {
+            arrays.set(key, []);
          } else {
-            // Scalar array
-            scalars.set(key, value);
+            // Check if it's an array of AST nodes
+            const astNodes = value.filter(isAstNode);
+            if (astNodes.length > 0) {
+               arrays.set(key, astNodes);
+            } else {
+               // Scalar array
+               scalars.set(key, value);
+            }
          }
       } else if (isAstNode(value)) {
          singletons.set(key, value);

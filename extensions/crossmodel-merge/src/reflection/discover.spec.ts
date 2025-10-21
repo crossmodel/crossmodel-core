@@ -1,6 +1,6 @@
-import { describe, it, expect } from '@jest/globals';
-import { discoverProps, isAstNode } from './discover.js';
+import { describe, expect, it } from '@jest/globals';
 import type { AstNode, AstReflection } from 'langium';
+import { discoverProps, isAstNode } from './discover.js';
 
 // Mock AstReflection
 const mockReflection: AstReflection = {
@@ -22,8 +22,8 @@ const mockReflection: AstReflection = {
                { name: 'id', type: 'string' },
                { name: 'name', type: 'string' },
                { name: 'description', type: 'string' },
-               { name: 'attributes', type: 'Attribute', isArray: true },
-            ],
+               { name: 'attributes', type: 'Attribute', isArray: true }
+            ]
          };
       }
       if (type === 'Attribute') {
@@ -33,12 +33,12 @@ const mockReflection: AstReflection = {
             properties: [
                { name: 'id', type: 'string' },
                { name: 'name', type: 'string' },
-               { name: 'datatype', type: 'string' },
-            ],
+               { name: 'datatype', type: 'string' }
+            ]
          };
       }
       return { name: type, mandatory: [], properties: [] };
-   },
+   }
 } as unknown as AstReflection;
 
 describe('isAstNode', () => {
@@ -77,16 +77,14 @@ describe('discoverProps', () => {
          id: 'customer',
          name: 'Customer',
          description: 'A customer entity',
-         attributes: [
-            { $type: 'Attribute', id: 'age', name: 'age', datatype: 'int' },
-         ],
+         attributes: [{ $type: 'Attribute', id: 'age', name: 'age', datatype: 'int' }]
       } as unknown as AstNode;
 
       const result = discoverProps(node, mockReflection, {});
 
-      expect(result.scalars).toEqual(['id', 'name', 'description']);
-      expect(result.singletons).toEqual([]);
-      expect(result.arrays).toEqual(['attributes']);
+      expect(Array.from(result.scalars.keys())).toEqual(['id', 'name', 'description']);
+      expect(Array.from(result.singletons.keys())).toEqual([]);
+      expect(Array.from(result.arrays.keys())).toEqual(['attributes']);
    });
 
    it('should filter out properties starting with $', () => {
@@ -95,27 +93,27 @@ describe('discoverProps', () => {
          $container: {},
          $cstNode: {},
          id: 'test',
-         name: 'Test',
+         name: 'Test'
       } as unknown as AstNode;
 
       const result = discoverProps(node, mockReflection, {});
 
-      expect(result.scalars).toEqual(['id', 'name']);
-      expect(result.scalars).not.toContain('$container');
-      expect(result.scalars).not.toContain('$cstNode');
+      expect(Array.from(result.scalars.keys())).toEqual(['id', 'name']);
+      expect(Array.from(result.scalars.keys())).not.toContain('$container');
+      expect(Array.from(result.scalars.keys())).not.toContain('$cstNode');
    });
 
    it('should identify singleton child nodes', () => {
       const node = {
          $type: 'Entity',
          id: 'test',
-         owner: { $type: 'User', id: 'user1' },
+         owner: { $type: 'User', id: 'user1' }
       } as unknown as AstNode;
 
       const result = discoverProps(node, mockReflection, {});
 
-      expect(result.singletons).toEqual(['owner']);
-      expect(result.scalars).toEqual(['id']);
+      expect(Array.from(result.singletons.keys())).toEqual(['owner']);
+      expect(Array.from(result.scalars.keys())).toEqual(['id']);
    });
 
    it('should identify array child nodes', () => {
@@ -124,27 +122,27 @@ describe('discoverProps', () => {
          id: 'test',
          attributes: [
             { $type: 'Attribute', id: 'attr1' },
-            { $type: 'Attribute', id: 'attr2' },
-         ],
+            { $type: 'Attribute', id: 'attr2' }
+         ]
       } as unknown as AstNode;
 
       const result = discoverProps(node, mockReflection, {});
 
-      expect(result.arrays).toEqual(['attributes']);
-      expect(result.scalars).toEqual(['id']);
+      expect(Array.from(result.arrays.keys())).toEqual(['attributes']);
+      expect(Array.from(result.scalars.keys())).toEqual(['id']);
    });
 
    it('should handle empty arrays as arrays not scalars', () => {
       const node = {
          $type: 'Entity',
          id: 'test',
-         attributes: [],
+         attributes: []
       } as unknown as AstNode;
 
       const result = discoverProps(node, mockReflection, {});
 
-      expect(result.arrays).toEqual(['attributes']);
-      expect(result.scalars).toEqual(['id']);
+      expect(Array.from(result.arrays.keys())).toEqual(['attributes']);
+      expect(Array.from(result.scalars.keys())).toEqual(['id']);
    });
 
    it('should hide properties specified in hints', () => {
@@ -152,17 +150,17 @@ describe('discoverProps', () => {
          $type: 'Entity',
          id: 'test',
          name: 'Test',
-         internal: 'hidden',
+         internal: 'hidden'
       } as unknown as AstNode;
 
       const hints = {
-         Entity: { hiddenProps: ['internal'] },
+         Entity: { hiddenProps: ['internal'] }
       };
 
       const result = discoverProps(node, mockReflection, hints);
 
-      expect(result.scalars).toEqual(['id', 'name']);
-      expect(result.scalars).not.toContain('internal');
+      expect(Array.from(result.scalars.keys())).toEqual(['id', 'name']);
+      expect(Array.from(result.scalars.keys())).not.toContain('internal');
    });
 
    it('should handle null and undefined properties', () => {
@@ -170,14 +168,15 @@ describe('discoverProps', () => {
          $type: 'Entity',
          id: 'test',
          name: null,
-         description: undefined,
+         description: undefined
       } as unknown as AstNode;
 
       const result = discoverProps(node, mockReflection, {});
 
-      expect(result.scalars).toContain('id');
-      expect(result.scalars).toContain('name');
-      expect(result.scalars).toContain('description');
+      const scalarKeys = Array.from(result.scalars.keys());
+      expect(scalarKeys).toContain('id');
+      expect(scalarKeys).toContain('name');
+      expect(scalarKeys).toContain('description');
    });
 
    it('should handle mixed property types', () => {
@@ -188,13 +187,13 @@ describe('discoverProps', () => {
          count: 42,
          active: true,
          owner: { $type: 'User', id: 'user1' },
-         attributes: [{ $type: 'Attribute', id: 'attr1' }],
+         attributes: [{ $type: 'Attribute', id: 'attr1' }]
       } as unknown as AstNode;
 
       const result = discoverProps(node, mockReflection, {});
 
-      expect(result.scalars).toEqual(['id', 'name', 'count', 'active']);
-      expect(result.singletons).toEqual(['owner']);
-      expect(result.arrays).toEqual(['attributes']);
+      expect(Array.from(result.scalars.keys())).toEqual(['id', 'name', 'count', 'active']);
+      expect(Array.from(result.singletons.keys())).toEqual(['owner']);
+      expect(Array.from(result.arrays.keys())).toEqual(['attributes']);
    });
 });

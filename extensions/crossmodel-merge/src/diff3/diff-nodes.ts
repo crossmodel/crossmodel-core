@@ -5,14 +5,45 @@
 import type { AstNode, AstReflection } from 'langium';
 import * as vscode from 'vscode';
 import { discoverProps } from '../reflection/discover.js';
-import { resolveId } from '../reflection/ids.js';
 import { Hints } from '../reflection/hints.js';
+import { resolveId } from '../reflection/ids.js';
 import { Change } from '../types/change.js';
 import { diffScalarProps, hasConflicts } from './diff-values.js';
 
 /**
+ * Generate a label for an AST node.
+ * Priority:
+ * 1. id property if exists
+ * 2. First non-$ property if it has $refText (Langium reference) - use the reference text
+ * 3. Fall back to node type
+ */
+function generateLabel(node: AstNode, type: string): string {
+   const anyNode = node as any;
+
+   // Check for id property
+   if (anyNode.id) {
+      return anyNode.id;
+   }
+
+   // Get the first non-$ property
+   const keys = Object.keys(node).filter(k => !k.startsWith('$'));
+   if (keys.length > 0) {
+      const firstKey = keys[0];
+      const value = anyNode[firstKey];
+
+      // Check if it's a Langium reference (has $refText property)
+      if (value && typeof value === 'object' && '$refText' in value) {
+         return (value as any).$refText;
+      }
+   }
+
+   // Fall back to type name
+   return type;
+}
+
+/**
  * Perform 3-way diff on AST nodes.
- * 
+ *
  * @param base Base version node
  * @param ours Our version node
  * @param theirs Their version node
@@ -68,14 +99,14 @@ export function diff3Node(
    const baseScalars: Record<string, unknown> = Object.fromEntries(baseProps.scalars);
    const oursScalars: Record<string, unknown> = Object.fromEntries(oursProps.scalars);
    const theirsScalars: Record<string, unknown> = Object.fromEntries(theirsProps.scalars);
-   
+
    const details = diffScalarProps(baseScalars, oursScalars, theirsScalars);
    const conflicts = hasConflicts(details);
 
    // Recursively diff singleton children
    const childChanges: Change[] = [];
    const allSingletonKeys = new Set([...baseProps.singletons.keys(), ...oursProps.singletons.keys(), ...theirsProps.singletons.keys()]);
-   
+
    for (const key of allSingletonKeys) {
       const childChange = diff3Node(
          baseProps.singletons.get(key),
@@ -92,12 +123,12 @@ export function diff3Node(
 
    // Diff array children (treat as unordered sets)
    const allArrayKeys = new Set([...baseProps.arrays.keys(), ...oursProps.arrays.keys(), ...theirsProps.arrays.keys()]);
-   
+
    for (const key of allArrayKeys) {
       const baseArray = baseProps.arrays.get(key) || [];
       const oursArray = oursProps.arrays.get(key) || [];
       const theirsArray = theirsProps.arrays.get(key) || [];
-      
+
       const arrayChanges = diff3Array(baseArray, oursArray, theirsArray, fileUri, reflection, hints);
       childChanges.push(...arrayChanges);
    }
@@ -108,7 +139,7 @@ export function diff3Node(
    }
 
    // Determine label
-   const label = hint?.label ? hint.label(node) : ((node as any).name || (node as any).id || type);
+   const label = hint?.label ? hint.label(node) : generateLabel(node, type);
 
    return {
       id,
@@ -134,41 +165,40 @@ function diff3Array(
    hints: Hints
 ): Change[] {
    const changes: Change[] = [];
-   
+
    // Build maps keyed by identity
-   const baseMap = new Map(base.map(n => {
-      const type = (n as any).$type;
-      const hint = hints[type];
-      return [resolveId(n, hint), n];
-   }));
-   const oursMap = new Map(ours.map(n => {
-      const type = (n as any).$type;
-      const hint = hints[type];
-      return [resolveId(n, hint), n];
-   }));
-   const theirsMap = new Map(theirs.map(n => {
-      const type = (n as any).$type;
-      const hint = hints[type];
-      return [resolveId(n, hint), n];
-   }));
-   
+   const baseMap = new Map(
+      base.map(n => {
+         const type = (n as any).$type;
+         const hint = hints[type];
+         return [resolveId(n, hint), n];
+      })
+   );
+   const oursMap = new Map(
+      ours.map(n => {
+         const type = (n as any).$type;
+         const hint = hints[type];
+         return [resolveId(n, hint), n];
+      })
+   );
+   const theirsMap = new Map(
+      theirs.map(n => {
+         const type = (n as any).$type;
+         const hint = hints[type];
+         return [resolveId(n, hint), n];
+      })
+   );
+
    // Collect all IDs
    const allIds = new Set([...baseMap.keys(), ...oursMap.keys(), ...theirsMap.keys()]);
-   
+
    for (const id of allIds) {
-      const change = diff3Node(
-         baseMap.get(id),
-         oursMap.get(id),
-         theirsMap.get(id),
-         fileUri,
-         reflection,
-         hints
-      );
+      const change = diff3Node(baseMap.get(id), oursMap.get(id), theirsMap.get(id), fileUri, reflection, hints);
       if (change) {
          changes.push(change);
       }
    }
-   
+
    return changes;
 }
 
@@ -176,8 +206,8 @@ function createAddChange(node: AstNode, fileUri: vscode.Uri, hints: Hints): Chan
    const type = (node as any).$type;
    const hint = hints[type];
    const id = resolveId(node, hint);
-   const label = hint?.label ? hint.label(node) : ((node as any).name || (node as any).id || type);
-   
+   const label = hint?.label ? hint.label(node) : generateLabel(node, type);
+
    return {
       id,
       nodeKind: type,
@@ -191,8 +221,8 @@ function createRemoveChange(node: AstNode, fileUri: vscode.Uri, hints: Hints): C
    const type = (node as any).$type;
    const hint = hints[type];
    const id = resolveId(node, hint);
-   const label = hint?.label ? hint.label(node) : ((node as any).name || (node as any).id || type);
-   
+   const label = hint?.label ? hint.label(node) : generateLabel(node, type);
+
    return {
       id,
       nodeKind: type,

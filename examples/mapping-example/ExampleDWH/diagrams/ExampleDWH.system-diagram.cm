@@ -9,7 +9,7 @@ systemDiagram:
         height: 10
       - id: CompleteCustomerNode
         entity: ExampleDWH.CompleteCustomer
-        x: 594
+        x: 693
         y: 264
-        width: 148.649658203125
-        height: 116
+        width: 153.649658203125
+        height: 156
