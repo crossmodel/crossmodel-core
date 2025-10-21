@@ -8,4 +8,8 @@ module.exports = {
    collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/types/**'],
    coverageDirectory: 'coverage',
    coverageReporters: ['text', 'lcov', 'html'],
+   moduleNameMapper: {
+      ...baseConfig.moduleNameMapper,
+      '^vscode$': '<rootDir>/test/vscode-mock.ts'
+   }
 };

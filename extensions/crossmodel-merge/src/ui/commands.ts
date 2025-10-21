@@ -26,7 +26,7 @@ export function registerCommands(context: vscode.ExtensionContext, treeProvider:
       vscode.commands.registerCommand('crossmodel.refreshChanges', () => refresh(treeProvider)),
       vscode.commands.registerCommand('crossmodel.acceptAllOurs', () => acceptAllOurs(treeProvider)),
       vscode.commands.registerCommand('crossmodel.acceptAllTheirs', () => acceptAllTheirs(treeProvider)),
-      vscode.commands.registerCommand('crossmodel.showRawDiff', () => showRawDiff())
+      vscode.commands.registerCommand('crossmodel.showRawDiff', treeItem => showRawDiff(treeItem))
    );
 }
 
@@ -294,8 +294,62 @@ function acceptAllTheirs(treeProvider: MergeTreeDataProvider): void {
 }
 
 /**
- * Show raw diff in editor.
+ * Show raw diff in editor for a specific change.
  */
-async function showRawDiff(): Promise<void> {
-   vscode.window.showInformationMessage('Raw diff view not yet implemented');
+async function showRawDiff(treeItem: any): Promise<void> {
+   try {
+      // Extract the change from the tree item
+      if (!treeItem || !treeItem.node || treeItem.node.type !== 'change') {
+         vscode.window.showErrorMessage('Please select a change item to show diff');
+         return;
+      }
+
+      const change = treeItem.node.change;
+      const fileUri = change.fileUri;
+      const repo = await getRepository();
+
+      if (!repo) {
+         vscode.window.showErrorMessage('No Git repository found');
+         return;
+      }
+
+      // Use the Git extension's openChange command to open the diff
+      // This properly shows Git's diff including staged changes
+      try {
+         await vscode.commands.executeCommand('git.openChange', fileUri);
+
+         // If we have a specific range, try to reveal it in the opened editor
+         if (change.range) {
+            // Give the editor time to open
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.uri.toString() === fileUri.toString()) {
+               editor.revealRange(change.range, vscode.TextEditorRevealType.InCenter);
+               editor.selection = new vscode.Selection(change.range.start, change.range.end);
+            }
+         }
+      } catch (gitError) {
+         // Fallback to vscode.diff if git.openChange fails
+         console.warn('git.openChange failed, falling back to vscode.diff:', gitError);
+
+         const headUri = fileUri.with({ scheme: 'git', query: 'HEAD' });
+         const fileName = fileUri.path.split('/').pop() || 'file';
+         let title = `${fileName} (HEAD ↔ Working Tree)`;
+
+         if (change.range) {
+            const startLine = change.range.start.line + 1;
+            const endLine = change.range.end.line + 1;
+            title = `${fileName}:${startLine}${startLine !== endLine ? `-${endLine}` : ''} (HEAD ↔ Working Tree)`;
+         }
+
+         await vscode.commands.executeCommand('vscode.diff', headUri, fileUri, title, {
+            selection: change.range,
+            preview: true,
+            preserveFocus: false
+         });
+      }
+   } catch (error) {
+      vscode.window.showErrorMessage(`Failed to show diff: ${error}`);
+   }
 }

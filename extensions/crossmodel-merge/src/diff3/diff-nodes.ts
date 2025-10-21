@@ -2,13 +2,26 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import type { AstNode, AstReflection } from 'langium';
+import type { AstNode, AstReflection, CstNode } from 'langium';
 import * as vscode from 'vscode';
 import { discoverProps } from '../reflection/discover.js';
 import { Hints } from '../reflection/hints.js';
 import { resolveId } from '../reflection/ids.js';
 import { Change } from '../types/change.js';
 import { diffScalarProps, hasConflicts } from './diff-values.js';
+
+/**
+ * Extract range from AST node's CST node.
+ * Note: Langium's CST node range is already 0-based (line and character).
+ */
+function extractRange(node: AstNode): vscode.Range | undefined {
+   const cstNode = (node as any).$cstNode as CstNode | undefined;
+   if (!cstNode || !cstNode.range) {
+      return undefined;
+   }
+   const { start, end } = cstNode.range;
+   return new vscode.Range(new vscode.Position(start.line, start.character), new vscode.Position(end.line, end.character));
+}
 
 /**
  * Generate a label for an AST node.
@@ -141,6 +154,9 @@ export function diff3Node(
    // Determine label
    const label = hint?.label ? hint.label(node) : generateLabel(node, type);
 
+   // Extract range from the node
+   const range = extractRange(node);
+
    return {
       id,
       nodeKind: type,
@@ -149,7 +165,8 @@ export function diff3Node(
       details: Object.keys(details).length > 0 ? details : undefined,
       conflicts,
       children: childChanges.length > 0 ? childChanges : undefined,
-      label
+      label,
+      range
    };
 }
 
@@ -207,13 +224,15 @@ function createAddChange(node: AstNode, fileUri: vscode.Uri, hints: Hints): Chan
    const hint = hints[type];
    const id = resolveId(node, hint);
    const label = hint?.label ? hint.label(node) : generateLabel(node, type);
+   const range = extractRange(node);
 
    return {
       id,
       nodeKind: type,
       fileUri,
       kind: 'add',
-      label
+      label,
+      range
    };
 }
 
@@ -222,12 +241,14 @@ function createRemoveChange(node: AstNode, fileUri: vscode.Uri, hints: Hints): C
    const hint = hints[type];
    const id = resolveId(node, hint);
    const label = hint?.label ? hint.label(node) : generateLabel(node, type);
+   const range = extractRange(node);
 
    return {
       id,
       nodeKind: type,
       fileUri,
       kind: 'remove',
-      label
+      label,
+      range
    };
 }

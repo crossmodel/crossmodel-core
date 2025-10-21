@@ -22,4 +22,5 @@ export interface Change {
    conflicts?: boolean; // any property conflict?
    children?: Change[]; // nested changes (sections / child nodes)
    label?: string; // for UI: nice name if available
+   range?: vscode.Range; // location in file (line numbers)
 }

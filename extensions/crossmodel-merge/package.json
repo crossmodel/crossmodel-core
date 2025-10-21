@@ -36,30 +36,6 @@
     "watch": "node esbuild.mjs --watch"
   },
   "contributes": {
-    "configuration": {
-      "type": "object",
-      "title": "CrossModel Merge configuration",
-      "properties": {
-        "crossmodelMerge.modelGlob": {
-          "type": "string",
-          "default": "**/*.cm",
-          "description": "Glob pattern for CrossModel files"
-        },
-        "crossmodelMerge.git.targetRef": {
-          "type": "string",
-          "default": "",
-          "description": "Target ref/branch for merge (empty = prompt)"
-        }
-      }
-    },
-    "views": {
-      "scm": [
-        {
-          "id": "crossmodelChanges",
-          "name": "CrossModel Changes"
-        }
-      ]
-    },
     "commands": [
       {
         "command": "crossmodel.previewDiff",
@@ -102,6 +78,22 @@
         "icon": "$(file-code)"
       }
     ],
+    "configuration": {
+      "type": "object",
+      "title": "CrossModel Merge configuration",
+      "properties": {
+        "crossmodelMerge.modelGlob": {
+          "type": "string",
+          "default": "**/*.cm",
+          "description": "Glob pattern for CrossModel files"
+        },
+        "crossmodelMerge.git.targetRef": {
+          "type": "string",
+          "default": "",
+          "description": "Target ref/branch for merge (empty = prompt)"
+        }
+      }
+    },
     "menus": {
       "view/title": [
         {
@@ -123,11 +115,21 @@
           "command": "crossmodel.applySelected",
           "when": "view == crossmodelChanges",
           "group": "navigation@4"
-        },
+        }
+      ],
+      "view/item/context": [
         {
           "command": "crossmodel.showRawDiff",
-          "when": "view == crossmodelChanges",
-          "group": "navigation@5"
+          "when": "view == crossmodelChanges && viewItem =~ /^change-/",
+          "group": "inline"
+        }
+      ]
+    },
+    "views": {
+      "scm": [
+        {
+          "id": "crossmodelChanges",
+          "name": "CrossModel Changes"
         }
       ]
     }

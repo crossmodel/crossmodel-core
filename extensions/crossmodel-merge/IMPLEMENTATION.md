@@ -137,6 +137,7 @@ Properties are categorized into three types:
    ```
 
 3. **Arrays**: Arrays of child nodes
+
    ```typescript
    arrays.set('attributes', [attr1, attr2, attr3]);
    ```
@@ -155,8 +156,11 @@ interface Change {
    conflicts?: boolean; // Any property conflict?
    children?: Change[]; // Nested changes
    label?: string; // UI label
+   range?: Range; // Location in file (line numbers from CST)
 }
 ```
+
+The `range` property captures the location of the AST node in the source file by extracting it from Langium's `$cstNode.range`. This enables precise navigation to changes and displaying line numbers in the UI.
 
 ### 3-Way Diff Algorithm
 
@@ -167,7 +171,8 @@ For each node:
 3. Recursively diff singleton children
 4. Reconcile array children as unordered sets
 5. Detect conflicts per property
-6. Build Change tree
+6. Extract location information from `$cstNode.range` (Langium's 0-based line/character positions)
+7. Build Change tree with range annotations
 
 ### Apply Algorithm
 
@@ -187,26 +192,51 @@ For each selected change:
 
 - **Preview Diff**: 2-way diff (HEAD vs working tree)
 
-   ```
-   crossmodel.previewDiff
-   ```
+```
+crossmodel.previewDiff
+```
 
 - **Merge from Ref**: 3-way merge with target branch
 
-   ```
-   crossmodel.mergeFromRef
-   ```
+```
+crossmodel.mergeFromRef
+```
 
 - **Apply Selected**: Apply checked changes
 
-   ```
-   crossmodel.applySelected
-   ```
+```
+crossmodel.applySelected
+```
 
 - **Submit Changes**: Commit and push
-   ```
-   crossmodel.submitChanges
-   ```
+
+```
+crossmodel.submitChanges
+```
+
+- **Show Raw Diff**: Opens Git's native diff view for a specific change (inline button on tree items)
+
+```
+crossmodel.showRawDiff
+```
+
+- **Refresh Changes**: Recompute the current view
+
+```
+crossmodel.refreshChanges
+```
+
+- **Accept All Ours**: Accept our version for all conflicts
+
+```
+crossmodel.acceptAllOurs
+```
+
+- **Accept All Theirs**: Accept their version for all conflicts
+
+```
+crossmodel.acceptAllTheirs
+```
 
 ### Configuration
 
@@ -329,6 +359,23 @@ The extension automatically refreshes the diff view when:
 - The working tree state changes
 
 This is achieved by listening to `repo.state.onDidChange` events from the Git extension.
+
+### Show Raw Diff Button
+
+Each change item in the tree has an inline "Show Raw Diff" button that:
+
+- Opens the Git extension's native diff view (via `git.openChange` command)
+- Shows the same diff view as clicking on files in the Git Changes panel
+- Includes line number information in the title for non-root changes (e.g., "file.cm:15-20")
+- Automatically scrolls to and selects the specific change location when possible
+- Falls back to `vscode.diff` if the Git command is unavailable
+
+**Implementation Details**:
+
+- Each `Change` object tracks its location via the `range` property (extracted from Langium's `$cstNode.range`)
+- Langium's CST ranges are 0-based (line and character)
+- The button only appears on change items, not folder nodes
+- Uses `viewItem` context matching to show button inline: `viewItem =~ /^change-/`
 
 ## Known Limitations
 
