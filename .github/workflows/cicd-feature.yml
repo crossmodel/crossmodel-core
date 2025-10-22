@@ -9,6 +9,7 @@ on:
       - hotfix/*
       - chore/*
       - refactor/*
+      - copilot/*
 
 jobs:
   check-open-pr:

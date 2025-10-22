@@ -18,5 +18,5 @@ module.exports = {
       'summary',
       'default'
    ],
-   projects: ['<rootDir>/packages/protocol', '<rootDir>/packages/server']
+   projects: ['<rootDir>/packages/protocol', '<rootDir>/packages/server', '<rootDir>/extensions/crossmodel-merge']
 };
