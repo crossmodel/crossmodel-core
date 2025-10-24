@@ -3,6 +3,7 @@
  ********************************************************************************/
 import { expect, test } from '@playwright/test';
 import { CMApp } from '../../page-objects/cm-app';
+import { CMCompositeEditor } from '../../page-objects/cm-composite-editor';
 
 test.describe('Mapping Tests', () => {
    let app: CMApp;
@@ -27,6 +28,16 @@ test.describe('Mapping Tests', () => {
       await codeEditor.close();
    });
 
+   test('Open existing mapping in mapping diagram', async () => {
+      const compositeEditor = await app.openCompositeEditor(EXISTING_MAPPING_PATH, 'Mapping Diagram');
+
+      // Verify the mapping diagram editor is accessible
+      expect(compositeEditor).toBeDefined();
+
+      // Close the editor
+      await compositeEditor.close();
+   });
+
    test('Verify mapping file exists in explorer', async () => {
       const explorer = await app.openExplorerView();
 
@@ -34,14 +45,26 @@ test.describe('Mapping Tests', () => {
       expect(await explorer.existsFileNode(EXISTING_MAPPING_PATH)).toBeTruthy();
    });
 
-   test('Switch between code and form editor for mapping', async () => {
-      const compositeEditor = await app.openCompositeEditor(EXISTING_MAPPING_PATH, 'Code Editor');
+   test('Switch between mapping diagram and code editor', async () => {
+      // Open the mapping file in the composite editor
+      const editor = await app.openEditor(EXISTING_MAPPING_PATH, CMCompositeEditor);
+      expect(editor).toBeDefined();
 
-      // Verify code editor is accessible
-      const codeContent = await compositeEditor.textContentOfLineByLineNumber(1);
+      // Switch to code editor and verify content
+      const codeEditor = await editor.switchToCodeEditor();
+      expect(codeEditor).toBeDefined();
+      const codeContent = await codeEditor.textContentOfLineByLineNumber(1);
       expect(codeContent).toBe('mapping:');
 
+      // Switch to mapping diagram
+      const diagramEditor = await editor.switchToMappingDiagram();
+      expect(diagramEditor).toBeDefined();
+
+      // Switch back to code editor
+      const codeEditor2 = await editor.switchToCodeEditor();
+      expect(codeEditor2).toBeDefined();
+
       // Close the editor
-      await compositeEditor.close();
+      await editor.close();
    });
 });
