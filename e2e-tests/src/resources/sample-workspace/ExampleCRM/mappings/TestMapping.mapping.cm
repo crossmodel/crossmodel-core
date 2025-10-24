@@ -1,0 +1,13 @@
+mapping:
+    id: TestMapping
+    name: "Test Mapping"
+    sources:
+      - id: CustomerSource
+        entity: Customer
+        join: from
+    target:
+        entity: Order
+        mappings:
+          - attribute: CustomerId
+            sources:
+              - CustomerSource.Id
