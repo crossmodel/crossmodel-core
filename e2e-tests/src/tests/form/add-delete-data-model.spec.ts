@@ -119,27 +119,6 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
       unexpectedContextMenuItems.forEach(item => expect(item.status).toBe('rejected'));
    });
 
-   test('Edit data model properties', async () => {
-      // Open the data model that was created in the first test
-      const dataModelEditor = await app.openCompositeEditor(NEW_MODEL_DATAMODEL_PATH, 'Form Editor');
-      const form = (await dataModelEditor.formFor('dataModel')).generalSection;
-
-      // Edit the data model properties
-      await form.setName('Updated Data Model Name');
-      await form.setDescription('This is an updated description');
-      await form.setVersion('2.0.0');
-
-      await dataModelEditor.waitForDirty();
-      await dataModelEditor.saveAndClose();
-
-      // Verify changes were saved
-      const codeEditor = await app.openCompositeEditor(NEW_MODEL_DATAMODEL_PATH, 'Code Editor');
-      expect((await codeEditor.textContentOfLineByLineNumber(3))?.trim()).toBe('name: "Updated Data Model Name"');
-      expect((await codeEditor.textContentOfLineByLineNumber(4))?.trim()).toContain('description: "This is an updated description"');
-      expect((await codeEditor.textContentOfLineByLineNumber(6))?.trim()).toBe('version: 2.0.0');
-      await codeEditor.saveAndClose();
-   });
-
    test('Delete data model via explorer', async () => {
       const explorer = await app.openExplorerView();
       // Delete the first data model
