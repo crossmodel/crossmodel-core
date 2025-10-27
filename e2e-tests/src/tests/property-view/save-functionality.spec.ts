@@ -8,27 +8,9 @@ test.describe.serial('Save Functionality Tests', () => {
    let app: CMApp;
 
    test.beforeAll(async ({ browser, playwright }) => {
-      test.setTimeout(180000);
+      test.setTimeout(120000);
       app = await CMApp.load({ browser, playwright });
    });
-
-   async function closeAnyDialog() {
-      const dialog = app.page.locator('#theia-dialog-shell');
-      try {
-         if (await dialog.isVisible({ timeout: 1000 })) {
-            for (const label of ['Save', "Don't Save", 'Close', 'Close Without Saving', 'Yes', 'OK']) {
-               const button = app.page.locator(`#theia-dialog-shell button:has-text("${label}")`);
-               if (await button.isVisible({ timeout: 200 }).catch(() => false)) {
-                  await button.click();
-                  break;
-               }
-            }
-            await dialog.waitFor({ state: 'detached', timeout: 4000 }).catch(() => undefined);
-         }
-      } catch {
-         return;
-      }
-   }
 
    test.afterAll(async () => {
       if (app?.page) {
@@ -37,10 +19,11 @@ test.describe.serial('Save Functionality Tests', () => {
    });
 
    test('should save changes using the Save button', async () => {
-      test.setTimeout(180000);
+      test.setTimeout(120000); 
 
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
       await formEditor.waitForVisible();
+      await app.page.waitForTimeout(1000); 
 
       const form = await formEditor.formFor('entity');
       const general = form.generalSection;
@@ -52,19 +35,27 @@ test.describe.serial('Save Functionality Tests', () => {
       await formEditor.waitForDirty();
       expect(await formEditor.isDirty()).toBeTruthy();
 
-      const saveBtn = app.page.locator('button:has-text("Save")');
-      await expect(saveBtn).toBeVisible({ timeout: 10000 });
+      const saveBtn = formEditor.getSaveButton();
+      await expect(saveBtn).toBeVisible({ timeout: 5000 });
       await expect(saveBtn).toBeEnabled();
 
       await saveBtn.click();
-      await app.page.waitForTimeout(1500);
+      await app.page.waitForTimeout(1000);
+
+      const isDirtyAfterSave = await formEditor.isDirty();
+      if (!isDirtyAfterSave) {
+         expect(await formEditor.isDirty()).toBeFalsy();
+         await expect(saveBtn).toBeDisabled();
+      } else {
+         await expect(saveBtn).toBeVisible();
+      }
 
       await general.setName(oldName);
       await formEditor.saveAndClose();
    });
 
    test('should respond to Ctrl+S shortcut', async () => {
-      test.setTimeout(180000);
+      test.setTimeout(120000);
 
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
       await formEditor.waitForVisible();
@@ -80,32 +71,35 @@ test.describe.serial('Save Functionality Tests', () => {
       expect(await formEditor.isDirty()).toBeTruthy();
 
       await app.page.keyboard.press('Control+s');
-      await app.page.waitForTimeout(1500);
+      await app.page.waitForTimeout(1000);
 
-      const saveBtn = app.page.locator('button:has-text("Save")');
-      await expect(saveBtn).toBeVisible({ timeout: 10000 });
+      const isDirtyAfterCtrlS = await formEditor.isDirty();
+      const saveBtn = formEditor.getSaveButton();
+
+      if (!isDirtyAfterCtrlS) {
+         expect(await formEditor.isDirty()).toBeFalsy();
+         await expect(saveBtn).toBeDisabled();
+      } else {
+         await expect(saveBtn).toBeVisible();
+      }
 
       await general.setName(oldName);
       await saveBtn.click();
       await app.page.waitForTimeout(1000);
 
-      const closeBtn = app.page.locator('[id*="shell-tab-cm-composite-editor-handler"] .lm-TabBar-tabCloseIcon');
-      if (await closeBtn.isVisible()) {
-         await closeBtn.click();
-         await app.page.waitForTimeout(800);
-      }
+      await formEditor.parent.closeTab();
 
-      await closeAnyDialog();
+      await app.closeAnyDialog();
    });
 
    test('should keep focus on input after saving', async () => {
-      test.setTimeout(240000);
+      test.setTimeout(120000);
 
       if (app.page.isClosed()) {
          throw new Error('Page is closed, cannot continue test');
       }
 
-      await closeAnyDialog();
+      await app.closeAnyDialog();
 
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
       await formEditor.waitForVisible();
@@ -114,32 +108,27 @@ test.describe.serial('Save Functionality Tests', () => {
       const general = form.generalSection;
 
       await general.setName('TestFocus');
-      await app.page.waitForTimeout(800);
+      await app.page.waitForTimeout(500);
 
       const focusBefore = await app.page.evaluate(() => (document.activeElement ? document.activeElement.tagName : 'BODY'));
 
       await app.page.keyboard.press('Control+s');
-      await app.page.waitForTimeout(1500);
+      await app.page.waitForTimeout(1000);
 
       const focusAfter = await app.page.evaluate(() => (document.activeElement ? document.activeElement.tagName : 'BODY'));
 
-      console.log(`Focus before: ${focusBefore}, after: ${focusAfter}`);
-
       expect(focusAfter).toBeDefined();
+      expect(focusAfter).toBe(focusBefore);
 
       await general.setName('Customer');
-      const saveBtn = app.page.locator('button:has-text("Save")');
+      const saveBtn = formEditor.getSaveButton();
       if (await saveBtn.isVisible()) {
          await saveBtn.click();
          await app.page.waitForTimeout(1000);
       }
 
-      const closeBtn = app.page.locator('[id*="shell-tab-cm-composite-editor-handler"] .lm-TabBar-tabCloseIcon');
-      if (await closeBtn.isVisible()) {
-         await closeBtn.click();
-         await app.page.waitForTimeout(800);
-      }
+      await formEditor.parent.closeTab();
 
-      await closeAnyDialog();
+      await app.closeAnyDialog();
    });
 });

@@ -49,4 +49,8 @@ export class IntegratedFormEditor extends IntegratedEditor {
          return form;
       }
    }
+
+   getSaveButton(): import('@playwright/test').Locator {
+      return this.page.locator(`${this.viewSelector} button:has-text("Save")`);
+   }
 }

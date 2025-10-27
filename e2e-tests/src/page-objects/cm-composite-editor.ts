@@ -93,6 +93,18 @@ export class CMCompositeEditor extends TheiaEditor {
       await diagramEditor.activate();
       return diagramEditor;
    }
+
+   getCloseButton(): import('@playwright/test').Locator {
+      return this.page.locator('[id*="shell-tab-cm-composite-editor-handler"] .lm-TabBar-tabCloseIcon');
+   }
+
+   async closeTab(): Promise<void> {
+      const closeBtn = this.getCloseButton();
+      if (await closeBtn.isVisible()) {
+         await closeBtn.click();
+         await this.page.waitForTimeout(1000);
+      }
+   }
 }
 
 export class IntegratedCodeEditor extends IntegratedTextEditor {
