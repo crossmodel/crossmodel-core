@@ -86,10 +86,15 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
             // Generate a proper ID for the new custom property
             const newId = findNextUnique(toId(customProperty.name || ''), relationship?.customProperties || [], prop => prop.id || '');
 
-            // Create the final property without temporary fields
+            // Create the final property without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, ...propertyData } = customProperty;
-            const finalProperty = { ...propertyData, id: newId };
+            const { _uncommitted, id: tempId, description, value, ...propertyData } = customProperty;
+            const finalProperty = {
+               ...propertyData,
+               id: newId,
+               ...(description ? { description } : {}),
+               ...(value ? { value } : {})
+            };
 
             dispatch({
                type: 'relationship:customProperty:add-customProperty',
@@ -100,7 +105,7 @@ export function RelationshipCustomPropertiesDataGrid(): React.ReactElement {
             dispatch({
                type: 'relationship:customProperty:update',
                customPropertyIdx: customProperty.idx,
-               customProperty
+               customProperty: customProperty
             });
          }
 
