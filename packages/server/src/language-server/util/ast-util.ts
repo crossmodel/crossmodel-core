@@ -215,12 +215,15 @@ export function createSourceObject(entity: LogicalEntity | AstNodeDescription, c
       : (entity.id ?? idProvider.getLocalId(entity) ?? entity.name ?? 'unknown');
    const ref = isAstNodeDescription(entity) ? undefined : entity;
    const $refText = isAstNodeDescription(entity) ? entity.name : idProvider.getGlobalId(entity) || entity.id || '';
+
+   const hasFromJoin = container.sources.some(source => source.join === 'from');
+   const joinType = hasFromJoin ? 'left-join' : 'from';
    return {
       $type: SourceObject,
       $container: container,
       id: idProvider.findNextId(SourceObject, entityId + 'SourceObject', container),
       entity: { $refText, ref },
-      join: 'from',
+      join: joinType,
       dependencies: [],
       conditions: [],
       customProperties: []
