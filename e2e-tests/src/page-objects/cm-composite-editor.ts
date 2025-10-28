@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { ElementHandle, Page } from '@playwright/test';
+import { ElementHandle, Locator, Page } from '@playwright/test';
 import { TheiaEditor, isElementVisible, normalizeId } from '@theia/playwright';
 import { TheiaMonacoEditor } from '@theia/playwright/lib/theia-monaco-editor';
 import { CMApp } from './cm-app';
@@ -92,6 +92,18 @@ export class CMCompositeEditor extends TheiaEditor {
       await diagramEditor.waitForVisible();
       await diagramEditor.activate();
       return diagramEditor;
+   }
+
+   closeButtonLocator(): Locator {
+      return this.page.locator('[id*="shell-tab-cm-composite-editor-handler"] .lm-TabBar-tabCloseIcon');
+   }
+
+   async closeTab(): Promise<void> {
+      const closeBtn = this.closeButtonLocator();
+      if (await closeBtn.isVisible()) {
+         await closeBtn.click();
+         await this.page.waitForTimeout(1000);
+      }
    }
 }
 

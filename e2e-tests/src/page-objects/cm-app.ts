@@ -89,4 +89,18 @@ export class CMApp extends TheiaGLSPApp {
    ): Promise<T> {
       return super.openEditor(filePath, editorFactory as new (f: string, a: TheiaGLSPApp) => T, editorName, expectFileNodes);
    }
+
+   async closeAnyDialog(): Promise<void> {
+      const dialog = this.page.locator('#theia-dialog-shell');
+      if (await dialog.isVisible({ timeout: 1000 }).catch(() => false)) {
+         const buttons = ['Save', "Don't Save", 'Close', 'Yes', 'OK'];
+         for (const label of buttons) {
+            const button = dialog.locator(`button:has-text("${label}")`);
+            if (await button.isVisible({ timeout: 200 }).catch(() => false)) {
+               await button.click();
+               break;
+            }
+         }
+      }
+   }
 }
