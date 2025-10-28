@@ -35,7 +35,7 @@ test.describe.serial('Save Functionality Tests', () => {
       await formEditor.waitForDirty();
       expect(await formEditor.isDirty()).toBeTruthy();
 
-      const saveBtn = formEditor.getSaveButton();
+      const saveBtn = formEditor.saveButtonLocator();
       await expect(saveBtn).toBeVisible({ timeout: 5000 });
       await expect(saveBtn).toBeEnabled();
 
@@ -43,12 +43,8 @@ test.describe.serial('Save Functionality Tests', () => {
       await app.page.waitForTimeout(1000);
 
       const isDirtyAfterSave = await formEditor.isDirty();
-      if (!isDirtyAfterSave) {
-         expect(await formEditor.isDirty()).toBeFalsy();
-         await expect(saveBtn).toBeDisabled();
-      } else {
-         await expect(saveBtn).toBeVisible();
-      }
+      expect(isDirtyAfterSave).toBe(false);
+      await expect(saveBtn).toBeDisabled();
 
       await general.setName(oldName);
       await formEditor.saveAndClose();
@@ -74,20 +70,16 @@ test.describe.serial('Save Functionality Tests', () => {
       await app.page.waitForTimeout(1000);
 
       const isDirtyAfterCtrlS = await formEditor.isDirty();
-      const saveBtn = formEditor.getSaveButton();
+      const saveBtn = formEditor.saveButtonLocator();
 
-      if (!isDirtyAfterCtrlS) {
-         expect(await formEditor.isDirty()).toBeFalsy();
-         await expect(saveBtn).toBeDisabled();
-      } else {
-         await expect(saveBtn).toBeVisible();
-      }
+      expect(isDirtyAfterCtrlS).toBe(false);
+      await expect(saveBtn).toBeDisabled();
 
       await general.setName(oldName);
       await saveBtn.click();
       await app.page.waitForTimeout(1000);
 
-      await formEditor.parent.closeTab();
+      await formEditor.close();
 
       await app.closeAnyDialog();
    });
@@ -121,13 +113,13 @@ test.describe.serial('Save Functionality Tests', () => {
       expect(focusAfter).toBe(focusBefore);
 
       await general.setName('Customer');
-      const saveBtn = formEditor.getSaveButton();
+      const saveBtn = formEditor.saveButtonLocator();
       if (await saveBtn.isVisible()) {
          await saveBtn.click();
          await app.page.waitForTimeout(1000);
       }
 
-      await formEditor.parent.closeTab();
+      await formEditor.close();
 
       await app.closeAnyDialog();
    });

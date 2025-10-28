@@ -2,6 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
+import { Locator } from '@playwright/test';
 import { normalizeId } from '@theia/playwright';
 import { CMCompositeEditor, hasViewError } from '../cm-composite-editor';
 import { IntegratedEditor } from '../cm-integrated-editor';
@@ -50,7 +51,7 @@ export class IntegratedFormEditor extends IntegratedEditor {
       }
    }
 
-   getSaveButton(): import('@playwright/test').Locator {
+   saveButtonLocator(): Locator {
       return this.page.locator(`${this.viewSelector} button:has-text("Save")`);
    }
 }
