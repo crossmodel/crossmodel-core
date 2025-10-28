@@ -73,6 +73,10 @@ export abstract class IntegratedEditor extends TheiaEditor {
    async waitForDirty(): Promise<void> {
       await waitForFunction(async () => this.isDirty());
    }
+
+   async waitForSaved(): Promise<void> {
+      await this.page.waitForSelector(this.tabSelector + '.theia-mod-dirty', { state: 'detached' });
+   }
 }
 
 export abstract class IntegratedTextEditor extends TheiaTextEditor {

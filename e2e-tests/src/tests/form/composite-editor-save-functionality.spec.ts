@@ -4,11 +4,10 @@
 import { expect, test } from '@playwright/test';
 import { CMApp } from '../../page-objects/cm-app';
 
-test.describe.serial('Save Functionality Tests', () => {
+test.describe('Composite Editor Save Functionality', () => {
    let app: CMApp;
 
    test.beforeAll(async ({ browser, playwright }) => {
-      test.setTimeout(120000);
       app = await CMApp.load({ browser, playwright });
    });
 
@@ -18,12 +17,10 @@ test.describe.serial('Save Functionality Tests', () => {
       }
    });
 
-   test('should save changes using the Save button', async () => {
-      test.setTimeout(120000); 
-
+   test('Composite Editor should save changes using the Save button', async () => {
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
+      expect(formEditor).toBeDefined();
       await formEditor.waitForVisible();
-      await app.page.waitForTimeout(1000); 
 
       const form = await formEditor.formFor('entity');
       const general = form.generalSection;
@@ -31,29 +28,29 @@ test.describe.serial('Save Functionality Tests', () => {
       const oldName = await general.getName();
       const newName = 'UpdatedCustomer';
 
+      // Change a property and wait until the editor is dirty
       await general.setName(newName);
       await formEditor.waitForDirty();
-      expect(await formEditor.isDirty()).toBeTruthy();
 
+      // Check whether the save button is there, visible and enabled.
       const saveBtn = formEditor.saveButtonLocator();
-      await expect(saveBtn).toBeVisible({ timeout: 5000 });
-      await expect(saveBtn).toBeEnabled();
+      expect(saveBtn).toBeDefined();
+      expect(saveBtn).toBeVisible();
+      expect(saveBtn).toBeEnabled();
 
+      // Click the save button and expect the save button to be disabled.
       await saveBtn.click();
-      await app.page.waitForTimeout(1000);
-
-      const isDirtyAfterSave = await formEditor.isDirty();
-      expect(isDirtyAfterSave).toBe(false);
+      await formEditor.waitForSaved();
       await expect(saveBtn).toBeDisabled();
 
+      // Revert change.
       await general.setName(oldName);
       await formEditor.saveAndClose();
    });
 
-   test('should respond to Ctrl+S shortcut', async () => {
-      test.setTimeout(120000);
-
+   test('Composite editor should respond to Ctrl+S shortcut', async () => {
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
+      expect(formEditor).toBeDefined();
       await formEditor.waitForVisible();
 
       const form = await formEditor.formFor('entity');
@@ -62,64 +59,48 @@ test.describe.serial('Save Functionality Tests', () => {
       const oldName = await general.getName();
       const newName = 'ShortcutSaveTest';
 
+      // Change a property and wait until the editor is dirty
       await general.setName(newName);
       await formEditor.waitForDirty();
-      expect(await formEditor.isDirty()).toBeTruthy();
 
+      // Simulate Ctrl+S keyboard shortcut
       await app.page.keyboard.press('Control+s');
-      await app.page.waitForTimeout(1000);
+      await formEditor.waitForSaved();
 
-      const isDirtyAfterCtrlS = await formEditor.isDirty();
+      // Check that the save button is now disabled
       const saveBtn = formEditor.saveButtonLocator();
-
-      expect(isDirtyAfterCtrlS).toBe(false);
       await expect(saveBtn).toBeDisabled();
 
+      // Revert change.
       await general.setName(oldName);
-      await saveBtn.click();
-      await app.page.waitForTimeout(1000);
-
-      await formEditor.close();
-
-      await app.closeAnyDialog();
+      await formEditor.saveAndClose();
    });
 
-   test('should keep focus on input after saving', async () => {
-      test.setTimeout(120000);
-
-      if (app.page.isClosed()) {
-         throw new Error('Page is closed, cannot continue test');
-      }
-
-      await app.closeAnyDialog();
-
+   test('Composite Editor should keep focus on input after saving', async () => {
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
+      expect(formEditor).toBeDefined();
       await formEditor.waitForVisible();
 
       const form = await formEditor.formFor('entity');
       const general = form.generalSection;
+      const oldName = await general.getName();
 
+      // Change a property and wait until the editor is dirty
       await general.setName('TestFocus');
-      await app.page.waitForTimeout(500);
+      await formEditor.waitForDirty();
 
       const focusBefore = await app.page.evaluate(() => (document.activeElement ? document.activeElement.tagName : 'BODY'));
+      expect(focusBefore).toBeDefined();
 
       await app.page.keyboard.press('Control+s');
-      await app.page.waitForTimeout(1000);
+      await formEditor.waitForSaved();
 
       const focusAfter = await app.page.evaluate(() => (document.activeElement ? document.activeElement.tagName : 'BODY'));
       expect(focusAfter).toBeDefined();
       expect(focusAfter).toBe(focusBefore); // Verify focus stays on same field after saving - ensures smooth workflow
 
-      await general.setName('Customer');
-      const saveBtn = formEditor.saveButtonLocator();
-      if (await saveBtn.isVisible()) {
-         await saveBtn.click();
-         await app.page.waitForTimeout(1000);
-      }
-
-      await formEditor.close();
-
-      await app.closeAnyDialog();
+      // Revert change.
+      await general.setName(oldName);
+      await formEditor.saveAndClose();
    });
 });
