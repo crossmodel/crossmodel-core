@@ -108,10 +108,8 @@ test.describe.serial('Save Functionality Tests', () => {
       await app.page.waitForTimeout(1000);
 
       const focusAfter = await app.page.evaluate(() => (document.activeElement ? document.activeElement.tagName : 'BODY'));
-      // Verify that focus stays on the same field after saving
-      // Ensures a smooth workflow and prevents focus from jumping
       expect(focusAfter).toBeDefined();
-      expect(focusAfter).toBe(focusBefore);
+      expect(focusAfter).toBe(focusBefore); // Verify focus stays on same field after saving - ensures smooth workflow
 
       await general.setName('Customer');
       const saveBtn = formEditor.saveButtonLocator();
