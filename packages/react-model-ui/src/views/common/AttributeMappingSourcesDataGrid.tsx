@@ -14,7 +14,7 @@ import {
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
@@ -24,7 +24,8 @@ interface AttributeMappingSourceEditorProps {
 }
 
 function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps): React.ReactElement {
-   const { options, mappingIdx } = props;
+   const mapping = useMapping();
+   const { options } = props;
    const { editorCallback } = options;
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
@@ -38,7 +39,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: 'mapping_' + mappingIdx },
+         container: { globalId: mapping.id },
          syntheticElements: [
             { property: 'target', type: TargetObjectType },
             { property: 'mappings', type: AttributeMappingType },
@@ -46,7 +47,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
          ],
          property: 'value'
       }),
-      [mappingIdx]
+      [mapping]
    );
 
    const search = React.useCallback(
@@ -156,6 +157,7 @@ export interface AttributeMappingSourceRow extends Omit<AttributeMappingSource &
    idx: number;
    id: string;
    value: string;
+   _uncommitted?: boolean;
 }
 
 export function AttributeMappingSourcesDataGrid({
@@ -167,43 +169,34 @@ export function AttributeMappingSourcesDataGrid({
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
-   const validateField = React.useCallback((rowData: AttributeMappingSourceRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.value) {
-         errors.value = 'Invalid Value';
-      }
-      return errors;
-   }, []);
+   const defaultEntry = React.useMemo<Partial<AttributeMappingSourceRow>>(
+      () => ({
+         $type: AttributeMappingSourceType,
+         value: '',
+         id: ''
+      }),
+      []
+   );
 
-   const gridData = React.useMemo(
-      () =>
-         (attributeMapping.sources || []).map((source, idx) => ({
+   const [gridData, setGridData] = React.useState<AttributeMappingSourceRow[]>([]);
+
+   // Update grid data when sources change, preserving any uncommitted rows
+   React.useEffect(() => {
+      setGridData(current => {
+         // Map the committed sources
+         const committedData = (attributeMapping.sources || []).map((source, idx) => ({
             ...source,
             idx,
-            id: (source as any).id || idx.toString(),
+            id: `source${idx}`,
             value: String(source.value || '')
-         })) as AttributeMappingSourceRow[],
-      [attributeMapping.sources]
-   );
+         })) as AttributeMappingSourceRow[];
 
-   const onSourceAdd = React.useCallback(
-      (sourceToAdd: AttributeMappingSourceRow) => {
-         setValidationErrors({});
-         const newId = sourceToAdd.id || gridData.length.toString();
-         const sourceData: AttributeMappingSource = {
-            $type: AttributeMappingSourceType,
-            value: sourceToAdd.value
-         };
+         // Preserve any uncommitted rows that are currently being edited
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         dispatch({
-            type: 'attribute-mapping:add-source',
-            mappingIdx,
-            source: sourceData
-         });
-         setEditingRows({ [newId]: true });
-      },
-      [dispatch, mappingIdx, gridData]
-   );
+         return [...committedData, ...uncommittedRows];
+      });
+   }, [attributeMapping.sources, editingRows]);
 
    const onSourceDelete = React.useCallback(
       (sourceToDelete: AttributeMappingSourceRow) => {
@@ -214,17 +207,86 @@ export function AttributeMappingSourcesDataGrid({
 
    const onSourceUpdate = React.useCallback(
       (sourceToUpdate: AttributeMappingSourceRow) => {
-         const errors = validateField(sourceToUpdate);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-            return;
+         // Clear any existing validation errors for this row
+         const rowId = sourceToUpdate.id;
+         setValidationErrors(current => {
+            const updated = { ...current };
+            Object.keys(updated).forEach(key => {
+               if (key.startsWith(`${rowId}.`)) {
+                  delete updated[key];
+               }
+            });
+            return updated;
+         });
+
+         if (sourceToUpdate._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
+            const hasChanges = sourceToUpdate.value !== defaultEntry.value;
+
+            // Check if the value is valid (not empty or default value)
+            const isValidValue =
+               sourceToUpdate.value && sourceToUpdate.value.trim() !== '' && sourceToUpdate.value !== '_' && sourceToUpdate.value !== '-';
+
+            if (!hasChanges || !isValidValue) {
+               // Remove the row if no changes or invalid value
+               setGridData(current => current.filter(row => row.id !== sourceToUpdate.id));
+               setEditingRows({});
+               return;
+            }
+
+            // Add the new source through dispatch
+            dispatch({
+               type: 'attribute-mapping:add-source',
+               mappingIdx,
+               source: {
+                  $type: AttributeMappingSourceType,
+                  value: sourceToUpdate.value
+               }
+            });
+         } else {
+            // This is an existing row being updated
+            if (!sourceToUpdate.value?.trim() || sourceToUpdate.value === '_' || sourceToUpdate.value === '-') {
+               // Invalid value, delete the row
+               onSourceDelete(sourceToUpdate);
+               return;
+            }
+
+            dispatch({
+               type: 'attribute-mapping:update-source',
+               mappingIdx,
+               sourceIdx: sourceToUpdate.idx,
+               source: {
+                  $type: AttributeMappingSourceType,
+                  value: sourceToUpdate.value
+               }
+            });
          }
-         setValidationErrors({});
-         const { ...rest } = sourceToUpdate;
-         dispatch({ type: 'attribute-mapping:update-source', mappingIdx, source: rest, sourceIdx: sourceToUpdate.idx });
+
+         // Clear editing state after successful update
+         setEditingRows({});
       },
-      [dispatch, mappingIdx, validateField]
+      [dispatch, mappingIdx, onSourceDelete, defaultEntry]
    );
+
+   const onSourceAdd = React.useCallback((): void => {
+      // Clear any previous validation errors
+      setValidationErrors({});
+
+      // Clear any existing edit states first
+      setEditingRows({});
+
+      // Create a new uncommitted row with a unique temporary ID
+      const tempRow: AttributeMappingSourceRow = {
+         ...defaultEntry,
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
+         _uncommitted: true,
+         idx: -1
+      } as AttributeMappingSourceRow;
+
+      // Add to grid data and set it to editing mode
+      setGridData(current => [...current, tempRow]);
+      setEditingRows({ [tempRow.id]: true });
+   }, [defaultEntry]);
 
    const onSourceMoveUp = React.useCallback(
       (sourceToMove: AttributeMappingSourceRow) => {
@@ -252,15 +314,6 @@ export function AttributeMappingSourcesDataGrid({
       [mappingIdx]
    );
 
-   const defaultEntry = React.useMemo<Partial<AttributeMappingSourceRow>>(
-      () => ({
-         $type: AttributeMappingSourceType,
-         value: '',
-         id: ''
-      }),
-      []
-   );
-
    if (!attributeMapping) {
       return <></>;
    }
@@ -283,7 +336,38 @@ export function AttributeMappingSourcesDataGrid({
          noDataMessage='No source expressions'
          addButtonLabel='Add Source'
          editingRows={editingRows}
-         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         onRowEditChange={(e: DataTableRowEditEvent) => {
+            const newEditingRows = e.data as Record<string, boolean>;
+            const newEditingId = Object.keys(newEditingRows)[0];
+            const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+
+            // If we're stopping editing a row (either by cancelling or completing)
+            if (currentEditingId && !newEditingRows[currentEditingId]) {
+               const currentRow = gridData.find(row => row.id === currentEditingId);
+
+               // Always remove uncommitted rows when editing stops
+               if (currentRow?._uncommitted) {
+                  setGridData(current => current.filter(row => row.id !== currentEditingId));
+               }
+
+               // Clear validation errors
+               setValidationErrors({});
+            }
+
+            // Update editing state
+            setEditingRows(newEditingRows);
+
+            // Clean up any stale uncommitted rows
+            setGridData(current => {
+               // Keep all committed rows
+               const committedRows = current.filter(row => !row._uncommitted);
+
+               // For uncommitted rows, only keep the one being edited (if any)
+               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
+
+               return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+            });
+         }}
          globalFilterFields={['value']}
       />
    );

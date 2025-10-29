@@ -36,7 +36,8 @@ export function AttributeProperty({ field, row, diagnostics, value }: AttributeP
 
 export interface RelationshipAttributeRow extends RelationshipAttribute {
    idx: number;
-   id: string; // Added id field
+   id: string;
+   _uncommitted?: boolean;
 }
 
 interface RelationshipAttributeEditorProps {
@@ -253,57 +254,24 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    }, [rawDiagnostics, relationship?.attributes]);
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+   const [gridData, setGridData] = React.useState<RelationshipAttributeRow[]>([]);
 
-   const validateField = React.useCallback(
-      (rowData: RelationshipAttributeRow): Record<string, string> => {
-         const errors: Record<string, string> = {}; // Check if the current values have any validation errors in raw diagnostics
-         const hasRawError = rawDiagnostics.some(diagnostic => {
-            // Handle reference resolution errors
-            if (diagnostic.message.includes('Could not resolve reference')) {
-               if (rowData.parent && (rowData.parent === '_' || diagnostic.message.includes(rowData.parent))) {
-                  errors.parent = diagnostic.message;
-                  return true;
-               }
-               if (rowData.child && (rowData.child === '_' || diagnostic.message.includes(rowData.child))) {
-                  errors.child = diagnostic.message;
-                  return true;
-               }
-            }
-
-            // Handle malformed attributes errors
-            const diagnosticCode = String(diagnostic.code);
-            if (diagnosticCode.startsWith('malformed-attributes')) {
-               const match = diagnosticCode.match(/malformed-attributes\[(\d+)\]\.(\w+)/);
-               if (match) {
-                  const [, diagnosticIdx, field] = match;
-                  if (parseInt(diagnosticIdx, 10) === rowData.idx) {
-                     errors[field] = diagnostic.message;
-                     return true;
-                  }
-               }
-            }
-            return false;
-         });
-
-         // If no raw errors, then the field is valid regardless of processed diagnostics
-         if (!hasRawError) {
-            return {};
-         }
-
-         return errors;
-      },
-      [rawDiagnostics]
-   );
-
-   const gridData = React.useMemo(
-      () =>
-         (relationship.attributes || []).map((attr, idx) => ({
+   // Update grid data when attributes change, preserving any uncommitted rows
+   React.useEffect(() => {
+      setGridData(current => {
+         // Map the committed attributes
+         const committedData = (relationship.attributes || []).map((attr, idx) => ({
             ...attr,
             idx,
-            id: (attr as any).id || idx.toString() // Ensure id is present for keyField
-         })) as RelationshipAttributeRow[],
-      [relationship.attributes]
-   );
+            id: (attr as any).id || idx.toString()
+         })) as RelationshipAttributeRow[];
+
+         // Preserve any uncommitted rows that are currently being edited
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
+
+         return [...committedData, ...uncommittedRows];
+      });
+   }, [relationship.attributes, editingRows]);
 
    const parentOptions = React.useMemo(() => {
       const uniqueParents = [...new Set(gridData.map(item => item.parent).filter(Boolean))];
@@ -328,52 +296,62 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
-         if (attribute.parent === defaultEntry.parent && attribute.child === defaultEntry.child) {
-            console.log('Not saving default new attribute.');
-            return;
-         }
-
-         // Only check for reference errors, let language server handle duplicates
-         const errors = validateField(attribute);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-         } else {
-            setValidationErrors({});
-         }
-
-         // Always save the changes and let language server provide diagnostics
-         dispatch({
-            type: 'relationship:attribute:update',
-            attributeIdx: attribute.idx,
-            attribute: attribute
-         });
-      },
-      [dispatch, defaultEntry, validateField]
-   );
-
-   const onRowAdd = React.useCallback(
-      (attribute: RelationshipAttributeRow) => {
-         // Clear any previous validation errors
+         // Don't validate before update since errors come from server after the update
          setValidationErrors({});
 
-         // Create a new attribute with empty values
-         const newId = attribute.id || gridData.length.toString(); // Generate a unique ID
-         const attributeData: RelationshipAttributeRow = {
-            $type: RelationshipAttributeType,
-            parent: attribute.parent || '',
-            child: attribute.child || '',
-            id: newId,
-            idx: -1
-         };
+         if (attribute._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
+            const hasChanges = attribute.parent !== defaultEntry.parent || attribute.child !== defaultEntry.child;
 
-         dispatch({
-            type: 'relationship:attribute:add',
-            attribute: attributeData
-         });
-         setEditingRows({ [newId]: true });
+            if (!hasChanges || !attribute.parent || !attribute.child) {
+               // Remove the row if no changes or incomplete data
+               setGridData(current => current.filter(row => row.id !== attribute.id));
+               setEditingRows({});
+               return;
+            }
+
+            // Create the final attribute without temporary fields
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { _uncommitted, id: tempId, ...attributeData } = attribute;
+
+            // Add the new attribute through dispatch
+            dispatch({
+               type: 'relationship:attribute:add',
+               attribute: attributeData
+            });
+         } else {
+            // This is an existing row being updated
+            dispatch({
+               type: 'relationship:attribute:update',
+               attributeIdx: attribute.idx,
+               attribute: attribute
+            });
+         }
+
+         // Clear editing state after successful update
+         setEditingRows({});
       },
-      [dispatch, gridData]
+      [dispatch, defaultEntry]
    );
+
+   const onRowAdd = React.useCallback((): void => {
+      // Clear any previous validation errors
+      setValidationErrors({});
+
+      // Clear any existing edit states first
+      setEditingRows({});
+
+      // Create a new uncommitted row with a unique temporary ID
+      const tempRow: RelationshipAttributeRow = {
+         ...defaultEntry,
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
+         _uncommitted: true
+      };
+
+      // Add to grid data and set it to editing mode
+      setGridData(current => [...current, tempRow]);
+      setEditingRows({ [tempRow.id]: true });
+   }, [defaultEntry]);
 
    const onRowDelete = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
@@ -468,7 +446,38 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          noDataMessage='No attributes'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
-         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         onRowEditChange={(e: DataTableRowEditEvent) => {
+            const newEditingRows = e.data as Record<string, boolean>;
+            const newEditingId = Object.keys(newEditingRows)[0];
+            const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+
+            // If we're stopping editing a row (either by cancelling or completing)
+            if (currentEditingId && !newEditingRows[currentEditingId]) {
+               const currentRow = gridData.find(row => row.id === currentEditingId);
+
+               // Always remove uncommitted rows when editing stops
+               if (currentRow?._uncommitted) {
+                  setGridData(current => current.filter(row => row.id !== currentEditingId));
+               }
+
+               // Clear validation errors
+               setValidationErrors({});
+            }
+
+            // Update editing state
+            setEditingRows(newEditingRows);
+
+            // Clean up any stale uncommitted rows
+            setGridData(current => {
+               // Keep all committed rows
+               const committedRows = current.filter(row => !row._uncommitted);
+
+               // For uncommitted rows, only keep the one being edited (if any)
+               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
+
+               return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+            });
+         }}
          globalFilterFields={['parent', 'child']}
       />
    );
