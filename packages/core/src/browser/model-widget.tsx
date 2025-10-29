@@ -27,12 +27,13 @@ import {
    SourceObjectRenderProps
 } from '@crossmodel/react-model-ui';
 import { Emitter, Event, ResourceProvider } from '@theia/core';
-import { LabelProvider, Message, OpenerService, ReactWidget, Saveable, open } from '@theia/core/lib/browser';
+import { ApplicationShell, LabelProvider, Message, OpenerService, ReactWidget, Saveable, open } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import debounce from '@theia/core/shared/lodash.debounce';
 import * as React from '@theia/core/shared/react';
+import { PropertyViewWidget } from '@theia/property-view/lib/browser/property-view-widget';
 import deepEqual from 'fast-deep-equal';
 
 export const CrossModelWidgetOptions = Symbol('FormEditorWidgetOptions');
@@ -52,6 +53,7 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
    @inject(ThemeService) protected readonly themeService: ThemeService;
    @inject(OpenerService) protected readonly openerService: OpenerService;
    @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider;
+   @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
    protected readonly onDirtyChangedEmitter = new Emitter<void>();
    onDirtyChanged: Event<void> = this.onDirtyChangedEmitter.event;
@@ -168,6 +170,10 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
    protected async openModelInEditor(): Promise<void> {
       if (this.document?.uri === undefined) {
          throw new Error('Cannot open undefined model');
+      }
+      const propertyWidget = this.shell.getWidgets('right').find(widget => widget.id === PropertyViewWidget.ID);
+      if (propertyWidget && propertyWidget.isVisible) {
+         this.shell.collapsePanel('right');
       }
       open(this.openerService, new URI(this.document.uri));
    }
