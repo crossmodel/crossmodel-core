@@ -251,6 +251,13 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       } else if (event.currentWidget instanceof GLSPDiagramWidget && !event.currentWidget.hasFocus) {
          event.currentWidget.actionDispatcher.dispatch(FocusStateChangedAction.create(true));
       }
+      
+      if (event.currentWidget instanceof CrossModelWidget) {
+         const isAnyEditorDirty = this.saveable.saveables.some((saveable: Saveable) => saveable.dirty);
+         if (isAnyEditorDirty && !event.currentWidget.dirty) {
+            event.currentWidget.setDirty(true);
+         }
+      }
    }
 
    protected override onCloseRequest(msg: Message): void {

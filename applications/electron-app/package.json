@@ -1,6 +1,6 @@
 {
   "name": "crossmodel-core-electron",
-  "version": "0.9.4",
+  "version": "0.10.1",
   "private": true,
   "description": "CrossModel Core Edition",
   "homepage": "https://github.com/crossmodel/crossmodel-core",
@@ -33,13 +33,13 @@
     "watch": "theia build --watch --mode development"
   },
   "dependencies": {
-    "@crossmodel/composite-editor": "0.9.4",
-    "@crossmodel/core": "0.9.4",
-    "@crossmodel/form-client": "0.9.4",
-    "@crossmodel/glsp-client": "0.9.4",
-    "@crossmodel/model-service": "0.9.4",
-    "@crossmodel/product": "0.9.4",
-    "@crossmodel/property-view": "0.9.4",
+    "@crossmodel/composite-editor": "0.10.1",
+    "@crossmodel/core": "0.10.1",
+    "@crossmodel/form-client": "0.10.1",
+    "@crossmodel/glsp-client": "0.10.1",
+    "@crossmodel/model-service": "0.10.1",
+    "@crossmodel/product": "0.10.1",
+    "@crossmodel/property-view": "0.10.1",
     "@theia/core": "1.64.1",
     "@theia/editor": "1.64.1",
     "@theia/electron": "1.64.1",

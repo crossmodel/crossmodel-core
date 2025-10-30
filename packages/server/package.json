@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/server",
-  "version": "0.9.4",
+  "version": "0.10.1",
   "description": "CrossModel language, GLSP and model server components",
   "homepage": "https://github.com/crossmodel/crossmodel-core",
   "repository": {
@@ -34,7 +34,7 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/protocol": "0.9.4",
+    "@crossmodel/protocol": "0.10.1",
     "@eclipse-glsp/server": "2.5.0",
     "elkjs": "^0.10.0",
     "fast-json-patch": "^3.1.0",

@@ -11,6 +11,7 @@ test.describe('CrossModel Error Views', () => {
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
    });
+
    test('Form Editor should show error if model code is broken', async () => {
       const editor = await app.openEditor('example-entity.entity.cm', CMCompositeEditor);
       expect(editor).toBeDefined();
