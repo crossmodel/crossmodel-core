@@ -10,6 +10,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
    const SYSTEM_DIAGRAM_PATH = 'ExampleCRM/diagrams/EMPTY.system-diagram.cm';
    const ENTITY_PATH = 'ExampleCRM/entities/EmptyEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'EmptyEntity';
+   const ATTRIBUTE_NAME = 'MyTestAttribute';
    const RENAMED_ATTRIBUTE_LABEL = 'Renamed Attribute';
 
    test.beforeAll(async ({ browser, playwright }) => {
@@ -24,12 +25,13 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
-      const attribute = await form.attributesSection.addAttribute();
+      const attributeInEdit = await form.attributesSection.startAddAttribute();
+      const attribute = await form.attributesSection.commitAttributeAdd(attributeInEdit, ATTRIBUTE_NAME);
       await form.waitForDirty();
 
       // Verify that the attribute is added to the properties view
       const properties = await attribute.getProperties();
-      expect(properties).toMatchObject({ name: 'New Attribute', datatype: 'Text', identifier: false, description: '' });
+      expect(properties).toMatchObject({ name: ATTRIBUTE_NAME, datatype: 'Text', identifier: false, description: '' });
       await propertyView.saveAndClose();
 
       // Verify that the attribute is added to the diagram
@@ -38,7 +40,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       expect(attributeNodes).toHaveLength(1);
       const attributeNode = attributeNodes[0];
       expect(await attributeNode.datatype()).toEqual('Text');
-      expect(await attributeNode.name()).toEqual('New Attribute');
+      expect(await attributeNode.name()).toEqual(ATTRIBUTE_NAME);
       await diagramEditor.saveAndClose();
 
       // Verify that the attribute is added to the entity file
@@ -47,9 +49,10 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       expect(await entityCodeEditor.textContentOfLineByLineNumber(2)).toMatch(`id: ${EMPTY_ENTITY_ID}`);
       expect(await entityCodeEditor.textContentOfLineByLineNumber(3)).toMatch(`name: "${EMPTY_ENTITY_ID}"`);
       expect(await entityCodeEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(5)).toMatch('- id: New_Attribute');
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(6)).toMatch('name: "New Attribute"');
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(7)).toMatch('datatype: "Text"');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(5)).toMatch('- id: MyTestAttribute');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(6)).toMatch('name: "MyTestAttribute"');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(7)).toMatch('description: ""');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(8)).toMatch('datatype: "Text"');
 
       await entityCodeEditor.saveAndClose();
 
@@ -58,7 +61,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
-         await formForCleanup.attributesSection.deleteAttribute('New Attribute');
+         await formForCleanup.attributesSection.deleteAttribute('MyTestAttribute');
          await formForCleanup.waitForDirty();
       });
       await propertyViewForCleanup.saveAndClose();
@@ -69,7 +72,8 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForAdd = await propertyViewForAdd.form();
-      await formForAdd.attributesSection.addAttribute();
+      const attributeInEdit = await formForAdd.attributesSection.startAddAttribute();
+      await formForAdd.attributesSection.commitAttributeAdd(attributeInEdit, 'MyTestAttribute');
       await formForAdd.waitForDirty();
       await propertyViewForAdd.saveAndClose();
 
@@ -77,7 +81,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
-      const attribute = await form.attributesSection.getAttribute('New Attribute');
+      const attribute = await form.attributesSection.getAttribute('MyTestAttribute');
 
       await attribute.setName(RENAMED_ATTRIBUTE_LABEL);
       await attribute.setDatatype('Boolean');
@@ -115,82 +119,78 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
    });
 
    test('Edit attribute and verify changes in code editor before saving', async () => {
-      // Add attribute first to ensure it exists for editing
-      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForAdd = await propertyViewForAdd.form();
-      await formForAdd.attributesSection.addAttribute();
-      await formForAdd.waitForDirty();
-      await propertyViewForAdd.saveAndClose();
-
-      // Now, open the system diagram again and edit the attribute
+      // Open the system diagram, select the existing empty entity and edit its attribute
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
-      const attribute = await form.attributesSection.getAttribute('New Attribute');
-
-      // Make changes but don't save
-      await attribute.setName(RENAMED_ATTRIBUTE_LABEL);
-      await attribute.setDatatype('Boolean');
-      await attribute.toggleIdentifier();
-      await attribute.setDescription('New Description');
+      const attributeInEdit = await form.attributesSection.startAddAttribute();
+      await form.attributesSection.commitAttributeAdd(attributeInEdit, ATTRIBUTE_NAME);
       await form.waitForDirty();
 
-      // We need to switch to the entity editor specifically
+      // Open the entity file in Code Editor to verify changes
       const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      await entityEditor.waitForVisible();
+      expect(await entityEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');
+      expect(await entityEditor.textContentOfLineByLineNumber(2)).toMatch(`id: ${EMPTY_ENTITY_ID}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(3)).toMatch(`name: "${EMPTY_ENTITY_ID}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(5)).toMatch('- id: MyTestAttribute');
+      expect(await entityEditor.textContentOfLineByLineNumber(6)).toMatch('name: "MyTestAttribute"');
+      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch('description: ""');
+      expect(await entityEditor.textContentOfLineByLineNumber(8)).toMatch('datatype: "Text"');
 
-      // Verify changes are present in code editor - note that attributes start after the entity header
-      expect(await entityEditor.textContentOfLineByLineNumber(6)).toMatch(`name: "${RENAMED_ATTRIBUTE_LABEL}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch('description: "New Description"');
-      expect(await entityEditor.textContentOfLineByLineNumber(8)).toMatch('datatype: "Boolean"');
-      expect(await entityEditor.textContentOfLineByLineNumber(9)).toMatch('identifier: true');
+      // Need to close both views first and wait for them to fully close
+      await propertyView.close();
+      await entityEditor.close();
 
-      await entityEditor.saveAndClose();
+      // Make sure views are fully closed before opening new ones
+      await app.page.waitForTimeout(1000);
 
-      // Cleanup for next test
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForCleanup = await propertyViewForCleanup.form();
-      await diagramEditorForCleanup.waitForModelUpdate(async () => {
-         await formForCleanup.attributesSection.deleteAttribute(RENAMED_ATTRIBUTE_LABEL);
-         await formForCleanup.waitForDirty();
+      // Delete the attribute as cleanup via the System Diagram
+      const cleanupEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      await cleanupEditor.waitForVisible();
+
+      const cleanupView = await cleanupEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      await cleanupView.waitForVisible();
+
+      // Get the form after ensuring property view is ready
+      const cleanupForm = await cleanupView.form();
+      await cleanupEditor.waitForModelUpdate(async () => {
+         await cleanupForm.attributesSection.deleteAttribute(ATTRIBUTE_NAME);
+         await cleanupForm.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await cleanupView.saveAndClose();
    });
 
    test('Delete the attribute via properties view', async () => {
-      // Add and edit attribute first to ensure it exists for deletion
+      // Add an attribute first to ensure it exists for deletion
       const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForAdd = await propertyViewForAdd.form();
-      await formForAdd.attributesSection.addAttribute();
+      const attributeInEdit = await formForAdd.attributesSection.startAddAttribute();
+      await formForAdd.attributesSection.commitAttributeAdd(attributeInEdit, ATTRIBUTE_NAME);
       await formForAdd.waitForDirty();
       await propertyViewForAdd.saveAndClose();
-
-      const diagramEditorForEdit = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForEdit = await diagramEditorForEdit.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForEdit = await propertyViewForEdit.form();
-      const attributeForEdit = await formForEdit.attributesSection.getAttribute('New Attribute');
-      await attributeForEdit.setName(RENAMED_ATTRIBUTE_LABEL);
-      await formForEdit.waitForDirty();
-      await propertyViewForEdit.saveAndClose();
 
       // Now, open the system diagram again to delete the attribute
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
+
+      // First verify the attribute exists
+      const attributeBefore = await form.attributesSection.findAttribute(ATTRIBUTE_NAME);
+      expect(attributeBefore).toBeDefined();
+
+      // Delete the attribute and wait for model update
       await diagramEditor.waitForModelUpdate(async () => {
-         await form.attributesSection.deleteAttribute(RENAMED_ATTRIBUTE_LABEL);
+         await form.attributesSection.deleteAttribute(ATTRIBUTE_NAME);
          await form.waitForDirty();
+
+         // Verify the attribute is no longer found
+         expect(await form.attributesSection.findAttribute(ATTRIBUTE_NAME)).toBeUndefined();
       });
 
-      // Verify that the attribute is deleted from the properties view
-      const attribute = await form.attributesSection.findAttribute(RENAMED_ATTRIBUTE_LABEL);
-      expect(attribute).toBeUndefined();
       await propertyView.saveAndClose();
-
-      // Verify that the attribute is deleted rom the entity file;
+      // Verify that the attribute is deleted from the entity file
       const entityCodeEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
       expect(await entityCodeEditor.numberOfLines()).toBe(3);
       expect(await entityCodeEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');

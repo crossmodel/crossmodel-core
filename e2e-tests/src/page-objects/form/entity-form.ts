@@ -57,21 +57,67 @@ export class LogicalEntityAttributesSection extends FormSection {
       this.addButtonLocator = this.locator.locator('button:has-text("Add Attribute")');
    }
 
-   async addAttribute(): Promise<LogicalAttribute> {
+   async startAddAttribute(): Promise<LogicalAttribute> {
+      // Ensure attributes section is expanded
       const header = this.locator.locator('.p-accordion-header');
       const isExpanded = (await header.getAttribute('class'))?.includes('p-highlight');
       if (!isExpanded) {
          await header.click();
+         // Wait for accordion animation to complete
+         await this.page.waitForTimeout(300);
       }
-      const allAttributes = this.locator.locator('tr[data-pc-section="bodyrow"]');
-      const initialCount = await allAttributes.count();
+
+      // Wait for the table to be visible
+      await this.locator.locator('.p-datatable-table').waitFor({ state: 'visible' });
+
+      // Click add button to start edit mode
       await this.addButtonLocator.click();
-      await this.page.keyboard.press('Enter');
-      await waitForFunction(async () => (await allAttributes.count()) > initialCount);
-      // The new table uses <tr> elements for rows, with a PrimeReact-specific attribute
-      const lastAttribute = allAttributes.last();
-      await waitForFunction(async () => (await lastAttribute.locator('td').first().textContent()) !== '');
-      return new LogicalAttribute(lastAttribute, this);
+
+      // Wait for the new editable row by looking for the input field
+      const editRow = this.locator.locator('tr:has(input)');
+      await editRow.locator('input').first().waitFor({ state: 'visible' });
+
+      // Return the attribute in edit mode
+      return new LogicalAttribute(editRow, this);
+   }
+
+   async commitAttributeAdd(attribute: LogicalAttribute, name: string): Promise<LogicalAttribute> {
+      if (!name) {
+         throw new Error('Attribute name is required to save the row');
+      }
+
+      // Set the name in the new row
+      const nameInput = attribute.locator.locator('td').first().locator('input');
+      await nameInput.waitFor({ state: 'visible' });
+      await nameInput.fill(name);
+
+      // Save the row by pressing Enter and wait for things to settle
+      await nameInput.press('Enter');
+
+      // Wait a bit longer than our usual timeouts since this is a complex UI update
+      await this.page.waitForTimeout(500);
+
+      // Wait for the edit mode to end using a direct selector
+      const editingCell = this.locator.locator('td input[role="textbox"]');
+      await editingCell.waitFor({ state: 'hidden', timeout: 5000 });
+
+      // Give a little more time for the table to refresh
+      await this.page.waitForTimeout(500);
+
+      // Locate the cell containing the attribute name
+      const nameCell = this.locator.locator('td').filter({ hasText: name }).first();
+      await nameCell.waitFor({ state: 'visible', timeout: 500 });
+
+      // Get the parent row and return the attribute
+      const row = nameCell.locator('xpath=..');
+      return new LogicalAttribute(row, this);
+   }
+
+   /** @deprecated Use startAddAttribute() and commitAttributeAdd() instead */
+   async addAttribute(): Promise<LogicalAttribute> {
+      // Temporary compatibility method
+      const attribute = await this.startAddAttribute();
+      return this.commitAttributeAdd(attribute, 'New Attribute');
    }
 
    async getAllAttributes(): Promise<LogicalAttribute[]> {
