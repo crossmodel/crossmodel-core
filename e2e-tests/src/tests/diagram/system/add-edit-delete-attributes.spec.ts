@@ -31,7 +31,8 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
 
       // Verify that the attribute is added to the properties view
       const properties = await attribute.getProperties();
-      expect(properties).toMatchObject({ name: ATTRIBUTE_NAME, datatype: 'Text', identifier: false, description: '' });
+      expect(properties).toMatchObject({ name: ATTRIBUTE_NAME, datatype: 'Text', identifier: false });
+      expect(properties.description).toBeFalsy();
       await propertyView.saveAndClose();
 
       // Verify that the attribute is added to the diagram
@@ -51,8 +52,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       expect(await entityCodeEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(5)).toMatch('- id: MyTestAttribute');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(6)).toMatch('name: "MyTestAttribute"');
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(7)).toMatch('description: ""');
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(8)).toMatch('datatype: "Text"');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(7)).toMatch('datatype: "Text"');
 
       await entityCodeEditor.saveAndClose();
 
@@ -135,8 +135,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       expect(await entityEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
       expect(await entityEditor.textContentOfLineByLineNumber(5)).toMatch('- id: MyTestAttribute');
       expect(await entityEditor.textContentOfLineByLineNumber(6)).toMatch('name: "MyTestAttribute"');
-      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch('description: ""');
-      expect(await entityEditor.textContentOfLineByLineNumber(8)).toMatch('datatype: "Text"');
+      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch('datatype: "Text"');
 
       // Need to close both views first and wait for them to fully close
       await propertyView.close();

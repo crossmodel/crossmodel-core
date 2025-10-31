@@ -262,13 +262,14 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             // Generate a proper ID for the new attribute
             const newId = findNextUnique(toId(attribute.name || ''), entity.attributes || [], attr => attr.id || '');
 
-            // Create the final attribute without temporary fields
+            // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, ...attributeData } = attribute;
+            const { _uncommitted, id: tempId, description, ...attributeData } = attribute;
             const finalAttribute = {
                ...attributeData,
                id: newId,
-               $globalId: newId
+               $globalId: newId,
+               ...(description ? { description } : {})
             };
 
             // Add the new attribute through dispatch
@@ -278,10 +279,17 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             });
          } else {
             // This is an existing row being updated
+            // Remove empty fields before updating
+            const { description, ...rest } = attribute;
+            const updatedAttribute = {
+               ...rest,
+               ...(description ? { description } : {})
+            };
+
             dispatch({
                type: 'entity:attribute:update',
                attributeIdx: attribute.idx,
-               attribute: attribute
+               attribute: updatedAttribute
             });
          }
 
