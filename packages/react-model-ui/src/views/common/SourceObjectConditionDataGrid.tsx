@@ -24,7 +24,7 @@ import {
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
-import { useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
@@ -215,6 +215,7 @@ export interface SourceObjectConditionRow {
    };
    idx: number;
    id: string;
+   _uncommitted?: boolean;
 }
 
 export interface SourceObjectConditionDataGridProps {
@@ -225,74 +226,94 @@ export interface SourceObjectConditionDataGridProps {
 export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: SourceObjectConditionDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
+   const rawDiagnostics = useDiagnostics();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+   const [gridData, setGridData] = React.useState<SourceObjectConditionRow[]>([]);
 
    const sourceObject = mapping.sources[sourceObjectIdx];
 
-   const validateField = React.useCallback((rowData: SourceObjectConditionRow): Record<string, string> => {
+   // Update grid data when conditions change, preserving any uncommitted rows
+   React.useEffect(() => {
+      setGridData(current => {
+         // Map the committed conditions
+         const committedData = (sourceObject?.conditions || []).map((condition: SourceObjectCondition, idx: number) => ({
+            $type: condition.expression.$type,
+            left: {
+               $type: condition.expression.left.$type as
+                  | typeof SourceObjectAttributeReferenceType
+                  | typeof StringLiteralType
+                  | typeof NumberLiteralType,
+               value: condition.expression.left.value?.toString() || ''
+            },
+            operator: condition.expression.op,
+            right: {
+               $type: condition.expression.right.$type as
+                  | typeof SourceObjectAttributeReferenceType
+                  | typeof StringLiteralType
+                  | typeof NumberLiteralType,
+               value: condition.expression.right.value?.toString() || ''
+            },
+            idx,
+            id: idx.toString()
+         })) as SourceObjectConditionRow[];
+
+         // Preserve any uncommitted rows that are currently being edited
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
+
+         return [...committedData, ...uncommittedRows];
+      });
+   }, [sourceObject?.conditions, editingRows]);
+
+   // Process diagnostics into validation errors
+   React.useEffect(() => {
       const errors: Record<string, string> = {};
-      if (!rowData.left?.value) {
-         errors.left = 'Left value required';
-      }
-      if (!rowData.operator) {
-         errors.operator = 'Operator required';
-      }
-      if (!rowData.right?.value) {
-         errors.right = 'Right value required';
-      }
-      return errors;
-   }, []);
 
-   const onRowUpdate = React.useCallback(
-      (condition: SourceObjectConditionRow) => {
-         const errors = validateField(condition);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-            return;
-         }
-         setValidationErrors({});
-         dispatch({
-            type: 'source-object:update-condition',
-            sourceObjectIdx,
-            conditionIdx: condition.idx,
-            condition: {
-               $type: JoinConditionType,
-               expression: {
-                  $type: BinaryExpressionType,
-                  left: condition.left as unknown as BooleanExpression,
-                  op: condition.operator,
-                  right: condition.right as unknown as BooleanExpression
-               }
-            }
-         });
-      },
-      [dispatch, sourceObjectIdx, validateField]
-   );
+      try {
+         sourceObject?.conditions?.forEach((condition, idx) => {
+            const rowId = idx.toString();
 
-   const onRowAdd = React.useCallback(
-      (condition: SourceObjectConditionRow) => {
-         dispatch({
-            type: 'source-object:add-condition',
-            sourceObjectIdx,
-            condition: {
-               $type: JoinConditionType,
-               expression: {
-                  $type: BinaryExpressionType,
-                  left: {
-                     $type: condition.left.$type,
-                     value: condition.left.value
-                  } as BooleanExpression,
-                  op: condition.operator,
-                  right: {
-                     $type: condition.right.$type,
-                     value: condition.right.value
-                  } as BooleanExpression
-               }
+            // Client-side validation for empty required fields
+            if (!condition.expression.left?.value?.toString().trim()) {
+               errors[`${rowId}.left`] = 'Left expression is required';
             }
+            if (!condition.expression.op) {
+               errors[`${rowId}.operator`] = 'Operator is required';
+            }
+            if (!condition.expression.right?.value?.toString().trim()) {
+               errors[`${rowId}.right`] = 'Right expression is required';
+            }
+
+            // Server-side validation from diagnostics
+            rawDiagnostics.forEach(diagnostic => {
+               if (diagnostic.code?.toString().includes(`conditions[${idx}]`)) {
+                  if (diagnostic.message.includes('left')) {
+                     errors[`${rowId}.left`] = diagnostic.message;
+                  } else if (diagnostic.message.includes('right')) {
+                     errors[`${rowId}.right`] = diagnostic.message;
+                  } else if (diagnostic.message.includes('operator')) {
+                     errors[`${rowId}.operator`] = diagnostic.message;
+                  }
+               }
+            });
          });
-      },
-      [dispatch, sourceObjectIdx]
+
+         setValidationErrors(errors);
+      } catch (e) {
+         console.error('Error processing diagnostics:', e);
+      }
+   }, [sourceObject?.conditions, rawDiagnostics]);
+
+   const defaultEntry = React.useMemo<SourceObjectConditionRow>(
+      () => ({
+         $type: BinaryExpressionType,
+         left: { $type: SourceObjectAttributeReferenceType, value: '' },
+         operator: '=',
+         right: { $type: SourceObjectAttributeReferenceType, value: '' },
+         idx: -1,
+         id: ''
+      }),
+      []
    );
 
    const onRowDelete = React.useCallback(
@@ -305,6 +326,114 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
       },
       [dispatch, sourceObjectIdx]
    );
+
+   const onRowUpdate = React.useCallback(
+      (condition: SourceObjectConditionRow) => {
+         // Clear any existing validation errors for this row
+         const rowId = condition.id;
+         setValidationErrors(current => {
+            const updated = { ...current };
+            Object.keys(updated).forEach(key => {
+               if (key.startsWith(`${rowId}.`)) {
+                  delete updated[key];
+               }
+            });
+            return updated;
+         });
+
+         if (condition._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
+            const hasChanges =
+               condition.left.value !== defaultEntry.left.value ||
+               condition.operator !== defaultEntry.operator ||
+               condition.right.value !== defaultEntry.right.value;
+
+            // Check if required fields are valid
+            const isValid =
+               condition.left.value?.trim() &&
+               condition.right.value?.trim() &&
+               condition.left.value !== '_' &&
+               condition.left.value !== '-' &&
+               condition.right.value !== '_' &&
+               condition.right.value !== '-';
+
+            if (!hasChanges || !isValid) {
+               // Remove the row if no changes or invalid
+               setGridData(current => current.filter(row => row.id !== condition.id));
+               setEditingRows({});
+               return;
+            }
+
+            // Add the new condition through dispatch
+            dispatch({
+               type: 'source-object:add-condition',
+               sourceObjectIdx,
+               condition: {
+                  $type: JoinConditionType,
+                  expression: {
+                     $type: BinaryExpressionType,
+                     left: condition.left as unknown as BooleanExpression,
+                     op: condition.operator,
+                     right: condition.right as unknown as BooleanExpression
+                  }
+               }
+            });
+         } else {
+            // This is an existing row being updated
+            if (
+               !condition.left.value?.trim() ||
+               condition.left.value === '_' ||
+               condition.left.value === '-' ||
+               !condition.right.value?.trim() ||
+               condition.right.value === '_' ||
+               condition.right.value === '-'
+            ) {
+               // Invalid values, delete the row
+               onRowDelete(condition);
+               return;
+            }
+
+            dispatch({
+               type: 'source-object:update-condition',
+               sourceObjectIdx,
+               conditionIdx: condition.idx,
+               condition: {
+                  $type: JoinConditionType,
+                  expression: {
+                     $type: BinaryExpressionType,
+                     left: condition.left as unknown as BooleanExpression,
+                     op: condition.operator,
+                     right: condition.right as unknown as BooleanExpression
+                  }
+               }
+            });
+         }
+
+         // Clear editing state after successful update
+         setEditingRows({});
+      },
+      [dispatch, sourceObjectIdx, onRowDelete, defaultEntry]
+   );
+
+   const onRowAdd = React.useCallback((): void => {
+      // Clear any previous validation errors
+      setValidationErrors({});
+
+      // Clear any existing edit states first
+      setEditingRows({});
+
+      // Create a new uncommitted row with a unique temporary ID
+      const tempRow: SourceObjectConditionRow = {
+         ...defaultEntry,
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
+         _uncommitted: true,
+         idx: -1
+      };
+
+      // Add to grid data and set it to editing mode
+      setGridData(current => [...current, tempRow]);
+      setEditingRows({ [tempRow.id]: true });
+   }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
       (condition: SourceObjectConditionRow) => {
@@ -334,13 +463,19 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             field: 'left',
             header: 'Left Expression',
             body: rowData => {
-               if (rowData.left.$type === StringLiteralType) {
-                  return quote(rowData.left.value);
-               }
-               if (rowData.left.$type === NumberLiteralType) {
-                  return rowData.left.value.toString();
-               }
-               return rowData.left.value;
+               const error = validationErrors[`${rowData.id}.left`];
+               const displayValue =
+                  rowData.left.$type === StringLiteralType
+                     ? quote(rowData.left.value)
+                     : rowData.left.$type === NumberLiteralType
+                       ? rowData.left.value.toString()
+                       : rowData.left.value;
+               return (
+                  <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
+                     <span>{displayValue}</span>
+                     {error && <p className='p-error m-0'>{error}</p>}
+                  </div>
+               );
             },
             editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />,
             filterType: 'text',
@@ -371,45 +506,10 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             filterField: 'right.value'
          }
       ],
-      [sourceObject]
+      [sourceObject, validationErrors]
    );
 
-   const defaultEntry = React.useMemo<SourceObjectConditionRow>(
-      () => ({
-         $type: BinaryExpressionType,
-         left: { $type: SourceObjectAttributeReferenceType, value: '' },
-         operator: '=',
-         right: { $type: SourceObjectAttributeReferenceType, value: '' },
-         idx: -1,
-         id: ''
-      }),
-      []
-   );
-
-   const gridData = React.useMemo(
-      () =>
-         sourceObject?.conditions?.map((condition: SourceObjectCondition, idx: number) => ({
-            $type: condition.expression.$type,
-            left: {
-               $type: condition.expression.left.$type as
-                  | typeof SourceObjectAttributeReferenceType
-                  | typeof StringLiteralType
-                  | typeof NumberLiteralType,
-               value: condition.expression.left.value?.toString() || ''
-            },
-            operator: condition.expression.op,
-            right: {
-               $type: condition.expression.right.$type as
-                  | typeof SourceObjectAttributeReferenceType
-                  | typeof StringLiteralType
-                  | typeof NumberLiteralType,
-               value: condition.expression.right.value?.toString() || ''
-            },
-            idx,
-            id: idx.toString()
-         })) || [],
-      [sourceObject?.conditions]
-   );
+   // Grid data is now managed by the useState and useEffect above
 
    if (!mapping || !sourceObject) {
       return <ErrorView errorMessage='No mapping or source object available' />;
@@ -433,7 +533,38 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          noDataMessage='No conditions'
          addButtonLabel='Add Condition'
          editingRows={editingRows}
-         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         onRowEditChange={(e: DataTableRowEditEvent) => {
+            const newEditingRows = e.data as Record<string, boolean>;
+            const newEditingId = Object.keys(newEditingRows)[0];
+            const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+
+            // If we're stopping editing a row (either by cancelling or completing)
+            if (currentEditingId && !newEditingRows[currentEditingId]) {
+               const currentRow = gridData.find(row => row.id === currentEditingId);
+
+               // Always remove uncommitted rows when editing stops
+               if (currentRow?._uncommitted) {
+                  setGridData(current => current.filter(row => row.id !== currentEditingId));
+               }
+
+               // Clear validation errors
+               setValidationErrors({});
+            }
+
+            // Update editing state
+            setEditingRows(newEditingRows);
+
+            // Clean up any stale uncommitted rows
+            setGridData(current => {
+               // Keep all committed rows
+               const committedRows = current.filter(row => !row._uncommitted);
+
+               // For uncommitted rows, only keep the one being edited (if any)
+               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
+
+               return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+            });
+         }}
          globalFilterFields={['left.value', 'operator', 'right.value']}
       />
    );

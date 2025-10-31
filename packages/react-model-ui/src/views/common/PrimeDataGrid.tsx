@@ -82,6 +82,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 }: PrimeDataGridProps<T>): React.ReactElement {
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
+   // eslint-disable-next-line no-null/no-null
+   const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
 
    const initFilters = (): DataTableFilterMeta => {
       const initialFilters: DataTableFilterMeta = {
@@ -120,6 +122,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {
+         // First check if we have any active edits that need to be saved
+         const tableElement = tableRef.current?.getElement();
+         if (tableElement && activeRowKey) {
+            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               rowEditorSaveButton.click();
+            }
+         }
+
+         // Then add the new row
          const newRow = { ...defaultNewRow };
          columns.forEach(col => {
             if (!(col.field in newRow)) {
@@ -128,7 +140,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          });
          onRowAdd(newRow as T);
       }
-   }, [onRowAdd, defaultNewRow, columns]);
+   }, [onRowAdd, defaultNewRow, columns, activeRowKey]);
 
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
@@ -256,9 +268,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    };
 
-   // eslint-disable-next-line no-null/no-null
-   const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
-
    React.useEffect(() => {
       if (!activeRowKey) {
          return;
@@ -292,9 +301,60 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          }
       };
 
+      const handleFocusOut = (event: FocusEvent): void => {
+         const tableElement = tableRef.current?.getElement();
+         if (!tableElement) {
+            return;
+         }
+
+         const relatedTarget = event.relatedTarget as HTMLElement;
+         if (!relatedTarget) {
+            return; // Exit if there's no related target
+         }
+
+         // Check if we're in Properties View context
+         const propertyView = tableElement.closest('#model-property-view');
+         if (propertyView) {
+            // Check if the focus is still within the Properties View or its overlays
+            const isStillInPropertyView = propertyView.contains(relatedTarget);
+            const isInOverlayPanel = relatedTarget.closest(
+               '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
+            );
+
+            // Only save if we're leaving the Properties View completely
+            if (!isStillInPropertyView && !isInOverlayPanel) {
+               const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+               if (rowEditorSaveButton instanceof HTMLElement) {
+                  rowEditorSaveButton.click();
+               }
+            }
+            return;
+         }
+
+         // Regular form editor handling
+         const isInsideTable = tableElement.contains(relatedTarget);
+         const isInsideOverlay = relatedTarget.closest(
+            '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
+         );
+
+         if (isInsideOverlay) {
+            return; // focusing into overlay shouldn't exit edit mode
+         }
+
+         if (!isInsideTable) {
+            // Outside table → save & exit
+            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               rowEditorSaveButton.click();
+            }
+         }
+      };
+
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('focusout', handleFocusOut);
       return () => {
          document.removeEventListener('mousedown', handleClickOutside);
+         document.removeEventListener('focusout', handleFocusOut);
       };
    }, [activeRowKey]);
 
