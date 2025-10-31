@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { LogicalIdentifier } from '@crossmodel/protocol';
+import { findNextUnique, LogicalIdentifier, toId } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
@@ -19,6 +19,7 @@ export interface EntityIdentifierRow {
    description?: string;
    $type?: 'LogicalIdentifier';
    $globalId?: string;
+   _uncommitted?: boolean;
 }
 
 function convertIdentifierToRow(identifier: LogicalIdentifier, idx: number): EntityIdentifierRow {
@@ -53,6 +54,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+   const [gridData, setGridData] = React.useState<EntityIdentifierRow[]>([]);
 
    const handleIdentifierDelete = React.useCallback(
       (identifier: EntityIdentifierRow): void => {
@@ -89,10 +91,18 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       [entity.identifiers]
    );
 
-   const gridData = React.useMemo(
-      () => (entity.identifiers || []).map((identifier, idx) => convertIdentifierToRow(identifier, idx)),
-      [entity.identifiers]
-   );
+   // Update grid data when identifiers change, preserving any uncommitted rows
+   React.useEffect(() => {
+      setGridData(current => {
+         // Map the committed identifiers
+         const committedData = (entity.identifiers || []).map((identifier, idx) => convertIdentifierToRow(identifier, idx));
+
+         // Preserve any uncommitted rows that are currently being edited
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
+
+         return [...committedData, ...uncommittedRows];
+      });
+   }, [entity.identifiers, editingRows]);
 
    const columns: GridColumn<EntityIdentifierRow>[] = React.useMemo(
       () => [
@@ -100,7 +110,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             field: 'name',
             header: 'Name',
             editor: !readonly,
-            headerStyle: { width: '30%' },
+            headerStyle: { width: '20%' },
             filterType: 'text'
          },
          {
@@ -127,7 +137,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          {
             field: 'attributeIds',
             header: 'Attributes',
-            headerStyle: { width: '60%' },
+            headerStyle: { width: '30%' },
             body: (rowData: EntityIdentifierRow) => {
                const selectedAttributes = entity.attributes
                   .filter(attr => rowData.attributeIds.includes(attr.id))
@@ -157,6 +167,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          {
             field: 'description',
             header: 'Description',
+            headerStyle: { width: '20%' },
             editor: true,
             filterType: 'text'
          }
@@ -164,30 +175,25 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       [readonly, entity.attributes, entity.identifiers]
    );
 
-   const handleRowAdd = React.useCallback(
-      (identifier: EntityIdentifierRow): void => {
-         // Clear any previous validation errors
-         setValidationErrors({});
+   const handleRowAdd = React.useCallback((): void => {
+      // Clear any previous validation errors
+      setValidationErrors({});
 
-         if (identifier.name) {
-            const newIdentifier = {
-               ...convertRowToIdentifier(identifier),
-               id: `ID_${identifier.name.replace(/\s+/g, '_')}`,
-               primary: !entity.identifiers || entity.identifiers.length === 0,
-               $globalId: `${entity.id}.${identifier.name.replace(/\s+/g, '_')}`
-            };
+      // Clear any existing edit states first
+      setEditingRows({});
 
-            dispatch({
-               type: 'entity:identifier:add-identifier',
-               identifier: newIdentifier
-            });
+      // Create a new uncommitted row with a unique temporary ID
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+      const tempRow: EntityIdentifierRow = {
+         ...defaultEntry,
+         id: tempId,
+         _uncommitted: true
+      };
 
-            // Set the row in edit mode
-            setEditingRows({ [newIdentifier.id]: true });
-         }
-      },
-      [dispatch, entity]
-   );
+      // Add to grid data and set it to editing mode
+      setGridData(current => [...current, tempRow]);
+      setEditingRows({ [tempId]: true });
+   }, [defaultEntry]);
 
    const handleRowUpdate = React.useCallback(
       (identifier: EntityIdentifierRow): void => {
@@ -198,29 +204,80 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          }
          setValidationErrors({});
 
-         // If setting this as primary, first unset any existing primary
-         if (identifier.primary) {
-            const currentPrimary = entity.identifiers?.find(i => i.primary && i.id !== identifier.id);
-            if (currentPrimary) {
-               dispatch({
-                  type: 'entity:identifier:update',
-                  identifierIdx: entity.identifiers.indexOf(currentPrimary),
-                  identifier: {
-                     ...currentPrimary,
-                     primary: false
-                  }
-               });
+         if (identifier._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
+            const hasChanges =
+               identifier.name !== defaultEntry.name ||
+               identifier.description !== defaultEntry.description ||
+               identifier.attributeIds.length > 0;
+
+            if (!hasChanges || !identifier.name) {
+               // Remove the row if no changes or no name
+               setGridData(current => current.filter(row => row.id !== identifier.id));
+               setEditingRows({});
+               return;
             }
+
+            // Generate unique ID using the same pattern as attributes grid
+            const newId = findNextUnique(toId(identifier.name || ''), entity.identifiers || [], id => id.id || '');
+
+            // If this new identifier is marked as primary, first unset any existing primary
+            if (identifier.primary) {
+               const currentPrimary = entity.identifiers?.find(i => i.primary);
+               if (currentPrimary) {
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: entity.identifiers.indexOf(currentPrimary),
+                     identifier: {
+                        ...currentPrimary,
+                        primary: false
+                     }
+                  });
+               }
+            }
+
+            // Create new identifier with unique ID
+            const newIdentifier = {
+               ...convertRowToIdentifier(identifier),
+               id: newId,
+               primary: identifier.primary,
+               $globalId: `${entity.id}.${newId}`
+            };
+
+            // Add the new identifier
+            dispatch({
+               type: 'entity:identifier:add-identifier',
+               identifier: newIdentifier
+            });
+         } else {
+            // For existing rows
+            // If setting this as primary, first unset any existing primary
+            if (identifier.primary) {
+               const currentPrimary = entity.identifiers?.find(i => i.primary && i.id !== identifier.id);
+               if (currentPrimary) {
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: entity.identifiers.indexOf(currentPrimary),
+                     identifier: {
+                        ...currentPrimary,
+                        primary: false
+                     }
+                  });
+               }
+            }
+
+            // Then update this identifier
+            dispatch({
+               type: 'entity:identifier:update',
+               identifierIdx: identifier.idx,
+               identifier: convertRowToIdentifier(identifier)
+            });
          }
 
-         // Then update this identifier
-         dispatch({
-            type: 'entity:identifier:update',
-            identifierIdx: identifier.idx,
-            identifier: convertRowToIdentifier(identifier)
-         });
+         // Clear editing state after successful update
+         setEditingRows({});
       },
-      [dispatch, validateField, entity]
+      [dispatch, validateField, entity, defaultEntry]
    );
 
    if (!entity) {
@@ -243,7 +300,26 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          noDataMessage='No identifiers defined'
          addButtonLabel='Add Identifier'
          editingRows={editingRows}
-         onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+         onRowEditChange={(e: DataTableRowEditEvent) => {
+            const newEditingRows = e.data as Record<string, boolean>;
+            const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+
+            // If we're stopping editing a row (either by cancelling or completing)
+            if (currentEditingId && !newEditingRows[currentEditingId]) {
+               const currentRow = gridData.find(row => row.id === currentEditingId);
+
+               // Always remove uncommitted rows when editing stops
+               if (currentRow?._uncommitted) {
+                  setGridData(current => current.filter(row => row.id !== currentEditingId));
+               }
+
+               // Clear validation errors
+               setValidationErrors({});
+            }
+
+            // Update editing state
+            setEditingRows(newEditingRows);
+         }}
          globalFilterFields={['name', 'attributeIds']}
       />
    );

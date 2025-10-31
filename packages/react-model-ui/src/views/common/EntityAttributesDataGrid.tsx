@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2023 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
@@ -136,17 +136,34 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleAttributeDelete = React.useCallback(
       (attribute: EntityAttributeRow): void => {
-         // First find if this attribute is part of any identifier
-         const identifierIdx = entity.identifiers?.findIndex(identifier =>
+         // First check if this attribute is part of any identifier
+         const identifierWithAttribute = entity.identifiers?.find(identifier =>
             identifier.attributes.some(attr => (typeof attr === 'string' ? attr === attribute.id : attr.id === attribute.id))
          );
 
-         // If it is part of an identifier, delete the identifier first
-         if (identifierIdx !== undefined && identifierIdx !== -1) {
-            dispatch({
-               type: 'entity:identifier:delete-identifier',
-               identifierIdx
-            });
+         // If it is part of an identifier, handle the removal
+         if (identifierWithAttribute) {
+            const remainingAttributes = identifierWithAttribute.attributes.filter(attr =>
+               typeof attr === 'string' ? attr !== attribute.id : attr.id !== attribute.id
+            );
+
+            if (remainingAttributes.length === 0) {
+               // If no attributes left, remove the identifier
+               dispatch({
+                  type: 'entity:identifier:delete-identifier',
+                  identifierIdx: entity.identifiers.indexOf(identifierWithAttribute)
+               });
+            } else {
+               // Otherwise update the identifier with remaining attributes
+               dispatch({
+                  type: 'entity:identifier:update',
+                  identifierIdx: entity.identifiers.indexOf(identifierWithAttribute),
+                  identifier: {
+                     ...identifierWithAttribute,
+                     attributes: remainingAttributes
+                  }
+               });
+            }
          }
 
          // Then delete the attribute
@@ -169,15 +186,18 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
                ) || false;
 
+            // Check for stored identifier state or current identifier references
+            const isIdentifierAttribute = attr.identifier || isIdentifier;
+
             return {
                idx,
                name: attr.name || '',
                datatype: attr.datatype || 'string',
                description: attr.description || '',
-               identifier: isIdentifier,
+               identifier: isIdentifierAttribute,
                id: attr.id || '',
                $type: 'LogicalAttribute',
-               $globalId: attr.id || ''
+               $globalId: attr.$globalId || ''
             };
          }) as EntityAttributeRow[];
 
@@ -255,6 +275,72 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       [readonly, validationErrors]
    );
 
+   const handleIdentifierUpdate = React.useCallback(
+      (attributeId: string, attributeName: string, shouldBeIdentifier: boolean, isNew: boolean = false) => {
+         // Check if there's an existing primary identifier
+         const existingPrimary = entity.identifiers?.find(i => i.primary);
+
+         if (shouldBeIdentifier) {
+            if (existingPrimary) {
+               // Add this attribute to the existing primary identifier
+               dispatch({
+                  type: 'entity:identifier:update',
+                  identifierIdx: entity.identifiers.indexOf(existingPrimary),
+                  identifier: {
+                     ...existingPrimary,
+                     attributes: [...existingPrimary.attributes, attributeId] as any
+                  }
+               });
+            } else {
+               // Create new primary identifier
+               dispatch({
+                  type: 'entity:identifier:add-identifier',
+                  identifier: {
+                     id: `ID_${attributeId}`,
+                     name: `Identifier ${attributeName}`,
+                     primary: true,
+                     attributes: [attributeId] as any,
+                     $type: 'LogicalIdentifier',
+                     customProperties: [],
+                     $globalId: `${entity.id}.${attributeId}`
+                  }
+               });
+            }
+         } else if (!isNew) {
+            // Only handle removal for existing attributes
+            // Find identifier containing this attribute
+            const identifierToUpdate = entity.identifiers?.find(identifier =>
+               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === attributeId : attr.id === attributeId))
+            );
+
+            if (identifierToUpdate) {
+               const remainingAttributes = identifierToUpdate.attributes.filter(attr =>
+                  typeof attr === 'string' ? attr !== attributeId : attr.id !== attributeId
+               );
+
+               if (remainingAttributes.length === 0) {
+                  // If no attributes left, remove the identifier
+                  dispatch({
+                     type: 'entity:identifier:delete-identifier',
+                     identifierIdx: entity.identifiers.indexOf(identifierToUpdate)
+                  });
+               } else {
+                  // Otherwise update the identifier with remaining attributes
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: entity.identifiers.indexOf(identifierToUpdate),
+                     identifier: {
+                        ...identifierToUpdate,
+                        attributes: remainingAttributes
+                     }
+                  });
+               }
+            }
+         }
+      },
+      [dispatch, entity.identifiers, entity.id]
+   );
+
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow) => {
          // Clear any existing validation errors for this row
@@ -292,7 +378,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, description, ...attributeData } = attribute;
+            const { _uncommitted, id: tempId, description, identifier, ...attributeData } = attribute;
             const finalAttribute = {
                ...attributeData,
                id: newId,
@@ -305,6 +391,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                type: 'entity:attribute:add-attribute',
                attribute: finalAttribute
             });
+
+            // Handle identifier status for the new attribute
+            handleIdentifierUpdate(newId, attribute.name, identifier ?? false, true);
          } else {
             // This is an existing row being updated
             // Remove empty fields before updating
@@ -319,35 +408,20 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                attributeIdx: attribute.idx,
                attribute: updatedAttribute
             });
+
+            // Handle identifier changes separately
+            const isCurrentlyIdentifier = entity.identifiers?.some(identifier =>
+               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id))
+            );
+            const identifierChanged = attribute.identifier !== isCurrentlyIdentifier;
+
+            if (identifierChanged) {
+               handleIdentifierUpdate(oldAttribute.id || '', oldAttribute.name || '', attribute.identifier ?? false, false);
+            }
          }
 
          // Clear editing state after successful update
          setEditingRows({});
-
-         // Handle identifier changes separately
-         const identifierChanged = attribute.identifier !== oldAttribute.identifier;
-         if (identifierChanged && attribute.identifier) {
-            // Check if the attribute is already part of any identifier
-            const existingIdentifier = entity.identifiers?.find(identifier =>
-               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id))
-            );
-
-            // Only create a new identifier if the attribute isn't already part of one
-            if (!existingIdentifier) {
-               dispatch({
-                  type: 'entity:identifier:add-identifier',
-                  identifier: {
-                     id: `ID_${oldAttribute.id}`,
-                     name: `Identifier ${oldAttribute.name}`,
-                     primary: !entity.identifiers || entity.identifiers.length === 0,
-                     attributes: [oldAttribute.id] as any,
-                     $type: 'LogicalIdentifier',
-                     customProperties: [],
-                     $globalId: `${entity.id}.${oldAttribute.id}`
-                  }
-               });
-            }
-         }
       },
       [dispatch, defaultEntry, entity]
    );
