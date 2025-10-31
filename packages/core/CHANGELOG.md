@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.3](https://github.com/crossmodel/crossmodel-core/compare/v0.10.2...v0.10.3) (2025-10-31)
+
+**Note:** Version bump only for package @crossmodel/core
+
+
+
+
+
+## [0.10.2](https://github.com/crossmodel/crossmodel-core/compare/v0.10.1...v0.10.2) (2025-10-30)
+
+
+### Bug Fixes
+
+* resolve disappearing characters in model form ([#199](https://github.com/crossmodel/crossmodel-core/issues/199)) ([d21f4d6](https://github.com/crossmodel/crossmodel-core/commit/d21f4d6f4ba2e236743aa0a76fc9c9108a60a148))
+
+
+
+
+
 ## [0.10.1](https://github.com/crossmodel/crossmodel-core/compare/v0.10.0...v0.10.1) (2025-10-28)
 
 **Note:** Version bump only for package @crossmodel/core

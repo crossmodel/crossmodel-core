@@ -132,8 +132,14 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          (!deepEqual(this.document.root, document.root) || !deepEqual(this.document.diagnostics, document.diagnostics))
       ) {
          console.debug(`[${this.options.clientId}] Receive update from ${sourceClientId} due to '${reason}'`);
-         this.document = document;
-         this.update();
+
+         if (sourceClientId !== this.options.clientId) {
+            this.document = document;
+            this.update();
+         } else {
+            this.document.diagnostics = document.diagnostics;
+            this.update();
+         }
       }
    }
 

@@ -320,9 +320,7 @@ label {
 }
 
 .entity-attributes-datatable .p-datatable-tbody > tr > td .p-inputtext,
-.entity-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
-.data-model-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
-.relationship-custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
+.custom-properties-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .source-object-condition-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .source-object-dependency-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .attribute-mapping-sources-datatable .p-datatable-tbody > tr > td .p-inputtext,

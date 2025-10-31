@@ -195,6 +195,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
 export interface SourceObjectDependencyRow extends SourceObjectDependency {
    idx: number;
    id: string;
+   _uncommitted?: boolean;
 }
 
 export interface SourceObjectDependencyDataGridProps {
@@ -256,74 +257,38 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
          setProcessedDiagnostics({});
       };
    }, [rawDiagnostics, sourceObject.dependencies]);
-   const gridData = React.useMemo(
-      () =>
-         (sourceObject.dependencies || []).map((dep, idx) => ({
+   const [gridData, setGridData] = React.useState<SourceObjectDependencyRow[]>([]);
+
+   // Update grid data when dependencies change, preserving any uncommitted rows
+   React.useEffect(() => {
+      setGridData(current => {
+         // Map the committed dependencies
+         const committedData = (sourceObject.dependencies || []).map((dep, idx) => ({
             ...dep,
             idx,
-            id: (dep as any).id || idx.toString()
-         })) as SourceObjectDependencyRow[],
-      [sourceObject.dependencies]
+            id: `dep${idx}`
+         })) as SourceObjectDependencyRow[];
+
+         // Preserve any uncommitted rows that are currently being edited
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
+
+         return [...committedData, ...uncommittedRows];
+      });
+   }, [sourceObject.dependencies, editingRows]);
+
+   const defaultEntry = React.useMemo<Partial<SourceObjectDependencyRow>>(
+      () => ({
+         $type: SourceObjectDependencyType,
+         source: '',
+         id: ''
+      }),
+      []
    );
 
    const sourceOptions = React.useMemo(() => {
       const uniqueSources = [...new Set(gridData.map(item => item.source).filter(Boolean))];
       return uniqueSources.map(s => ({ label: s, value: s }));
    }, [gridData]);
-
-   const validateField = React.useCallback((rowData: SourceObjectDependencyRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.source) {
-         errors.source = 'Source is required';
-      }
-      return errors;
-   }, []);
-
-   const onRowUpdate = React.useCallback(
-      (dependency: SourceObjectDependencyRow) => {
-         // Ensure we have a value, defaulting to '' if empty
-         const updatedDependency = {
-            ...dependency,
-            source: dependency.source || ''
-         };
-
-         const errors = validateField(updatedDependency);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-         } else {
-            setValidationErrors({});
-         }
-
-         // Always save and let language server handle validation
-         const { ...dependencyToUpdate } = updatedDependency;
-         dispatch({
-            type: 'source-object:update-dependency',
-            sourceObjectIdx,
-            dependencyIdx: updatedDependency.idx,
-            dependency: dependencyToUpdate
-         });
-      },
-      [dispatch, sourceObjectIdx, validateField]
-   );
-
-   const onRowAdd = React.useCallback(
-      (dependency: SourceObjectDependencyRow) => {
-         setValidationErrors({});
-         const newId = dependency.id || gridData.length.toString();
-         const dependencyData: SourceObjectDependency = {
-            $type: SourceObjectDependencyType,
-            source: dependency.source
-         };
-
-         dispatch({
-            type: 'source-object:add-dependency',
-            sourceObjectIdx,
-            dependency: dependencyData
-         });
-         setEditingRows({ [newId]: true });
-      },
-      [dispatch, sourceObjectIdx, gridData]
-   );
 
    const onRowDelete = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
@@ -335,6 +300,89 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       },
       [dispatch, sourceObjectIdx]
    );
+
+   const onRowUpdate = React.useCallback(
+      (dependency: SourceObjectDependencyRow) => {
+         // Clear any existing validation errors for this row
+         const rowId = dependency.id;
+         setValidationErrors(current => {
+            const updated = { ...current };
+            Object.keys(updated).forEach(key => {
+               if (key.startsWith(`${rowId}.`)) {
+                  delete updated[key];
+               }
+            });
+            return updated;
+         });
+
+         if (dependency._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
+            const hasChanges = dependency.source !== defaultEntry.source;
+
+            // Check if the source is valid (not empty or default value)
+            const isValidSource =
+               dependency.source && dependency.source.trim() !== '' && dependency.source !== '_' && dependency.source !== '-';
+
+            if (!hasChanges || !isValidSource) {
+               // Remove the row if no changes or invalid source
+               setGridData(current => current.filter(row => row.id !== dependency.id));
+               setEditingRows({});
+               return;
+            }
+
+            // Add the new dependency through dispatch
+            dispatch({
+               type: 'source-object:add-dependency',
+               sourceObjectIdx,
+               dependency: {
+                  $type: SourceObjectDependencyType,
+                  source: dependency.source
+               }
+            });
+         } else {
+            // This is an existing row being updated
+            if (!dependency.source?.trim() || dependency.source === '_' || dependency.source === '-') {
+               // Invalid source, delete the row
+               onRowDelete(dependency);
+               return;
+            }
+
+            dispatch({
+               type: 'source-object:update-dependency',
+               sourceObjectIdx,
+               dependencyIdx: dependency.idx,
+               dependency: {
+                  $type: SourceObjectDependencyType,
+                  source: dependency.source
+               }
+            });
+         }
+
+         // Clear editing state after successful update
+         setEditingRows({});
+      },
+      [dispatch, sourceObjectIdx, onRowDelete, defaultEntry]
+   );
+
+   const onRowAdd = React.useCallback((): void => {
+      // Clear any previous validation errors
+      setValidationErrors({});
+
+      // Clear any existing edit states first
+      setEditingRows({});
+
+      // Create a new uncommitted row with a unique temporary ID
+      const tempRow: SourceObjectDependencyRow = {
+         ...defaultEntry,
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
+         _uncommitted: true,
+         idx: -1
+      } as SourceObjectDependencyRow;
+
+      // Add to grid data and set it to editing mode
+      setGridData(current => [...current, tempRow]);
+      setEditingRows({ [tempRow.id]: true });
+   }, [defaultEntry]);
 
    const onRowMoveUp = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
@@ -381,15 +429,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       [sourceObject, sourceOptions, processedDiagnostics]
    );
 
-   const defaultEntry = React.useMemo<Partial<SourceObjectDependencyRow>>(
-      () => ({
-         $type: SourceObjectDependencyType,
-         source: '',
-         id: ''
-      }),
-      []
-   );
-
    if (!mapping || !sourceObject) {
       return <div>No mapping or source object available</div>;
    }
@@ -415,7 +454,38 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             noDataMessage='No dependencies'
             addButtonLabel='Add Dependency'
             editingRows={editingRows}
-            onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
+            onRowEditChange={(e: DataTableRowEditEvent) => {
+               const newEditingRows = e.data as Record<string, boolean>;
+               const newEditingId = Object.keys(newEditingRows)[0];
+               const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+
+               // If we're stopping editing a row (either by cancelling or completing)
+               if (currentEditingId && !newEditingRows[currentEditingId]) {
+                  const currentRow = gridData.find(row => row.id === currentEditingId);
+
+                  // Always remove uncommitted rows when editing stops
+                  if (currentRow?._uncommitted) {
+                     setGridData(current => current.filter(row => row.id !== currentEditingId));
+                  }
+
+                  // Clear validation errors
+                  setValidationErrors({});
+               }
+
+               // Update editing state
+               setEditingRows(newEditingRows);
+
+               // Clean up any stale uncommitted rows
+               setGridData(current => {
+                  // Keep all committed rows
+                  const committedRows = current.filter(row => !row._uncommitted);
+
+                  // For uncommitted rows, only keep the one being edited (if any)
+                  const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
+
+                  return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+               });
+            }}
             globalFilterFields={['source']}
          />
       </div>
