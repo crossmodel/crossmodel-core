@@ -187,7 +187,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          },
          {
             field: 'identifier',
-            header: 'Key',
+            header: 'Primary',
             dataType: 'boolean',
             headerStyle: { width: '10%' },
             body: (rowData: EntityAttributeRow) => (

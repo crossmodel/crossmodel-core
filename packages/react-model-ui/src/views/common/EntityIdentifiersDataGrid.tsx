@@ -4,6 +4,7 @@
 import { LogicalIdentifier } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
+import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
@@ -14,20 +15,23 @@ export interface EntityIdentifierRow {
    id: string;
    name: string;
    primary: boolean;
-   attributeId: string;
+   attributeIds: string[];
+   description?: string;
    $type?: 'LogicalIdentifier';
    $globalId?: string;
 }
 
 function convertIdentifierToRow(identifier: LogicalIdentifier, idx: number): EntityIdentifierRow {
-   const attributeId = identifier.attributes?.[0];
+   const attributeIds = (identifier.attributes || []).map(attr =>
+      typeof attr === 'object' ? attr.id : String(attr).replace(/^[-_]+/, '')
+   );
    return {
       idx,
       id: identifier.id || '',
       name: identifier.name || '',
       primary: identifier.primary || false,
-      // Get first attribute ID
-      attributeId: typeof attributeId === 'object' ? attributeId.id : String(attributeId).replace(/^[-_]+/, '')
+      attributeIds,
+      description: identifier.description || ''
    };
 }
 function convertRowToIdentifier(row: EntityIdentifierRow): LogicalIdentifier {
@@ -35,7 +39,8 @@ function convertRowToIdentifier(row: EntityIdentifierRow): LogicalIdentifier {
       id: row.id,
       name: row.name,
       primary: row.primary,
-      attributes: [row.attributeId] as any,
+      attributes: row.attributeIds as any,
+      description: row.description,
       $type: 'LogicalIdentifier',
       customProperties: [],
       $globalId: row.id
@@ -64,11 +69,25 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       if (!rowData.name) {
          errors.name = 'Invalid Name';
       }
-      if (!rowData.attributeId) {
-         errors.attributeId = 'An attribute is required';
+      if (!rowData.attributeIds || rowData.attributeIds.length === 0) {
+         errors.attributeIds = 'At least one attribute is required';
       }
       return errors;
    }, []);
+
+   const defaultEntry = React.useMemo<EntityIdentifierRow>(
+      () => ({
+         idx: -1,
+         id: `ID_${Date.now()}`,
+         name: 'New Identifier',
+         primary: !entity.identifiers || entity.identifiers.length === 0,
+         attributeIds: [],
+         description: '',
+         $type: 'LogicalIdentifier',
+         $globalId: 'toBeAssigned'
+      }),
+      [entity.identifiers]
+   );
 
    const gridData = React.useMemo(
       () => (entity.identifiers || []).map((identifier, idx) => convertIdentifierToRow(identifier, idx)),
@@ -106,24 +125,68 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             showFilterMatchModes: false
          },
          {
-            field: 'attributeId',
-            header: 'Attribute',
+            field: 'attributeIds',
+            header: 'Attributes',
             headerStyle: { width: '60%' },
             body: (rowData: EntityIdentifierRow) => {
-               const attribute = entity.attributes.find(attr => attr.id === rowData.attributeId);
+               const selectedAttributes = entity.attributes
+                  .filter(attr => rowData.attributeIds.includes(attr.id))
+                  .map(attr => attr.name)
+                  .join(', ');
+               return <div className='flex align-items-center'>{selectedAttributes}</div>;
+            },
+            editor: (options: any) => {
+               const attributeOptions = entity.attributes.map(attr => ({
+                  label: attr.name,
+                  value: attr.id
+               }));
                return (
-                  <div className='flex align-items-center'>
-                     {attribute?.name}
-                     {entity.identifiers?.find(identifier => identifier.primary)?.attributes.some(a => a.id === attribute?.id) && (
-                        <i className='pi pi-key ml-1' style={{ fontSize: '0.8em' }} />
-                     )}
-                  </div>
+                  <MultiSelect
+                     value={options.value}
+                     options={attributeOptions}
+                     onChange={(e: MultiSelectChangeEvent) => options.editorCallback(e.value)}
+                     onKeyDown={handleGridEditorKeyDown}
+                     disabled={readonly}
+                     className='w-full'
+                     display='chip'
+                  />
                );
             },
+            filterType: 'text'
+         },
+         {
+            field: 'description',
+            header: 'Description',
+            editor: true,
             filterType: 'text'
          }
       ],
       [readonly, entity.attributes, entity.identifiers]
+   );
+
+   const handleRowAdd = React.useCallback(
+      (identifier: EntityIdentifierRow): void => {
+         // Clear any previous validation errors
+         setValidationErrors({});
+
+         if (identifier.name) {
+            const newIdentifier = {
+               ...convertRowToIdentifier(identifier),
+               id: `ID_${identifier.name.replace(/\s+/g, '_')}`,
+               primary: !entity.identifiers || entity.identifiers.length === 0,
+               $globalId: `${entity.id}.${identifier.name.replace(/\s+/g, '_')}`
+            };
+
+            dispatch({
+               type: 'entity:identifier:add-identifier',
+               identifier: newIdentifier
+            });
+
+            // Set the row in edit mode
+            setEditingRows({ [newIdentifier.id]: true });
+         }
+      },
+      [dispatch, entity]
    );
 
    const handleRowUpdate = React.useCallback(
@@ -171,14 +234,17 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          data={gridData}
          keyField='id'
          height='auto'
+         onRowAdd={handleRowAdd}
          onRowUpdate={handleRowUpdate}
          onRowDelete={handleIdentifierDelete}
          readonly={readonly}
          validationErrors={validationErrors}
+         defaultNewRow={defaultEntry}
          noDataMessage='No identifiers defined'
+         addButtonLabel='Add Identifier'
          editingRows={editingRows}
          onRowEditChange={(e: DataTableRowEditEvent) => setEditingRows(e.data as Record<string, boolean>)}
-         globalFilterFields={['name', 'attributeId']}
+         globalFilterFields={['name', 'attributeIds']}
       />
    );
 }
