@@ -199,7 +199,6 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
       if (this.document) {
          this.closeModel(this.document.uri.toString());
       }
-      document.body.classList.remove('hide-right-sidebar');
       super.close();
    }
 
@@ -267,24 +266,6 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
    protected override onActivateRequest(msg: Message): void {
       super.onActivateRequest(msg);
 
-      document.body.classList.add('hide-right-sidebar');
       this.focusInput();
-   }
-
-   protected override onAfterDetach(msg: Message): void {
-      super.onAfterDetach(msg);
-
-      document.body.classList.remove('hide-right-sidebar');
-   }
-
-   protected override onAfterHide(msg: Message): void {
-      super.onAfterHide(msg);
-
-      document.body.classList.remove('hide-right-sidebar');
-   }
-
-   protected override onCloseRequest(msg: Message): void {
-      document.body.classList.remove('hide-right-sidebar');
-      super.onCloseRequest(msg);
    }
 }

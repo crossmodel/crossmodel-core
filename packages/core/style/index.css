@@ -55,9 +55,3 @@ input[type='number'] {
 .editor-diagnostics-error-message {
    font-weight: 500;
 }
-
-body.hide-right-sidebar #theia-right-content-panel,
-body.hide-right-sidebar #theia-right-side-panel,
-body.hide-right-sidebar .p-TabBar.theia-app-right {
-   display: none !important;
-}
