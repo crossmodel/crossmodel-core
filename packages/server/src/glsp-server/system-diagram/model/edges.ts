@@ -24,6 +24,9 @@ export class GRelationshipEdge extends GEdge {
 
 export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
    set(edge: RelationshipEdge, index: SystemModelIndex): this {
+      if (!edge) {
+         return this;
+      }
       this.id(index.createId(edge));
       this.addCssClasses('diagram-edge', 'relationship');
       this.addArgs(ArgsUtil.edgePadding(5));

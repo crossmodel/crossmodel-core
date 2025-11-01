@@ -18,6 +18,9 @@ export class GSourceObjectNode extends GNode {
 
 export class GSourceObjectNodeBuilder extends GNodeBuilder<GSourceObjectNode> {
    set(node: SourceObject, index: MappingModelIndex): this {
+      if (!node) {
+         return this;
+      }
       const sourceObjectIdx = node.$container.sources.indexOf(node);
       this.id(index.createId(node));
 
@@ -56,6 +59,9 @@ export class GTargetObjectNode extends GNode {
 
 export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
    set(node: TargetObject, index: MappingModelIndex): this {
+      if (!node) {
+         return this;
+      }
       const id = index.createId(node);
       this.id(id);
 

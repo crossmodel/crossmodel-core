@@ -48,17 +48,13 @@ export function startGLSPServer(services: CrossModelLSPServices, workspaceFolder
    launcher.configure(serverModule);
    try {
       const stop = launcher.start(launchOptions);
-      launcher['netServer'].on(
-         'listening',
-         () => services.shared.lsp.Connection?.onRequest(GLSP_PORT_COMMAND, () => getPort(launcher['netServer'].address()))
+      launcher['netServer'].on('listening', () =>
+         services.shared.lsp.Connection?.onRequest(GLSP_PORT_COMMAND, () => getPort(launcher['netServer'].address()))
       );
       return stop;
    } catch (error) {
       logger.error('Error in GLSP server launcher:', error);
    }
-
-   // Attach a generic unhandled rejection handler to prevent the process from crashing in case of an error
-   process.on('unhandledRejection', error => console.log('Unhandled rejection', error));
 }
 
 function getPort(address: AddressInfo | string | null): number | undefined {
