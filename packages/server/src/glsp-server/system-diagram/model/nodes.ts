@@ -18,6 +18,9 @@ export class GEntityNode extends GNode {
 
 export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
    set(node: LogicalEntityNode, index: SystemModelIndex): this {
+      if (!node) {
+         return this;
+      }
       this.id(index.createId(node));
 
       // Get the reference that the DiagramNode holds to the Entity in the .langium file.
@@ -27,7 +30,7 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       this.addCssClasses('diagram-node', 'entity');
       this.addArg(REFERENCE_CONTAINER_TYPE, LogicalEntityNode);
       this.addArg(REFERENCE_PROPERTY, 'entity');
-      this.addArg(REFERENCE_VALUE, node.entity.$refText);
+      this.addArg(REFERENCE_VALUE, node.entity?.$refText);
 
       // Add the label/name of the node
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));

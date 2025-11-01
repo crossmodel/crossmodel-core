@@ -17,6 +17,9 @@ export class GTargetObjectEdge extends GEdge {
 
 export class GTargetMappingSourceEdgeBuilder extends GEdgeBuilder<GTargetObjectEdge> {
    set(source: AttributeMappingSource, index: MappingModelIndex): this {
+      if (!source) {
+         return this;
+      }
       const mapping = source.$container;
       const sourceId = createRightPortId(index.createId(source.value.ref));
       const targetId = createLeftPortId(index.createId(mapping.attribute));
