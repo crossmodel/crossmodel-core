@@ -17,7 +17,6 @@ import { EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { CompositeEditor } from './composite-editor';
 
 export interface CompositeEditorOptions extends NavigatableWidgetOptions {
-   widgetId: string;
    selection?: RecursivePartial<Range>;
    fileType: Exclude<ModelFileType, 'Generic'>;
 }
@@ -48,7 +47,6 @@ export class CompositeEditorOpenHandler
 
    protected override createWidgetOptions(resourceUri: URI, options?: EditorOpenerOptions): CompositeEditorOptions {
       const { kind, uri } = super.createWidgetOptions(resourceUri, options);
-      const widgetId = createCompositeEditorId(uri);
       const fileType = ModelFileExtensions.getFileType(uri);
       if (fileType === undefined || fileType === 'Generic') {
          throw new Error(`Cannot open a composite editor for the file type ${fileType}`);
@@ -56,7 +54,6 @@ export class CompositeEditorOpenHandler
       return {
          kind,
          uri,
-         widgetId,
          fileType
       };
    }

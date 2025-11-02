@@ -22,6 +22,7 @@ import {
    NavigatableWidgetOptions,
    SaveOptions,
    Saveable,
+   StatefulWidget,
    TabPanel,
    Widget,
    WidgetManager
@@ -34,12 +35,15 @@ import { EditorPreviewWidgetFactory } from '@theia/editor-preview/lib/browser/ed
 import { EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { CompositeEditorOptions } from './composite-editor-open-handler';
+import { CompositeEditorOptions, createCompositeEditorId } from './composite-editor-open-handler';
 import { CrossModelEditorManager } from './cross-model-editor-manager';
 import { CrossModelFileResourceResolver } from './cross-model-file-resource-resolver';
 import { DefaultSaveAsSaveableSource } from './cross-model-saveable-service';
 
-export class ReverseCompositeSaveable extends CompositeSaveable implements Required<Pick<Saveable, 'serialize'>> {
+export class ReverseCompositeSaveable
+   extends CompositeSaveable
+   implements Required<Pick<Saveable, 'serialize' | 'createSnapshot' | 'applySnapshot'>>
+{
    constructor(
       protected editor: CompositeEditor,
       protected fileResourceResolver: CrossModelFileResourceResolver
@@ -54,6 +58,7 @@ export class ReverseCompositeSaveable extends CompositeSaveable implements Requi
 
    override async save(options?: SaveOptions): Promise<void> {
       // we do not want the overwrite dialog to appear since we are syncing manually
+      await this.editor.idle();
       const autoOverwrite = this.fileResourceResolver.autoOverwrite;
       try {
          this.fileResourceResolver.autoOverwrite = true;
@@ -79,17 +84,37 @@ export class ReverseCompositeSaveable extends CompositeSaveable implements Requi
       for (const saveable of this.saveables) {
          if (typeof saveable.createSnapshot === 'function') {
             const snapshot = saveable.createSnapshot();
-            if ('value' in snapshot) {
-               return Promise.resolve(BinaryBuffer.fromString(snapshot.value));
-            } else {
-               return Promise.resolve(BinaryBuffer.fromString(snapshot.read() ?? ''));
-            }
+            return BinaryBuffer.fromString(Saveable.Snapshot.read(snapshot) ?? '');
          }
          if (typeof saveable.serialize === 'function') {
             return saveable.serialize();
          }
       }
       throw new Error('Found no serializable saveable!');
+   }
+
+   createSnapshot(): Saveable.Snapshot {
+      for (const saveable of this.saveables) {
+         if (typeof saveable.createSnapshot === 'function') {
+            const snapshot = saveable.createSnapshot();
+            // we read the value here to avoid read being disposed before the snapshot is applied, e.g., reading Monaco text model
+            // eslint-disable-next-line no-null/no-null
+            const value = Saveable.Snapshot.read(snapshot) ?? null;
+            return { read: () => value };
+         }
+      }
+      // eslint-disable-next-line no-null/no-null
+      return { read: () => null };
+   }
+
+   async applySnapshot(snapshot: object): Promise<void> {
+      await this.editor.idle();
+      for (const saveable of this.saveables) {
+         if (typeof saveable.applySnapshot === 'function') {
+            saveable?.applySnapshot?.(snapshot);
+            return;
+         }
+      }
    }
 
    /**
@@ -110,6 +135,7 @@ export class ReverseCompositeSaveable extends CompositeSaveable implements Requi
    }
 
    override async revert(options?: Saveable.RevertOptions): Promise<void> {
+      await this.editor.idle();
       if (this.editor.getResourceUri().scheme === 'file') {
          // for file resources, we can revert to the last saved state
          return super.revert(options);
@@ -124,7 +150,10 @@ export interface CompositeWidgetOptions extends NavigatableWidgetOptions {
 }
 
 @injectable()
-export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveableSource, Navigatable, Partial<GLSPDiagramWidgetContainer> {
+export class CompositeEditor
+   extends BaseWidget
+   implements DefaultSaveAsSaveableSource, Navigatable, Partial<GLSPDiagramWidgetContainer>, StatefulWidget
+{
    @inject(CrossModelWidgetOptions) protected options: CompositeEditorOptions;
    @inject(LabelProvider) protected labelProvider: LabelProvider;
    @inject(WidgetManager) protected widgetManager: WidgetManager;
@@ -133,7 +162,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
    @inject(ModelService) protected readonly modelService: ModelService;
 
    protected tabPanel: TabPanel;
-   saveable: CompositeSaveable;
+   saveable: ReverseCompositeSaveable;
    protected initialized = new Deferred<void>();
 
    protected _resourceUri?: URI;
@@ -161,7 +190,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    @postConstruct()
    protected init(): void {
-      this.id = this.options.widgetId;
+      this.id = createCompositeEditorId(this.options.uri);
       this.addClass('cm-composite-editor');
       this.title.closable = true;
       this.title.label = this.labelProvider.getName(this.resourceUri);
@@ -182,9 +211,9 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       const codeWidget = await this.createCodeWidget(this.options);
       const version = monaco.editor.getModel(monaco.Uri.parse(this.options.uri))?.getVersionId() ?? 0;
       const options: CompositeWidgetOptions = { ...this.options, version };
-      const primateWidget = await this.createPrimaryWidget(options);
+      const primaryWidget = await this.createPrimaryWidget(options);
 
-      this.addWidget(primateWidget);
+      this.addWidget(primaryWidget);
       this.addWidget(codeWidget);
 
       this.update();
@@ -200,6 +229,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
    }
 
    async idle(): Promise<void> {
+      await this.initialized.promise;
       await Promise.all(this.getCrossModelWidgets().map(widget => widget.idle()));
    }
 
@@ -235,10 +265,6 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       }
    }
 
-   protected override onAfterAttach(msg: Message): void {
-      super.onAfterAttach(msg);
-   }
-
    protected override onActivateRequest(msg: Message): void {
       super.onActivateRequest(msg);
       this.initialized.promise.then(() => this.activeWidget()?.activate());
@@ -251,7 +277,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       } else if (event.currentWidget instanceof GLSPDiagramWidget && !event.currentWidget.hasFocus) {
          event.currentWidget.actionDispatcher.dispatch(FocusStateChangedAction.create(true));
       }
-      
+
       if (event.currentWidget instanceof CrossModelWidget) {
          const isAnyEditorDirty = this.saveable.saveables.some((saveable: Saveable) => saveable.dirty);
          if (isAnyEditorDirty && !event.currentWidget.dirty) {
@@ -322,6 +348,10 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
       return widget;
    }
 
+   getPrimaryWidget(): GLSPDiagramWidget | FormEditorWidget | undefined {
+      return this.tabPanel.widgets.find(widget => widget instanceof GLSPDiagramWidget || widget instanceof FormEditorWidget);
+   }
+
    getCodeWidget(): EditorWidget | undefined {
       return this.tabPanel.widgets.find<EditorWidget>(toTypeGuard(EditorWidget));
    }
@@ -331,7 +361,7 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
    }
 
    createMoveToUri(resourceUri: URI): URI | undefined {
-      return resourceUri;
+      return this.getResourceUri().withPath(resourceUri.path);
    }
 
    revealCodeTab(options: EditorOpenerOptions): void {
@@ -344,5 +374,18 @@ export class CompositeEditor extends BaseWidget implements DefaultSaveAsSaveable
 
    activeWidget(): Widget | undefined {
       return this.tabPanel.currentWidget ?? undefined;
+   }
+
+   storeState(): object | undefined {
+      return {
+         primaryWidget: this.getPrimaryWidget()?.storeState(),
+         codeWidget: this.getCodeWidget()?.storeState()
+      };
+   }
+
+   async restoreState(oldState: any): Promise<void> {
+      await this.idle();
+      this.getPrimaryWidget()?.restoreState(oldState.primaryWidget);
+      this.getCodeWidget()?.restoreState(oldState.codeWidget);
    }
 }
