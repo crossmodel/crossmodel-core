@@ -28,13 +28,13 @@ export class MappingDiagramGModelFactory implements GModelFactory {
       const graphBuilder = GGraph.builder().id(this.modelState.semanticUri);
 
       // source nodes
-      mappingRoot.sources.map(sourceObject => this.createSourceObjectNode(sourceObject)).forEach(node => graphBuilder.add(node));
+      mappingRoot.sources?.map(sourceObject => this.createSourceObjectNode(sourceObject)).forEach(node => graphBuilder.add(node));
 
       // target node
       graphBuilder.add(this.createTargetNode(mappingRoot.target));
 
       // attribute mapping edges
-      mappingRoot.target.mappings.flatMap(mapping => this.createTargetObjectEdge(mapping)).forEach(edge => graphBuilder.add(edge));
+      mappingRoot.target?.mappings?.flatMap(mapping => this.createTargetObjectEdge(mapping)).forEach(edge => graphBuilder.add(edge));
 
       return graphBuilder.build();
    }

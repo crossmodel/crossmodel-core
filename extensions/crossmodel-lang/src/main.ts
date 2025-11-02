@@ -6,7 +6,7 @@ import 'reflect-metadata';
 import { createCrossModelServices, startGLSPServer, startModelServer } from '@crossmodel/server';
 import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import { ProposedFeatures, createConnection } from 'vscode-languageserver/node.js';
 
 /**
  * This module will be spawned as a separate language server process by the 'extension.ts'.
@@ -34,3 +34,7 @@ shared.workspace.WorkspaceManager.onWorkspaceInitialized(workspaceFolders => {
    // Start the JSON server with the shared services
    startModelServer({ shared, language: CrossModel }, workspaceFolders[0]);
 });
+
+// Attach generic handles  to prevent the process from crashing in case of an error
+process.on('uncaughtException', error => console.error('Uncaught exception', error));
+process.on('unhandledRejection', error => console.error('Unhandled rejection', error));
