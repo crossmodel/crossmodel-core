@@ -35,7 +35,8 @@ import { AstNode, AstUtils, isReference } from 'langium';
 import { Disposable } from 'vscode-jsonrpc';
 import * as rpc from 'vscode-jsonrpc/node.js';
 
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-protocol';
+import { DiagnosticSeverity } from 'vscode-languageserver-protocol';
+import { CrossModelDiagnostic } from '../language-server/cross-model-document-validator.js';
 import * as ast from '../language-server/generated/ast.js';
 import { IMPLICIT_ID_PROPERTY } from '../language-server/util/ast-util.js';
 import { ModelService } from './model-service.js';
@@ -159,7 +160,7 @@ export class ModelServer implements Disposable {
       this.toDispose.forEach(disposable => disposable.dispose());
    }
 
-   protected toDocument<T extends CrossModelDocument<ast.CrossModelRoot, Diagnostic>>(
+   protected toDocument<T extends CrossModelDocument<ast.CrossModelRoot, CrossModelDiagnostic>>(
       document: T
    ): CrossModelDocument<CrossModelRoot, ModelDiagnostic> {
       return {
@@ -169,10 +170,12 @@ export class ModelServer implements Disposable {
       };
    }
 
-   protected toModelDiagnostic(diagnostic: Diagnostic): ModelDiagnostic {
+   protected toModelDiagnostic(diagnostic: CrossModelDiagnostic): ModelDiagnostic {
       const langiumCode = diagnostic.data?.code;
       return {
          message: diagnostic.message,
+         element: diagnostic.element,
+         property: diagnostic.property,
          severity:
             diagnostic.severity === DiagnosticSeverity.Error
                ? 'error'

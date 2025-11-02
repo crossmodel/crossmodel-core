@@ -4,12 +4,14 @@
 
 import { CloseModelArgs, CrossModelDocument, ModelSavedEvent, ModelUpdatedEvent, OpenModelArgs } from '@crossmodel/protocol';
 import * as fs from 'fs';
-import { AstNode, DocumentBuilder, DocumentState, FileSystemProvider, LangiumDocument, LangiumDocuments, UriUtils } from 'langium';
+import { AstNode, DocumentBuilder, DocumentState, FileSystemProvider, LangiumDocument, UriUtils } from 'langium';
 import * as path from 'path';
 import { Disposable } from 'vscode-languageserver';
-import { Diagnostic, TextDocumentIdentifier, TextDocumentItem, VersionedTextDocumentIdentifier } from 'vscode-languageserver-protocol';
+import { TextDocumentIdentifier, TextDocumentItem, VersionedTextDocumentIdentifier } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+import { CrossModelDiagnostic } from '../language-server/cross-model-document-validator.js';
+import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelSharedServices } from '../language-server/cross-model-module.js';
 import { CrossModelRoot } from '../language-server/generated/ast.js';
 import { CrossModelLanguageMetaData } from '../language-server/generated/module.js';
@@ -20,7 +22,7 @@ export interface UpdateInfo {
    deleted: URI[];
 }
 
-export type AstCrossModelDocument = CrossModelDocument<CrossModelRoot, Diagnostic>;
+export type AstCrossModelDocument = CrossModelDocument<CrossModelRoot, CrossModelDiagnostic>;
 
 /**
  * A manager class that supports handling documents with a simple open-update-save/close lifecycle.
@@ -30,7 +32,7 @@ export type AstCrossModelDocument = CrossModelDocument<CrossModelRoot, Diagnosti
 export class OpenTextDocumentManager {
    protected textDocuments: OpenableTextDocuments<TextDocument>;
    protected fileSystemProvider: FileSystemProvider;
-   protected langiumDocs: LangiumDocuments;
+   protected langiumDocs: CrossModelLangiumDocuments;
    protected documentBuilder: DocumentBuilder;
 
    protected lastUpdate?: UpdateInfo;
@@ -82,7 +84,9 @@ export class OpenTextDocumentManager {
 
    onUpdate(uri: string, listener: (model: ModelUpdatedEvent<AstCrossModelDocument>) => void): Disposable {
       return this.documentBuilder.onBuildPhase(DocumentState.Validated, (allChangedDocuments, _token) => {
-         const changedDocument = allChangedDocuments.find(document => document.uri.toString() === uri);
+         const changedDocument = allChangedDocuments.find(document => document.uri.toString() === uri) as
+            | CrossModelLangiumDocument
+            | undefined;
          if (changedDocument) {
             const buildTrigger = allChangedDocuments.find(
                document => document.uri.toString() === this.lastUpdate?.changed?.[0]?.toString()

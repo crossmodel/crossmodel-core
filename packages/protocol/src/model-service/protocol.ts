@@ -309,18 +309,29 @@ export interface FindIdArgs extends SyntheticDocument {
 
 export interface ModelDiagnostic {
    type: 'lexing-error' | 'parsing-error' | 'validation-error';
+   element: string;
+   property?: string;
    message: string;
    severity: 'error' | 'warning' | 'info';
    code?: number | string;
 }
 
 export namespace ModelDiagnostic {
+   // should match the separators used in AstNodeLocator on the server side
+   export const ELEMENT_SEGMENT_SEPARATOR = '/';
+   export const ELEMENT_INDEX_SEPARATOR = '@';
+   export const ELEMENT_PROPERTY_SEPARATOR = '^';
+
    export function isError(diagnostic: ModelDiagnostic): boolean {
       return diagnostic.severity === 'error';
    }
 
    export function isParseError(diagnostic: ModelDiagnostic): boolean {
       return diagnostic.type === 'parsing-error';
+   }
+
+   export function getPath(diagnostic: ModelDiagnostic): string {
+      return diagnostic.property ? `${diagnostic.element}${ELEMENT_PROPERTY_SEPARATOR}${diagnostic.property}` : diagnostic.element;
    }
 
    export function errors(diagnostics: ModelDiagnostic[]): ModelDiagnostic[] {

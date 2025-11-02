@@ -7,8 +7,10 @@ import { URI } from '@theia/core';
 import * as React from 'react';
 import { useImmerReducer } from 'use-immer';
 import {
+   DiagnosticManager,
    ModelContext,
    ModelDiagnosticsContext,
+   ModelDiagnosticsManager,
    ModelDirtyContext,
    ModelDispatchContext,
    ModelQueryApiContext,
@@ -63,7 +65,10 @@ export function ModelProvider({
          onModelUpdate(appState.model);
       }
    }, [appState, onModelUpdate]);
+
    const isUntitled = React.useMemo(() => new URI(document.uri).scheme === 'untitled', [document.uri]);
+   const diagnosticsManager = React.useMemo(() => new DiagnosticManager(document.diagnostics), [document.diagnostics]);
+
    return (
       <ModelContext.Provider value={appState.model}>
          <OpenModelContext.Provider value={onModelOpen}>
@@ -71,11 +76,13 @@ export function ModelProvider({
                <ModelDispatchContext.Provider value={dispatch}>
                   <ModelDirtyContext.Provider value={dirty}>
                      <ModelDiagnosticsContext.Provider value={document.diagnostics}>
-                        <UriContext.Provider value={document.uri}>
-                           <UntitledContext.Provider value={isUntitled}>
-                              <ModelQueryApiContext.Provider value={modelQueryApi}>{children}</ModelQueryApiContext.Provider>
-                           </UntitledContext.Provider>
-                        </UriContext.Provider>
+                        <ModelDiagnosticsManager.Provider value={diagnosticsManager}>
+                           <UriContext.Provider value={document.uri}>
+                              <UntitledContext.Provider value={isUntitled}>
+                                 <ModelQueryApiContext.Provider value={modelQueryApi}>{children}</ModelQueryApiContext.Provider>
+                              </UntitledContext.Provider>
+                           </UriContext.Provider>
+                        </ModelDiagnosticsManager.Provider>
                      </ModelDiagnosticsContext.Provider>
                   </ModelDirtyContext.Provider>
                </ModelDispatchContext.Provider>

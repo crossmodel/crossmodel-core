@@ -21,6 +21,7 @@ import { AstNode, Deferred, DocumentState, UriUtils, isAstNode } from 'langium';
 import { basename } from 'path';
 import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumentEdit, TextEdit, uinteger } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
 import { CrossModelRoot, isCrossModelRoot } from '../language-server/generated/ast.js';
 import { findDocument } from '../language-server/util/ast-util.js';
@@ -35,7 +36,7 @@ export class ModelService {
    constructor(
       protected shared: CrossModelSharedServices,
       protected documentManager = shared.workspace.TextDocumentManager,
-      protected documents = shared.workspace.LangiumDocuments,
+      protected documents: CrossModelLangiumDocuments = shared.workspace.LangiumDocuments,
       protected documentBuilder = shared.workspace.DocumentBuilder,
       protected fileSystemProvider = shared.workspace.FileSystemProvider
    ) {
@@ -157,11 +158,11 @@ export class ModelService {
       const listener = this.documentBuilder.onBuildPhase(DocumentState.Validated, (allChangedDocuments, _token) => {
          const updatedDocument = allChangedDocuments.find(
             doc => doc.uri.toString() === documentUri.toString() && doc.textDocument.version === newVersion
-         );
+         ) as CrossModelLangiumDocument | undefined;
          if (updatedDocument) {
             pendingUpdate.resolve({
                diagnostics: updatedDocument.diagnostics ?? [],
-               root: updatedDocument.parseResult.value as CrossModelRoot,
+               root: updatedDocument.parseResult.value,
                uri: args.uri
             });
             listener.dispose();

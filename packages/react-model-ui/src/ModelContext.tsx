@@ -23,6 +23,58 @@ export interface ModelQueryApi {
    findNextId(args: FindIdArgs): Promise<string>;
 }
 
+export interface DiagnosticInfo {
+   diagnostics: ModelDiagnostic[];
+   empty: boolean;
+   inputClasses(): string;
+   text(): string | undefined;
+}
+export class DiagnosticManager {
+   private result: Record<string, ModelDiagnostic[]> = {};
+
+   constructor(protected diagnostics: ModelDiagnostic[]) {
+      this.diagnostics.forEach(diagnostic => {
+         const path = ModelDiagnostic.getPath(diagnostic);
+         this.result[path] ??= [];
+         this.result[path].push(diagnostic);
+      });
+   }
+
+   list(elementPath: string | string[], property?: string, idx?: number): ModelDiagnostic[] {
+      const singleElementPath = Array.isArray(elementPath) ? elementPath.join(ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR) : elementPath;
+      const rootElementPath = singleElementPath.startsWith(ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR)
+         ? singleElementPath
+         : `${ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR}${singleElementPath}`;
+      const indexedElementPath = idx !== undefined ? `${rootElementPath}${ModelDiagnostic.ELEMENT_INDEX_SEPARATOR}${idx}` : rootElementPath;
+      const elementPathWithProperty = property
+         ? `${indexedElementPath}${ModelDiagnostic.ELEMENT_PROPERTY_SEPARATOR}${property}`
+         : indexedElementPath;
+      return this.result[elementPathWithProperty] ?? [];
+   }
+
+   has(elementPath: string | string[], property?: string, idx?: number): boolean {
+      return !this.info(elementPath, property, idx).empty;
+   }
+
+   cssClasses(elementPath: string | string[], property?: string, idx?: number): string {
+      return this.info(elementPath, property, idx).inputClasses();
+   }
+
+   text(elementPath: string | string[], property?: string, idx?: number): string | undefined {
+      return this.info(elementPath, property, idx).text();
+   }
+
+   info(elementPath: string | string[], property?: string, idx?: number): DiagnosticInfo {
+      const diagnostics = this.list(elementPath, property, idx);
+      return {
+         diagnostics,
+         empty: diagnostics.length === 0,
+         inputClasses: () => (diagnostics.length > 0 ? 'p-invalid' : ''),
+         text: () => (diagnostics.length > 0 ? diagnostics.map(diagnostic => diagnostic.message).join(', ') : undefined)
+      };
+   }
+}
+
 const DEFAULT_MODEL_ROOT: CrossModelRoot = { $type: 'CrossModelRoot' };
 export const ModelContext = React.createContext(DEFAULT_MODEL_ROOT);
 
@@ -47,6 +99,8 @@ export const UriContext = React.createContext<string>('');
 
 export const ModelDiagnosticsContext = React.createContext<ModelDiagnostic[]>([]);
 
+export const ModelDiagnosticsManager = React.createContext<DiagnosticManager>(new DiagnosticManager([]));
+
 export function useModel(): CrossModelRoot {
    return React.useContext(ModelContext);
 }
@@ -69,6 +123,10 @@ export function useModelQueryApi(): ModelQueryApi {
 
 export function useDiagnostics(): ModelDiagnostic[] {
    return React.useContext(ModelDiagnosticsContext);
+}
+
+export function useDiagnosticsManager(): DiagnosticManager {
+   return React.useContext(ModelDiagnosticsManager);
 }
 
 export function useDirty(): boolean {
