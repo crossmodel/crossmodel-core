@@ -18,7 +18,6 @@ export interface EntityAttributeRow extends LogicalAttribute {
    name: string;
    datatype: string;
    description?: string;
-   identifier?: boolean;
    _uncommitted?: boolean;
 }
 
@@ -88,7 +87,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          idx: -1,
          id: '', // ID will be assigned when adding the row
          description: '',
-         identifier: false,
          $type: 'LogicalAttribute',
          $globalId: 'toBeAssigned'
       }),
@@ -180,21 +178,21 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       setGridData(current => {
          // Map the committed attributes
          const committedData = (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => {
-            // Check if this attribute is part of any identifier
-            const isIdentifier =
-               entity.identifiers?.some(identifier =>
-                  identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
+            // Find if this attribute is part of any primary identifier
+            const isPrimaryIdentifier =
+               entity.identifiers?.some(
+                  identifier =>
+                     identifier.primary && identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
                ) || false;
 
-            // Check for stored identifier state or current identifier references
-            const isIdentifierAttribute = attr.identifier || isIdentifier;
-
+            // Use the primary identifier status for the identifier checkbox
+            // This ensures the grid reflects the actual primary identifier state
             return {
                idx,
                name: attr.name || '',
                datatype: attr.datatype || 'string',
                description: attr.description || '',
-               identifier: isIdentifierAttribute,
+               identifier: isPrimaryIdentifier, // Only true if part of a primary identifier
                id: attr.id || '',
                $type: 'LogicalAttribute',
                $globalId: attr.$globalId || ''
@@ -276,7 +274,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    );
 
    const handleIdentifierUpdate = React.useCallback(
-      (attributeId: string, attributeName: string, shouldBeIdentifier: boolean, isNew: boolean = false) => {
+      (attributeId: string, attributeName: string, shouldBeIdentifier: boolean, isNew = false) => {
          // Check if there's an existing primary identifier
          const existingPrimary = entity.identifiers?.find(i => i.primary);
 
@@ -363,8 +361,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             const hasChanges =
                attribute.name !== defaultEntry.name ||
                attribute.datatype !== defaultEntry.datatype ||
-               attribute.description !== defaultEntry.description ||
-               attribute.identifier !== defaultEntry.identifier;
+               attribute.description !== defaultEntry.description;
 
             if (!hasChanges || !attribute.name) {
                // Remove the row if no changes or no name
@@ -378,7 +375,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, description, identifier, ...attributeData } = attribute;
+            const { _uncommitted: _, id: __, description, identifier, ...attributeData } = attribute;
             const finalAttribute = {
                ...attributeData,
                id: newId,
@@ -396,8 +393,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             handleIdentifierUpdate(newId, attribute.name, identifier ?? false, true);
          } else {
             // This is an existing row being updated
-            // Remove empty fields before updating
-            const { description, ...rest } = attribute;
+            // Remove empty and non-model fields before updating
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { description, identifier: _ignored, ...rest } = attribute;
             const updatedAttribute = {
                ...rest,
                ...(description ? { description } : {})
@@ -410,20 +408,72 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             });
 
             // Handle identifier changes separately
-            const isCurrentlyIdentifier = entity.identifiers?.some(identifier =>
-               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id))
+            // Find the current primary identifier if it exists
+            const primaryIdentifier = entity.identifiers?.find(identifier => identifier.primary);
+            const isCurrentlyInPrimary = primaryIdentifier?.attributes.some(attr =>
+               typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id
             );
-            const identifierChanged = attribute.identifier !== isCurrentlyIdentifier;
+            const identifierChanged = attribute.identifier !== isCurrentlyInPrimary;
 
             if (identifierChanged) {
-               handleIdentifierUpdate(oldAttribute.id || '', oldAttribute.name || '', attribute.identifier ?? false, false);
+               if (attribute.identifier) {
+                  // Adding to primary identifier
+                  if (primaryIdentifier) {
+                     // Add to existing primary identifier
+                     dispatch({
+                        type: 'entity:identifier:update',
+                        identifierIdx: entity.identifiers.indexOf(primaryIdentifier),
+                        identifier: {
+                           ...primaryIdentifier,
+                           attributes: [...primaryIdentifier.attributes, oldAttribute.id] as any
+                        }
+                     });
+                  } else {
+                     // Create new primary identifier
+                     dispatch({
+                        type: 'entity:identifier:add-identifier',
+                        identifier: {
+                           id: `ID_${oldAttribute.id}`,
+                           name: `Identifier ${oldAttribute.name}`,
+                           primary: true,
+                           attributes: [oldAttribute.id] as any,
+                           $type: 'LogicalIdentifier',
+                           customProperties: [],
+                           $globalId: `${entity.id}.${oldAttribute.id}`
+                        }
+                     });
+                  }
+               } else if (primaryIdentifier) {
+                  // Removing from primary identifier
+                  const remainingAttributes = primaryIdentifier.attributes.filter(attr =>
+                     typeof attr === 'string' ? attr !== oldAttribute.id : attr.id !== oldAttribute.id
+                  );
+
+                  if (remainingAttributes.length === 0) {
+                     // If no attributes left, remove the identifier
+                     dispatch({
+                        type: 'entity:identifier:delete-identifier',
+                        identifierIdx: entity.identifiers.indexOf(primaryIdentifier)
+                     });
+                  } else {
+                     // Update the identifier with remaining attributes
+                     dispatch({
+                        type: 'entity:identifier:update',
+                        identifierIdx: entity.identifiers.indexOf(primaryIdentifier),
+                        identifier: {
+                           ...primaryIdentifier,
+                           attributes: remainingAttributes
+                        }
+                     });
+                  }
+               }
             }
          }
 
          // Clear editing state after successful update
          setEditingRows({});
       },
-      [dispatch, defaultEntry, entity]
+      [dispatch, defaultEntry, entity, handleIdentifierUpdate]
    );
 
    if (!entity) {

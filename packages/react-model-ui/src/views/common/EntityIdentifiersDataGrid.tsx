@@ -30,7 +30,7 @@ function convertIdentifierToRow(identifier: LogicalIdentifier, idx: number): Ent
       idx,
       id: identifier.id || '',
       name: identifier.name || '',
-      primary: identifier.primary || false,
+      primary: Boolean(identifier.primary),
       attributeIds,
       description: identifier.description || ''
    };
@@ -91,18 +91,31 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       [entity.identifiers]
    );
 
-   // Update grid data when identifiers change, preserving any uncommitted rows
-   React.useEffect(() => {
-      setGridData(current => {
-         // Map the committed identifiers
-         const committedData = (entity.identifiers || []).map((identifier, idx) => convertIdentifierToRow(identifier, idx));
-
-         // Preserve any uncommitted rows that are currently being edited
-         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
-
-         return [...committedData, ...uncommittedRows];
+   // Map entity data to grid data with proper updates
+   const mapToGridData = React.useCallback(() => {
+      const committedData = (entity.identifiers || []).map((identifier, idx) => {
+         const row = convertIdentifierToRow(identifier, idx);
+         // Ensure primary status is current
+         row.primary = identifier.primary || false;
+         return row;
       });
-   }, [entity.identifiers, editingRows]);
+
+      return committedData;
+   }, [entity.identifiers]);
+
+   // Update grid data whenever identifiers change
+   React.useEffect(() => {
+      // Immediate update of grid data
+      const updateGridData = async (): Promise<void> => {
+         const newData = mapToGridData();
+         setGridData(current => {
+            // Preserve any uncommitted rows that are currently being edited
+            const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
+            return [...newData, ...uncommittedRows];
+         });
+      };
+      updateGridData();
+   }, [entity.identifiers, entity.attributes, editingRows, mapToGridData]);
 
    const columns: GridColumn<EntityIdentifierRow>[] = React.useMemo(
       () => [
@@ -172,7 +185,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             filterType: 'text'
          }
       ],
-      [readonly, entity.attributes, entity.identifiers]
+      [readonly, entity.attributes]
    );
 
    const handleRowAdd = React.useCallback((): void => {
@@ -197,13 +210,15 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
 
    const handleRowUpdate = React.useCallback(
       (identifier: EntityIdentifierRow): void => {
+         // Ensure primary is always a boolean
+         identifier.primary = Boolean(identifier.primary);
+
          const errors = validateField(identifier);
          if (Object.keys(errors).length > 0) {
             setValidationErrors(errors);
             return;
          }
          setValidationErrors({});
-
          if (identifier._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
@@ -221,16 +236,32 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             // Generate unique ID using the same pattern as attributes grid
             const newId = findNextUnique(toId(identifier.name || ''), entity.identifiers || [], id => id.id || '');
 
-            // If this new identifier is marked as primary, first unset any existing primary
+            // If this will be primary, first unset any existing primary identifier and its attributes
             if (identifier.primary) {
                const currentPrimary = entity.identifiers?.find(i => i.primary);
                if (currentPrimary) {
+                  // Update the existing primary identifier
                   dispatch({
                      type: 'entity:identifier:update',
                      identifierIdx: entity.identifiers.indexOf(currentPrimary),
                      identifier: {
                         ...currentPrimary,
                         primary: false
+                     }
+                  });
+
+                  // Update its attributes to non-primary
+                  currentPrimary.attributes.forEach(attrId => {
+                     const attrIdx = entity.attributes.findIndex(attr => attr.id === (typeof attrId === 'string' ? attrId : attrId.id));
+                     if (attrIdx !== -1) {
+                        dispatch({
+                           type: 'entity:attribute:update',
+                           attributeIdx: attrIdx,
+                           attribute: {
+                              ...entity.attributes[attrIdx],
+                              identifier: false
+                           }
+                        });
                      }
                   });
                }
@@ -244,6 +275,21 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                $globalId: `${entity.id}.${newId}`
             };
 
+            // Set the identifier status on all selected attributes
+            identifier.attributeIds.forEach(attrId => {
+               const attrIdx = entity.attributes.findIndex(attr => attr.id === attrId);
+               if (attrIdx !== -1) {
+                  dispatch({
+                     type: 'entity:attribute:update',
+                     attributeIdx: attrIdx,
+                     attribute: {
+                        ...entity.attributes[attrIdx],
+                        identifier: identifier.primary
+                     }
+                  });
+               }
+            });
+
             // Add the new identifier
             dispatch({
                type: 'entity:identifier:add-identifier',
@@ -255,6 +301,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             if (identifier.primary) {
                const currentPrimary = entity.identifiers?.find(i => i.primary && i.id !== identifier.id);
                if (currentPrimary) {
+                  // Update the existing primary identifier
                   dispatch({
                      type: 'entity:identifier:update',
                      identifierIdx: entity.identifiers.indexOf(currentPrimary),
@@ -266,7 +313,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                }
             }
 
-            // Then update this identifier
+            // Update this identifier
             dispatch({
                type: 'entity:identifier:update',
                identifierIdx: identifier.idx,
@@ -286,6 +333,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
 
    return (
       <PrimeDataGrid
+         key={`identifiers-grid-${entity.identifiers?.length}-${gridData.length}`}
          className='entity-identifiers-datatable'
          columns={columns}
          data={gridData}
