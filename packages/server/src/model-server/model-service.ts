@@ -18,6 +18,7 @@ import {
    UpdateModelArgs
 } from '@crossmodel/protocol';
 import { AstNode, Deferred, DocumentState, UriUtils, isAstNode } from 'langium';
+import { basename } from 'path';
 import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumentEdit, TextEdit, uinteger } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
@@ -41,7 +42,7 @@ export class ModelService {
       // sync updates with language client
       this.documentBuilder.onBuildPhase(DocumentState.Validated, async (allChangedDocuments, _token) => {
          for (const changedDocument of allChangedDocuments) {
-            const sourceClientId = this.documentManager.getSourceClientId(changedDocument, allChangedDocuments);
+            const sourceClientId = this.documentManager.getAuthor(changedDocument);
             if (sourceClientId === LANGUAGE_CLIENT_ID) {
                continue;
             }
@@ -49,6 +50,9 @@ export class ModelService {
             if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
                // we only want to apply a text edit if the editor is already open
                // because opening and updating at the same time might cause problems as the open call resets the document to filesystem
+               shared.logger.ClientLogger.info(
+                  `[Documents][${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`
+               );
                await this.shared.lsp.Connection?.workspace.applyEdit({
                   label: 'Update Model',
                   documentChanges: [

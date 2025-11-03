@@ -2,7 +2,7 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { getAbsolutePosition } from '@eclipse-glsp/client';
+import { AnyObject, getAbsolutePosition } from '@eclipse-glsp/client';
 import { GLSPDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { Message } from '@theia/core/lib/browser';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
@@ -50,5 +50,10 @@ export class CrossModelDiagramWidget extends GLSPDiagramWidget {
          return selectedFileNodes.map(node => node.uri.path.fsPath());
       }
       return [];
+   }
+
+   override restoreState(oldState: AnyObject): void {
+      // we want to keep the configured URI of the diagram instead of the original one, relevant during move
+      super.restoreState({ ...this._options, ...oldState, uri: this._options.uri ?? (oldState as any).uri });
    }
 }

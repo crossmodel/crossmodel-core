@@ -4,24 +4,15 @@
 
 import { CloseModelArgs, CrossModelDocument, ModelSavedEvent, ModelUpdatedEvent, OpenModelArgs } from '@crossmodel/protocol';
 import * as fs from 'fs';
-import {
-    AstNode,
-    DocumentBuilder,
-    DocumentState,
-    FileSystemProvider,
-    LangiumDefaultSharedCoreServices,
-    LangiumDocument,
-    LangiumDocuments,
-    UriUtils
-} from 'langium';
+import { AstNode, DocumentBuilder, DocumentState, FileSystemProvider, LangiumDocument, LangiumDocuments, UriUtils } from 'langium';
 import * as path from 'path';
 import { Disposable } from 'vscode-languageserver';
 import { Diagnostic, TextDocumentIdentifier, TextDocumentItem, VersionedTextDocumentIdentifier } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+import { CrossModelSharedServices } from '../language-server/cross-model-module.js';
 import { CrossModelRoot } from '../language-server/generated/ast.js';
 import { CrossModelLanguageMetaData } from '../language-server/generated/module.js';
-import { AddedSharedModelServices } from './model-module.js';
 import { OpenableTextDocuments } from './openable-text-documents.js';
 
 export interface UpdateInfo {
@@ -44,7 +35,7 @@ export class OpenTextDocumentManager {
 
    protected lastUpdate?: UpdateInfo;
 
-   constructor(services: AddedSharedModelServices & LangiumDefaultSharedCoreServices) {
+   constructor(protected services: CrossModelSharedServices) {
       this.textDocuments = services.workspace.TextDocuments;
       this.fileSystemProvider = services.workspace.FileSystemProvider;
       this.langiumDocs = services.workspace.LangiumDocuments;
@@ -96,7 +87,7 @@ export class OpenTextDocumentManager {
             const buildTrigger = allChangedDocuments.find(
                document => document.uri.toString() === this.lastUpdate?.changed?.[0]?.toString()
             );
-            const sourceClientId = this.getSourceClientId(buildTrigger ?? changedDocument, allChangedDocuments);
+            const sourceClientId = this.getAuthor(buildTrigger ?? changedDocument);
             const event: ModelUpdatedEvent<AstCrossModelDocument> = {
                document: {
                   root: changedDocument.parseResult.value as CrossModelRoot,
@@ -115,22 +106,21 @@ export class OpenTextDocumentManager {
       });
    }
 
-   getSourceClientId(preferred: LangiumDocument<AstNode>, rest: LangiumDocument<AstNode>[]): string {
-      const clientId = this.textDocuments.getChangeSource(preferred.textDocument.uri, preferred.textDocument.version);
-      if (clientId) {
-         return clientId;
+   getAuthor(document: LangiumDocument<AstNode>): string {
+      if (document.textDocument.version <= 0) {
+         return 'unknown';
       }
-      return 'unknown';
+      return this.textDocuments.getAuthor(document.textDocument.uri, document.textDocument.version) ?? 'unknown';
    }
 
    async open(args: OpenModelArgs): Promise<Disposable> {
       // only create a dummy document if it is already open as we use the synced state anyway
-      const textDocument = this.isOpen(args.uri)
-         ? this.createDummyDocument(args.uri, args.version)
-         : await this.createDocumentFromTextOrFileSystem(args.uri, args.languageId, args.version, args.text);
-
-      // open will trigger a change event which in turn will trigger a build
-      this.textDocuments.notifyDidOpenTextDocument({ textDocument }, args.clientId);
+      if (this.isOpen(args.uri)) {
+         this.textDocuments.refreshContent(args.uri, args.clientId);
+      } else {
+         const textDocument = await this.createDocumentFromTextOrFileSystem(args.uri, args.languageId, args.version, args.text);
+         this.textDocuments.notifyDidOpenTextDocument({ textDocument }, args.clientId);
+      }
       return Disposable.create(() => this.close(args));
    }
 
@@ -169,10 +159,6 @@ export class OpenTextDocumentManager {
 
    isOnlyOpenInClient(uri: string, client: string): boolean {
       return this.textDocuments.isOnlyOpenInClient(this.normalizedUri(uri), client);
-   }
-
-   protected createDummyDocument(uri: string, version = 0): TextDocumentItem {
-      return TextDocumentItem.create(this.normalizedUri(uri), CrossModelLanguageMetaData.languageId, version, '');
    }
 
    protected async createDocumentFromTextOrFileSystem(

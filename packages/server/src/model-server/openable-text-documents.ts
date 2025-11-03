@@ -6,25 +6,25 @@
 import { NormalizedTextDocuments } from 'langium/lsp';
 import { basename } from 'path';
 import {
-    CancellationToken,
-    Connection,
-    DidChangeTextDocumentParams,
-    DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams,
-    DidSaveTextDocumentParams,
-    Disposable,
-    Emitter,
-    Event,
-    HandlerResult,
-    RequestHandler,
-    TextDocumentChangeEvent,
-    TextDocumentsConfiguration,
-    TextDocumentSyncKind,
-    TextDocumentWillSaveEvent,
-    TextEdit,
-    WillSaveTextDocumentParams
+   CancellationToken,
+   Connection,
+   DidChangeTextDocumentParams,
+   DidCloseTextDocumentParams,
+   DidOpenTextDocumentParams,
+   DidSaveTextDocumentParams,
+   Disposable,
+   Emitter,
+   Event,
+   HandlerResult,
+   RequestHandler,
+   TextDocumentChangeEvent,
+   TextDocumentSyncKind,
+   TextDocumentWillSaveEvent,
+   TextDocumentsConfiguration,
+   TextEdit,
+   WillSaveTextDocumentParams
 } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { CrossModelSharedServices } from '../language-server/cross-model-module.js';
 
@@ -39,7 +39,7 @@ export interface ClientTextDocumentChangeEvent<T> extends TextDocumentChangeEven
  */
 export class OpenableTextDocuments<T extends TextDocument> extends NormalizedTextDocuments<T> {
    protected __clientDocuments = new Map<string, Set<string>>();
-   protected __changeHistory = new Map<string, string[]>();
+   protected __versionHistory = new Map<string, string[]>();
 
    public constructor(
       protected configuration: TextDocumentsConfiguration<T>,
@@ -153,9 +153,7 @@ export class OpenableTextDocuments<T extends TextDocument> extends NormalizedTex
          }
          document = this.configuration.update(document, changes, version);
          this.__syncedDocuments.set(td.uri, document);
-         const changeHistory = this.__changeHistory.get(td.uri) || [];
-         changeHistory[td.version] = clientId;
-         this.__changeHistory.set(td.uri, changeHistory);
+         this.setAuthor(td.uri, td.version, clientId);
          this.log(document.uri, `Update to version ${td.version} by ${clientId}`);
          this.__onDidChangeContent.fire(Object.freeze({ document, clientId }));
       }
@@ -175,7 +173,7 @@ export class OpenableTextDocuments<T extends TextDocument> extends NormalizedTex
             // last client closed the document, delete sync state
             this.log(syncedDocument.uri, `Remove synced document: ${syncedDocument.version} (no client left)`);
             this.__syncedDocuments.delete(event.textDocument.uri);
-            this.__changeHistory.delete(event.textDocument.uri);
+            this.__versionHistory.delete(event.textDocument.uri);
             // Non-persistent files are dead if no client holds them.
             const uri = URI.parse(event.textDocument.uri);
             if (uri.scheme !== 'file') {
@@ -223,44 +221,60 @@ export class OpenableTextDocuments<T extends TextDocument> extends NormalizedTex
       this.__clientDocuments.set(td.uri, clients);
       if (!document) {
          // no synced document yet, create new one
-         this.log(td.uri, `Opened new document: ${td.version} by ${clientId}`);
+         this.log(td.uri, `Open document: Version ${td.version} by ${clientId}`);
          document = this.configuration.create(td.uri, td.languageId, td.version, td.text);
          this.__syncedDocuments.set(td.uri, document);
-         this.__changeHistory.set(td.uri, [clientId]);
+         this.setAuthor(td.uri, td.version, clientId);
          const toFire = Object.freeze({ document, clientId });
          this.__onDidOpen.fire(toFire);
          this.__onDidChangeContent.fire(toFire);
       } else {
-         // document was already synced, so we just change a content change
-         this.log(td.uri, `Opened synced document: ${td.version} by ${clientId}`);
-         const toFire = Object.freeze({ document, clientId });
-         this.__onDidChangeContent.fire(toFire);
+         this.refreshContent(td.uri, clientId);
       }
    }
 
-   getChangeSource(uri: string, version?: number): string | undefined {
-      const history = this.__changeHistory.get(uri);
-      // given version or last entry
-      return version ? history?.[version] : history?.at(-1);
+   refreshContent(uri: DocumentUri, clientId: string): void {
+      const syncedDocument = this.__syncedDocuments.get(uri);
+      if (syncedDocument) {
+         // trigger a (re-)build by firing a change event
+         this.log(syncedDocument.uri, `Refresh synced document: Version ${syncedDocument.version} by ${clientId}`);
+         this.__onDidChangeContent.fire(Object.freeze({ document: syncedDocument, clientId }));
+      }
    }
 
-   isOpen(uri: string): boolean {
+   protected setAuthor(uri: DocumentUri, version: number, author: string): void {
+      const history = this.__versionHistory.get(uri) || [];
+      history[version] = author;
+      this.__versionHistory.set(uri, history);
+   }
+
+   getAuthor(uri: DocumentUri, version?: number): string | undefined {
+      const history = this.__versionHistory.get(uri);
+      // given version or latest version
+      const clientId = version ? history?.[version] : history?.at(-1);
+      if (!clientId) {
+         this.log(uri, `Could not detect author of version ${version}.`);
+      }
+      return clientId;
+   }
+
+   isOpen(uri: DocumentUri): boolean {
       return this.__syncedDocuments.has(uri);
    }
 
-   isOpenInClient(uri: string, client: string): boolean {
+   isOpenInClient(uri: DocumentUri, client: string): boolean {
       return !!this.__clientDocuments.get(uri)?.has(client);
    }
 
-   isOpenInLanguageClient(uri: string): boolean {
+   isOpenInLanguageClient(uri: DocumentUri): boolean {
       return this.isOpenInClient(uri, LANGUAGE_CLIENT_ID);
    }
 
-   isOnlyOpenInClient(uri: string, client: string): boolean {
+   isOnlyOpenInClient(uri: DocumentUri, client: string): boolean {
       return this.__clientDocuments.get(uri)?.size === 1 && this.isOpenInClient(uri, client);
    }
 
-   protected log(uri: string, message: string): void {
+   protected log(uri: DocumentUri, message: string): void {
       const full = URI.parse(uri);
       this.logger.info(`[Documents][${basename(full.fsPath)}] ${message}`);
    }
