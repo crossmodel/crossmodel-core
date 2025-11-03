@@ -3,9 +3,10 @@
  ********************************************************************************/
 
 import { CrossModelWidget, CrossModelWidgetOptions } from '@crossmodel/core/lib/browser';
-import { NavigatableWidget, NavigatableWidgetOptions, StatefulWidget } from '@theia/core/lib/browser';
+import { Message, NavigatableWidget, NavigatableWidgetOptions, StatefulWidget } from '@theia/core/lib/browser';
 import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
 import { CommandService } from '@theia/core/lib/common/command';
+import { SelectionService } from '@theia/core/lib/common/selection-service';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 
@@ -20,7 +21,10 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
    @inject(CommandService)
    protected readonly commandService: CommandService;
 
-   protected override handleOpenRequest = undefined; // we do not need to support opening in editor, we are the editor
+   @inject(SelectionService)
+   protected readonly selectionService: SelectionService;
+
+   protected override handleOpenRequest = undefined;
 
    protected override getModelProviderProps(): any {
       const props = super.getModelProviderProps();
@@ -53,5 +57,10 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
 
    restoreState(oldState: object | undefined): void {
       // nothing to restore
+   }
+
+   protected override onActivateRequest(msg: Message): void {
+      super.onActivateRequest(msg);
+      this.selectionService.selection = { sourceUri: this.getResourceUri().toString() };
    }
 }
