@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-22.04', 'windows-2022', 'macos-13', 'macos-14'] # macos-13 for intel, macos-14 for arm
+        os: ['ubuntu-22.04', 'windows-2025', 'macos-15-intel', 'macos-15'] # macos-15-intel for intel, macos-15 for arm
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -68,7 +68,7 @@ jobs:
         shell: bash
         # We set env variables on the GITHUB_ENV variable so they value is available in all consecutive steps.
         run: |
-          echo "PYTHON_VERSION=3.11.4" >> "$GITHUB_ENV"
+          echo "PYTHON_VERSION=3.13" >> "$GITHUB_ENV"
           echo "NODE_VERSION=22.x" >> "$GITHUB_ENV"
           echo "GITHUB_TOKEN=${{ inputs.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 

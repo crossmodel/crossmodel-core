@@ -4,7 +4,7 @@ on:
       runs-on:
         required: false
         type: string
-        default: "['ubuntu-22.04', 'windows-2022', 'macos-13']"
+        default: "['ubuntu-22.04', 'windows-2025', 'macos-15']"
 
 defaults:
   run:
