@@ -27,6 +27,8 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
    }
 
    override updateContentWidget(selection: GlspSelection | undefined): void {
-      this.getPropertyDataService(selection).then(service => this.modelPropertyWidget.updatePropertyViewContent(service, selection));
+      this.getPropertyDataService(selection).then(service => {
+         this.modelPropertyWidget.updatePropertyViewContent(service, selection);
+      });
    }
 }
