@@ -61,6 +61,6 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
 
    protected override onActivateRequest(msg: Message): void {
       super.onActivateRequest(msg);
-      this.selectionService.selection = { sourceUri: this.getResourceUri().toString() };
+      this.selectionService.selection = this;
    }
 }
