@@ -37,7 +37,7 @@ irm get.scoop.sh | iex
 Open a new PowerShell window (this is needed after installing scoop) and execute the following commands:
 
 ```powershell
-scoop install python@3.11.4
+scoop install python@3.13
 scoop install yarn@1.22.22
 scoop install nvm
 nvm install 22
