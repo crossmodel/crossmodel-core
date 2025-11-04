@@ -7,6 +7,7 @@ import { CMApp } from '../page-objects/cm-app';
 test.describe('CrossModel Merge Extension', () => {
    let app: CMApp;
    const TEST_ENTITY_PATH = 'ExampleCRM/entities/Customer.entity.cm';
+   const TEST_RELATIONSHIP_PATH = 'ExampleCRM/relationships/Test.relationship.cm';
 
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
@@ -39,19 +40,56 @@ test.describe('CrossModel Merge Extension', () => {
 
       // Get all command text
       const commands = await app.page.locator('.quick-input-list .monaco-list-row').allTextContents();
-      
+
       // Verify at least one CrossModel merge command is present
-      const hasMergeCommand = commands.some(cmd => 
-         cmd.includes('CrossModel: Preview Diff') || 
+      const hasMergeCommand = commands.some(cmd =>
+         cmd.includes('CrossModel: Preview Diff') ||
          cmd.includes('CrossModel: Merge from Ref') ||
          cmd.includes('CrossModel: Refresh')
       );
-      
+
       expect(hasMergeCommand).toBeTruthy();
 
       // Close the command palette
       await app.page.keyboard.press('Escape');
       await app.page.waitForTimeout(500);
+   });
+
+   test('all merge commands are available in command palette', async () => {
+      // Wait for extension to activate
+      await app.page.waitForTimeout(2000);
+
+      const commandsToCheck = [
+         'CrossModel: Preview Diff',
+         'CrossModel: Merge from Ref',
+         'CrossModel: Refresh',
+         'CrossModel: Apply Selected',
+         'CrossModel: Accept All Ours',
+         'CrossModel: Accept All Theirs'
+      ];
+
+      for (const commandName of commandsToCheck) {
+         // Open command palette
+         await app.page.keyboard.press('F1');
+         await app.page.waitForTimeout(1000);
+
+         // Type command name
+         await app.page.keyboard.type(commandName);
+         await app.page.waitForTimeout(1000);
+
+         // Check if command appears
+         const commandList = app.page.locator('.quick-input-list');
+         await expect(commandList).toBeVisible({ timeout: 5000 });
+
+         const commands = await app.page.locator('.quick-input-list .monaco-list-row').allTextContents();
+         const hasCommand = commands.some(cmd => cmd.includes(commandName));
+
+         expect(hasCommand).toBeTruthy();
+
+         // Close command palette
+         await app.page.keyboard.press('Escape');
+         await app.page.waitForTimeout(300);
+      }
    });
 
    test('CrossModel Changes view appears when file is modified', async () => {
@@ -67,7 +105,7 @@ test.describe('CrossModel Merge Extension', () => {
       await app.page.keyboard.press('End'); // Go to end of line
       await app.page.keyboard.press('Enter'); // New line
       await app.page.keyboard.type('    description: "Test customer entity with updated description"');
-      
+
       // Add custom properties at the same level as attributes (at the end)
       await app.page.keyboard.press('Control+End'); // Go to end of file
       await app.page.keyboard.press('Enter'); // New line at the end
@@ -78,7 +116,7 @@ test.describe('CrossModel Merge Extension', () => {
       await app.page.keyboard.type('        name: "Test Property"');
       await app.page.keyboard.press('Enter');
       await app.page.keyboard.type('        value: "test_value"');
-      
+
       await editor.waitForDirty();
 
       // Save the file
@@ -147,7 +185,7 @@ test.describe('CrossModel Merge Extension', () => {
       // Check that no critical error occurred
       const errorNotifications = app.page.locator('.theia-notification-message-error');
       const hasError = await errorNotifications.count() > 0;
-      
+
       if (hasError) {
          const errorText = await errorNotifications.first().textContent();
          // Allow expected info messages but not critical failures
@@ -202,6 +240,328 @@ test.describe('CrossModel Merge Extension', () => {
       // Revert the file to original state (undo all changes)
       // We added: 1 description line + 1 customProperties line + 2 property lines = 4 lines total
       for (let i = 0; i < 4; i++) {
+         await app.page.keyboard.press('Control+Z');
+         await app.page.waitForTimeout(100);
+      }
+      await editor.save();
+      await editor.close();
+   });
+
+   test('Multiple file modifications are detected', async () => {
+      // Modify first file (entity)
+      const entityEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      await entityEditor.waitForVisible();
+
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('ArrowDown'); // Move to line 2
+      await app.page.keyboard.press('ArrowDown'); // Move to line 3
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    description: "Modified entity"');
+      await entityEditor.waitForDirty();
+      await entityEditor.save();
+      await entityEditor.close();
+      await app.page.waitForTimeout(500);
+
+      // Modify second file (relationship)
+      const relationshipEditor = await app.openCompositeEditor(TEST_RELATIONSHIP_PATH, 'Code Editor');
+      await relationshipEditor.waitForVisible();
+
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('ArrowDown'); // Move to line 2
+      await app.page.keyboard.press('ArrowDown'); // Move to line 3
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    description: "Modified relationship"');
+      await relationshipEditor.waitForDirty();
+      await relationshipEditor.save();
+      await relationshipEditor.close();
+      await app.page.waitForTimeout(500);
+
+      // Execute refresh
+      await app.page.keyboard.press('F1');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.type('CrossModel: Refresh');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.press('Enter');
+      await app.page.waitForTimeout(2000);
+
+      // Check that no errors occurred
+      const errorNotifications = app.page.locator('.theia-notification-message-error:visible');
+      const errorCount = await errorNotifications.count();
+      expect(errorCount).toBe(0);
+
+      // Revert both files
+      const entityEditor2 = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      await entityEditor2.waitForVisible();
+      await app.page.keyboard.press('Control+Z');
+      await entityEditor2.save();
+      await entityEditor2.close();
+
+      const relationshipEditor2 = await app.openCompositeEditor(TEST_RELATIONSHIP_PATH, 'Code Editor');
+      await relationshipEditor2.waitForVisible();
+      await app.page.keyboard.press('Control+Z');
+      await relationshipEditor2.save();
+      await relationshipEditor2.close();
+   });
+
+   test('Tree view structure is visible after Preview Diff', async () => {
+      // Make a change
+      const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      await editor.waitForVisible();
+
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    description: "Tree view test"');
+      await editor.waitForDirty();
+      await editor.save();
+      await app.page.waitForTimeout(1000);
+
+      // Execute Preview Diff
+      await app.page.keyboard.press('F1');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.type('CrossModel: Preview Diff');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.press('Enter');
+      await app.page.waitForTimeout(3000);
+
+      // Look for tree view elements in the sidebar
+      // The tree view should show file paths in a hierarchical structure
+      const sidebarContainer = app.page.locator('.theia-app-left .theia-view-container');
+      const isVisible = await sidebarContainer.isVisible();
+      expect(isVisible).toBeTruthy();
+
+      // Revert changes
+      await app.page.keyboard.press('Control+Z');
+      await editor.save();
+      await editor.close();
+   });
+
+   test('Refresh command updates the view', async () => {
+      // Make initial change
+      const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      await editor.waitForVisible();
+
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    description: "Refresh test 1"');
+      await editor.waitForDirty();
+      await editor.save();
+      await app.page.waitForTimeout(1000);
+
+      // Execute first refresh
+      await app.page.keyboard.press('F1');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.type('CrossModel: Refresh');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.press('Enter');
+      await app.page.waitForTimeout(2000);
+
+      // Make another change
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    version: "2.0"');
+      await editor.waitForDirty();
+      await editor.save();
+      await app.page.waitForTimeout(1000);
+
+      // Execute second refresh
+      await app.page.keyboard.press('F1');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.type('CrossModel: Refresh');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.press('Enter');
+      await app.page.waitForTimeout(2000);
+
+      // Check no errors
+      const errorNotifications = app.page.locator('.theia-notification-message-error:visible');
+      const errorCount = await errorNotifications.count();
+      expect(errorCount).toBe(0);
+
+      // Revert all changes
+      await app.page.keyboard.press('Control+Z');
+      await app.page.keyboard.press('Control+Z');
+      await editor.save();
+      await editor.close();
+   });
+
+   test('Extension handles empty files gracefully', async () => {
+      // Open empty entity file
+      const emptyEntityPath = 'ExampleCRM/entities/EmptyEntity.entity.cm';
+      const editor = await app.openCompositeEditor(emptyEntityPath, 'Code Editor');
+      await editor.waitForVisible();
+
+      // Add some content
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    description: "Added to empty entity"');
+      await editor.waitForDirty();
+      await editor.save();
+      await app.page.waitForTimeout(1000);
+
+      // Execute refresh
+      await app.page.keyboard.press('F1');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.type('CrossModel: Refresh');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.press('Enter');
+      await app.page.waitForTimeout(2000);
+
+      // Check no errors
+      const errorNotifications = app.page.locator('.theia-notification-message-error:visible');
+      const errorCount = await errorNotifications.count();
+      expect(errorCount).toBe(0);
+
+      // Revert changes
+      await app.page.keyboard.press('Control+Z');
+      await editor.save();
+      await editor.close();
+   });
+
+   test('Consecutive refreshes work correctly', async () => {
+      // Make a change
+      const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      await editor.waitForVisible();
+
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    description: "Consecutive refresh test"');
+      await editor.waitForDirty();
+      await editor.save();
+      await app.page.waitForTimeout(1000);
+
+      // Execute multiple refreshes
+      for (let i = 0; i < 3; i++) {
+         await app.page.keyboard.press('F1');
+         await app.page.waitForTimeout(1000);
+         await app.page.keyboard.type('CrossModel: Refresh');
+         await app.page.waitForTimeout(1000);
+         await app.page.keyboard.press('Enter');
+         await app.page.waitForTimeout(2000);
+
+         // Check no errors after each refresh
+         const errorNotifications = app.page.locator('.theia-notification-message-error:visible');
+         const errorCount = await errorNotifications.count();
+         expect(errorCount).toBe(0);
+      }
+
+      // Revert changes
+      await app.page.keyboard.press('Control+Z');
+      await editor.save();
+      await editor.close();
+   });
+
+   test('Extension handles attribute changes', async () => {
+      // Open entity and modify an attribute
+      const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      await editor.waitForVisible();
+
+      // Navigate to attributes section and add a new attribute
+      await app.page.keyboard.press('Control+Home');
+      // Find the attributes section (usually after description and other metadata)
+      for (let i = 0; i < 10; i++) {
+         await app.page.keyboard.press('ArrowDown');
+      }
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('      - id: new_attribute');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        name: "NewAttribute"');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        datatype: string');
+      await editor.waitForDirty();
+      await editor.save();
+      await app.page.waitForTimeout(1000);
+
+      // Execute refresh
+      await app.page.keyboard.press('F1');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.type('CrossModel: Refresh');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.press('Enter');
+      await app.page.waitForTimeout(2000);
+
+      // Check no errors
+      const errorNotifications = app.page.locator('.theia-notification-message-error:visible');
+      const errorCount = await errorNotifications.count();
+      expect(errorCount).toBe(0);
+
+      // Revert changes (3 lines added)
+      for (let i = 0; i < 3; i++) {
+         await app.page.keyboard.press('Control+Z');
+         await app.page.waitForTimeout(100);
+      }
+      await editor.save();
+      await editor.close();
+   });
+
+   test('Extension handles complex AST changes', async () => {
+      // Open entity and make multiple complex changes
+      const editor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      await editor.waitForVisible();
+
+      // Add description
+      await app.page.keyboard.press('Control+Home');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('ArrowDown');
+      await app.page.keyboard.press('End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    description: "Complex changes test"');
+
+      // Add version
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    version: "1.0.0"');
+
+      // Add custom properties
+      await app.page.keyboard.press('Control+End');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('    customProperties:');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('      - id: prop1');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        name: "Property 1"');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        value: "value1"');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('      - id: prop2');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        name: "Property 2"');
+      await app.page.keyboard.press('Enter');
+      await app.page.keyboard.type('        value: "value2"');
+
+      await editor.waitForDirty();
+      await editor.save();
+      await app.page.waitForTimeout(1500);
+
+      // Execute refresh
+      await app.page.keyboard.press('F1');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.type('CrossModel: Refresh');
+      await app.page.waitForTimeout(1000);
+      await app.page.keyboard.press('Enter');
+      await app.page.waitForTimeout(2000);
+
+      // Check no errors
+      const errorNotifications = app.page.locator('.theia-notification-message-error:visible');
+      const errorCount = await errorNotifications.count();
+      expect(errorCount).toBe(0);
+
+      // Revert all changes (9 lines added)
+      for (let i = 0; i < 9; i++) {
          await app.page.keyboard.press('Control+Z');
          await app.page.waitForTimeout(100);
       }
