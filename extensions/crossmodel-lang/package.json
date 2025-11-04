@@ -1,7 +1,7 @@
 {
   "name": "crossmodel-lang",
   "displayName": "crossmodel-lang",
-  "version": "0.10.5",
+  "version": "0.10.6",
   "private": true,
   "description": "CrossModel Language",
   "categories": [
@@ -84,8 +84,8 @@
     "onStartupFinished"
   ],
   "dependencies": {
-    "@crossmodel/protocol": "0.10.5",
-    "@crossmodel/server": "0.10.5",
+    "@crossmodel/protocol": "0.10.6",
+    "@crossmodel/server": "0.10.6",
     "vscode-languageclient": "9.0.1",
     "vscode-uri": "^3.1.0"
   },
