@@ -11,19 +11,13 @@ RUN apt-get update \
     software-properties-common
 
 # Get the version of Ubuntu in environment variables
-RUN . /etc/os-release
-
 # Download the Microsoft repository keys
-RUN wget -q https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb
-
 # Register the Microsoft repository keys
-RUN dpkg -i packages-microsoft-prod.deb
-
 # Delete the Microsoft repository keys file
-RUN rm packages-microsoft-prod.deb
-
-# Update the list of packages after we added packages.microsoft.com
-RUN apt-get update
+RUN . /etc/os-release \
+    && wget -q https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb
 
 # Install OS packages needed for building Theia.
 RUN apt-get update \
