@@ -27,8 +27,8 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    async updatePropertyViewContent(propertyDataService?: PropertyDataService, selection?: GlspSelection | undefined): Promise<void> {
       const selectionData = selection as any;
-      if (selectionData?.sourceUri && !GlspSelection.is(selection)) {
-         const uri = selectionData.sourceUri;
+      if (selectionData && 'getResourceUri' in selectionData && typeof selectionData.getResourceUri === 'function' && !GlspSelection.is(selection)) {
+         const uri = selectionData.getResourceUri().toString();
          if (this.document?.uri.toString() !== uri) {
             this.renderData = undefined;
             await this.setModel(uri);

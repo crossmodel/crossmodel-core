@@ -29,6 +29,7 @@ import {
 } from '@theia/core/lib/browser';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewWidget } from '@theia/editor-preview/lib/browser/editor-preview-widget';
 import { EditorPreviewWidgetFactory } from '@theia/editor-preview/lib/browser/editor-preview-widget-factory';
@@ -160,6 +161,7 @@ export class CompositeEditor
    @inject(CrossModelEditorManager) protected editorManager: CrossModelEditorManager;
    @inject(CrossModelFileResourceResolver) protected fileResourceResolver: CrossModelFileResourceResolver;
    @inject(ModelService) protected readonly modelService: ModelService;
+   @inject(SelectionService) protected readonly selectionService: SelectionService;
 
    protected tabPanel: TabPanel;
    saveable: ReverseCompositeSaveable;
@@ -267,7 +269,13 @@ export class CompositeEditor
 
    protected override onActivateRequest(msg: Message): void {
       super.onActivateRequest(msg);
-      this.initialized.promise.then(() => this.activeWidget()?.activate());
+      this.initialized.promise.then(() => {
+         this.activeWidget()?.activate();
+         const activeWidget = this.activeWidget();
+         if (activeWidget && 'getResourceUri' in activeWidget) {
+            this.selectionService.selection = activeWidget;
+         }
+      });
    }
 
    protected handleCurrentWidgetChanged(event: TabPanel.ICurrentChangedArgs): void {
@@ -287,9 +295,11 @@ export class CompositeEditor
    }
 
    protected override onCloseRequest(msg: Message): void {
+      this.selectionService.selection = undefined;
       this.tabPanel.widgets.forEach(widget => widget.close());
       super.onCloseRequest(msg);
       this.dispose();
+      this.selectionService.selection = undefined;
    }
 
    protected createDiagramWidgetOptions(language: GLSPDiagramLanguage, label?: string): GLSPDiagramWidgetOptions {

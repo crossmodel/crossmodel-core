@@ -63,4 +63,11 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
       super.onActivateRequest(msg);
       this.selectionService.selection = this;
    }
+
+   protected override onCloseRequest(msg: Message): void {
+      if (this.selectionService.selection === this) {
+         this.selectionService.selection = undefined;
+      }
+      super.onCloseRequest(msg);
+   }
 }
