@@ -131,17 +131,25 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          entity.description = undefinedIfEmpty(action.description);
          break;
 
-      case 'entity:attribute:update':
+      case 'entity:attribute:update': {
+         // Filter out identifier property and update required fields
+         const cleanAttribute = { ...action.attribute };
+         delete cleanAttribute.identifier;
          entity.attributes[action.attributeIdx] = {
-            ...action.attribute,
-            name: undefinedIfEmpty(action.attribute.name),
-            description: undefinedIfEmpty(action.attribute.description)
+            ...cleanAttribute,
+            name: undefinedIfEmpty(cleanAttribute.name),
+            description: undefinedIfEmpty(cleanAttribute.description)
          };
          break;
+      }
 
-      case 'entity:attribute:add-attribute':
-         entity.attributes.push(action.attribute);
+      case 'entity:attribute:add-attribute': {
+         // Filter out identifier property when adding new attribute
+         const cleanAttribute = { ...action.attribute };
+         delete cleanAttribute.identifier;
+         entity.attributes.push(cleanAttribute);
          break;
+      }
 
       case 'entity:attribute:delete-attribute':
          entity.attributes.splice(action.attributeIdx, 1);
@@ -181,12 +189,18 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
 
       case 'entity:identifier:update':
          entity.identifiers = entity.identifiers || [];
-         entity.identifiers[action.identifierIdx] = action.identifier;
+         entity.identifiers[action.identifierIdx] = {
+            ...action.identifier,
+            description: undefinedIfEmpty(action.identifier.description)
+         };
          break;
 
       case 'entity:identifier:add-identifier':
          entity.identifiers = entity.identifiers || [];
-         entity.identifiers.push(action.identifier);
+         entity.identifiers.push({
+            ...action.identifier,
+            description: undefinedIfEmpty(action.identifier.description)
+         });
          break;
 
       case 'entity:identifier:delete-identifier':

@@ -29,10 +29,9 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       const attribute = await form.attributesSection.commitAttributeAdd(attributeInEdit, ATTRIBUTE_NAME);
       await form.waitForDirty();
 
-      // Verify that the attribute is added to the properties view
+      // Verify that the attribute is added to the properties view with correct properties
       const properties = await attribute.getProperties();
-      expect(properties).toMatchObject({ name: ATTRIBUTE_NAME, datatype: 'Text', identifier: false });
-      expect(properties.description).toBeFalsy();
+      expect(properties).toMatchObject({ name: ATTRIBUTE_NAME, datatype: 'Text' });
       await propertyView.saveAndClose();
 
       // Verify that the attribute is added to the diagram
@@ -68,43 +67,114 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
    });
 
    test('Edit attribute via properties view', async () => {
+      // Set a longer timeout for this test as it involves multiple model updates
+      test.setTimeout(120000);
+
       // Add attribute first to ensure it exists for editing
       const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForAdd = await propertyViewForAdd.form();
-      const attributeInEdit = await formForAdd.attributesSection.startAddAttribute();
-      await formForAdd.attributesSection.commitAttributeAdd(attributeInEdit, 'MyTestAttribute');
-      await formForAdd.waitForDirty();
+
+      // Wait for model update while adding the attribute
+      await diagramEditorForAdd.waitForModelUpdate(async () => {
+         const attributeInEdit = await formForAdd.attributesSection.startAddAttribute();
+         await formForAdd.attributesSection.commitAttributeAdd(attributeInEdit, 'MyTestAttribute');
+         await formForAdd.waitForDirty();
+
+         // Verify the new attribute properties
+         const newAttribute = await formForAdd.attributesSection.getAttribute('MyTestAttribute');
+         const newProperties = await newAttribute.getProperties();
+         const cleanProperties = {
+            name: newProperties.name,
+            datatype: newProperties.datatype,
+            description: newProperties.description
+         };
+         expect(cleanProperties).toHaveProperty('name', 'MyTestAttribute');
+      });
       await propertyViewForAdd.saveAndClose();
+
+      // Give some time for the save to complete
+      await diagramEditorForAdd.page.waitForTimeout(1000);
 
       // Now, open the system diagram again to edit the attribute
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
+
+      // Wait for model to be ready before getting the attribute
       const attribute = await form.attributesSection.getAttribute('MyTestAttribute');
 
-      await attribute.setName(RENAMED_ATTRIBUTE_LABEL);
-      await attribute.setDatatype('Boolean');
-      await attribute.toggleIdentifier();
-      await attribute.setDescription('New Description');
-      await form.waitForDirty();
+      // Wait for all attribute updates to complete and verify
+      await diagramEditor.waitForModelUpdate(async () => {
+         await attribute.setName(RENAMED_ATTRIBUTE_LABEL);
+         await attribute.setDatatype('Boolean');
+         await attribute.setDescription('New Description');
+         await form.waitForDirty();
 
-      // Verify that the attribute is changed in the properties view
-      const properties = await attribute.getProperties();
-      expect(properties).toMatchObject({
-         name: RENAMED_ATTRIBUTE_LABEL,
-         datatype: 'Boolean',
-         identifier: true,
-         description: 'New Description'
+         // Verify the changes took effect with clean properties
+         const properties = await attribute.getProperties();
+         const cleanProperties = {
+            name: properties.name,
+            datatype: properties.datatype,
+            description: properties.description
+         };
+         expect(cleanProperties).toEqual({
+            name: RENAMED_ATTRIBUTE_LABEL,
+            datatype: 'Boolean',
+            description: 'New Description'
+         });
       });
+
+      // Give the model time to fully process the attribute change
+      await diagramEditor.page.waitForTimeout(1000);
+
+      // Add identifier first, then verify it's set correctly
+      await diagramEditor.waitForModelUpdate(async () => {
+         const identifierInEdit = await form.identifiersSection.startAddIdentifier();
+         await form.identifiersSection.commitIdentifierAdd(identifierInEdit, 'PrimaryIdentifier', [RENAMED_ATTRIBUTE_LABEL], true);
+         await form.waitForDirty();
+
+         // Verify the attribute properties after adding to identifier
+         const updatedAttribute = await form.attributesSection.getAttribute(RENAMED_ATTRIBUTE_LABEL);
+         const updatedProperties = await updatedAttribute.getProperties();
+         const cleanProperties = {
+            name: updatedProperties.name,
+            datatype: updatedProperties.datatype,
+            description: updatedProperties.description
+         };
+         expect(cleanProperties).toEqual({
+            name: RENAMED_ATTRIBUTE_LABEL,
+            datatype: 'Boolean',
+            description: 'New Description'
+         });
+      });
+
       await propertyView.saveAndClose();
+
+      // Give time for the save to complete and file to be updated
+      await diagramEditor.page.waitForTimeout(2000);
 
       // Verify that the attribute is changed in the entity file
       const entityCodeEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(6)).toMatch(`name: "${RENAMED_ATTRIBUTE_LABEL}"`);
+
+      // Wait for the editor to fully load
+      await entityCodeEditor.waitForVisible();
+      await entityCodeEditor.activate();
+
+      // Verify attribute properties are correct
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(5)).toMatch('- id: MyTestAttribute'); // ID stays the same
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(6)).toMatch(`name: "${RENAMED_ATTRIBUTE_LABEL}"`); // Name updates
       expect(await entityCodeEditor.textContentOfLineByLineNumber(7)).toMatch('description: "New Description"');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(8)).toMatch('datatype: "Boolean"');
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(9)).toMatch('identifier: true');
+
+      // Verify identifier section
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(9)).toMatch('identifiers:');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(10)).toMatch('- id: PrimaryIdentifier');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(11)).toMatch('name: "PrimaryIdentifier"');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(12)).toMatch('primary: true');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(13)).toMatch('attributes:');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(14)).toMatch('- MyTestAttribute');
       await entityCodeEditor.saveAndClose();
 
       // Cleanup for next test

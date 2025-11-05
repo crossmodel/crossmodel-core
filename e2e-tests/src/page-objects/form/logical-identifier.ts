@@ -1,0 +1,197 @@
+/********************************************************************************
+ * Copyright (c) 2025 CrossBreeze.
+ ********************************************************************************/
+
+import { waitForFunction } from '@eclipse-glsp/glsp-playwright';
+import { Locator } from '@playwright/test';
+import { TheiaPageObject } from '@theia/playwright';
+
+export class LogicalIdentifier extends TheiaPageObject {
+   constructor(
+      readonly locator: Locator,
+      section: any
+   ) {
+      super(section.app);
+   }
+
+   protected get nameLocator(): Locator {
+      return this.locator.locator('td').first();
+   }
+
+   protected get primaryLocator(): Locator {
+      return this.locator.locator('td').nth(1);
+   }
+
+   protected get attributeIdsLocator(): Locator {
+      return this.locator.locator('td:nth-child(3)'); // More reliable than nth(2)
+   }
+
+   protected get descriptionLocator(): Locator {
+      return this.locator.locator('td').nth(3);
+   }
+
+   protected get actionsLocator(): Locator {
+      return this.locator.locator('td').last();
+   }
+
+   async getName(): Promise<string> {
+      // First check if we're in edit mode
+      const inputLocator = this.nameLocator.locator('input');
+      if (await inputLocator.isVisible()) {
+         // If in edit mode, get value from input
+         const value = await inputLocator.inputValue();
+         return value;
+      }
+      // Otherwise get text content
+      return (await this.nameLocator.textContent()) ?? '';
+   }
+
+   async setName(name: string): Promise<void> {
+      const inputLocator = this.nameLocator.locator('input');
+
+      // If input is not immediately visible, enter edit mode
+      if (!(await inputLocator.isVisible())) {
+         await this.actionsLocator.locator('button:has(.pi-pencil)').click();
+         await inputLocator.waitFor({ state: 'visible' });
+      }
+
+      // Just fill the name without saving
+      await inputLocator.fill(name);
+   }
+
+   async isPrimary(): Promise<boolean> {
+      const checkboxBox = this.primaryLocator.locator('.p-checkbox-box');
+      try {
+         await checkboxBox.waitFor({ state: 'attached', timeout: 300 });
+         return (await checkboxBox.getAttribute('data-p-highlight')) === 'true';
+      } catch (error) {
+         return (await this.primaryLocator.locator('.pi-check').count()) === 1;
+      }
+   }
+
+   async setPrimary(primary: boolean): Promise<void> {
+      const checkbox = this.primaryLocator.locator('input[type="checkbox"]');
+
+      // If checkbox is not immediately visible, enter edit mode
+      if (!(await checkbox.isVisible())) {
+         await this.actionsLocator.locator('button:has(.pi-pencil)').click();
+         await checkbox.waitFor({ state: 'visible' });
+      }
+
+      const currentPrimary = await this.isPrimary();
+      if (currentPrimary !== primary) {
+         await checkbox.click();
+
+         // Wait for the checkbox state to update
+         const checkIcon = this.primaryLocator.locator('.p-checkbox-icon');
+         if (primary) {
+            await checkIcon.waitFor({ state: 'visible' });
+         } else {
+            await checkIcon.waitFor({ state: 'hidden' });
+         }
+      }
+
+      await waitForFunction(async () => (await this.isPrimary()) === primary);
+   }
+
+   async save(): Promise<void> {
+      const inputLocator = this.nameLocator.locator('input');
+      const name = await this.getName();
+      const attributes = await this.getAttributes();
+
+      if (!name) {
+         throw new Error('Cannot save identifier without a name');
+      }
+      if (!attributes || attributes.length === 0) {
+         throw new Error('Cannot save identifier without selecting attributes');
+      }
+
+      // Only proceed if we're in edit mode
+      if (!(await inputLocator.isVisible())) {
+         throw new Error('Cannot save identifier - not in edit mode');
+      }
+
+      // Save when we have both name and attributes
+      await inputLocator.press('Enter');
+
+      // Wait for edit mode to end
+      await inputLocator.waitFor({ state: 'hidden', timeout: 5000 });
+   }
+
+   async getAttributes(): Promise<string[]> {
+      try {
+         await this.attributeIdsLocator.waitFor({ state: 'visible', timeout: 5000 });
+
+         // If we're in edit mode, get from multiselect
+         const multiselect = this.attributeIdsLocator.locator('.p-multiselect');
+         if (await multiselect.isVisible()) {
+            const tokens = await multiselect.locator('.p-multiselect-token');
+            const labels = await tokens.locator('.p-multiselect-token-label').allTextContents();
+            return labels;
+         }
+
+         // Otherwise get from the view mode cell content
+         const text = await this.attributeIdsLocator.textContent();
+         return text ? [text.trim()] : [];
+      } catch (error) {
+         return [];
+      }
+   }
+   async setAttributes(attributeIds: string[]): Promise<void> {
+      // First ensure we can interact with the multiselect
+      const multiSelect = this.attributeIdsLocator.locator('.p-multiselect');
+
+      // If multiselect is not immediately visible or clickable, enter edit mode
+      if (!(await multiSelect.isVisible()) || !(await multiSelect.isEnabled())) {
+         await this.actionsLocator.locator('button:has(.pi-pencil)').click();
+         await multiSelect.waitFor({ state: 'visible' });
+         await this.page.waitForTimeout(300); // Wait for edit mode transition
+      }
+
+      // Click the multiselect to open the dropdown
+      await multiSelect.click();
+
+      // Wait for the panel and verify it's visible
+      const panel = this.page.locator('.p-multiselect-panel');
+      await panel.waitFor({ state: 'visible', timeout: 5000 });
+
+      // Select each attribute
+      for (const attrId of attributeIds) {
+         const option = panel.getByRole('option', { name: attrId });
+         await option.waitFor({ state: 'visible', timeout: 5000 });
+         await option.click();
+
+         // Wait for the selection to register
+         await this.page.waitForTimeout(100);
+      }
+
+      // Close the panel
+      const closeButton = panel.locator('.p-multiselect-close');
+      await closeButton.waitFor({ state: 'visible' });
+      await closeButton.click();
+      await panel.waitFor({ state: 'hidden', timeout: 5000 });
+   }
+
+   async getDescription(): Promise<string> {
+      return (await this.descriptionLocator.textContent()) ?? '';
+   }
+
+   async setDescription(description: string): Promise<void> {
+      const inputLocator = this.descriptionLocator.locator('input');
+
+      // If input is not immediately visible, enter edit mode
+      if (!(await inputLocator.isVisible())) {
+         await this.actionsLocator.locator('button:has(.pi-pencil)').click();
+         await inputLocator.waitFor({ state: 'visible' });
+      }
+
+      await inputLocator.fill(description);
+      await this.descriptionLocator.press('Enter');
+      await waitForFunction(async () => (await this.getDescription()) === description);
+   }
+
+   async delete(): Promise<void> {
+      const deleteButton = this.actionsLocator.locator('button:has(.pi-trash)');
+      await deleteButton.click();
+   }
+}
