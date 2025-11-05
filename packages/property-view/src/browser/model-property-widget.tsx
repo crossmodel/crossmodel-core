@@ -10,13 +10,13 @@ import { CrossModelWidget } from '@crossmodel/core/lib/browser';
 import { RenderProps } from '@crossmodel/protocol';
 import { GLSPDiagramWidget, GlspSelection, getDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
 import * as deepEqual from 'fast-deep-equal';
 import { PropertiesRenderData } from './model-data-service';
 
 @injectable()
 export class ModelPropertyWidget extends CrossModelWidget implements PropertyViewContentWidget {
-   @inject(ApplicationShell) protected shell: ApplicationShell;
-
+   @inject(ApplicationShell) protected readonly shell: ApplicationShell;
    protected renderData?: PropertiesRenderData;
 
    constructor() {
@@ -27,8 +27,8 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    async updatePropertyViewContent(propertyDataService?: PropertyDataService, selection?: GlspSelection | undefined): Promise<void> {
       const selectionData = selection as any;
-      if (selectionData && 'getResourceUri' in selectionData && typeof selectionData.getResourceUri === 'function' && !GlspSelection.is(selection)) {
-         const uri = selectionData.getResourceUri().toString();
+      if (selectionData?.sourceUri && !GlspSelection.is(selection)) {
+         const uri = selectionData.sourceUri;
          if (this.document?.uri.toString() !== uri) {
             this.renderData = undefined;
             await this.setModel(uri);
@@ -47,6 +47,10 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
             this.renderData = renderData;
             await this.setModel(renderData?.uri);
          }
+
+         if (renderData && selection) {
+            this.shell.expandPanel('right');
+         }
       } else {
          this.renderData = undefined;
          await this.setModel();
@@ -55,6 +59,14 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    protected override getRenderProperties(): RenderProps {
       return { ...super.getRenderProperties(), ...this.renderData?.renderProps };
+   }
+
+   override render(): React.ReactNode {
+      if (!this.renderData) {
+         return <div className='theia-widget-noInfo'>No properties available.</div>;
+      }
+
+      return super.render();
    }
 
    protected override async closeModel(uri: string): Promise<void> {
