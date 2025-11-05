@@ -269,13 +269,7 @@ export class CompositeEditor
 
    protected override onActivateRequest(msg: Message): void {
       super.onActivateRequest(msg);
-      this.initialized.promise.then(() => {
-         this.activeWidget()?.activate();
-         const activeWidget = this.activeWidget();
-         if (activeWidget && 'getResourceUri' in activeWidget) {
-            this.selectionService.selection = activeWidget;
-         }
-      });
+      this.initialized.promise.then(() => this.activeWidget()?.activate());
    }
 
    protected handleCurrentWidgetChanged(event: TabPanel.ICurrentChangedArgs): void {

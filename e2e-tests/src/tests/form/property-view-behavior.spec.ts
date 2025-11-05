@@ -30,15 +30,18 @@ test.describe('Property View Form Integration', () => {
       await systemDiagram.selectLogicalEntityAndOpenProperties('Customer');
 
       const openButton = propertyView.locator('button:has-text("Open")');
-      await expect(openButton).toBeVisible({ timeout: 10000 });
-      await expect(propertyView.locator('#model-property-view')).toBeVisible({ timeout: 10000 });
+      await expect(openButton).toBeVisible({ timeout: 5000 });
+      await expect(propertyView.locator('#model-property-view')).toBeVisible({ timeout: 5000 });
 
       await openButton.click();
 
       const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
       await formEditor.waitForVisible();
-      await expect(propertyView.locator('#model-property-view')).toBeVisible({ timeout: 10000 });
-      await expect(propertyView.locator('text=No properties available.')).toHaveCount(0);
+      if (!(await propertyView.isVisible())) {
+         await propertyTab.click();
+         await propertyView.waitFor({ state: 'visible', timeout: 5000 });
+      }
+      await expect(propertyView.locator('#model-property-view')).toHaveCount(0, { timeout: 5000 });
 
       await formEditor.close();
       const dialog = app.page.locator('.theia-dialog-shell');
@@ -47,7 +50,7 @@ test.describe('Property View Form Integration', () => {
       }
 
       await expect(propertyView.locator('#model-property-view')).toHaveCount(0);
-      await expect(propertyView.locator('text=No properties available.')).toBeVisible({ timeout: 30000 });
+      await expect(propertyView.locator('text=No properties available.')).toBeVisible({ timeout: 5000 });
 
       await systemDiagram.closeWithoutSave();
       await app.closeAnyDialog();
