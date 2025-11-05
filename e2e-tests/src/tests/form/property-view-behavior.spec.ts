@@ -49,7 +49,7 @@ test.describe('Property View Form Integration', () => {
          await dialog.locator('button:has-text("Don\'t Save")').click();
       }
 
-      await expect(propertyView.locator('#model-property-view')).toHaveCount(0);
+      await expect(propertyView.locator('#model-property-view')).toHaveCount(0, { timeout: 5000 });
       await expect(propertyView.locator('text=No properties available.')).toBeVisible({ timeout: 5000 });
 
       await systemDiagram.closeWithoutSave();
