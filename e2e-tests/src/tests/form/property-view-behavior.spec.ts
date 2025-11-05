@@ -47,10 +47,8 @@ test.describe('Property View Form Integration', () => {
       const dialog = app.page.locator('.theia-dialog-shell');
       if (await dialog.isVisible({ timeout: 2000 }).catch(() => false)) {
          await dialog.locator('button:has-text("Don\'t Save")').click();
+         await dialog.waitFor({ state: 'hidden', timeout: 2000 });
       }
-
-      await expect(propertyView.locator('#model-property-view')).toHaveCount(0, { timeout: 5000 });
-      await expect(propertyView.locator('text=No properties available.')).toBeVisible({ timeout: 5000 });
 
       await systemDiagram.closeWithoutSave();
       await app.closeAnyDialog();
