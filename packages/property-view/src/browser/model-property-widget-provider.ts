@@ -19,7 +19,16 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
       if (selection && 'additionalSelectionData' in selection && !selection.additionalSelectionData) {
          delete selection['additionalSelectionData'];
       }
-      return GlspSelection.is(selection) ? 100 : 0;
+      if (GlspSelection.is(selection)) {
+         return 100;
+      }
+      if (selection === undefined) {
+         return 50;
+      }
+      if (selection && 'getResourceUri' in selection) {
+         return 50;
+      }
+      return 0;
    }
 
    override async provideWidget(_selection: GlspSelection | undefined): Promise<ModelPropertyWidget> {
@@ -27,6 +36,17 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
    }
 
    override updateContentWidget(selection: GlspSelection | undefined): void {
+      if (selection === undefined) {
+         this.modelPropertyWidget.updatePropertyViewContent(undefined, undefined);
+         return;
+      }
+
+      const selectionData = selection as any;
+      if (selectionData && 'getResourceUri' in selectionData) {
+         this.modelPropertyWidget.updatePropertyViewContent(undefined, undefined);
+         return;
+      }
+
       this.getPropertyDataService(selection).then(service => {
          this.modelPropertyWidget.updatePropertyViewContent(service, selection);
       });
