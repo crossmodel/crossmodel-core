@@ -15,8 +15,7 @@ import { PropertiesRenderData } from './model-data-service';
 
 @injectable()
 export class ModelPropertyWidget extends CrossModelWidget implements PropertyViewContentWidget {
-   @inject(ApplicationShell) protected shell: ApplicationShell;
-
+   @inject(ApplicationShell) protected readonly shell: ApplicationShell;
    protected renderData?: PropertiesRenderData;
 
    constructor() {
@@ -26,6 +25,16 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
    }
 
    async updatePropertyViewContent(propertyDataService?: PropertyDataService, selection?: GlspSelection | undefined): Promise<void> {
+      const selectionData = selection as any;
+      if (selectionData?.sourceUri && !GlspSelection.is(selection)) {
+         const uri = selectionData.sourceUri;
+         if (this.document?.uri.toString() !== uri) {
+            this.renderData = undefined;
+            await this.setModel(uri);
+         }
+         return;
+      }
+
       const activeWidget = getDiagramWidget(this.shell);
       if (activeWidget?.options.uri === this.document?.uri.toString() && this.document?.uri.toString() !== selection?.sourceUri) {
          // only react to selection of active widget
@@ -36,6 +45,14 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
          if (this.document?.uri.toString() !== renderData?.uri || !deepEqual(this.renderData, renderData)) {
             this.renderData = renderData;
             this.setModel(renderData?.uri);
+         }
+
+         if (renderData && selection) {
+            this.shell.expandPanel('right');
+         }
+
+         if (renderData && selection) {
+            this.shell.expandPanel('right');
          }
       } else {
          this.renderData = undefined;
