@@ -81,7 +81,7 @@ jobs:
           path: gh-pages
       # Generate the Allure Report
       - name: Generate Allure Report
-        uses: simple-elf/allure-report-action@58e6590adf6d8f196a0d771bf8a00e6921086a62 # v.1.9
+        uses: simple-elf/allure-report-action@master
         with:
           # Where to find the allure results.
           allure_results: allure-results

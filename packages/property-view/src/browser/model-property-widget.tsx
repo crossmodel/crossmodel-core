@@ -45,7 +45,11 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
          const renderData = (await propertyDataService.providePropertyData(selection)) as PropertiesRenderData | undefined;
          if (this.document?.uri.toString() !== renderData?.uri || !deepEqual(this.renderData, renderData)) {
             this.renderData = renderData;
-            this.setModel(renderData?.uri);
+            await this.setModel(renderData?.uri);
+         }
+
+         if (renderData && selection) {
+            this.shell.expandPanel('right');
          }
 
          if (renderData && selection) {
@@ -53,12 +57,20 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
          }
       } else {
          this.renderData = undefined;
-         this.setModel();
+         await this.setModel();
       }
    }
 
    protected override getRenderProperties(): RenderProps {
       return { ...super.getRenderProperties(), ...this.renderData?.renderProps };
+   }
+
+   override render(): React.ReactNode {
+      if (!this.renderData) {
+         return <div className='theia-widget-noInfo'>No properties available.</div>;
+      }
+
+      return super.render();
    }
 
    protected override async closeModel(uri: string): Promise<void> {
