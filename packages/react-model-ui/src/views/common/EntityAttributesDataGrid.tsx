@@ -49,6 +49,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<EntityAttributeRow[]>([]);
+   const identifiersRef = React.useRef(entity?.identifiers);
 
    // Process diagnostics into validation errors
    React.useEffect(() => {
@@ -134,34 +135,28 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleAttributeDelete = React.useCallback(
       (attribute: EntityAttributeRow): void => {
-         // First check if this attribute is part of any identifier
-         const identifierWithAttribute = entity.identifiers?.find(identifier =>
-            identifier.attributes.some(attr => (typeof attr === 'string' ? attr === attribute.id : attr.id === attribute.id))
-         );
-
-         // If it is part of an identifier, handle the removal
-         if (identifierWithAttribute) {
-            const remainingAttributes = identifierWithAttribute.attributes.filter(attr =>
-               typeof attr === 'string' ? attr !== attribute.id : attr.id !== attribute.id
-            );
-
-            if (remainingAttributes.length === 0) {
-               // If no attributes left, remove the identifier
-               dispatch({
-                  type: 'entity:identifier:delete-identifier',
-                  identifierIdx: entity.identifiers.indexOf(identifierWithAttribute)
-               });
-            } else {
-               // Otherwise update the identifier with remaining attributes
-               dispatch({
-                  type: 'entity:identifier:update',
-                  identifierIdx: entity.identifiers.indexOf(identifierWithAttribute),
-                  identifier: {
-                     ...identifierWithAttribute,
-                     attributes: remainingAttributes
-                  }
-               });
-            }
+         // Get the current state of identifiers
+         const currentIdentifiers = identifiersRef.current;
+         // Update all identifiers that reference this attribute first
+         if (currentIdentifiers?.length > 0) {
+            // Create updates for all identifiers in parallel
+            currentIdentifiers.forEach((identifier, idx) => {
+               if (
+                  identifier?.attributes?.some((attr: any) => (typeof attr === 'string' ? attr === attribute.id : attr.id === attribute.id))
+               ) {
+                  // Update each identifier to remove the attribute reference
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: idx,
+                     identifier: {
+                        ...identifier,
+                        attributes: identifier.attributes.filter((attr: any) =>
+                           typeof attr === 'string' ? attr !== attribute.id : attr.id !== attribute.id
+                        )
+                     }
+                  });
+               }
+            });
          }
 
          // Then delete the attribute
@@ -170,8 +165,13 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             attributeIdx: attribute.idx
          });
       },
-      [dispatch, entity.identifiers]
+      [dispatch, identifiersRef]
    );
+
+   // Keep identifiersRef updated with the latest identifiers
+   React.useEffect(() => {
+      identifiersRef.current = entity?.identifiers;
+   }, [entity?.identifiers]);
 
    // Update grid data when attributes change, preserving any uncommitted rows
    React.useEffect(() => {

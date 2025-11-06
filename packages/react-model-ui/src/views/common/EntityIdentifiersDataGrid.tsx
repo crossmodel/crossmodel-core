@@ -71,9 +71,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       if (!rowData.name) {
          errors.name = 'Invalid Name';
       }
-      if (!rowData.attributeIds || rowData.attributeIds.length === 0) {
-         errors.attributeIds = 'At least one attribute is required';
-      }
       return errors;
    }, []);
 
