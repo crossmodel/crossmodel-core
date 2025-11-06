@@ -83,6 +83,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
    // eslint-disable-next-line no-null/no-null
+   const lastInteractedCellRef = React.useRef<HTMLElement | null>(null);
+   // eslint-disable-next-line no-null/no-null
    const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
 
    const initFilters = (): DataTableFilterMeta => {
@@ -181,22 +183,46 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const header = renderHeader();
 
    React.useEffect(() => {
-      if (tableRef.current && editingRows && Object.keys(editingRows).length > 0) {
-         const editingRowKey = Object.keys(editingRows)[0];
-         const editingRowIndex = data.findIndex(row => row[keyField] === editingRowKey);
-         if (editingRowIndex !== -1) {
-            setTimeout(() => {
-               const tableElement = tableRef.current?.getElement();
-               const editingCell = tableElement?.querySelector('.p-cell-editing');
-               if (editingCell) {
-                  const input = editingCell.querySelector('input, .p-dropdown, .p-autocomplete-input');
-                  if (input) {
-                     (input as HTMLElement).focus();
-                  }
-               }
-            }, 100);
-         }
+      if (!tableRef.current || !editingRows || Object.keys(editingRows).length === 0) {
+         // eslint-disable-next-line no-null/no-null
+         lastInteractedCellRef.current = null;
+         return;
       }
+
+      const editingRowKey = Object.keys(editingRows)[0];
+      const editingRowIndex = data.findIndex(row => row[keyField] === editingRowKey);
+      if (editingRowIndex === -1) {
+         // eslint-disable-next-line no-null/no-null
+         lastInteractedCellRef.current = null;
+         return;
+      }
+
+      const timer = window.setTimeout(() => {
+         const tableElement = tableRef.current?.getElement();
+         if (!tableElement) {
+            return;
+         }
+
+         const editingCell = lastInteractedCellRef.current ?? (tableElement.querySelector('.p-cell-editing') as HTMLElement | null);
+
+         if (editingCell) {
+            const focusTarget = editingCell.querySelector<HTMLElement>(
+               'input, textarea, select, .p-dropdown, .p-multiselect, .p-autocomplete-input'
+            );
+
+            if (focusTarget) {
+               focusTarget.focus();
+               if (focusTarget instanceof HTMLInputElement || focusTarget instanceof HTMLTextAreaElement) {
+                  focusTarget.select?.();
+               }
+            }
+         }
+
+         // eslint-disable-next-line no-null/no-null
+         lastInteractedCellRef.current = null;
+      }, 100);
+
+      return () => window.clearTimeout(timer);
    }, [editingRows, data, keyField]);
 
    const onRowEditComplete = (e: DataTableRowEditCompleteEvent): void => {
@@ -214,6 +240,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       if (target.closest('button, a, input, select, textarea')) {
          return;
       }
+
+      const cellElement = target.closest('td');
+      // eslint-disable-next-line no-null/no-null
+      lastInteractedCellRef.current = cellElement instanceof HTMLElement ? cellElement : null;
 
       if (editable && !readonly && onRowEditChange) {
          const rowData = e.data as T;

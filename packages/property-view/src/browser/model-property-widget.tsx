@@ -45,6 +45,8 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
          if (this.document?.uri.toString() !== renderData?.uri || !deepEqual(this.renderData, renderData)) {
             this.renderData = renderData;
             this.setModel(renderData?.uri);
+         } else if (renderData?.renderProps?.focusField) {
+            this.focusField(renderData.renderProps.focusField as string);
          }
 
          if (renderData && selection) {
@@ -87,5 +89,18 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    protected override focusInput(): void {
       // do nothing, we properties are based on selection so we do not want to steal focus
+      const fieldName = this.renderData?.renderProps?.focusField as string | undefined;
+      if (fieldName) {
+         this.focusField(fieldName);
+      }
+   }
+
+   protected focusField(fieldName: string): void {
+      setTimeout(() => {
+         const input = this.node.querySelector(`#${fieldName}`) as HTMLInputElement | HTMLTextAreaElement;
+         if (input) {
+            input.focus();
+         }
+      }, 50);
    }
 }
