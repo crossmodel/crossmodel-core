@@ -63,10 +63,7 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
       const logicalEntity = await this.diagram.graph.getNodeByLabel(logicalEntityLabel, LogicalEntity);
       await logicalEntity.select();
       const view = new EntityPropertiesView(this.app);
-      if (!(await view.isTabVisible())) {
-         await this.page.keyboard.press('Alt+Shift+P');
-      }
-      await view.activate();
+      await view.open();
       return view;
    }
 
