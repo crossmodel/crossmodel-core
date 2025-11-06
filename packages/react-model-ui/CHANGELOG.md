@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.9](https://github.com/crossmodel/crossmodel-core/compare/v0.10.8...v0.10.9) (2025-11-06)
+
+
+### Bug Fixes
+
+* improve focus management in property view ([#209](https://github.com/crossmodel/crossmodel-core/issues/209)) ([9c0f418](https://github.com/crossmodel/crossmodel-core/commit/9c0f4185b49393b34df1b753d0ff469c85b9cb65))
+
+
+
+
+
 ## [0.10.8](https://github.com/crossmodel/crossmodel-core/compare/v0.10.7...v0.10.8) (2025-11-06)
 
 **Note:** Version bump only for package @crossmodel/react-model-ui
