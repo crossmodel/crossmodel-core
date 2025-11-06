@@ -10,7 +10,6 @@ import { CrossModelWidget } from '@crossmodel/core/lib/browser';
 import { RenderProps } from '@crossmodel/protocol';
 import { GLSPDiagramWidget, GlspSelection, getDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import * as React from '@theia/core/shared/react';
 import * as deepEqual from 'fast-deep-equal';
 import { PropertiesRenderData } from './model-data-service';
 
