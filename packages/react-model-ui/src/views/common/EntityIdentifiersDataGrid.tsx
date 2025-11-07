@@ -43,7 +43,6 @@ function convertRowToIdentifier(row: EntityIdentifierRow): LogicalIdentifier {
       attributes: row.attributeIds as any,
       description: row.description,
       $type: 'LogicalIdentifier',
-      customProperties: [],
       $globalId: row.id
    };
 }
@@ -74,19 +73,19 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       return errors;
    }, []);
 
-   const defaultEntry = React.useMemo<EntityIdentifierRow>(
-      () => ({
+   const defaultEntry = React.useMemo<EntityIdentifierRow>(() => {
+      const isPrimary = !entity.identifiers || entity.identifiers.length === 0;
+      return {
          idx: -1,
-         id: `ID_${Date.now()}`,
-         name: 'New Identifier',
-         primary: !entity.identifiers || entity.identifiers.length === 0,
+         id: '',
+         name: isPrimary ? 'Primary Identifier' : '',
+         primary: isPrimary,
          attributeIds: [],
          description: '',
          $type: 'LogicalIdentifier',
          $globalId: 'toBeAssigned'
-      }),
-      [entity.identifiers]
-   );
+      };
+   }, [entity.identifiers]);
 
    // Map entity data to grid data with proper updates
    const mapToGridData = React.useCallback(() => {
@@ -230,10 +229,21 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                return;
             }
 
-            // Generate unique ID using the same pattern as attributes grid
-            const newId = findNextUnique(toId(identifier.name || ''), entity.identifiers || [], id => id.id || '');
+            // For primary identifier without a name, use 'Primary Identifier'
+            const identifierName = identifier.primary && !identifier.name ? 'Primary Identifier' : identifier.name;
 
-            // If this will be primary, first unset any existing primary identifier and its attributes
+            // Generate unique ID using the same pattern as attributes grid, without ID_ prefix
+            const newId = findNextUnique(toId(identifierName || ''), entity.identifiers || [], id => id.id || '');
+
+            // Create the final identifier without temporary fields
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { _uncommitted: _, ...identifierData } = identifier;
+            const finalIdentifier = {
+               ...convertRowToIdentifier(identifierData),
+               id: newId,
+               name: identifierName || '',
+               $globalId: `${entity.id}.${newId}`
+            }; // If this will be primary, first unset any existing primary identifier and its attributes
             if (identifier.primary) {
                const currentPrimary = entity.identifiers?.find(i => i.primary);
                if (currentPrimary) {
@@ -264,14 +274,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                }
             }
 
-            // Create new identifier with unique ID
-            const newIdentifier = {
-               ...convertRowToIdentifier(identifier),
-               id: newId,
-               primary: identifier.primary,
-               $globalId: `${entity.id}.${newId}`
-            };
-
             // Set the identifier status on all selected attributes
             identifier.attributeIds.forEach(attrId => {
                const attrIdx = entity.attributes.findIndex(attr => attr.id === attrId);
@@ -290,7 +292,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             // Add the new identifier
             dispatch({
                type: 'entity:identifier:add-identifier',
-               identifier: newIdentifier
+               identifier: finalIdentifier
             });
          } else {
             // For existing rows

@@ -291,16 +291,16 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                });
             } else {
                // Create new primary identifier
+               const identifierId = findNextUnique(toId('Primary Identifier'), entity.identifiers || [], id => id.id || '');
                dispatch({
                   type: 'entity:identifier:add-identifier',
                   identifier: {
-                     id: `ID_${attributeId}`,
-                     name: `Identifier ${attributeName}`,
+                     id: identifierId,
+                     name: 'Primary Identifier',
                      primary: true,
                      attributes: [attributeId] as any,
                      $type: 'LogicalIdentifier',
-                     customProperties: [],
-                     $globalId: `${entity.id}.${attributeId}`
+                     $globalId: `${entity.id}.${identifierId}`
                   }
                });
             }
@@ -430,16 +430,16 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      });
                   } else {
                      // Create new primary identifier
+                     const identifierId = findNextUnique(toId('Primary Identifier'), entity.identifiers || [], id => id.id || '');
                      dispatch({
                         type: 'entity:identifier:add-identifier',
                         identifier: {
-                           id: `ID_${oldAttribute.id}`,
-                           name: `Identifier ${oldAttribute.name}`,
+                           id: identifierId,
+                           name: 'Primary Identifier',
                            primary: true,
                            attributes: [oldAttribute.id] as any,
                            $type: 'LogicalIdentifier',
-                           customProperties: [],
-                           $globalId: `${entity.id}.${oldAttribute.id}`
+                           $globalId: `${entity.id}.${identifierId}`
                         }
                      });
                   }
