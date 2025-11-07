@@ -57,7 +57,6 @@ export type CrossModelKeywordNames =
     | "from"
     | "height"
     | "id"
-    | "identifier"
     | "identifiers"
     | "inherits"
     | "inner-join"
@@ -394,7 +393,6 @@ export function isDataModel(item: unknown): item is DataModel {
 
 export interface LogicalAttribute extends DataElement, WithCustomProperties {
     readonly $type: 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
-    identifier: boolean;
     length?: number;
     precision?: number;
     scale?: number;
@@ -965,7 +963,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'datatype' },
                         { name: 'description' },
                         { name: 'id' },
-                        { name: 'identifier', defaultValue: false },
                         { name: 'length' },
                         { name: 'name' },
                         { name: 'precision' },
@@ -1133,7 +1130,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'datatype' },
                         { name: 'description' },
                         { name: 'id' },
-                        { name: 'identifier', defaultValue: false },
                         { name: 'length' },
                         { name: 'name' },
                         { name: 'precision' },
@@ -1149,7 +1145,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'datatype' },
                         { name: 'description' },
                         { name: 'id' },
-                        { name: 'identifier', defaultValue: false },
                         { name: 'length' },
                         { name: 'name' },
                         { name: 'precision' },
@@ -1165,7 +1160,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'datatype' },
                         { name: 'description' },
                         { name: 'id' },
-                        { name: 'identifier', defaultValue: false },
                         { name: 'length' },
                         { name: 'name' },
                         { name: 'precision' },

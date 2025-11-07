@@ -1182,38 +1182,6 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
             "cardinality": "?"
           },
           {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Assignment",
-                "feature": "identifier",
-                "operator": "?=",
-                "terminal": {
-                  "$type": "Keyword",
-                  "value": "identifier"
-                }
-              },
-              {
-                "$type": "Keyword",
-                "value": ":"
-              },
-              {
-                "$type": "Alternatives",
-                "elements": [
-                  {
-                    "$type": "Keyword",
-                    "value": "TRUE"
-                  },
-                  {
-                    "$type": "Keyword",
-                    "value": "true"
-                  }
-                ]
-              }
-            ],
-            "cardinality": "?"
-          },
-          {
             "$type": "RuleCall",
             "rule": {
               "$ref": "#/rules@18"
@@ -3502,15 +3470,6 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
           "type": {
             "$type": "SimpleType",
             "primitiveType": "number"
-          }
-        },
-        {
-          "$type": "TypeAttribute",
-          "name": "identifier",
-          "isOptional": true,
-          "type": {
-            "$type": "SimpleType",
-            "primitiveType": "boolean"
           }
         }
       ]
