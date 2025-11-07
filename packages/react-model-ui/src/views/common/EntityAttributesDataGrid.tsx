@@ -6,7 +6,7 @@ import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import * as React from 'react';
-import { useDiagnostics, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
@@ -43,7 +43,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const entity = useEntity();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
+   const diagnostics = useDiagnosticsManager();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<EntityAttributeRow[]>([]);
@@ -51,32 +51,34 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    // Process diagnostics into validation errors
    React.useEffect(() => {
       const errors: Record<string, string> = {};
+      console.log('Processing diagnostics for grid data:', gridData);
 
-      // Process server-side diagnostics
-      rawDiagnostics.forEach(diagnostic => {
-         entity?.attributes?.forEach((attr, idx) => {
-            const rowId = (attr as EntityAttributeRow).id || `attr${idx}`;
+      // Process each row's diagnostics
+      gridData.forEach(row => {
+         // Build the path using protocol constants
+         const basePath = ['entity', 'attributes'];
 
-            // Check for attribute-specific errors
-            if (diagnostic.code?.toString().includes(`attributes[${idx}]`)) {
-               if (diagnostic.message.includes('name')) {
-                  errors[`${rowId}.name`] = diagnostic.message;
-               } else if (diagnostic.message.includes('datatype')) {
-                  errors[`${rowId}.datatype`] = diagnostic.message;
-               }
+         // Check row-level diagnostics
+         const rowInfo = diagnostics.info(basePath, undefined, row.idx);
+         if (!rowInfo.empty) {
+            errors[row.id] = rowInfo.text() || '';
+            console.log('Found row diagnostics:', { id: row.id, info: rowInfo });
+         }
+
+         // Check field-level diagnostics
+         ['name', 'datatype', 'description'].forEach(field => {
+            const fieldInfo = diagnostics.info(basePath, field, row.idx);
+            if (!fieldInfo.empty) {
+               errors[`${row.id}.${field}`] = fieldInfo.text() || '';
+               console.log('Found field diagnostics:', { id: row.id, field, info: fieldInfo });
             }
          });
       });
 
-      // Add client-side validation for empty names
-      gridData.forEach(row => {
-         if (!row.name?.trim()) {
-            errors[`${row.id}.name`] = 'Name is required';
-         }
-      });
+      console.log('Setting validation errors:', errors);
 
       setValidationErrors(errors);
-   }, [entity?.attributes, rawDiagnostics, gridData]);
+   }, [entity?.attributes, diagnostics, gridData]);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({

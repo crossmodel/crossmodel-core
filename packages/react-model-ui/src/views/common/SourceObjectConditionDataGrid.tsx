@@ -24,7 +24,7 @@ import {
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
-import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
@@ -226,7 +226,7 @@ export interface SourceObjectConditionDataGridProps {
 export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: SourceObjectConditionDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
+   const diagnostics = useDiagnosticsManager();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<SourceObjectConditionRow[]>([]);
@@ -268,41 +268,44 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
    // Process diagnostics into validation errors
    React.useEffect(() => {
       const errors: Record<string, string> = {};
+      console.log('Processing diagnostics for source object conditions:', sourceObject?.conditions);
 
-      try {
-         sourceObject?.conditions?.forEach((condition, idx) => {
-            const rowId = idx.toString();
+      sourceObject?.conditions?.forEach((condition, idx) => {
+         const rowId = idx.toString();
+         const basePath = ['mapping', 'sources', sourceObjectIdx.toString(), 'conditions', idx.toString()];
 
-            // Client-side validation for empty required fields
-            if (!condition.expression.left?.value?.toString().trim()) {
-               errors[`${rowId}.left`] = 'Left expression is required';
-            }
-            if (!condition.expression.op) {
-               errors[`${rowId}.operator`] = 'Operator is required';
-            }
-            if (!condition.expression.right?.value?.toString().trim()) {
-               errors[`${rowId}.right`] = 'Right expression is required';
-            }
+         // Check row-level diagnostics
+         const rowInfo = diagnostics.info(basePath, undefined);
+         if (!rowInfo.empty) {
+            errors[rowId] = rowInfo.text() || '';
+            console.log('Found row diagnostics:', { id: rowId, info: rowInfo });
+         }
 
-            // Server-side validation from diagnostics
-            rawDiagnostics.forEach(diagnostic => {
-               if (diagnostic.code?.toString().includes(`conditions[${idx}]`)) {
-                  if (diagnostic.message.includes('left')) {
-                     errors[`${rowId}.left`] = diagnostic.message;
-                  } else if (diagnostic.message.includes('right')) {
-                     errors[`${rowId}.right`] = diagnostic.message;
-                  } else if (diagnostic.message.includes('operator')) {
-                     errors[`${rowId}.operator`] = diagnostic.message;
-                  }
-               }
-            });
+         // Check field-level diagnostics
+         ['expression.left', 'expression.op', 'expression.right'].forEach(field => {
+            const fieldInfo = diagnostics.info(basePath, field);
+            if (!fieldInfo.empty) {
+               const errorField = field.includes('left') ? 'left' : field.includes('right') ? 'right' : 'operator';
+               errors[`${rowId}.${errorField}`] = fieldInfo.text() || '';
+               console.log('Found field diagnostics:', { id: rowId, field: errorField, info: fieldInfo });
+            }
          });
 
-         setValidationErrors(errors);
-      } catch (e) {
-         console.error('Error processing diagnostics:', e);
-      }
-   }, [sourceObject?.conditions, rawDiagnostics]);
+         // Client-side validation for empty required fields
+         if (!condition.expression.left?.value?.toString().trim() && !errors[`${rowId}.left`]) {
+            errors[`${rowId}.left`] = 'Left expression is required';
+         }
+         if (!condition.expression.op && !errors[`${rowId}.operator`]) {
+            errors[`${rowId}.operator`] = 'Operator is required';
+         }
+         if (!condition.expression.right?.value?.toString().trim() && !errors[`${rowId}.right`]) {
+            errors[`${rowId}.right`] = 'Right expression is required';
+         }
+      });
+
+      console.log('Setting validation errors:', errors);
+      setValidationErrors(errors);
+   }, [sourceObject?.conditions, diagnostics, sourceObjectIdx]);
 
    const defaultEntry = React.useMemo<SourceObjectConditionRow>(
       () => ({

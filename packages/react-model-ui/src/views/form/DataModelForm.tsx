@@ -161,10 +161,10 @@ export function DataModelForm(): React.ReactElement {
       return <div>No data model found</div>;
    }
 
-   const nameDiagnostics = diagnostics.info(['dataModel'], 'name');
-   const descriptionDiagnostics = diagnostics.info(['dataModel'], 'description');
-   const typeDiagnostics = diagnostics.info(['dataModel'], 'type');
-   const versionDiagnostics = diagnostics.info(['dataModel'], 'version');
+   const nameDiagnostics = diagnostics.info('datamodel', 'name');
+   const descriptionDiagnostics = diagnostics.info('datamodel', 'description');
+   const typeDiagnostics = diagnostics.info('datamodel', 'type');
+   const versionDiagnostics = diagnostics.info('datamodel', 'version');
 
    return (
       <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.DataModel.ICON_CLASS}>

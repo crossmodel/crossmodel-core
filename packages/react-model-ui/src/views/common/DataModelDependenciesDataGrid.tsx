@@ -5,7 +5,7 @@ import { CrossReferenceContext, DataModelDependency, DataModelDependencyType } f
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDataModel, useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
@@ -152,7 +152,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    const dataModel = useDataModel();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
+   const diagnostics = useDiagnosticsManager();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<DataModelDependencyRow[]>([]);
@@ -174,68 +174,36 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       });
    }, [dataModel.dependencies, editingRows]);
 
-   // Update validation errors whenever diagnostics change
+   // Process diagnostics into validation errors
    React.useEffect(() => {
       const errors: Record<string, string> = {};
+      console.log('Processing diagnostics for dependencies:', gridData);
 
-      try {
-         // Process raw diagnostics to find reference errors
-         dataModel?.dependencies?.forEach((dep, idx) => {
-            const rowId = (dep as DataModelDependencyRow).id || `dep${idx}`;
+      // Process each row's diagnostics
+      gridData.forEach(row => {
+         // Build the path for dependency validation
+         const basePath = ['datamodel', 'dependencies'];
 
-            // Look for diagnostics related to this dependency
-            rawDiagnostics.forEach(diagnostic => {
-               // Check if this diagnostic is about a DataModel reference and belongs to this dependency
-               if (
-                  diagnostic.message.includes('Could not resolve reference') &&
-                  (diagnostic.code?.toString().includes(`dependencies.${idx}`) ||
-                     diagnostic.code?.toString().includes(`dependencies[${idx}]`) ||
-                     (dep.datamodel && diagnostic.message.includes(dep.datamodel)))
-               ) {
-                  errors[`${rowId}.datamodel`] = diagnostic.message;
-               }
-            });
-         });
-
-         // Set validation errors if any were found
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
+         // Check row-level diagnostics
+         const rowInfo = diagnostics.info(basePath, undefined, row.idx);
+         if (!rowInfo.empty) {
+            errors[row.id] = rowInfo.text() || '';
+            console.log('Found row diagnostics:', { id: row.id, info: rowInfo });
          }
-      } catch (e) {
-         console.error('Error processing diagnostics:', e);
-      }
 
-      // Process raw diagnostics looking for model errors
-      rawDiagnostics.forEach(diagnostic => {
-         // Try to find which dependency this error belongs to
-         dataModel?.dependencies?.forEach((dep, idx) => {
-            const rowId = `dep${idx}`; // Use consistent ID format
-            const isErrorForThisDependency =
-               diagnostic.code === `dependencies.${idx}` ||
-               diagnostic.code === `dependencies[${idx}]` ||
-               diagnostic.code === `dependencies.${idx}.datamodel` ||
-               (dep.datamodel && diagnostic.message.includes(`named '${dep.datamodel}'`)) ||
-               (diagnostic.message.includes('Could not resolve reference') && diagnostic.message.includes(`'${dep.datamodel}'`));
-
-            if (isErrorForThisDependency) {
-               // Use the complete message from the language server
-               errors[`${rowId}.datamodel`] = diagnostic.message;
+         // Check field-level diagnostics
+         ['datamodel', 'version'].forEach(field => {
+            const fieldInfo = diagnostics.info(basePath, field, row.idx);
+            if (!fieldInfo.empty) {
+               errors[`${row.id}.${field}`] = fieldInfo.text() || '';
+               console.log('Found field diagnostics:', { id: row.id, field, info: fieldInfo });
             }
          });
       });
 
-      // Show validation for all rows, including newly added ones
-      dataModel?.dependencies?.forEach((dep, idx) => {
-         const rowId = `dep${idx}`;
-
-         // Always validate if the datamodel is empty or invalid
-         if (!dep.datamodel?.trim() && !errors[`${rowId}.datamodel`]) {
-            errors[`${rowId}.datamodel`] = 'Data Model reference is required';
-         }
-      });
-
+      console.log('Setting validation errors:', errors);
       setValidationErrors(errors);
-   }, [dataModel?.dependencies, rawDiagnostics, editingRows]);
+   }, [dataModel?.dependencies, diagnostics, gridData, editingRows]);
 
    // Removed validateField as we now rely on language server validation
 

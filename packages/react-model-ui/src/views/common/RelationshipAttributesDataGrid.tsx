@@ -1,33 +1,29 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { CrossReferenceContext, ModelDiagnostic, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
+import { CrossReferenceContext, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
+import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
-function getDiagnosticKey(row: { idx: number }, field: string): string {
-   return `attributes[${row.idx}].${field}`;
-}
-
 export interface AttributePropertyProps {
    field: string;
    row: { idx: number };
-   diagnostics: Record<string, ModelDiagnostic[] | undefined>;
    value: string;
 }
 
-export function AttributeProperty({ field, row, diagnostics, value }: AttributePropertyProps): React.ReactNode {
-   const diagnosticKey = getDiagnosticKey(row, field);
-   const relevantDiagnostics = diagnostics[diagnosticKey];
-   const errorMessage = relevantDiagnostics?.[0]?.message;
+export function AttributeProperty({ field, row, value }: AttributePropertyProps): React.ReactNode {
+   const diagnostics = useDiagnosticsManager();
+   const basePath = ['relationship', 'attributes'];
+   const info = diagnostics.info(basePath, field, row.idx);
+   const errorMessage = info.empty ? undefined : info.text();
 
    return (
-      <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage || undefined}>
+      <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage}>
          {value}
          {errorMessage && <p className='p-error block'>{errorMessage}</p>}
       </div>
@@ -52,39 +48,21 @@ interface RelationshipAttributeEditorProps {
 function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): React.ReactElement {
    const { options, isParent } = props;
    const { editorCallback } = options;
-   const rawDiagnostics = useDiagnostics();
-   const [processedDiagnostics, setProcessedDiagnostics] = React.useState<Record<string, ModelDiagnostic[]>>({});
-   const diagnosticKey = getDiagnosticKey(options.rowData, isParent ? 'parent' : 'child');
+   const diagnostics = useDiagnosticsManager();
+   const [errorMessage, setErrorMessage] = React.useState<string>('');
+   const field = isParent ? 'parent' : 'child';
 
    React.useEffect(() => {
-      // Process diagnostics
-      const diagnostics: Record<string, ModelDiagnostic[]> = {};
-      rawDiagnostics.forEach(diagnostic => {
-         // Handle reference resolution errors
-         if (diagnostic.message.includes('Could not resolve reference')) {
-            const value = isParent ? options.rowData.parent : options.rowData.child;
-            if (value === '_' || diagnostic.message.includes(value || '')) {
-               diagnostics[diagnosticKey] = [diagnostic];
-            }
-         }
+      // Check for field-level diagnostics
+      const basePath = ['relationship', 'attributes'];
+      const fieldInfo = diagnostics.info(basePath, field, options.rowData.idx);
 
-         // Handle malformed attributes errors
-         const diagnosticCode = String(diagnostic.code);
-         if (diagnosticCode.startsWith('malformed-attributes')) {
-            const match = diagnosticCode.match(/malformed-attributes\[(\d+)\]\.(\w+)/);
-            if (match) {
-               const [, diagnosticIdx, field] = match;
-               if (
-                  parseInt(diagnosticIdx, 10) === options.rowData.idx &&
-                  ((isParent && field === 'parent') || (!isParent && field === 'child'))
-               ) {
-                  diagnostics[diagnosticKey] = [diagnostic];
-               }
-            }
-         }
-      });
-      setProcessedDiagnostics(diagnostics);
-   }, [rawDiagnostics, diagnosticKey, isParent, options.rowData]);
+      if (!fieldInfo.empty) {
+         setErrorMessage(fieldInfo.text() || '');
+      } else {
+         setErrorMessage('');
+      }
+   }, [diagnostics, field, options.rowData.idx]);
 
    const [currentValue, setCurrentValue] = React.useState(options.value || '');
    const [suggestions, setSuggestions] = React.useState<string[]>([]);
@@ -176,9 +154,6 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
       };
    }, []);
 
-   const fieldDiagnostics = processedDiagnostics[diagnosticKey];
-   const errorMessage = fieldDiagnostics?.[0]?.message;
-
    return (
       <div className='grid-editor-container'>
          <div className={`p-field ${errorMessage ? 'p-error' : ''}`}>
@@ -188,7 +163,7 @@ function RelationshipAttributeEditor(props: RelationshipAttributeEditorProps): R
                suggestions={suggestions}
                completeMethod={search}
                dropdown
-               className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''} ${fieldDiagnostics ? 'p-invalid' : ''}`}
+               className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''} ${errorMessage ? 'p-invalid' : ''}`}
                onDropdownClick={handleDropdownClick}
                onChange={e => setCurrentValue(e.value)}
                onSelect={onSelect}
@@ -208,52 +183,40 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    const relationship = useRelationship();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
-   const [processedDiagnostics, setProcessedDiagnostics] = React.useState<Record<string, ModelDiagnostic[]>>({});
-
-   // Process raw diagnostics into field-specific diagnostics
-   React.useEffect(() => {
-      try {
-         const diagnostics: Record<string, ModelDiagnostic[]> = {};
-
-         // Process each attribute's diagnostics
-         relationship?.attributes?.forEach((attr, idx) => {
-            rawDiagnostics.forEach(diagnostic => {
-               // Handle reference resolution errors
-               if (diagnostic.message.includes('Could not resolve reference')) {
-                  if (attr.parent === '_' || diagnostic.message.includes(attr.parent || '')) {
-                     const key = `attributes[${idx}].parent`;
-                     diagnostics[key] = [diagnostic];
-                  }
-                  if (attr.child === '_' || diagnostic.message.includes(attr.child || '')) {
-                     const key = `attributes[${idx}].child`;
-                     diagnostics[key] = [diagnostic];
-                  }
-               }
-
-               // Handle malformed attributes errors
-               const diagnosticCode = String(diagnostic.code);
-               if (diagnosticCode.startsWith('malformed-attributes')) {
-                  // Extract index and field from the diagnostic code
-                  const match = diagnosticCode.match(/malformed-attributes\[(\d+)\]\.(\w+)/);
-                  if (match) {
-                     const [, diagnosticIdx, field] = match;
-                     if (parseInt(diagnosticIdx, 10) === idx) {
-                        const key = `attributes[${idx}].${field}`;
-                        diagnostics[key] = [diagnostic];
-                     }
-                  }
-               }
-            });
-         });
-
-         setProcessedDiagnostics(diagnostics);
-      } catch (e) {
-         console.error('Error processing diagnostics:', e);
-      }
-   }, [rawDiagnostics, relationship?.attributes]);
-   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
+   const diagnostics = useDiagnosticsManager();
    const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+   // Process diagnostics into validation errors
+   React.useEffect(() => {
+      const errors: Record<string, string> = {};
+      console.log('Processing diagnostics for relationship attributes:', relationship?.attributes);
+
+      // Process each attribute's diagnostics
+      relationship?.attributes?.forEach((attr, idx) => {
+         // Build the path for relationship validation
+         const basePath = ['relationship', 'attributes'];
+
+         // Check attribute-level diagnostics
+         const rowInfo = diagnostics.info(basePath, undefined, idx);
+         if (!rowInfo.empty) {
+            errors[`attr${idx}`] = rowInfo.text() || '';
+            console.log('Found attribute diagnostics:', { idx, info: rowInfo });
+         }
+
+         // Check field-level diagnostics for both parent and child
+         ['parent', 'child'].forEach(field => {
+            const fieldInfo = diagnostics.info(basePath, field, idx);
+            if (!fieldInfo.empty) {
+               errors[`attributes[${idx}].${field}`] = fieldInfo.text() || '';
+               console.log('Found field diagnostics:', { idx, field, info: fieldInfo });
+            }
+         });
+      });
+
+      console.log('Setting validation errors:', errors);
+      setValidationErrors(errors);
+   }, [relationship?.attributes, diagnostics]);
+   const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<RelationshipAttributeRow[]>([]);
 
    // Update grid data when attributes change, preserving any uncommitted rows
@@ -399,7 +362,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             showFilterMatchModes: false,
             body: (rowData: RelationshipAttributeRow) => (
                <div className='grid-cell-wrapper'>
-                  <AttributeProperty field='parent' row={rowData} diagnostics={processedDiagnostics} value={rowData.parent || ''} />
+                  <AttributeProperty field='parent' row={rowData} value={rowData.parent || ''} />
                </div>
             )
          },
@@ -416,12 +379,12 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             showFilterMatchModes: false,
             body: (rowData: RelationshipAttributeRow) => (
                <div className='grid-cell-wrapper'>
-                  <AttributeProperty field='child' row={rowData} diagnostics={processedDiagnostics} value={rowData.child || ''} />
+                  <AttributeProperty field='child' row={rowData} value={rowData.child || ''} />
                </div>
             )
          }
       ],
-      [parentOptions, childOptions, processedDiagnostics]
+      [parentOptions, childOptions]
    );
 
    if (!relationship) {
