@@ -97,13 +97,9 @@ export class LogicalIdentifier extends TheiaPageObject {
    async save(): Promise<void> {
       const inputLocator = this.nameLocator.locator('input');
       const name = await this.getName();
-      const attributes = await this.getAttributes();
 
       if (!name) {
          throw new Error('Cannot save identifier without a name');
-      }
-      if (!attributes || attributes.length === 0) {
-         throw new Error('Cannot save identifier without selecting attributes');
       }
 
       // Only proceed if we're in edit mode

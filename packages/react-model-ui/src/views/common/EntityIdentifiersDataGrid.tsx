@@ -74,18 +74,17 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    }, []);
 
    const defaultEntry = React.useMemo<EntityIdentifierRow>(() => {
-      const isPrimary = !entity.identifiers || entity.identifiers.length === 0;
       return {
          idx: -1,
          id: '',
-         name: isPrimary ? 'Primary Identifier' : '',
-         primary: isPrimary,
+         name: '',
+         primary: false,
          attributeIds: [],
          description: '',
          $type: 'LogicalIdentifier',
          $globalId: 'toBeAssigned'
       };
-   }, [entity.identifiers]);
+   }, []);
 
    // Map entity data to grid data with proper updates
    const mapToGridData = React.useCallback(() => {

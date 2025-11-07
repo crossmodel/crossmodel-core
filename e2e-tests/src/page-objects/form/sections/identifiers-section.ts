@@ -48,15 +48,13 @@ export class LogicalEntityIdentifiersSection extends FormSection {
          throw new Error('Identifier name is required to save the row');
       }
 
-      if (!attributeIds || attributeIds.length === 0) {
-         throw new Error('At least one attribute must be selected for the identifier');
-      }
-
       // First set the name without saving
       await identifier.setName(name);
 
       // Set the attributes in the UI
-      await identifier.setAttributes(attributeIds);
+      if (attributeIds.length > 0) {
+         await identifier.setAttributes(attributeIds);
+      }
 
       // Set primary if needed
       if (primary) {
