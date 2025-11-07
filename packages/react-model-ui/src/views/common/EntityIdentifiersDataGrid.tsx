@@ -73,8 +73,9 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       return errors;
    }, []);
 
-   const defaultEntry = React.useMemo<EntityIdentifierRow>(
-      () => ({
+   const defaultEntry = React.useMemo<EntityIdentifierRow>(() => {
+      const isPrimary = !entity.identifiers || entity.identifiers.length === 0;
+      return {
          idx: -1,
          id: '',
          name: '',
