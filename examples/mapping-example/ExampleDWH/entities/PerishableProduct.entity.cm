@@ -9,7 +9,12 @@ entity:
       - id: ProductID
         name: "ProductID"
         datatype: "Guid"
-        identifier: true
       - id: ExpirationDate
         name: "ExpirationDate"
         datatype: "Text"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - ProductID

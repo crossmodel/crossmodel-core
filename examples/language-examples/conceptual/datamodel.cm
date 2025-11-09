@@ -1,0 +1,5 @@
+datamodel:
+    id: ExampleCRM_CDM
+    name: "ExampleCRM CDM"
+    type: conceptual
+    version: 1.0.0

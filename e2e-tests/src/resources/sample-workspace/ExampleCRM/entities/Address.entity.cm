@@ -6,7 +6,6 @@ entity:
       - id: CustomerID
         name: "CustomerID"
         datatype: "Integer"
-        identifier: true
       - id: Street
         name: "Street"
         datatype: "Text"
@@ -19,6 +18,12 @@ entity:
             value: "CrossBreeze"
           - id: exampleEntityAttribute
             name: "ExampleEntityAttribute"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - CustomerID
     customProperties:
       - id: author
         name: "Author"

@@ -5,7 +5,6 @@ entity:
       - id: Id
         name: "Id"
         datatype: "Integer"
-        identifier: true
       - id: FirstName
         name: "FirstName"
         datatype: "Text"
@@ -24,3 +23,9 @@ entity:
       - id: BirthDate
         name: "BirthDate"
         datatype: "DateTime"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - Id

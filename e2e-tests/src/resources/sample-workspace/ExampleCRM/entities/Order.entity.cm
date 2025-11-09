@@ -6,7 +6,6 @@ entity:
       - id: Id
         name: "Id"
         datatype: "Integer"
-        identifier: true
       - id: OrderDate
         name: "OrderDate"
         datatype: "Integer"
@@ -19,3 +18,9 @@ entity:
       - id: TotalAmount
         name: "TotalAmount"
         datatype: "Decimal"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - Id

@@ -1,0 +1,5 @@
+datamodel:
+    id: ExampleCRM_DPDM
+    name: "ExampleCRM Document PDM"
+    type: document
+    version: 1.0.0
