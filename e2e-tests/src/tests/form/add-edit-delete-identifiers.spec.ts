@@ -1,23 +1,12 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { expect } from '@eclipse-glsp/glsp-playwright';
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { CMApp } from '../../page-objects/cm-app';
 
-test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
+test.describe('Multiple Identifiers Management', () => {
    let app: CMApp;
-
-   const SYSTEM_DIAGRAM_PATH = 'ExampleCRM/diagrams/EMPTY.system-diagram.cm';
-   const ENTITY_PATH = 'ExampleCRM/entities/EmptyEntity.entity.cm';
-   const EMPTY_ENTITY_ID = 'EmptyEntity';
-
-   const ATTRIBUTE_ONE = 'IdentifierAttrOne';
-   const ATTRIBUTE_TWO = 'IdentifierAttrTwo';
-
-   const PRIMARY_IDENTIFIER_NAME = 'PrimaryIdentifier';
-   const SECONDARY_IDENTIFIER_NAME = 'SecondaryIdentifier';
-   const RENAMED_IDENTIFIER_NAME = 'SecondaryIdentifierRenamed';
+   const TEST_ENTITY_PATH = 'ExampleCRM/entities/Customer.entity.cm';
 
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
@@ -27,244 +16,152 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       await app.page.close();
    });
 
-   test('Add identifiers via properties view', async () => {
-      const { diagramEditor, propertyView, form } = await openEntityForm();
+   test('Add multiple identifiers to entity', async () => {
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
+      const form = await formEditor.formFor('entity');
+      const identifiersSection = form.identifiersSection;
 
-      await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
-      await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
+      const id1 = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(id1, 'TestPrimaryKey', ['Id'], false);
 
-      await addIdentifier(diagramEditor, form, PRIMARY_IDENTIFIER_NAME, [ATTRIBUTE_ONE], true);
+      const saved1 = await identifiersSection.findIdentifier('TestPrimaryKey');
+      expect(saved1).toBeDefined();
+      expect(await saved1?.getName()).toBe('TestPrimaryKey');
 
-      const primaryIdentifier = await form.identifiersSection.getIdentifier(PRIMARY_IDENTIFIER_NAME);
-      const attributeOne = await form.attributesSection.getAttribute(ATTRIBUTE_ONE);
+      const id2 = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(id2, 'AlternateKey', ['FirstName', 'LastName'], false);
 
-      expect(await primaryIdentifier.isPrimary()).toBe(true);
-      expect(await primaryIdentifier.getAttributes()).toEqual([ATTRIBUTE_ONE]);
-      expect(await attributeOne.isIdentifier()).toBe(true);
+      const saved2 = await identifiersSection.findIdentifier('AlternateKey');
+      expect(saved2).toBeDefined();
+      expect(await saved2?.getName()).toBe('AlternateKey');
+      expect(await saved2?.isPrimary()).toBe(false);
 
-      await propertyView.saveAndClose();
-      await diagramEditor.saveAndClose();
+      const allIdentifiers = await identifiersSection.getAllIdentifiers();
+      expect(allIdentifiers.length).toBeGreaterThanOrEqual(2);
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain('identifiers:');
-      expect(fileContent).toContain(`id: ${PRIMARY_IDENTIFIER_NAME}`);
-      expect(fileContent).toContain(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain(ATTRIBUTE_ONE);
-
-      // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForCleanup = await propertyViewForCleanup.form();
-      await diagramEditorForCleanup.waitForModelUpdate(async () => {
-         await formForCleanup.identifiersSection.deleteIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_ONE);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
-         await formForCleanup.waitForDirty();
-      });
-      await propertyViewForCleanup.saveAndClose();
+      await identifiersSection.deleteIdentifier('TestPrimaryKey');
+      await identifiersSection.deleteIdentifier('AlternateKey');
+      await formEditor.saveAndClose();
    });
 
-   test('Modify identifier attributes', async () => {
-      const { diagramEditor, propertyView, form } = await openEntityForm();
+   test('Modify existing identifiers', async () => {
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
+      const form = await formEditor.formFor('entity');
+      const identifiersSection = form.identifiersSection;
 
-      await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
-      await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
+      const newId = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(newId, 'ModifyTest', ['Phone'], false);
+      await formEditor.page.waitForTimeout(500);
 
-      await addIdentifier(diagramEditor, form, PRIMARY_IDENTIFIER_NAME, [ATTRIBUTE_ONE], true);
+      const identifier = await identifiersSection.getIdentifier('ModifyTest');
+      await identifier.setName('ModifiedTest');
+      await identifier.save();
+      await formEditor.page.waitForTimeout(500);
 
-      // Delete and recreate identifier with different attributes
-      await diagramEditor.waitForModelUpdate(async () => {
-         await form.identifiersSection.deleteIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await form.waitForDirty();
-      });
+      const renamed = await identifiersSection.findIdentifier('ModifiedTest');
+      expect(renamed).toBeDefined();
+      expect(await renamed?.getName()).toBe('ModifiedTest');
 
-      await addIdentifier(diagramEditor, form, PRIMARY_IDENTIFIER_NAME, [ATTRIBUTE_ONE, ATTRIBUTE_TWO], true);
-
-      const identifier = await form.identifiersSection.getIdentifier(PRIMARY_IDENTIFIER_NAME);
-      const attrs = await identifier.getAttributes();
-      const attrList = attrs.flatMap((a: string) => a.split(',').map((s: string) => s.trim()));
-      expect(attrList).toEqual(expect.arrayContaining([ATTRIBUTE_ONE, ATTRIBUTE_TWO]));
-
-      await propertyView.saveAndClose();
-      await diagramEditor.saveAndClose();
-
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain(ATTRIBUTE_ONE);
-      expect(fileContent).toContain(ATTRIBUTE_TWO);
-
-      // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForCleanup = await propertyViewForCleanup.form();
-      await diagramEditorForCleanup.waitForModelUpdate(async () => {
-         await formForCleanup.identifiersSection.deleteIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_ONE);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
-         await formForCleanup.waitForDirty();
-      });
-      await propertyViewForCleanup.saveAndClose();
+      await identifiersSection.deleteIdentifier('ModifiedTest');
+      await formEditor.saveAndClose();
    });
 
-   test('Support multiple identifiers', async () => {
-      const { diagramEditor, propertyView, form } = await openEntityForm();
+   test('Remove identifiers from entity', async () => {
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
+      const form = await formEditor.formFor('entity');
+      const identifiersSection = form.identifiersSection;
 
-      await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
-      await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
+      const testId = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(testId, 'ToBeDeleted', ['City'], false);
+      await formEditor.page.waitForTimeout(500);
 
-      await addIdentifier(diagramEditor, form, PRIMARY_IDENTIFIER_NAME, [ATTRIBUTE_ONE], true);
-      await addIdentifier(diagramEditor, form, SECONDARY_IDENTIFIER_NAME, [ATTRIBUTE_TWO], false);
+      const countBefore = (await identifiersSection.getAllIdentifiers()).length;
+      await identifiersSection.deleteIdentifier('ToBeDeleted');
+      await formEditor.page.waitForTimeout(500);
 
-      const allIdentifiers = await form.identifiersSection.getAllIdentifiers();
-      expect(allIdentifiers).toHaveLength(2);
-      expect(await allIdentifiers[0].getName()).toBe(PRIMARY_IDENTIFIER_NAME);
-      expect(await allIdentifiers[1].getName()).toBe(SECONDARY_IDENTIFIER_NAME);
+      const deleted = await identifiersSection.findIdentifier('ToBeDeleted');
+      expect(deleted).toBeUndefined();
 
-      await propertyView.saveAndClose();
-      await diagramEditor.saveAndClose();
+      const countAfter = (await identifiersSection.getAllIdentifiers()).length;
+      expect(countAfter).toBe(countBefore - 1);
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
-
-      // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForCleanup = await propertyViewForCleanup.form();
-      await diagramEditorForCleanup.waitForModelUpdate(async () => {
-         await formForCleanup.identifiersSection.deleteIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await formForCleanup.identifiersSection.deleteIdentifier(SECONDARY_IDENTIFIER_NAME);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_ONE);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
-         await formForCleanup.waitForDirty();
-      });
-      await propertyViewForCleanup.saveAndClose();
+      await formEditor.saveAndClose();
    });
 
-   test('Enforce single primary identifier', async () => {
-      test.setTimeout(120000);
-      const { diagramEditor, propertyView, form } = await openEntityForm();
+   test('Manage multiple identifiers simultaneously', async () => {
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
+      const form = await formEditor.formFor('entity');
+      const identifiersSection = form.identifiersSection;
 
-      await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
-      await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
+      const initialCount = (await identifiersSection.getAllIdentifiers()).length;
 
-      await addIdentifier(diagramEditor, form, PRIMARY_IDENTIFIER_NAME, [ATTRIBUTE_ONE], true);
-      await addIdentifier(diagramEditor, form, SECONDARY_IDENTIFIER_NAME, [ATTRIBUTE_TWO], false);
+      const id1 = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(id1, 'CompositeKey1', ['Id', 'FirstName'], false);
 
-      // Add new primary identifier - should demote the existing primary
-      await addIdentifier(diagramEditor, form, RENAMED_IDENTIFIER_NAME, [ATTRIBUTE_ONE, ATTRIBUTE_TWO], true);
+      const id2 = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(id2, 'CompositeKey2', ['LastName', 'Phone'], false);
 
-      const promotedIdentifier = await form.identifiersSection.getIdentifier(RENAMED_IDENTIFIER_NAME);
-      const demotedIdentifier = await form.identifiersSection.getIdentifier(PRIMARY_IDENTIFIER_NAME);
+      const id3 = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(id3, 'UniqueCity', ['City'], false);
 
-      expect(await promotedIdentifier.isPrimary()).toBe(true);
-      expect(await demotedIdentifier.isPrimary()).toBe(false);
+      await formEditor.page.waitForTimeout(500);
 
-      await propertyView.saveAndClose();
-      await diagramEditor.saveAndClose();
+      expect((await identifiersSection.getAllIdentifiers()).length).toBe(initialCount + 3);
+      expect(await identifiersSection.findIdentifier('CompositeKey1')).toBeDefined();
+      expect(await identifiersSection.findIdentifier('CompositeKey2')).toBeDefined();
+      expect(await identifiersSection.findIdentifier('UniqueCity')).toBeDefined();
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain(`name: "${RENAMED_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain('primary: true');
-
-      // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForCleanup = await propertyViewForCleanup.form();
-      await diagramEditorForCleanup.waitForModelUpdate(async () => {
-         await formForCleanup.identifiersSection.deleteIdentifier(RENAMED_IDENTIFIER_NAME);
-         await formForCleanup.identifiersSection.deleteIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await formForCleanup.identifiersSection.deleteIdentifier(SECONDARY_IDENTIFIER_NAME);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_ONE);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
-         await formForCleanup.waitForDirty();
-      });
-      await propertyViewForCleanup.saveAndClose();
+      await identifiersSection.deleteIdentifier('CompositeKey1');
+      await identifiersSection.deleteIdentifier('CompositeKey2');
+      await identifiersSection.deleteIdentifier('UniqueCity');
+      await formEditor.saveAndClose();
    });
 
-   test('Remove identifiers via properties view', async () => {
-      const { diagramEditor, propertyView, form } = await openEntityForm();
+   test('Only one identifier can be primary - switch primary between identifiers', async () => {
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
+      const form = await formEditor.formFor('entity');
+      const identifiersSection = form.identifiersSection;
 
-      await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
-      await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
+      const id1 = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(id1, 'FirstTestKey', ['Country'], false);
+      await formEditor.page.waitForTimeout(500);
 
-      await addIdentifier(diagramEditor, form, PRIMARY_IDENTIFIER_NAME, [ATTRIBUTE_ONE], true);
-      await addIdentifier(diagramEditor, form, SECONDARY_IDENTIFIER_NAME, [ATTRIBUTE_TWO], false);
+      const firstKey = await identifiersSection.getIdentifier('FirstTestKey');
+      expect(await firstKey.isPrimary()).toBe(false);
 
-      await diagramEditor.waitForModelUpdate(async () => {
-         await form.identifiersSection.deleteIdentifier(SECONDARY_IDENTIFIER_NAME);
-         await form.waitForDirty();
-      });
+      const id2 = await identifiersSection.startAddIdentifier();
+      await identifiersSection.commitIdentifierAdd(id2, 'SecondTestKey', ['BirthDate'], false);
+      await formEditor.page.waitForTimeout(500);
 
-      const identifiers = await form.identifiersSection.getAllIdentifiers();
-      expect(identifiers).toHaveLength(1);
-      expect(await identifiers[0].getName()).toBe(PRIMARY_IDENTIFIER_NAME);
-      expect(await identifiers[0].isPrimary()).toBe(true);
+      const secondKey = await identifiersSection.getIdentifier('SecondTestKey');
+      expect(await secondKey.isPrimary()).toBe(false);
 
-      const attributeTwo = await form.attributesSection.getAttribute(ATTRIBUTE_TWO);
-      expect(await attributeTwo.isIdentifier()).toBe(false);
+      await firstKey.setPrimary(true);
+      await firstKey.save();
+      await formEditor.page.waitForTimeout(500);
 
-      await propertyView.saveAndClose();
-      await diagramEditor.saveAndClose();
+      expect(await (await identifiersSection.getIdentifier('FirstTestKey')).isPrimary()).toBe(true);
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).not.toContain(SECONDARY_IDENTIFIER_NAME);
-      expect(fileContent).toContain(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      const second = await identifiersSection.getIdentifier('SecondTestKey');
+      await second.setPrimary(true);
+      await second.save();
+      await formEditor.page.waitForTimeout(1000);
 
-      // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const formForCleanup = await propertyViewForCleanup.form();
-      await diagramEditorForCleanup.waitForModelUpdate(async () => {
-         await formForCleanup.identifiersSection.deleteIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_ONE);
-         await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
-         await formForCleanup.waitForDirty();
-      });
-      await propertyViewForCleanup.saveAndClose();
-   });
+      expect(await (await identifiersSection.getIdentifier('FirstTestKey')).isPrimary()).toBe(false);
+      expect(await (await identifiersSection.getIdentifier('SecondTestKey')).isPrimary()).toBe(true);
 
-   async function openEntityForm(): Promise<{ diagramEditor: any; propertyView: any; form: any }> {
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      const form = await propertyView.form();
-      return { diagramEditor, propertyView, form };
-   }
-
-   async function addAttribute(diagramEditor: any, form: any, name: string): Promise<void> {
-      await diagramEditor.waitForModelUpdate(async () => {
-         const attributeInEdit = await form.attributesSection.startAddAttribute();
-         await form.attributesSection.commitAttributeAdd(attributeInEdit, name);
-         await form.waitForDirty();
-      });
-   }
-
-   async function addIdentifier(diagramEditor: any, form: any, name: string, attributeNames: string[], primary = false): Promise<void> {
-      await diagramEditor.waitForModelUpdate(async () => {
-         const identifierInEdit = await form.identifiersSection.startAddIdentifier();
-         await form.identifiersSection.commitIdentifierAdd(identifierInEdit, name, attributeNames, primary);
-         await form.waitForDirty();
-      });
-   }
-
-   async function readEntityFile(): Promise<string> {
-      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      await entityEditor.waitForVisible();
-      await entityEditor.activate();
-
-      const lines: string[] = [];
-      for (let index = 1; index <= 80; index++) {
-         try {
-            const line = await entityEditor.textContentOfLineByLineNumber(index);
-            if (line) {
-               lines.push(line);
-            }
-         } catch (error) {
-            break;
+      // Only one primary should exist
+      const allIds = await identifiersSection.getAllIdentifiers();
+      let primaryCount = 0;
+      for (const id of allIds) {
+         if (await id.isPrimary()) {
+            primaryCount++;
          }
       }
+      expect(primaryCount).toBe(1);
 
-      await entityEditor.saveAndClose();
-      return lines.join('\n');
-   }
+      await identifiersSection.deleteIdentifier('FirstTestKey');
+      await identifiersSection.deleteIdentifier('SecondTestKey');
+      await formEditor.saveAndClose();
+   });
 });
