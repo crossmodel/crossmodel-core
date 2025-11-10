@@ -227,7 +227,6 @@ export function AttributeMappingSourcesDataGrid({
    // Process diagnostics
    React.useEffect(() => {
       const errors: Record<string, string> = {};
-      console.log('Available diagnostics:', diagnostics);
 
       // Process each row's diagnostics
       gridData.forEach(row => {
@@ -238,14 +237,12 @@ export function AttributeMappingSourcesDataGrid({
          // Build the path for source validation
          // Example: /mapping/target/mappings@0/sources@1/value
          const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'sources@' + row.idx.toString()];
-         console.log('Checking diagnostics for path:', basePath, 'row:', row);
 
          // Check row-level diagnostics
          const rowInfo = diagnostics.info(basePath);
          const rowText = rowInfo.text();
          if (!rowInfo.empty && rowText) {
             errors[row.id] = rowText;
-            console.log('Found row diagnostics:', { info: rowInfo, text: rowText });
          }
 
          // Check value-level diagnostics
@@ -253,7 +250,6 @@ export function AttributeMappingSourcesDataGrid({
          const valueText = valueInfo.text();
          if (!valueInfo.empty && valueText) {
             errors[`${row.id}.value`] = valueText;
-            console.log('Found value diagnostics:', { info: valueInfo, text: valueText });
          }
 
          // Also check for source-level validation (in case server reports it differently)
@@ -267,11 +263,9 @@ export function AttributeMappingSourcesDataGrid({
          ]);
          if (!sourceDiagnostics.empty) {
             errors[row.id] = (errors[row.id] ? errors[row.id] + '; ' : '') + sourceDiagnostics.text();
-            console.log('Found source diagnostics:', sourceDiagnostics);
          }
       });
 
-      console.log('Setting validation errors:', errors);
       setValidationErrors(errors);
    }, [diagnostics, gridData, mappingIdx]);
 

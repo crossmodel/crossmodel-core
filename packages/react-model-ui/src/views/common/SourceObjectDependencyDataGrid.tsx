@@ -186,7 +186,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    // Process diagnostics into validation errors
    React.useEffect(() => {
       const errors: Record<string, string> = {};
-      console.log('Processing diagnostics for source dependencies:', sourceObject?.dependencies);
 
       // Base path for the source object
       const basePath = ['mapping', 'sources', sourceObjectIdx.toString()];
@@ -195,7 +194,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       const dependenciesInfo = diagnostics.info(basePath, 'dependencies');
       if (!dependenciesInfo.empty) {
          errors['dependencies'] = dependenciesInfo.text() || '';
-         console.log('Found dependencies diagnostics:', { info: dependenciesInfo });
       }
 
       // Check individual dependencies
@@ -206,14 +204,12 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
          const rowInfo = diagnostics.info(dependencyPath, undefined);
          if (!rowInfo.empty) {
             errors[`dep${idx}`] = rowInfo.text() || '';
-            console.log('Found dependency diagnostics:', { idx, info: rowInfo });
          }
 
          // Check source field diagnostics
          const sourceInfo = diagnostics.info(dependencyPath, 'source');
          if (!sourceInfo.empty) {
             errors[`dependencies[${idx}].source`] = sourceInfo.text() || '';
-            console.log('Found source diagnostics:', { idx, info: sourceInfo });
          }
 
          // Client-side validation for empty source
@@ -222,7 +218,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
          }
       });
 
-      console.log('Setting validation errors:', errors);
       setValidationErrors(errors);
    }, [diagnostics, sourceObject?.dependencies, sourceObjectIdx]);
    const [gridData, setGridData] = React.useState<SourceObjectDependencyRow[]>([]);

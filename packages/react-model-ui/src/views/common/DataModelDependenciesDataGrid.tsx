@@ -177,7 +177,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    // Process diagnostics into validation errors
    React.useEffect(() => {
       const errors: Record<string, string> = {};
-      console.log('Processing diagnostics for dependencies:', gridData);
 
       // Process each row's diagnostics
       gridData.forEach(row => {
@@ -188,7 +187,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          const rowInfo = diagnostics.info(basePath, undefined, row.idx);
          if (!rowInfo.empty) {
             errors[row.id] = rowInfo.text() || '';
-            console.log('Found row diagnostics:', { id: row.id, info: rowInfo });
          }
 
          // Check field-level diagnostics
@@ -196,12 +194,10 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             const fieldInfo = diagnostics.info(basePath, field, row.idx);
             if (!fieldInfo.empty) {
                errors[`${row.id}.${field}`] = fieldInfo.text() || '';
-               console.log('Found field diagnostics:', { id: row.id, field, info: fieldInfo });
             }
          });
       });
 
-      console.log('Setting validation errors:', errors);
       setValidationErrors(errors);
    }, [dataModel?.dependencies, diagnostics, gridData, editingRows]);
 

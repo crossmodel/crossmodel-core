@@ -189,7 +189,6 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    // Process diagnostics into validation errors
    React.useEffect(() => {
       const errors: Record<string, string> = {};
-      console.log('Processing diagnostics for relationship attributes:', relationship?.attributes);
 
       // Process each attribute's diagnostics
       relationship?.attributes?.forEach((attr, idx) => {
@@ -200,7 +199,6 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          const rowInfo = diagnostics.info(basePath, undefined, idx);
          if (!rowInfo.empty) {
             errors[`attr${idx}`] = rowInfo.text() || '';
-            console.log('Found attribute diagnostics:', { idx, info: rowInfo });
          }
 
          // Check field-level diagnostics for both parent and child
@@ -208,12 +206,10 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             const fieldInfo = diagnostics.info(basePath, field, idx);
             if (!fieldInfo.empty) {
                errors[`attributes[${idx}].${field}`] = fieldInfo.text() || '';
-               console.log('Found field diagnostics:', { idx, field, info: fieldInfo });
             }
          });
       });
 
-      console.log('Setting validation errors:', errors);
       setValidationErrors(errors);
    }, [relationship?.attributes, diagnostics]);
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});

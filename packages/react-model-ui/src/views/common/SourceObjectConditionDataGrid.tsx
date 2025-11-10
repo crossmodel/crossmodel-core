@@ -268,7 +268,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
    // Process diagnostics into validation errors
    React.useEffect(() => {
       const errors: Record<string, string> = {};
-      console.log('Processing diagnostics for source object conditions:', sourceObject?.conditions);
 
       sourceObject?.conditions?.forEach((condition, idx) => {
          const rowId = idx.toString();
@@ -278,7 +277,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          const rowInfo = diagnostics.info(basePath, undefined);
          if (!rowInfo.empty) {
             errors[rowId] = rowInfo.text() || '';
-            console.log('Found row diagnostics:', { id: rowId, info: rowInfo });
          }
 
          // Check field-level diagnostics
@@ -287,7 +285,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             if (!fieldInfo.empty) {
                const errorField = field.includes('left') ? 'left' : field.includes('right') ? 'right' : 'operator';
                errors[`${rowId}.${errorField}`] = fieldInfo.text() || '';
-               console.log('Found field diagnostics:', { id: rowId, field: errorField, info: fieldInfo });
             }
          });
 
@@ -303,7 +300,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          }
       });
 
-      console.log('Setting validation errors:', errors);
       setValidationErrors(errors);
    }, [sourceObject?.conditions, diagnostics, sourceObjectIdx]);
 
