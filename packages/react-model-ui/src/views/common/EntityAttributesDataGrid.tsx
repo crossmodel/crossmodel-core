@@ -449,23 +449,15 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      typeof attr === 'string' ? attr !== oldAttribute.id : attr.id !== oldAttribute.id
                   );
 
-                  if (remainingAttributes.length === 0) {
-                     // If no attributes left, remove the identifier
-                     dispatch({
-                        type: 'entity:identifier:delete-identifier',
-                        identifierIdx: entity.identifiers.indexOf(primaryIdentifier)
-                     });
-                  } else {
-                     // Update the identifier with remaining attributes
-                     dispatch({
-                        type: 'entity:identifier:update',
-                        identifierIdx: entity.identifiers.indexOf(primaryIdentifier),
-                        identifier: {
-                           ...primaryIdentifier,
-                           attributes: remainingAttributes
-                        }
-                     });
-                  }
+                  // Always update the identifier with remaining attributes, even if empty
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: entity.identifiers.indexOf(primaryIdentifier),
+                     identifier: {
+                        ...primaryIdentifier,
+                        attributes: remainingAttributes
+                     }
+                  });
                }
             }
          }
