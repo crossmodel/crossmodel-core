@@ -44,7 +44,10 @@ export class ModelDataService implements PropertyDataService {
    protected async getPropertyData(selection: GlspSelection, info?: GModelElementInfo): Promise<PropertiesRenderData | undefined> {
       if (info?.reference) {
          const reference = await this.modelService.resolveReference(info.reference);
-         return reference ? { uri: reference?.uri, renderProps: info.renderProps } : undefined;
+
+         const renderProps = { ...info.renderProps, focusField: info.reference.property };
+
+         return reference ? { uri: reference?.uri, renderProps } : undefined;
       } else if (selection.sourceUri && info?.renderProps) {
          return { uri: selection.sourceUri, renderProps: info.renderProps };
       }

@@ -3,6 +3,41 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.9](https://github.com/crossmodel/crossmodel-core/compare/v0.10.8...v0.10.9) (2025-11-06)
+
+**Note:** Version bump only for package @crossmodel/composite-editor
+
+
+
+
+
+## [0.10.8](https://github.com/crossmodel/crossmodel-core/compare/v0.10.7...v0.10.8) (2025-11-06)
+
+
+### Bug Fixes
+
+* Hide Right Sidebar When Model Editor Form is Active ([#198](https://github.com/crossmodel/crossmodel-core/issues/198)) ([abb1ac5](https://github.com/crossmodel/crossmodel-core/commit/abb1ac5e88e04fe338a2809028ea63e666dd0d8b))
+
+
+
+
+
+## [0.10.7](https://github.com/crossmodel/crossmodel-core/compare/v0.10.6...v0.10.7) (2025-11-04)
+
+**Note:** Version bump only for package @crossmodel/composite-editor
+
+
+
+
+
+## [0.10.6](https://github.com/crossmodel/crossmodel-core/compare/v0.10.5...v0.10.6) (2025-11-04)
+
+**Note:** Version bump only for package @crossmodel/composite-editor
+
+
+
+
+
 ## [0.10.5](https://github.com/crossmodel/crossmodel-core/compare/v0.10.4...v0.10.5) (2025-11-02)
 
 **Note:** Version bump only for package @crossmodel/composite-editor
