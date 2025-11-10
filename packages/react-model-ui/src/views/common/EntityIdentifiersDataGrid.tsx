@@ -73,8 +73,8 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       return errors;
    }, []);
 
-   const defaultEntry = React.useMemo<EntityIdentifierRow>(() => {
-      return {
+   const defaultEntry = React.useMemo<EntityIdentifierRow>(
+      () => ({
          idx: -1,
          id: '',
          name: '',
@@ -83,8 +83,9 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          description: '',
          $type: 'LogicalIdentifier',
          $globalId: 'toBeAssigned'
-      };
-   }, []);
+      }),
+      []
+   );
 
    // Map entity data to grid data with proper updates
    const mapToGridData = React.useCallback(() => {
