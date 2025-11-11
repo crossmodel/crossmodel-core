@@ -2,9 +2,9 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import { findNextUnique, LogicalAttribute, toId } from '@crossmodel/protocol';
+import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
 import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
-import { Dropdown } from 'primereact/dropdown';
 import * as React from 'react';
 import { useDiagnostics, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
@@ -80,8 +80,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
-         name: 'New Attribute',
-         datatype: 'Text',
+         name: '',
+         datatype: '',
          idx: -1,
          id: '', // ID will be assigned when adding the row
          description: '',
@@ -102,7 +102,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       // Create a new uncommitted row with a unique temporary ID
       const tempRow: EntityAttributeRow = {
          ...defaultEntry,
-         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
          _uncommitted: true
       };
 
@@ -185,16 +185,36 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             field: 'datatype',
             header: 'Data Type',
             headerStyle: { width: '15%' },
-            editor: (options: any) => (
-               <Dropdown
-                  value={options.value}
-                  options={dataTypeOptions}
-                  onChange={e => options.editorCallback(e.value)}
-                  onKeyDown={handleGridEditorKeyDown}
-                  disabled={readonly}
-                  className='w-full'
-               />
-            ),
+            editor: (options: any) => {
+               const [suggestions, setSuggestions] = React.useState<{ label: string; value: string }[]>([]);
+
+               const search = (event: AutoCompleteCompleteEvent) => {
+                  const query = event.query.toLowerCase();
+                  const filtered = query ? dataTypeOptions.filter(opt => opt.label.toLowerCase().includes(query)) : dataTypeOptions;
+                  setSuggestions(filtered);
+               };
+
+               const handleChange = (e: any) => {
+                  const value = typeof e.value === 'object' && e.value !== null ? e.value.value : e.value;
+                  options.editorCallback(value);
+               };
+
+               return (
+                  <AutoComplete
+                     value={options.value}
+                     suggestions={suggestions}
+                     completeMethod={search}
+                     onChange={handleChange}
+                     onSelect={handleChange}
+                     onKeyDown={handleGridEditorKeyDown}
+                     disabled={readonly}
+                     className='w-full'
+                     field='label'
+                     dropdown
+                     forceSelection={false}
+                  />
+               );
+            },
             filterType: 'multiselect',
             filterOptions: dataTypeOptions,
             showFilterMatchModes: false
@@ -245,7 +265,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          });
 
          if (attribute._uncommitted) {
-            // For uncommitted rows, check if anything actually changed
             const hasChanges =
                attribute.name !== defaultEntry.name ||
                attribute.datatype !== defaultEntry.datatype ||
@@ -272,11 +291,21 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                ...(description ? { description } : {})
             };
 
-            // Add the new attribute through dispatch
             dispatch({
                type: 'entity:attribute:add-attribute',
                attribute: finalAttribute
             });
+
+            const newTempRow: EntityAttributeRow = {
+               ...defaultEntry,
+               id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+               _uncommitted: true
+            };
+
+            setTimeout(() => {
+               setGridData(current => [...current, newTempRow]);
+               setEditingRows({ [newTempRow.id]: true });
+            }, 50);
          } else {
             // This is an existing row being updated
             // Remove empty fields before updating
@@ -291,10 +320,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                attributeIdx: attribute.idx,
                attribute: updatedAttribute
             });
-         }
 
-         // Clear editing state after successful update
-         setEditingRows({});
+            setEditingRows({});
+         }
       },
       [dispatch, defaultEntry, entity.attributes]
    );
@@ -335,23 +363,20 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
 
-               // Clear validation errors
                setValidationErrors({});
             }
 
             // Update editing state
             setEditingRows(newEditingRows);
-
             // Clean up any stale uncommitted rows
-            setGridData(current => {
-               // Keep all committed rows
-               const committedRows = current.filter(row => !row._uncommitted);
-
-               // For uncommitted rows, only keep the one being edited (if any)
-               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
-
-               return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
-            });
+            if (newEditingId) {
+               setGridData(current => {
+                  // Keep all committed rows
+                  const committedRows = current.filter(row => !row._uncommitted);
+                  const activeUncommittedRow = current.find(row => row._uncommitted && row.id === newEditingId);
+                  return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+               });
+            }
          }}
          globalFilterFields={['name', 'datatype', 'description']}
       />
