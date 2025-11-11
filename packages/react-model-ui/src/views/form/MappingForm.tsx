@@ -34,7 +34,10 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
    const elementPath = ['mapping', 'target', 'mappings@' + props.mappingIndex];
 
    const targetAttributeDiagnostics = diagnostics.info([...elementPath, 'attribute'], 'value');
-   const expressionDiagnostics = diagnostics.info(elementPath, 'expression');
+   // expression diagnostics are reported on the mapping node (no property) by the server
+   // (see checkAttributeMapping in the server validator), so request diagnostics
+   // for the mapping element itself rather than the 'expression' property.
+   const expressionDiagnostics = diagnostics.info(elementPath);
 
    return (
       <Form

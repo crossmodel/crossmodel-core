@@ -474,16 +474,26 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       );
    };
 
-   const cellEditor = (options: any): React.JSX.Element => (
-      <InputText
-         value={options.value}
-         onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
-         className={validationErrors[options.field] ? 'p-invalid' : ''}
-         onKeyDown={handleGridEditorKeyDown}
-         disabled={readonly}
-         autoFocus
-      />
-   );
+   const cellEditor = (options: any): React.JSX.Element => {
+      const rowKey = options.rowData ? options.rowData[keyField as string] : undefined;
+      const errorKey = rowKey !== undefined ? `${rowKey}.${options.field}` : options.field;
+      const error = validationErrors[errorKey];
+
+      return (
+         <div className='grid-editor-container'>
+            <InputText
+               value={options.value}
+               onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
+               className={error ? 'p-invalid' : ''}
+               onKeyDown={handleGridEditorKeyDown}
+               disabled={readonly}
+               autoFocus
+               title={error || undefined}
+            />
+            {error && <small className='p-error m-0'>{error}</small>}
+         </div>
+      );
+   };
 
    const filterTemplate = (
       options: any,
