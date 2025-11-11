@@ -27,7 +27,7 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
    });
 
    test('Add identifiers via properties view', async () => {
-      const { diagramEditor, form } = await openEntityForm();
+      const { diagramEditor, propertyView, form } = await openEntityForm();
 
       await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
       await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
@@ -41,7 +41,7 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       expect(await primaryIdentifier.getAttributes()).toEqual([ATTRIBUTE_ONE]);
       expect(await attributeOne.isIdentifier()).toBe(true);
 
-      await closePropertiesTab(app.page);
+      await propertyView.saveAndClose();
       await diagramEditor.saveAndClose();
 
       const fileContent = await readEntityFile();
@@ -61,11 +61,11 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await closePropertiesTab(app.page);
+      await propertyViewForCleanup.saveAndClose();
    });
 
    test('Modify identifier attributes', async () => {
-      const { diagramEditor, form } = await openEntityForm();
+      const { diagramEditor, propertyView, form } = await openEntityForm();
 
       await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
       await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
@@ -74,9 +74,9 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
 
       // Modify the identifier's attributes by adding ATTRIBUTE_TWO
       await diagramEditor.waitForModelUpdate(async () => {
-         const identifier = await form.identifiersSection.getIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await identifier.setAttributes([ATTRIBUTE_TWO]);
-         await identifier.save();
+         const modifyIdentifier = await form.identifiersSection.getIdentifier(PRIMARY_IDENTIFIER_NAME);
+         await modifyIdentifier.setAttributes([ATTRIBUTE_TWO]);
+         await modifyIdentifier.save();
          await form.waitForDirty();
       });
 
@@ -85,7 +85,7 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       const attrList = attrs.flatMap((a: string) => a.split(',').map((s: string) => s.trim()));
       expect(attrList).toEqual(expect.arrayContaining([ATTRIBUTE_ONE, ATTRIBUTE_TWO]));
 
-      await closePropertiesTab(app.page);
+      await propertyView.saveAndClose();
       await diagramEditor.saveAndClose();
 
       const fileContent = await readEntityFile();
@@ -104,11 +104,11 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await closePropertiesTab(app.page);
+      await propertyViewForCleanup.saveAndClose();
    });
 
    test('Support multiple identifiers', async () => {
-      const { diagramEditor, form } = await openEntityForm();
+      const { diagramEditor, propertyView, form } = await openEntityForm();
 
       await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
       await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
@@ -121,7 +121,7 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       expect(await allIdentifiers[0].getName()).toBe(PRIMARY_IDENTIFIER_NAME);
       expect(await allIdentifiers[1].getName()).toBe(SECONDARY_IDENTIFIER_NAME);
 
-      await closePropertiesTab(app.page);
+      await propertyView.saveAndClose();
       await diagramEditor.saveAndClose();
 
       const fileContent = await readEntityFile();
@@ -140,11 +140,11 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await closePropertiesTab(app.page);
+      await propertyViewForCleanup.saveAndClose();
    });
 
    test('Enforce single primary identifier', async () => {
-      const { diagramEditor, form } = await openEntityForm();
+      const { diagramEditor, propertyView, form } = await openEntityForm();
 
       await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
       await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
@@ -161,7 +161,7 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       expect(await promotedIdentifier.isPrimary()).toBe(true);
       expect(await demotedIdentifier.isPrimary()).toBe(false);
 
-      await closePropertiesTab(app.page);
+      await propertyView.saveAndClose();
       await diagramEditor.saveAndClose();
 
       const fileContent = await readEntityFile();
@@ -180,11 +180,11 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await closePropertiesTab(app.page);
+      await propertyViewForCleanup.saveAndClose();
    });
 
    test('Remove identifiers via properties view', async () => {
-      const { diagramEditor, form } = await openEntityForm();
+      const { diagramEditor, propertyView, form } = await openEntityForm();
 
       await addAttribute(diagramEditor, form, ATTRIBUTE_ONE);
       await addAttribute(diagramEditor, form, ATTRIBUTE_TWO);
@@ -205,7 +205,7 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       const attributeOne = await form.attributesSection.getAttribute(ATTRIBUTE_ONE);
       expect(await attributeOne.isIdentifier()).toBe(false);
 
-      await closePropertiesTab(app.page);
+      await propertyView.saveAndClose();
       await diagramEditor.saveAndClose();
 
       const fileContent = await readEntityFile();
@@ -222,7 +222,7 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await closePropertiesTab(app.page);
+      await propertyViewForCleanup.saveAndClose();
    });
 
    async function openEntityForm(): Promise<{ diagramEditor: any; propertyView: any; form: any }> {
@@ -269,46 +269,3 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       return lines.join('\n');
    }
 });
-
-async function closePropertiesTab(page: import('@playwright/test').Page): Promise<void> {
-   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+S' : 'Control+S');
-   await page.waitForTimeout(500);
-
-   const tab = page.locator('#shell-tab-property-view');
-   const view = page.locator('#property-view');
-
-   const tabCount = await tab.count();
-   if (tabCount === 0 || !(await tab.isVisible().catch(() => false))) {
-      return;
-   }
-
-   const closeIcon = tab.locator('.lm-TabBar-tabCloseIcon');
-   if (await closeIcon.isVisible().catch(() => false)) {
-      await closeIcon.click();
-   }
-
-   const timeoutMs = process.env.CI ? 20000 : 10000;
-   const start = Date.now();
-
-   while (Date.now() - start < timeoutMs) {
-      const attached = await tab
-         .count()
-         .then(c => c > 0)
-         .catch(() => false);
-      if (!attached) {
-         return;
-      }
-
-      const cls = await tab.getAttribute('class').catch(() => '');
-      const notCurrent = cls ? !cls.includes('lm-mod-current') : true;
-      const viewHidden = await view.isHidden().catch(() => true);
-
-      if (notCurrent || viewHidden) {
-         return;
-      }
-
-      await page.waitForTimeout(300);
-   }
-
-   console.warn('Properties tab may still be active after timeout, but continuing...');
-}

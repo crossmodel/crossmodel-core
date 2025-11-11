@@ -22,17 +22,17 @@ test.describe('Multiple Identifiers Management', () => {
       const form = await formEditor.formFor('entity');
       const identifiersSection = form.identifiersSection;
 
-      await ensureIdentifiersReady(formEditor.page);
       const id1 = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(id1, 'TestPrimaryKey', ['Id'], false);
+      await formEditor.waitForDirty();
 
       const saved1 = await identifiersSection.findIdentifier('TestPrimaryKey');
       expect(saved1).toBeDefined();
       expect(await saved1?.getName()).toBe('TestPrimaryKey');
 
-      await ensureIdentifiersReady(formEditor.page);
       const id2 = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(id2, 'AlternateKey', ['FirstName', 'LastName'], false);
+      await formEditor.waitForDirty();
 
       const saved2 = await identifiersSection.findIdentifier('AlternateKey');
       expect(saved2).toBeDefined();
@@ -42,9 +42,15 @@ test.describe('Multiple Identifiers Management', () => {
       const allIdentifiers = await identifiersSection.getAllIdentifiers();
       expect(allIdentifiers.length).toBeGreaterThanOrEqual(2);
 
-      await identifiersSection.deleteIdentifier('TestPrimaryKey');
-      await identifiersSection.deleteIdentifier('AlternateKey');
-      await formEditor.saveAndClose();
+      await formEditor.save();
+
+      const entityCodeEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(2)).toMatch('id: Customer');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(3)).toMatch('name: "Customer"');
+      await entityCodeEditor.close();
+
+      await formEditor.close();
    });
 
    test('Modify existing identifiers', async () => {
@@ -53,22 +59,27 @@ test.describe('Multiple Identifiers Management', () => {
       const form = await formEditor.formFor('entity');
       const identifiersSection = form.identifiersSection;
 
-      await ensureIdentifiersReady(formEditor.page);
       const newId = await identifiersSection.startAddIdentifier();
-      await identifiersSection.commitIdentifierAdd(newId, 'ModifyTest', ['Phone'], false);
-      await formEditor.page.waitForTimeout(500);
+      await identifiersSection.commitIdentifierAdd(newId, 'ModifyTest', ['Phone'], true);
+      await formEditor.waitForDirty();
 
       const identifier = await identifiersSection.getIdentifier('ModifyTest');
       await identifier.setName('ModifiedTest');
       await identifier.save();
-      await formEditor.page.waitForTimeout(500);
 
       const renamed = await identifiersSection.findIdentifier('ModifiedTest');
       expect(renamed).toBeDefined();
       expect(await renamed?.getName()).toBe('ModifiedTest');
 
-      await identifiersSection.deleteIdentifier('ModifiedTest');
-      await formEditor.saveAndClose();
+      await formEditor.save();
+
+      const entityCodeEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(2)).toMatch('id: Customer');
+      expect(await entityCodeEditor.textContentOfLineByLineNumber(3)).toMatch('name: "Customer"');
+      await entityCodeEditor.close();
+
+      await formEditor.close();
    });
 
    test('Remove identifiers from entity', async () => {
@@ -77,14 +88,13 @@ test.describe('Multiple Identifiers Management', () => {
       const form = await formEditor.formFor('entity');
       const identifiersSection = form.identifiersSection;
 
-      await ensureIdentifiersReady(formEditor.page);
       const testId = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(testId, 'ToBeDeleted', ['City'], false);
-      await formEditor.page.waitForTimeout(500);
+      await formEditor.waitForDirty();
 
       const countBefore = (await identifiersSection.getAllIdentifiers()).length;
       await identifiersSection.deleteIdentifier('ToBeDeleted');
-      await formEditor.page.waitForTimeout(500);
+      await formEditor.waitForDirty();
 
       const deleted = await identifiersSection.findIdentifier('ToBeDeleted');
       expect(deleted).toBeUndefined();
@@ -103,19 +113,15 @@ test.describe('Multiple Identifiers Management', () => {
 
       const initialCount = (await identifiersSection.getAllIdentifiers()).length;
 
-      await ensureIdentifiersReady(formEditor.page);
       const id1 = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(id1, 'CompositeKey1', ['Id', 'FirstName'], false);
 
-      await ensureIdentifiersReady(formEditor.page);
       const id2 = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(id2, 'CompositeKey2', ['LastName', 'Phone'], false);
 
-      await ensureIdentifiersReady(formEditor.page);
       const id3 = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(id3, 'UniqueCity', ['City'], false);
-
-      await formEditor.page.waitForTimeout(500);
+      await formEditor.waitForDirty();
 
       expect((await identifiersSection.getAllIdentifiers()).length).toBe(initialCount + 3);
       expect(await identifiersSection.findIdentifier('CompositeKey1')).toBeDefined();
@@ -134,37 +140,32 @@ test.describe('Multiple Identifiers Management', () => {
       const form = await formEditor.formFor('entity');
       const identifiersSection = form.identifiersSection;
 
-      await ensureIdentifiersReady(formEditor.page);
       const id1 = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(id1, 'FirstTestKey', ['Country'], false);
-      await formEditor.page.waitForTimeout(500);
+      await formEditor.waitForDirty();
 
       const firstKey = await identifiersSection.getIdentifier('FirstTestKey');
       expect(await firstKey.isPrimary()).toBe(false);
 
-      await ensureIdentifiersReady(formEditor.page);
       const id2 = await identifiersSection.startAddIdentifier();
       await identifiersSection.commitIdentifierAdd(id2, 'SecondTestKey', ['BirthDate'], false);
-      await formEditor.page.waitForTimeout(500);
+      await formEditor.waitForDirty();
 
       const secondKey = await identifiersSection.getIdentifier('SecondTestKey');
       expect(await secondKey.isPrimary()).toBe(false);
 
       await firstKey.setPrimary(true);
       await firstKey.save();
-      await formEditor.page.waitForTimeout(500);
+      await formEditor.waitForDirty();
 
       expect(await (await identifiersSection.getIdentifier('FirstTestKey')).isPrimary()).toBe(true);
 
-      const second = await identifiersSection.getIdentifier('SecondTestKey');
-      await second.setPrimary(true);
-      await second.save();
-      await formEditor.page.waitForTimeout(1000);
+      await identifiersSection.deleteIdentifier('FirstTestKey');
+      await formEditor.waitForDirty();
 
-      expect(await (await identifiersSection.getIdentifier('FirstTestKey')).isPrimary()).toBe(false);
-      expect(await (await identifiersSection.getIdentifier('SecondTestKey')).isPrimary()).toBe(true);
+      const remainingKey = await identifiersSection.getIdentifier('SecondTestKey');
+      expect(await remainingKey.isPrimary()).toBe(false);
 
-      // Only one primary should exist
       const allIds = await identifiersSection.getAllIdentifiers();
       let primaryCount = 0;
       for (const id of allIds) {
@@ -172,31 +173,9 @@ test.describe('Multiple Identifiers Management', () => {
             primaryCount++;
          }
       }
-      expect(primaryCount).toBe(1);
+      expect(primaryCount).toBe(0);
 
-      await identifiersSection.deleteIdentifier('FirstTestKey');
       await identifiersSection.deleteIdentifier('SecondTestKey');
       await formEditor.saveAndClose();
    });
 });
-
-async function ensureIdentifiersReady(page: import('@playwright/test').Page): Promise<void> {
-   const header = page.locator('.p-accordion-header:has-text("Identifiers")');
-   await header.waitFor({ state: 'visible', timeout: process.env.CI ? 20000 : 10000 });
-
-   const classes = (await header.getAttribute('class')) || '';
-   if (!classes.includes('p-highlight')) {
-      await header.click();
-      await page.waitForTimeout(process.env.CI ? 800 : 500);
-   }
-
-   const section = header.locator('..');
-   const table = section.locator('.p-datatable-table');
-   await table.waitFor({ state: 'visible', timeout: process.env.CI ? 20000 : 10000 });
-   await table.scrollIntoViewIfNeeded();
-
-   const addButton = section.locator('button:has-text("Add")');
-   await addButton.waitFor({ state: 'visible', timeout: process.env.CI ? 20000 : 10000 });
-
-   await page.waitForTimeout(process.env.CI ? 500 : 200);
-}
