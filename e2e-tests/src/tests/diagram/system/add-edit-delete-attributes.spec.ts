@@ -32,7 +32,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       // Verify that the attribute is added to the properties view with correct properties
       const properties = await attribute.getProperties();
       expect(properties).toMatchObject({ name: ATTRIBUTE_NAME, datatype: 'Text' });
-      await propertyView.save();
+      await propertyView.saveAndClose();
 
       // Verify that the attribute is added to the diagram
       const entity = await diagramEditor.getLogicalEntity(EMPTY_ENTITY_ID);
@@ -149,8 +149,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          });
       });
 
-      await propertyView.save();
-      await diagramEditor.activate();
+      await propertyView.saveAndClose();
 
       // Give time for the save to complete and file to be updated
       await diagramEditor.page.waitForTimeout(2000);
@@ -261,7 +260,6 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       });
 
       await propertyView.save();
-      await diagramEditor.activate();
       // Verify that the attribute is deleted from the entity file
       const entityCodeEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');
