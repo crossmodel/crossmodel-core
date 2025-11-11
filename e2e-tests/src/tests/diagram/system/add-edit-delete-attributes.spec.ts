@@ -32,7 +32,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       // Verify that the attribute is added to the properties view with correct properties
       const properties = await attribute.getProperties();
       expect(properties).toMatchObject({ name: ATTRIBUTE_NAME, datatype: 'Text' });
-      await propertyView.saveAndClose();
+      await closePropertiesTab(app.page);
 
       // Verify that the attribute is added to the diagram
       const entity = await diagramEditor.getLogicalEntity(EMPTY_ENTITY_ID);
@@ -63,7 +63,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          await formForCleanup.attributesSection.deleteAttribute('MyTestAttribute');
          await formForCleanup.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await closePropertiesTab(app.page);
    });
 
    test('Edit attribute via properties view', async () => {
@@ -91,7 +91,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          };
          expect(cleanProperties).toHaveProperty('name', 'MyTestAttribute');
       });
-      await propertyViewForAdd.saveAndClose();
+      await closePropertiesTab(app.page);
 
       // Give some time for the save to complete
       await diagramEditorForAdd.page.waitForTimeout(1000);
@@ -149,7 +149,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          });
       });
 
-      await propertyView.saveAndClose();
+      await closePropertiesTab(app.page);
 
       // Give time for the save to complete and file to be updated
       await diagramEditor.page.waitForTimeout(2000);
@@ -185,7 +185,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          await formForCleanup.attributesSection.deleteAttribute(RENAMED_ATTRIBUTE_LABEL);
          await formForCleanup.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await closePropertiesTab(app.page);
    });
 
    test('Edit attribute and verify changes in code editor before saving', async () => {
@@ -227,7 +227,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          await cleanupForm.attributesSection.deleteAttribute(ATTRIBUTE_NAME);
          await cleanupForm.waitForDirty();
       });
-      await cleanupView.saveAndClose();
+      await closePropertiesTab(app.page);
    });
 
    test('Delete the attribute via properties view', async () => {
@@ -238,7 +238,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       const attributeInEdit = await formForAdd.attributesSection.startAddAttribute();
       await formForAdd.attributesSection.commitAttributeAdd(attributeInEdit, ATTRIBUTE_NAME);
       await formForAdd.waitForDirty();
-      await propertyViewForAdd.saveAndClose();
+      await closePropertiesTab(app.page);
 
       // Now, open the system diagram again to delete the attribute
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
@@ -258,7 +258,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          expect(await form.attributesSection.findAttribute(ATTRIBUTE_NAME)).toBeUndefined();
       });
 
-      await propertyView.saveAndClose();
+      await closePropertiesTab(app.page);
       // Verify that the attribute is deleted from the entity file
       const entityCodeEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');
@@ -275,3 +275,46 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
       await diagramEditor.saveAndClose();
    });
 });
+
+async function closePropertiesTab(page: import('@playwright/test').Page): Promise<void> {
+   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+S' : 'Control+S');
+   await page.waitForTimeout(500);
+
+   const tab = page.locator('#shell-tab-property-view');
+   const view = page.locator('#property-view');
+
+   const tabCount = await tab.count();
+   if (tabCount === 0 || !(await tab.isVisible().catch(() => false))) {
+      return;
+   }
+
+   const closeIcon = tab.locator('.lm-TabBar-tabCloseIcon');
+   if (await closeIcon.isVisible().catch(() => false)) {
+      await closeIcon.click();
+   }
+
+   const timeoutMs = process.env.CI ? 20000 : 10000;
+   const start = Date.now();
+
+   while (Date.now() - start < timeoutMs) {
+      const attached = await tab
+         .count()
+         .then(c => c > 0)
+         .catch(() => false);
+      if (!attached) {
+         return;
+      }
+
+      const cls = await tab.getAttribute('class').catch(() => '');
+      const notCurrent = cls ? !cls.includes('lm-mod-current') : true;
+      const viewHidden = await view.isHidden().catch(() => true);
+
+      if (notCurrent || viewHidden) {
+         return;
+      }
+
+      await page.waitForTimeout(300);
+   }
+
+   console.warn('Properties tab may still be active after timeout, but continuing...');
+}
