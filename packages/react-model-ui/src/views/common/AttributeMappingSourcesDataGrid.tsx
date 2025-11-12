@@ -209,9 +209,7 @@ export function AttributeMappingSourcesDataGrid({
 }: AttributeMappingSourcesDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const diagnostics = useDiagnosticsManager();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
    const defaultEntry = React.useMemo<Partial<AttributeMappingSourceRow>>(
       () => ({
@@ -223,51 +221,6 @@ export function AttributeMappingSourcesDataGrid({
    );
 
    const [gridData, setGridData] = React.useState<AttributeMappingSourceRow[]>([]);
-
-   // Process diagnostics
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      // Process each row's diagnostics
-      gridData.forEach(row => {
-         if (row._uncommitted) {
-            return; // Skip uncommitted rows
-         }
-
-         // Build the path for source validation
-         // Example: /mapping/target/mappings@0/sources@1/value
-         const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'sources@' + row.idx.toString()];
-
-         // Check row-level diagnostics
-         const rowInfo = diagnostics.info(basePath);
-         const rowText = rowInfo.text();
-         if (!rowInfo.empty && rowText) {
-            errors[row.id] = rowText;
-         }
-
-         // Check value-level diagnostics
-         const valueInfo = diagnostics.info(basePath, 'value');
-         const valueText = valueInfo.text();
-         if (!valueInfo.empty && valueText) {
-            errors[`${row.id}.value`] = valueText;
-         }
-
-         // Also check for source-level validation (in case server reports it differently)
-         const sourceDiagnostics = diagnostics.info([
-            'mapping',
-            'target',
-            'mappings',
-            mappingIdx.toString(),
-            'sources',
-            row.idx.toString()
-         ]);
-         if (!sourceDiagnostics.empty) {
-            errors[row.id] = (errors[row.id] ? errors[row.id] + '; ' : '') + sourceDiagnostics.text();
-         }
-      });
-
-      setValidationErrors(errors);
-   }, [diagnostics, gridData, mappingIdx]);
 
    // Update grid data when sources change, preserving any uncommitted rows
    React.useEffect(() => {
@@ -296,18 +249,6 @@ export function AttributeMappingSourcesDataGrid({
 
    const onSourceUpdate = React.useCallback(
       (sourceToUpdate: AttributeMappingSourceRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = sourceToUpdate.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
-
          if (sourceToUpdate._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = sourceToUpdate.value !== defaultEntry.value;
@@ -358,9 +299,6 @@ export function AttributeMappingSourcesDataGrid({
    );
 
    const onSourceAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -421,7 +359,6 @@ export function AttributeMappingSourcesDataGrid({
          onRowMoveDown={onSourceMoveDown}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No source expressions'
          addButtonLabel='Add Source'
          editingRows={editingRows}
@@ -438,9 +375,6 @@ export function AttributeMappingSourcesDataGrid({
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state

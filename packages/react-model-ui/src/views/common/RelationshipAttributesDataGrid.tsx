@@ -183,35 +183,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    const relationship = useRelationship();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const diagnostics = useDiagnosticsManager();
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
-
-   // Process diagnostics into validation errors
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      // Process each attribute's diagnostics
-      relationship?.attributes?.forEach((attr, idx) => {
-         // Build the path for relationship validation
-         const basePath = ['relationship', 'attributes'];
-
-         // Check attribute-level diagnostics
-         const rowInfo = diagnostics.info(basePath, undefined, idx);
-         if (!rowInfo.empty) {
-            errors[`attr${idx}`] = rowInfo.text() || '';
-         }
-
-         // Check field-level diagnostics for both parent and child
-         ['parent', 'child'].forEach(field => {
-            const fieldInfo = diagnostics.info(basePath, field, idx);
-            if (!fieldInfo.empty) {
-               errors[`attributes[${idx}].${field}`] = fieldInfo.text() || '';
-            }
-         });
-      });
-
-      setValidationErrors(errors);
-   }, [relationship?.attributes, diagnostics]);
+   // Diagnostics are read directly in cell components; no centralized validationErrors map required.
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<RelationshipAttributeRow[]>([]);
 
@@ -255,8 +227,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
-         // Don't validate before update since errors come from server after the update
-         setValidationErrors({});
+         // Diagnostics are shown by cell components; nothing to clear here.
 
          if (attribute._uncommitted) {
             // For uncommitted rows, check if anything actually changed
@@ -294,8 +265,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    );
 
    const onRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
+      // Diagnostics are shown by cell components; nothing to clear here.
 
       // Clear any existing edit states first
       setEditingRows({});
@@ -401,7 +371,6 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          onRowMoveDown={onRowMoveDown}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No attributes'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
@@ -419,8 +388,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
 
-               // Clear validation errors
-               setValidationErrors({});
+               // Diagnostics are shown by cell components; nothing to clear here.
             }
 
             // Update editing state

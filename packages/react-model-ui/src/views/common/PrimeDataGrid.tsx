@@ -20,7 +20,7 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+// no default cell editor; per-column editors handle keyboard events themselves
 
 export interface GridColumn<T> {
    field: keyof T;
@@ -52,7 +52,6 @@ export interface PrimeDataGridProps<T> {
    defaultNewRow?: Partial<T>;
    editable?: boolean;
    readonly?: boolean;
-   validationErrors?: Record<string, string>;
    className?: string;
    editingRows?: Record<string, boolean>;
    onRowEditChange?: (e: DataTableRowEditEvent) => void;
@@ -74,7 +73,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    defaultNewRow = {},
    editable = true,
    readonly = false,
-   validationErrors = {},
+   // validationErrors removed: per-field editors handle their own validation via diagnostics or local checks
    className,
    editingRows,
    onRowEditChange,
@@ -474,26 +473,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       );
    };
 
-   const cellEditor = (options: any): React.JSX.Element => {
-      const rowKey = options.rowData ? options.rowData[keyField as string] : undefined;
-      const errorKey = rowKey !== undefined ? `${rowKey}.${options.field}` : options.field;
-      const error = validationErrors[errorKey];
-
-      return (
-         <div className='grid-editor-container'>
-            <InputText
-               value={options.value}
-               onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
-               className={error ? 'p-invalid' : ''}
-               onKeyDown={handleGridEditorKeyDown}
-               disabled={readonly}
-               autoFocus
-               title={error || undefined}
-            />
-            {error && <small className='p-error m-0'>{error}</small>}
-         </div>
-      );
-   };
+   // Note: No default cell editor is provided. Grids should provide per-column editor functions
+   // (columns[].editor) that render their own editor components which read diagnostics locally.
+   const cellEditor = undefined;
 
    const filterTemplate = (
       options: any,

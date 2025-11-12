@@ -7,6 +7,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
+import { EditorProperty, GenericTextEditor } from './GenericEditors';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
@@ -23,11 +24,10 @@ interface DataModelDependencyEditorProps {
       rowData: DataModelDependencyRow;
       editorCallback: (value: string) => void;
    };
-   validationErrors?: Record<string, string>;
 }
 
 function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React.ReactElement {
-   const { options, validationErrors } = props;
+   const { options } = props;
    const { editorCallback, rowData, field } = options;
 
    // Initialize with the actual value based on the field type
@@ -38,7 +38,10 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
    const queryApi = useModelQueryApi();
    const dataModel = useDataModel();
    const readonly = useReadonly();
-   const error = validationErrors?.[`${rowData.id}.${field}`];
+   const diagnostics = useDiagnosticsManager();
+   const basePath = ['datamodel', 'dependencies'];
+   const fieldInfo = diagnostics.info(basePath, field, rowData.idx);
+   const error = fieldInfo.empty ? undefined : fieldInfo.text();
    const isDropdownClicked = React.useRef(false);
    // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
@@ -148,13 +151,33 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
    );
 }
 
+function DataModelDependencyProperty({
+   rowData,
+   editingRows
+}: {
+   rowData: DataModelDependencyRow;
+   editingRows: Record<string, boolean>;
+}): React.ReactNode {
+   const diagnostics = useDiagnosticsManager();
+   const basePath = ['datamodel', 'dependencies'];
+   const info = diagnostics.info(basePath, 'datamodel', rowData.idx);
+   const error = info.empty ? undefined : info.text();
+
+   const showInvalid = Boolean(error && !editingRows[rowData.id]);
+
+   return (
+      <div className={`grid-cell-container ${showInvalid ? 'p-invalid' : ''}`} title={error || undefined}>
+         <span>{rowData.datamodel || ''}</span>
+         {error && !editingRows[rowData.id] && <p className='p-error m-0'>{error}</p>}
+      </div>
+   );
+}
+
 export function DataModelDependenciesDataGrid(): React.ReactElement {
    const dataModel = useDataModel();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const diagnostics = useDiagnosticsManager();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<DataModelDependencyRow[]>([]);
 
    // Update grid data when dependencies change, preserving any uncommitted rows
@@ -173,35 +196,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          return [...committedData, ...uncommittedRows];
       });
    }, [dataModel.dependencies, editingRows]);
-
-   // Process diagnostics into validation errors
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      // Process each row's diagnostics
-      gridData.forEach(row => {
-         // Build the path for dependency validation
-         const basePath = ['datamodel', 'dependencies'];
-
-         // Check row-level diagnostics
-         const rowInfo = diagnostics.info(basePath, undefined, row.idx);
-         if (!rowInfo.empty) {
-            errors[row.id] = rowInfo.text() || '';
-         }
-
-         // Check field-level diagnostics
-         ['datamodel', 'version'].forEach(field => {
-            const fieldInfo = diagnostics.info(basePath, field, row.idx);
-            if (!fieldInfo.empty) {
-               errors[`${row.id}.${field}`] = fieldInfo.text() || '';
-            }
-         });
-      });
-
-      setValidationErrors(errors);
-   }, [dataModel?.dependencies, diagnostics, gridData, editingRows]);
-
-   // Removed validateField as we now rely on language server validation
 
    const datamodelOptions = React.useMemo(() => {
       const uniqueDatamodels = [...new Set(gridData.map(item => item.datamodel).filter(Boolean))];
@@ -230,14 +224,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (dependency: DataModelDependencyRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = dependency.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            delete updated[`${rowId}.datamodel`];
-            return updated;
-         });
-
          if (dependency._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = dependency.datamodel !== defaultEntry.datamodel || dependency.version !== defaultEntry.version;
@@ -289,9 +275,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    );
 
    const onRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -333,16 +316,8 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          {
             field: 'datamodel',
             header: 'Data Model',
-            editor: (options: any) => <DataModelDependencyEditor options={options} validationErrors={validationErrors} />,
-            body: (rowData: DataModelDependencyRow) => {
-               const error = validationErrors[`${rowData.id}.datamodel`];
-               return (
-                  <div className={`grid-cell-container ${error && !editingRows[rowData.id] ? 'p-invalid' : ''}`} title={error || undefined}>
-                     <span>{rowData.datamodel || ''}</span>
-                     {error && !editingRows[rowData.id] && <p className='p-error m-0'>{error}</p>}
-                  </div>
-               );
-            },
+            editor: (options: any) => <DataModelDependencyEditor options={options} />,
+            body: (rowData: DataModelDependencyRow) => <DataModelDependencyProperty rowData={rowData} editingRows={editingRows} />,
             filterType: 'multiselect',
             filterOptions: datamodelOptions,
             showFilterMatchModes: false
@@ -350,12 +325,15 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          {
             field: 'version',
             header: 'Version',
-            editor: true,
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['datamodel', 'dependencies']} field='version' />,
+            body: (rowData: DataModelDependencyRow) => (
+               <EditorProperty basePath={['datamodel', 'dependencies']} field='version' row={rowData} value={rowData.version || ''} />
+            ),
             headerStyle: { width: '150px' },
             filterType: 'text'
          }
       ],
-      [datamodelOptions, validationErrors, editingRows]
+      [datamodelOptions, editingRows]
    );
 
    if (!dataModel) {
@@ -376,7 +354,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          onRowMoveDown={onRowMoveDown}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No dependencies'
          addButtonLabel='Add Dependency'
          editingRows={editingRows}
@@ -393,9 +370,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state

@@ -26,22 +26,23 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
    const { options, sourceObject } = props;
    const { editorCallback } = options;
 
+   const diagnostics = useDiagnosticsManager();
+
    const [currentValue, setCurrentValue] = React.useState(options.value || '');
    const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
-   const diagnostics = useDiagnosticsManager();
+
    const [errorMessage, setErrorMessage] = React.useState<string>('');
 
    // Process diagnostics for this field
    React.useEffect(() => {
-      const basePath = ['mapping', 'sources', props.sourceObjectIdx.toString(), 'dependencies', options.rowData.idx.toString()];
+      const basePath = ['mapping', 'sources@' + props.sourceObjectIdx.toString(), 'dependencies@' + options.rowData.idx.toString()];
       const fieldInfo = diagnostics.info(basePath, 'source');
 
       if (!fieldInfo.empty) {
          setErrorMessage(fieldInfo.text() || '');
-         console.log('Found field diagnostics:', { row: options.rowData.idx, info: fieldInfo });
       } else {
          setErrorMessage('');
       }
@@ -178,48 +179,10 @@ export interface SourceObjectDependencyDataGridProps {
 export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: SourceObjectDependencyDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const diagnostics = useDiagnosticsManager();
    const sourceObject = mapping.sources[sourceObjectIdx];
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
-   // Process diagnostics into validation errors
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      // Base path for the source object
-      const basePath = ['mapping', 'sources', sourceObjectIdx.toString()];
-
-      // Check for general dependencies errors
-      const dependenciesInfo = diagnostics.info(basePath, 'dependencies');
-      if (!dependenciesInfo.empty) {
-         errors['dependencies'] = dependenciesInfo.text() || '';
-      }
-
-      // Check individual dependencies
-      sourceObject.dependencies?.forEach((dependency, idx) => {
-         const dependencyPath = [...basePath, 'dependencies', idx.toString()];
-
-         // Check dependency-level diagnostics
-         const rowInfo = diagnostics.info(dependencyPath, undefined);
-         if (!rowInfo.empty) {
-            errors[`dep${idx}`] = rowInfo.text() || '';
-         }
-
-         // Check source field diagnostics
-         const sourceInfo = diagnostics.info(dependencyPath, 'source');
-         if (!sourceInfo.empty) {
-            errors[`dependencies[${idx}].source`] = sourceInfo.text() || '';
-         }
-
-         // Client-side validation for empty source
-         if (!dependency.source?.trim() && !errors[`dependencies[${idx}].source`]) {
-            errors[`dependencies[${idx}].source`] = 'Source reference is required';
-         }
-      });
-
-      setValidationErrors(errors);
-   }, [diagnostics, sourceObject?.dependencies, sourceObjectIdx]);
+   // Diagnostics are read directly in cell components; no validationErrors map is required.
    const [gridData, setGridData] = React.useState<SourceObjectDependencyRow[]>([]);
 
    // Update grid data when dependencies change, preserving any uncommitted rows
@@ -266,17 +229,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const onRowUpdate = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = dependency.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
+         // No local validationErrors state; rely on diagnostics via language server.
 
          if (dependency._uncommitted) {
             // For uncommitted rows, check if anything actually changed
@@ -329,7 +282,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const onRowAdd = React.useCallback((): void => {
       // Clear any previous validation errors
-      setValidationErrors({});
+      // nothing
 
       // Clear any existing edit states first
       setEditingRows({});
@@ -369,20 +322,36 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       [dispatch, sourceObjectIdx]
    );
 
+   function SourceObjectDependencyProperty({
+      rowData,
+      editingRows: editingRowsProp,
+      sourceObjectIdx: sourceIdx
+   }: {
+      rowData: SourceObjectDependencyRow;
+      editingRows: Record<string, boolean>;
+      sourceObjectIdx: number;
+   }): React.ReactNode {
+      const diagnostics = useDiagnosticsManager();
+      const basePath = ['mapping', 'sources@' + sourceIdx.toString(), 'dependencies@' + rowData.idx.toString()];
+      const info = diagnostics.info(basePath, 'source');
+      const error = info.empty ? undefined : info.text();
+
+      return (
+         <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
+            {rowData.source}
+            {error && <p className='p-error m-0'>{error}</p>}
+         </div>
+      );
+   }
+
    const columns = React.useMemo<GridColumn<SourceObjectDependencyRow>[]>(
       () => [
          {
             field: 'source',
             header: 'Source',
-            body: (rowData: SourceObjectDependencyRow) => {
-               const errorMessage = validationErrors[`dependencies[${rowData.idx}].source`];
-               return (
-                  <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage || undefined}>
-                     {rowData.source}
-                     {errorMessage && <p className='p-error m-0'>{errorMessage}</p>}
-                  </div>
-               );
-            },
+            body: (rowData: SourceObjectDependencyRow) => (
+               <SourceObjectDependencyProperty rowData={rowData} editingRows={editingRows} sourceObjectIdx={sourceObjectIdx} />
+            ),
             editor: (options: any) => (
                <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} sourceObjectIdx={sourceObjectIdx} />
             ),
@@ -391,14 +360,14 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             showFilterMatchModes: false
          }
       ],
-      [sourceObject, sourceOptions, validationErrors, sourceObjectIdx]
+      [sourceObject, sourceOptions, sourceObjectIdx, editingRows]
    );
 
    if (!mapping || !sourceObject) {
       return <div>No mapping or source object available</div>;
    }
 
-   const generalError = validationErrors['dependencies'];
+   const generalError = undefined;
 
    return (
       <div className='source-dependencies-container'>
@@ -415,7 +384,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             onRowMoveDown={onRowMoveDown}
             defaultNewRow={defaultEntry}
             readonly={readonly}
-            validationErrors={validationErrors}
+            // diagnostics are shown by cell components directly
             noDataMessage='No dependencies'
             addButtonLabel='Add Dependency'
             editingRows={editingRows}
@@ -433,8 +402,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
                      setGridData(current => current.filter(row => row.id !== currentEditingId));
                   }
 
-                  // Clear validation errors
-                  setValidationErrors({});
+                  // No local validationErrors to clear; diagnostics are read by cell components.
                }
 
                // Update editing state

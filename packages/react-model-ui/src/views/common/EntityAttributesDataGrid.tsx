@@ -2,62 +2,11 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import { findNextUnique, LogicalAttribute, toId } from '@crossmodel/protocol';
-import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
-import { Dropdown } from 'primereact/dropdown';
-import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
-import { useDiagnosticsManager, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
-
-interface NameEditorProps {
-   options: any;
-}
-
-function NameEditor({ options }: NameEditorProps): React.ReactElement {
-   const diagnostics = useDiagnosticsManager();
-   const readonly = useReadonly();
-
-   const rowData: EntityAttributeRow = options.rowData as EntityAttributeRow;
-   const diag = diagnostics.info(['entity', 'attributes'], 'name', rowData.idx);
-   const error = diag.text();
-   const invalid = !diag.empty;
-
-   return (
-      <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
-         <InputText
-            value={options.value}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
-            className={error ? 'p-invalid' : ''}
-            onKeyDown={handleGridEditorKeyDown}
-            disabled={readonly}
-            autoFocus
-            title={error || undefined}
-         />
-         {error && <small className='p-error m-0'>{error}</small>}
-      </div>
-   );
-}
-
-interface NamePropertyProps {
-   row: EntityAttributeRow;
-   value: string;
-}
-
-function NameProperty({ row, value }: NamePropertyProps): React.ReactNode {
-   const diagnostics = useDiagnosticsManager();
-   const diag = diagnostics.info(['entity', 'attributes'], 'name', row.idx);
-   const error = diag.text();
-   const invalid = !diag.empty;
-
-   return (
-      <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
-         <span>{value || ''}</span>
-         {invalid && <p className='p-error m-0'>{error}</p>}
-      </div>
-   );
-}
 
 export interface EntityAttributeRow extends LogicalAttribute {
    idx: number;
@@ -92,7 +41,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const entity = useEntity();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const diagnostics = useDiagnosticsManager();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<EntityAttributeRow[]>([]);
 
@@ -183,25 +131,23 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          {
             field: 'name',
             header: 'Name',
-            editor: (options: any) => {
-               return <NameEditor options={options} />;
-            },
+            body: (rowData: EntityAttributeRow) => (
+               <EditorProperty basePath={['entity', 'attributes']} field='name' row={rowData} value={rowData.name || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'attributes']} field='name' />,
             headerStyle: { width: '20%' },
-            filterType: 'text',
-            body: (rowData: EntityAttributeRow) => <NameProperty row={rowData} value={rowData.name || ''} />
+            filterType: 'text'
          },
          {
             field: 'datatype',
             header: 'Data Type',
             headerStyle: { width: '15%' },
             editor: (options: any) => (
-               <Dropdown
-                  value={options.value}
-                  options={dataTypeOptions}
-                  onChange={e => options.editorCallback(e.value)}
-                  onKeyDown={handleGridEditorKeyDown}
-                  disabled={readonly}
-                  className='w-full'
+               <GenericDropdownEditor
+                  options={options}
+                  basePath={['entity', 'attributes']}
+                  field='datatype'
+                  dropdownOptions={dataTypeOptions}
                />
             ),
             filterType: 'multiselect',
@@ -216,27 +162,21 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             body: (rowData: EntityAttributeRow) => (
                <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
             ),
-            editor: (options: any) => (
-               <div className='flex align-items-center justify-content-center'>
-                  <Checkbox
-                     checked={options.value ?? false}
-                     onChange={e => options.editorCallback(e.checked ?? false)}
-                     onKeyDown={handleGridEditorKeyDown}
-                     disabled={readonly}
-                  />
-               </div>
-            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='identifier' />,
             filterType: 'boolean',
             showFilterMatchModes: false
          },
          {
             field: 'description',
             header: 'Description',
-            editor: true,
+            body: (rowData: EntityAttributeRow) => (
+               <EditorProperty basePath={['entity', 'attributes']} field='description' row={rowData} value={rowData.description || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'attributes']} field='description' />,
             filterType: 'text'
          }
       ],
-      [readonly, diagnostics]
+      []
    );
 
    const handleRowUpdate = React.useCallback(
