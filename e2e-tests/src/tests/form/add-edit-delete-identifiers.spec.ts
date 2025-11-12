@@ -4,7 +4,7 @@
 import { expect, test } from '@playwright/test';
 import { CMApp } from '../../page-objects/cm-app';
 
-test.describe('Multiple Identifiers Management', () => {
+test.describe('Add/Edit/Delete identifiers of an entity using the composite editor', () => {
    let app: CMApp;
    const TEST_ENTITY_PATH = 'ExampleCRM/entities/Customer.entity.cm';
 

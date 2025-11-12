@@ -210,6 +210,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
          expect(await form.attributesSection.findAttribute(ATTRIBUTE_NAME)).toBeUndefined();
       });
       // Save the diagram, but leave it open.
+      await propertyView.save();
       await diagramEditor.save();
 
       // Verify that the attribute is deleted from the entity file

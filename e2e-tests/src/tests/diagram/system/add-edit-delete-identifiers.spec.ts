@@ -4,7 +4,8 @@
 import { expect } from '@eclipse-glsp/glsp-playwright';
 import { test } from '@playwright/test';
 import { CMApp } from '../../../page-objects/cm-app';
-test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
+
+test.describe('Add/Edit/Delete identifiers via properties view', () => {
    let app: CMApp;
 
    const SYSTEM_DIAGRAM_PATH = 'ExampleCRM/diagrams/EMPTY.system-diagram.cm';
@@ -41,15 +42,17 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       expect(await primaryIdentifier.getAttributes()).toEqual([ATTRIBUTE_ONE]);
       expect(await attributeOne.isIdentifier()).toBe(true);
 
-      await propertyView.saveAndClose();
+      await propertyView.save();
       await diagramEditor.saveAndClose();
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain('identifiers:');
-      expect(fileContent).toContain(`id: ${PRIMARY_IDENTIFIER_NAME}`);
-      expect(fileContent).toContain(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain('primary: true');
-      expect(fileContent).toContain(ATTRIBUTE_ONE);
+      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      entityEditor.closeWithoutSave();
 
       // Cleanup
       const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
@@ -61,7 +64,8 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await propertyViewForCleanup.save();
+      await diagramEditorForCleanup.saveAndClose();
    });
 
    test('Modify identifier attributes', async () => {
@@ -75,24 +79,27 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       // Modify the identifier's attributes by adding ATTRIBUTE_TWO
       await diagramEditor.waitForModelUpdate(async () => {
          const modifyIdentifier = await form.identifiersSection.getIdentifier(PRIMARY_IDENTIFIER_NAME);
-         await modifyIdentifier.setAttributes([ATTRIBUTE_TWO]);
+         await modifyIdentifier.setAttributes([ATTRIBUTE_ONE, ATTRIBUTE_TWO]);
          await modifyIdentifier.save();
          await form.waitForDirty();
       });
 
       const identifier = await form.identifiersSection.getIdentifier(PRIMARY_IDENTIFIER_NAME);
       const attrs = await identifier.getAttributes();
-      const attrList = attrs.flatMap((a: string) => a.split(',').map((s: string) => s.trim()));
-      expect(attrList).toEqual(expect.arrayContaining([ATTRIBUTE_ONE, ATTRIBUTE_TWO]));
+      expect(attrs).toEqual([ATTRIBUTE_ONE, ATTRIBUTE_TWO]);
 
-      await propertyView.saveAndClose();
+      await propertyView.save();
       await diagramEditor.saveAndClose();
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain('primary: true');
-      expect(fileContent).toContain(ATTRIBUTE_ONE);
-      expect(fileContent).toContain(ATTRIBUTE_TWO);
+      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch(`- ${ATTRIBUTE_TWO}`);
+      entityEditor.closeWithoutSave();
 
       // Cleanup
       const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
@@ -104,7 +111,8 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await propertyViewForCleanup.save();
+      await diagramEditorForCleanup.saveAndClose();
    });
 
    test('Support multiple identifiers', async () => {
@@ -121,13 +129,23 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       expect(await allIdentifiers[0].getName()).toBe(PRIMARY_IDENTIFIER_NAME);
       expect(await allIdentifiers[1].getName()).toBe(SECONDARY_IDENTIFIER_NAME);
 
-      await propertyView.saveAndClose();
+      await propertyView.save();
       await diagramEditor.saveAndClose();
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain('primary: true');
-      expect(fileContent).toContain(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`- ${ATTRIBUTE_ONE}`);
+
+      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(18)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(19)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(20)).toMatch(`- ${ATTRIBUTE_TWO}`);
+
+      entityEditor.closeWithoutSave();
 
       // Cleanup
       const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
@@ -140,7 +158,8 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await propertyViewForCleanup.save();
+      await diagramEditorForCleanup.saveAndClose();
    });
 
    test('Enforce single primary identifier', async () => {
@@ -161,12 +180,29 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       expect(await promotedIdentifier.isPrimary()).toBe(true);
       expect(await demotedIdentifier.isPrimary()).toBe(false);
 
-      await propertyView.saveAndClose();
+      await propertyView.save();
       await diagramEditor.saveAndClose();
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).toContain(`name: "${RENAMED_IDENTIFIER_NAME}"`);
-      expect(fileContent).toContain('primary: true');
+      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch(`- ${ATTRIBUTE_ONE}`);
+
+      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(18)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(19)).toMatch(`- ${ATTRIBUTE_TWO}`);
+
+      expect(await entityEditor.textContentOfLineByLineNumber(20)).toMatch(`id: ${RENAMED_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(21)).toMatch(`name: "${RENAMED_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(22)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(23)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(24)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(25)).toMatch(`- ${ATTRIBUTE_TWO}`);
+
+      entityEditor.closeWithoutSave();
 
       // Cleanup
       const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
@@ -180,7 +216,8 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await propertyViewForCleanup.save();
+      await diagramEditorForCleanup.saveAndClose();
    });
 
    test('Remove identifiers via properties view', async () => {
@@ -205,12 +242,16 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
       const attributeOne = await form.attributesSection.getAttribute(ATTRIBUTE_ONE);
       expect(await attributeOne.isIdentifier()).toBe(false);
 
-      await propertyView.saveAndClose();
+      await propertyView.save();
       await diagramEditor.saveAndClose();
 
-      const fileContent = await readEntityFile();
-      expect(fileContent).not.toContain(PRIMARY_IDENTIFIER_NAME);
-      expect(fileContent).toContain(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch(`- ${ATTRIBUTE_TWO}`);
+      entityEditor.closeWithoutSave();
 
       // Cleanup
       const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
@@ -222,7 +263,8 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await formForCleanup.attributesSection.deleteAttribute(ATTRIBUTE_TWO);
          await formForCleanup.waitForDirty();
       });
-      await propertyViewForCleanup.saveAndClose();
+      await propertyViewForCleanup.save();
+      await diagramEditorForCleanup.saveAndClose();
    });
 
    async function openEntityForm(): Promise<{ diagramEditor: any; propertyView: any; form: any }> {
@@ -246,26 +288,5 @@ test.describe.serial('Add/Edit/Delete identifiers via properties view', () => {
          await form.identifiersSection.commitIdentifierAdd(identifierInEdit, name, attributeNames, primary);
          await form.waitForDirty();
       });
-   }
-
-   async function readEntityFile(): Promise<string> {
-      const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      await entityEditor.waitForVisible();
-      await entityEditor.activate();
-
-      const lines: string[] = [];
-      for (let index = 1; index <= 80; index++) {
-         try {
-            const line = await entityEditor.textContentOfLineByLineNumber(index);
-            if (line) {
-               lines.push(line);
-            }
-         } catch (error) {
-            break;
-         }
-      }
-
-      await entityEditor.saveAndClose();
-      return lines.join('\n');
    }
 });
