@@ -5,10 +5,59 @@ import { findNextUnique, LogicalAttribute, toId } from '@crossmodel/protocol';
 import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
+import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
 import { useDiagnosticsManager, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
+
+interface NameEditorProps {
+   options: any;
+}
+
+function NameEditor({ options }: NameEditorProps): React.ReactElement {
+   const diagnostics = useDiagnosticsManager();
+   const readonly = useReadonly();
+
+   const rowData: EntityAttributeRow = options.rowData as EntityAttributeRow;
+   const diag = diagnostics.info(['entity', 'attributes'], 'name', rowData.idx);
+   const error = diag.text();
+   const invalid = !diag.empty;
+
+   return (
+      <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
+         <InputText
+            value={options.value}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
+            className={error ? 'p-invalid' : ''}
+            onKeyDown={handleGridEditorKeyDown}
+            disabled={readonly}
+            autoFocus
+            title={error || undefined}
+         />
+         {error && <small className='p-error m-0'>{error}</small>}
+      </div>
+   );
+}
+
+interface NamePropertyProps {
+   row: EntityAttributeRow;
+   value: string;
+}
+
+function NameProperty({ row, value }: NamePropertyProps): React.ReactNode {
+   const diagnostics = useDiagnosticsManager();
+   const diag = diagnostics.info(['entity', 'attributes'], 'name', row.idx);
+   const error = diag.text();
+   const invalid = !diag.empty;
+
+   return (
+      <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
+         <span>{value || ''}</span>
+         {invalid && <p className='p-error m-0'>{error}</p>}
+      </div>
+   );
+}
 
 export interface EntityAttributeRow extends LogicalAttribute {
    idx: number;
@@ -45,35 +94,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<EntityAttributeRow[]>([]);
-
-   // Process diagnostics into validation errors
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      // Process each row's diagnostics
-      gridData.forEach(row => {
-         // Build the path using protocol constants
-         const basePath = ['entity', 'attributes'];
-
-         // Check row-level diagnostics
-         const rowInfo = diagnostics.info(basePath, undefined, row.idx);
-         if (!rowInfo.empty) {
-            errors[row.id] = rowInfo.text() || '';
-         }
-
-         // Check field-level diagnostics
-         ['name', 'datatype', 'description'].forEach(field => {
-            const fieldInfo = diagnostics.info(basePath, field, row.idx);
-            if (!fieldInfo.empty) {
-               errors[`${row.id}.${field}`] = fieldInfo.text() || '';
-            }
-         });
-      });
-
-      setValidationErrors(errors);
-   }, [entity?.attributes, diagnostics, gridData]);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
@@ -90,9 +111,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    );
 
    const handleAddAttribute = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -165,18 +183,12 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          {
             field: 'name',
             header: 'Name',
-            editor: !readonly,
+            editor: (options: any) => {
+               return <NameEditor options={options} />;
+            },
             headerStyle: { width: '20%' },
             filterType: 'text',
-            body: (rowData: EntityAttributeRow) => {
-               const error = validationErrors[`${rowData.id}.name`];
-               return (
-                  <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
-                     <span>{rowData.name || ''}</span>
-                     {error && <p className='p-error m-0'>{error}</p>}
-                  </div>
-               );
-            }
+            body: (rowData: EntityAttributeRow) => <NameProperty row={rowData} value={rowData.name || ''} />
          },
          {
             field: 'datatype',
@@ -224,23 +236,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             filterType: 'text'
          }
       ],
-      [readonly, validationErrors]
+      [readonly, diagnostics]
    );
 
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = attribute.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
-
          if (attribute._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
@@ -314,7 +314,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          onRowMoveDown={handleAttributeDownward}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No attributes defined'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
@@ -331,9 +330,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state
