@@ -128,11 +128,12 @@ export class LogicalIdentifier extends TheiaPageObject {
 
          // Otherwise get from the view mode cell content
          const text = await this.attributeIdsLocator.textContent();
-         return text ? [text.trim()] : [];
+         return text ? text.trim().split(', ') : [];
       } catch (error) {
          return [];
       }
    }
+
    async setAttributes(attributeIds: string[]): Promise<void> {
       // First ensure we can interact with the multiselect
       const multiSelect = this.attributeIdsLocator.locator('.p-multiselect');
@@ -151,14 +152,19 @@ export class LogicalIdentifier extends TheiaPageObject {
       const panel = this.page.locator('.p-multiselect-panel');
       await panel.waitFor({ state: 'visible', timeout: 5000 });
 
-      // Select each attribute
-      for (const attrId of attributeIds) {
-         const option = panel.getByRole('option', { name: attrId }).first();
-         await option.waitFor({ state: 'visible', timeout: 5000 });
-         await option.click();
+      // Select or unselect attributes as needed
+      const options = await panel.getByRole('option').all();
+      for (const option of options) {
+         const optionName = (await option.textContent())?.trim() ?? '';
+         const isSelected = (await option.getAttribute('aria-selected')) === 'true';
+         const shouldBeSelected = attributeIds.includes(optionName);
 
-         // Wait for the selection to register
-         await this.page.waitForTimeout(100);
+         // Toggle selection if needed
+         if (isSelected !== shouldBeSelected) {
+            await option.click();
+            // Wait for the selection to register
+            await this.page.waitForTimeout(100);
+         }
       }
 
       // Close the panel

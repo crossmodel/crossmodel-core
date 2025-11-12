@@ -11,18 +11,6 @@ entity:
       - id: LastName
         name: "LastName"
         datatype: "Text"
-      - id: City
-        name: "City"
-        datatype: "Text"
-      - id: Country
-        name: "Country"
-        datatype: "Text"
-      - id: Phone
-        name: "Phone"
-        datatype: "Text"
-      - id: BirthDate
-        name: "BirthDate"
-        datatype: "DateTime"
     identifiers:
       - id: Primary_Identifier
         name: "Primary Identifier"

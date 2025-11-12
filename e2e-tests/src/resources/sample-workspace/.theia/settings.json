@@ -1,3 +1,4 @@
 {
-    "files.enableTrash": false
+  "files.enableTrash": false,
+  "editor.autoSave": "off"
 }
