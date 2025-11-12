@@ -84,12 +84,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          // Verify the new attribute properties
          const newAttribute = await formForAdd.attributesSection.getAttribute('MyTestAttribute');
          const newProperties = await newAttribute.getProperties();
-         const cleanProperties = {
-            name: newProperties.name,
-            datatype: newProperties.datatype,
-            description: newProperties.description
-         };
-         expect(cleanProperties).toHaveProperty('name', 'MyTestAttribute');
+         expect(newProperties).toMatchObject({ name: 'MyTestAttribute' });
       });
       await propertyViewForAdd.save();
 
@@ -113,12 +108,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
 
          // Verify the changes took effect with clean properties
          const properties = await attribute.getProperties();
-         const cleanProperties = {
-            name: properties.name,
-            datatype: properties.datatype,
-            description: properties.description
-         };
-         expect(cleanProperties).toEqual({
+         expect(properties).toMatchObject({
             name: RENAMED_ATTRIBUTE_LABEL,
             datatype: 'Boolean',
             description: 'New Description'
@@ -137,12 +127,7 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
          // Verify the attribute properties after adding to identifier
          const updatedAttribute = await form.attributesSection.getAttribute(RENAMED_ATTRIBUTE_LABEL);
          const updatedProperties = await updatedAttribute.getProperties();
-         const cleanProperties = {
-            name: updatedProperties.name,
-            datatype: updatedProperties.datatype,
-            description: updatedProperties.description
-         };
-         expect(cleanProperties).toEqual({
+         expect(updatedProperties).toMatchObject({
             name: RENAMED_ATTRIBUTE_LABEL,
             datatype: 'Boolean',
             description: 'New Description'
@@ -156,10 +141,6 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
 
       // Verify that the attribute is changed in the entity file
       const entityCodeEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-
-      // Wait for the editor to fully load
-      await entityCodeEditor.waitForVisible();
-      await entityCodeEditor.activate();
 
       // Verify attribute properties are correct
       expect(await entityCodeEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
@@ -216,10 +197,8 @@ test.describe.serial('Add/Edit/Delete attributes to/from an entity in a diagram'
 
       // Delete the attribute as cleanup via the System Diagram
       const cleanupEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      await cleanupEditor.waitForVisible();
 
       const cleanupView = await cleanupEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
-      await cleanupView.waitForVisible();
 
       // Get the form after ensuring property view is ready
       const cleanupForm = await cleanupView.form();

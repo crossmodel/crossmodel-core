@@ -153,7 +153,7 @@ export class LogicalIdentifier extends TheiaPageObject {
 
       // Select each attribute
       for (const attrId of attributeIds) {
-         const option = panel.getByRole('option', { name: attrId });
+         const option = panel.getByRole('option', { name: attrId }).first();
          await option.waitFor({ state: 'visible', timeout: 5000 });
          await option.click();
 
