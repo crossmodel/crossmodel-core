@@ -3,6 +3,18 @@
  ********************************************************************************/
 import * as React from 'react';
 
+// Global flag to track if save was triggered by Enter key
+let saveTriggeredByEnter = false;
+
+/**
+ * Check if the last save was triggered by Enter key
+ */
+export const wasSaveTriggeredByEnter = (): boolean => {
+   const result = saveTriggeredByEnter;
+   saveTriggeredByEnter = false;
+   return result;
+};
+
 /**
  * Handles keyboard events for editors within a PrimeDataGrid.
  * - For AutoComplete, it allows the component to handle Enter/Escape when the suggestion panel is open.
@@ -29,6 +41,7 @@ export const handleGridEditorKeyDown = (e: React.KeyboardEvent): void => {
 
    if (e.key === 'Enter') {
       e.preventDefault();
+      saveTriggeredByEnter = true;
       const saveButton = editingRow.querySelector('.p-row-editor-save') as HTMLButtonElement;
       if (saveButton) {
          setTimeout(() => saveButton.click(), 0);

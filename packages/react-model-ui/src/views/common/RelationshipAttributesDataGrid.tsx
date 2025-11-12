@@ -8,7 +8,7 @@ import * as React from 'react';
 import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 function getDiagnosticKey(row: { idx: number }, field: string): string {
    return `attributes[${row.idx}].${field}`;
@@ -319,6 +319,19 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
                type: 'relationship:attribute:add',
                attribute: attributeData
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: RelationshipAttributeRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true
+               };
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             dispatch({

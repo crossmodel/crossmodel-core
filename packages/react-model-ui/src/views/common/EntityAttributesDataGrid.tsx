@@ -8,7 +8,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnostics, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
    idx: number;
@@ -102,7 +102,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       // Create a new uncommitted row with a unique temporary ID
       const tempRow: EntityAttributeRow = {
          ...defaultEntry,
-         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
          _uncommitted: true
       };
 
@@ -148,7 +148,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          const committedData = (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => ({
             idx,
             name: attr.name || '',
-            datatype: attr.datatype || 'string',
+            datatype: attr.datatype || '',
             description: attr.description || '',
             identifier: (attr as any).identifier || false,
             id: attr.id || '',
@@ -265,6 +265,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          });
 
          if (attribute._uncommitted) {
+            // For uncommitted rows, check if anything actually changed
             const hasChanges =
                attribute.name !== defaultEntry.name ||
                attribute.datatype !== defaultEntry.datatype ||
@@ -291,21 +292,26 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                ...(description ? { description } : {})
             };
 
+            // Add the new attribute through dispatch
             dispatch({
                type: 'entity:attribute:add-attribute',
                attribute: finalAttribute
             });
 
-            const newTempRow: EntityAttributeRow = {
-               ...defaultEntry,
-               id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
-               _uncommitted: true
-            };
+            // Create a new uncommitted row for continuous entry only if save was triggered by Enter key
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: EntityAttributeRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true
+               };
 
-            setTimeout(() => {
-               setGridData(current => [...current, newTempRow]);
-               setEditingRows({ [newTempRow.id]: true });
-            }, 50);
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  // Clear editing state after successful update
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             // Remove empty fields before updating
@@ -363,6 +369,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
 
+               // Clear validation errors
                setValidationErrors({});
             }
 

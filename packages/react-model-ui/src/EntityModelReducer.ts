@@ -114,12 +114,18 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          entity.attributes[action.attributeIdx] = {
             ...action.attribute,
             name: undefinedIfEmpty(action.attribute.name),
-            description: undefinedIfEmpty(action.attribute.description)
+            description: undefinedIfEmpty(action.attribute.description),
+            datatype: undefinedIfEmpty(action.attribute.datatype)
          };
          break;
 
       case 'entity:attribute:add-attribute':
-         entity.attributes.push(action.attribute);
+         entity.attributes.push({
+            ...action.attribute,
+            name: undefinedIfEmpty(action.attribute.name),
+            description: undefinedIfEmpty(action.attribute.description),
+            datatype: undefinedIfEmpty(action.attribute.datatype)
+         });
          break;
 
       case 'entity:attribute:delete-attribute':

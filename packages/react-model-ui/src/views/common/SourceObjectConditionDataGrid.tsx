@@ -27,7 +27,7 @@ import * as React from 'react';
 import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectConditionEditorProps {
    options: any;
@@ -378,6 +378,20 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                   }
                }
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: SourceObjectConditionRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true,
+                  idx: -1
+               };
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             if (
