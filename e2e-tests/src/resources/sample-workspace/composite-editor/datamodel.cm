@@ -1,0 +1,5 @@
+datamodel:
+    id: composite-editor
+    name: "Composite Editor"
+    type: logical
+    version: 1.0.0

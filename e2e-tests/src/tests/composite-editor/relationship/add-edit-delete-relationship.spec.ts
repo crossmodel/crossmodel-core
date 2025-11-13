@@ -3,8 +3,8 @@
  ********************************************************************************/
 import { expect, test } from '@playwright/test';
 import { join } from 'path';
-import { CMApp } from '../../page-objects/cm-app';
-import { CMCompositeEditor } from '../../page-objects/cm-composite-editor';
+import { CMApp } from '../../../page-objects/cm-app';
+import { CMCompositeEditor } from '../../../page-objects/cm-composite-editor';
 
 async function confirmCreationEditor(app: CMApp, parentPathFragment: string, entityName: string, description?: string): Promise<void> {
    const untitledEditor = new CMCompositeEditor(join(parentPathFragment, 'NewRelationship.relationship.cm'), app, 'untitled');
@@ -21,8 +21,10 @@ async function confirmCreationEditor(app: CMApp, parentPathFragment: string, ent
 
 test.describe('Add/Edit/Delete relationship from explorer', () => {
    let app: CMApp;
-   const NEW_RELATIONSHIP_PATH = 'ExampleCRM/relationships/NewRelationship.relationship.cm';
-   const TEST_RELATIONSHIP_PATH = 'ExampleCRM/relationships/Test.relationship.cm';
+   const RELATIONSHIP_PARENT_PATH = 'composite-editor/relationships';
+   const NEW_RELATIONSHIP_PATH = `${RELATIONSHIP_PARENT_PATH}/NewRelationship.relationship.cm`;
+   const TEST_RELATIONSHIP_PATH = `${RELATIONSHIP_PARENT_PATH}/Test.relationship.cm`;
+
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
    });
@@ -32,8 +34,8 @@ test.describe('Add/Edit/Delete relationship from explorer', () => {
 
    test('Create relationship via explorer tabbar', async () => {
       const explorer = await app.openExplorerView();
-      await explorer.getFileStatNodeByLabel('ExampleCRM/relationships');
-      await explorer.selectTreeNode('ExampleCRM/relationships');
+      await explorer.getFileStatNodeByLabel(RELATIONSHIP_PARENT_PATH);
+      await explorer.selectTreeNode(RELATIONSHIP_PARENT_PATH);
 
       const tabBarToolbarNewRelationship = await explorer.tabBarToolbar.toolBarItem('crossbreeze.new.relationship.toolbar');
       expect(tabBarToolbarNewRelationship).toBeDefined();
@@ -41,7 +43,7 @@ test.describe('Add/Edit/Delete relationship from explorer', () => {
          return;
       }
       await tabBarToolbarNewRelationship.trigger();
-      await confirmCreationEditor(app, 'ExampleCRM/relationships', 'NewRelationship');
+      await confirmCreationEditor(app, RELATIONSHIP_PARENT_PATH, 'NewRelationship');
 
       // Verify that the relationship was created as expected
       explorer.activate();

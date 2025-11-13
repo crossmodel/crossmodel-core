@@ -3,8 +3,8 @@
  ********************************************************************************/
 import { expect, test } from '@playwright/test';
 import { join } from 'path';
-import { CMApp } from '../../page-objects/cm-app';
-import { CMCompositeEditor } from '../../page-objects/cm-composite-editor';
+import { CMApp } from '../../../page-objects/cm-app';
+import { CMCompositeEditor } from '../../../page-objects/cm-composite-editor';
 
 async function confirmCreationEditor(app: CMApp, parentPathFragment: string, name: string, type: string, version: string): Promise<void> {
    const untitledEditor = new CMCompositeEditor(join(parentPathFragment, 'datamodel.cm'), app, 'untitled');
@@ -21,11 +21,11 @@ async function confirmCreationEditor(app: CMApp, parentPathFragment: string, nam
 test.describe.serial('Add/Edit/Delete data model from explorer', () => {
    let app: CMApp;
    const NEW_DATA_MODEL_ID = 'New_Data_Model';
-   const NEW_MODEL_PATH = 'testFolder/' + NEW_DATA_MODEL_ID;
+   const NEW_MODEL_PATH = 'data-model/' + NEW_DATA_MODEL_ID;
    const NEW_MODEL_DATAMODEL_PATH = NEW_MODEL_PATH + '/datamodel.cm';
 
    const NEW_DATA_MODEL_2_ID = 'New_Data_Model_2';
-   const NEW_MODEL2_PATH = 'testFolder/' + NEW_DATA_MODEL_2_ID;
+   const NEW_MODEL2_PATH = 'data-model/' + NEW_DATA_MODEL_2_ID;
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
    });
@@ -35,8 +35,8 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
 
    test('Create model via explorer tabbar', async () => {
       const explorer = await app.openExplorerView();
-      await explorer.getFileStatNodeByLabel('testFolder');
-      await explorer.selectTreeNode('testFolder');
+      await explorer.getFileStatNodeByLabel('data-model');
+      await explorer.selectTreeNode('data-model');
 
       const tabBarToolbarNewModel = await explorer.tabBarToolbar.toolBarItem('crossbreeze.new.data-model.toolbar');
       expect(tabBarToolbarNewModel).toBeDefined();
@@ -48,7 +48,7 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
       const name = 'New Data Model';
       const modelType = 'Logical';
       const version = '0.0.1';
-      await confirmCreationEditor(app, 'testFolder/_/', name, modelType, version);
+      await confirmCreationEditor(app, 'data-model/_/', name, modelType, version);
 
       // Verify that the model was created as expected
       await explorer.activate();
@@ -85,7 +85,7 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
    test('Create model via context menu', async () => {
       const explorer = await app.openExplorerView();
       // Create node
-      const folderNode = await explorer.getFileStatNodeByLabel('testFolder');
+      const folderNode = await explorer.getFileStatNodeByLabel('data-model');
       const contextMenu = await folderNode.openContextMenu();
       const menuItem = await contextMenu.menuItemByNamePath('New Element', 'Data Model...');
       expect(menuItem).toBeDefined();
@@ -94,7 +94,7 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
       const name = 'New Data Model 2';
       const modelType = 'Relational';
       const version = '0.0.1';
-      await confirmCreationEditor(app, 'testFolder/_/', name, modelType, version);
+      await confirmCreationEditor(app, 'data-model/_/', name, modelType, version);
       await explorer.activate();
 
       // Verify that the model was created as expected
