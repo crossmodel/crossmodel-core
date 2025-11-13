@@ -235,7 +235,7 @@ export function RelationshipForm(): React.ReactElement {
          <FormSection label='Attributes'>
             <RelationshipAttributesDataGrid />
          </FormSection>
-         <FormSection label='Custom properties'>
+         <FormSection label='Custom properties' defaultCollapsed={true}>
             <RelationshipCustomPropertiesDataGrid />
          </FormSection>
       </Form>
