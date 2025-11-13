@@ -1,0 +1,19 @@
+entity:
+    id: AddEditDeleteIdentifiers
+    name: "Customer"
+    attributes:
+      - id: Id
+        name: "Id"
+        datatype: "Integer"
+      - id: FirstName
+        name: "FirstName"
+        datatype: "Text"
+      - id: LastName
+        name: "LastName"
+        datatype: "Text"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - Id

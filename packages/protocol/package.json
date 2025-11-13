@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/protocol",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "CrossModel Protocol Extensions between Server and Client",
   "homepage": "https://github.com/crossmodel/crossmodel-core",
   "repository": {

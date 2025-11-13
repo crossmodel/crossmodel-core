@@ -1,0 +1,9 @@
+systemDiagram:
+    id: AddEditDeleteIdentifiersDiagram
+    nodes:
+      - id: AddEditDeleteIdentifiersEntityNode
+        entity: AddEditDeleteIdentifiersEntity
+        x: 396
+        y: 429
+        width: 10
+        height: 10

@@ -22,7 +22,7 @@ test.describe('CrossModel TabBar Toolbar', () => {
 
    test('create new diagram from tabbar toolbar', async () => {
       // A data model of the appropriate type must be selected for the commands to be visible.
-      await explorer.selectTreeNode('ExampleCRM');
+      await explorer.selectTreeNode('system-diagram');
       // Get the new-entity toolbar item.
       const tabBarToolbarNewEntity = await explorer.tabBarToolbar.toolBarItem('crossbreeze.new.system-diagram.toolbar');
       expect(tabBarToolbarNewEntity).toBeDefined();
@@ -47,7 +47,7 @@ test.describe('CrossModel TabBar Toolbar', () => {
 
          explorer = await app.openView(CMExplorerView);
          const file = await explorer.fileStatNode(
-            'ExampleCRM' +
+            'system-diagram' +
                OSUtil.fileSeparator +
                'diagrams' +
                OSUtil.fileSeparator +

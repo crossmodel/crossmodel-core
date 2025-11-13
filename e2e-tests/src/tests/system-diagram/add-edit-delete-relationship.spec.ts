@@ -3,17 +3,17 @@
  ********************************************************************************/
 
 import { expect, test } from '@playwright/test';
-import { CMApp } from '../../../page-objects/cm-app';
-import { RelationshipPropertiesView } from '../../../page-objects/cm-properties-view';
-import { Relationship } from '../../../page-objects/system-diagram/diagram-elements';
-import { IntegratedSystemDiagramEditor } from '../../../page-objects/system-diagram/integrated-system-diagram-editor';
+import { CMApp } from '../../page-objects/cm-app';
+import { RelationshipPropertiesView } from '../../page-objects/cm-properties-view';
+import { Relationship } from '../../page-objects/system-diagram/diagram-elements';
+import { IntegratedSystemDiagramEditor } from '../../page-objects/system-diagram/integrated-system-diagram-editor';
 
 test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'ExampleCRM/diagrams/CRM.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteRelationshipDiagram.system-diagram.cm';
    const CUSTOMER_ENTITY_ID = 'Customer';
    const ORDER_ENTITY_ID = 'Order';
-   const NEW_RELATIONSHIP_PATH = 'ExampleCRM/relationships/Customer_to_Order.relationship.cm';
+   const NEW_RELATIONSHIP_PATH = 'system-diagram/relationships/Customer_to_Order.relationship.cm';
 
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
@@ -44,7 +44,7 @@ test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
       const diagramCodeEditor = await diagramEditor.parent.switchToCodeEditor();
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(16)).toMatch('edges:');
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(17)).toMatch('- id: Customer_to_OrderEdge');
-      expect(await diagramCodeEditor.textContentOfLineByLineNumber(18)).toMatch('relationship: ExampleCRM.Customer_to_Order');
+      expect(await diagramCodeEditor.textContentOfLineByLineNumber(18)).toMatch('relationship: system-diagram.Customer_to_Order');
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(19)).toMatch('sourceNode: CustomerNode');
       expect(await diagramCodeEditor.textContentOfLineByLineNumber(20)).toMatch('targetNode: OrderNode');
       await diagramCodeEditor.saveAndClose();

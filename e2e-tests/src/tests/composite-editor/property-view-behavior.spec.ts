@@ -7,6 +7,7 @@ import { CMPropertiesView } from '../../page-objects/cm-properties-view';
 
 test.describe('Property View Form Integration', () => {
    let app: CMApp;
+   const TEST_ENTITY_PATH = 'composite-editor/CompositeEditorPropertyViewBehavior.entity.cm';
 
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
@@ -28,13 +29,13 @@ test.describe('Property View Form Integration', () => {
       expect(await propertyView.viewLocator()).toContainText('No properties available.');
 
       // Open a composite editor (where the form is activate).
-      const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
       await formEditor.waitForVisible();
       await formEditor.activate();
 
       // Expect the property view to contain info about the open file.
       await propertyView.waitForVisible();
-      expect(await propertyView.viewLocator()).toContainText('ExampleCRM/entities/Customer.entity.cm');
+      expect(await propertyView.viewLocator()).toContainText(TEST_ENTITY_PATH);
 
       // Close the form editor.
       await formEditor.close();
@@ -52,12 +53,12 @@ test.describe('Property View Form Integration', () => {
       expect(await propertyView.viewLocator()).toContainText('No properties available.');
 
       // Open a composite editor (where the form is activate).
-      const codeEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Code Editor');
+      const codeEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Code Editor');
       await codeEditor.waitForVisible();
 
       // Expect the property view to contain info about the open file.
       await propertyView.waitForVisible();
-      expect(await propertyView.viewLocator()).toContainText('ExampleCRM/entities/Customer.entity.cm');
+      expect(await propertyView.viewLocator()).toContainText(TEST_ENTITY_PATH);
 
       // Close the form editor.
       await codeEditor.close();

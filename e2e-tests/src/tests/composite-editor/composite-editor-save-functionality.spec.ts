@@ -6,6 +6,7 @@ import { CMApp } from '../../page-objects/cm-app';
 
 test.describe('Composite Editor Save Functionality', () => {
    let app: CMApp;
+   const TEST_ENTITY_PATH = 'composite-editor/CompositeEditorSaveFunctionality.entity.cm';
 
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
@@ -18,10 +19,7 @@ test.describe('Composite Editor Save Functionality', () => {
    });
 
    test('Composite Editor should save changes using the Save button', async () => {
-      const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
-      expect(formEditor).toBeDefined();
-      await formEditor.waitForVisible();
-
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
       const form = await formEditor.formFor('entity');
       const general = form.generalSection;
 
@@ -49,10 +47,7 @@ test.describe('Composite Editor Save Functionality', () => {
    });
 
    test('Composite editor should respond to Ctrl+S shortcut', async () => {
-      const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
-      expect(formEditor).toBeDefined();
-      await formEditor.waitForVisible();
-
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
       const form = await formEditor.formFor('entity');
       const general = form.generalSection;
 
@@ -77,10 +72,7 @@ test.describe('Composite Editor Save Functionality', () => {
    });
 
    test('Composite Editor should keep focus on input after saving', async () => {
-      const formEditor = await app.openCompositeEditor('ExampleCRM/entities/Customer.entity.cm', 'Form Editor');
-      expect(formEditor).toBeDefined();
-      await formEditor.waitForVisible();
-
+      const formEditor = await app.openCompositeEditor(TEST_ENTITY_PATH, 'Form Editor');
       const form = await formEditor.formFor('entity');
       const general = form.generalSection;
       const oldName = await general.getName();
