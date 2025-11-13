@@ -14,8 +14,8 @@ async function confirmCreationEditor(app: CMApp, parentPathFragment: string, nam
    await form.setName(name);
    await form.setType(type);
    await form.setVersion(version);
-   formEditor.waitForDirty();
-   formEditor.saveAndClose();
+   await formEditor.waitForDirty();
+   await formEditor.saveAndClose();
 }
 
 test.describe.serial('Add/Edit/Delete data model from explorer', () => {

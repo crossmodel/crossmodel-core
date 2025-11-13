@@ -203,7 +203,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       // First verify the attribute exists
       const attributeBefore = await form.attributesSection.findAttribute(ATTRIBUTE_NAME_TO_DELETE);
       expect(attributeBefore).toBeDefined();
-      await diagramEditorForAdd.saveAndClose();
+      await diagramEditor.saveAndClose();
 
       // Delete the attribute and wait for model update
       const diagramEditorForDelete = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');

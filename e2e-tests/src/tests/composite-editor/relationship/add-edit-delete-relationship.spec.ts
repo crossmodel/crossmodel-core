@@ -15,8 +15,8 @@ async function confirmCreationEditor(app: CMApp, parentPathFragment: string, ent
    if (description) {
       await form.setDescription(description);
    }
-   formEditor.waitForDirty();
-   formEditor.saveAndClose();
+   await formEditor.waitForDirty();
+   await formEditor.saveAndClose();
 }
 
 test.describe('Add/Edit/Delete relationship from explorer', () => {
