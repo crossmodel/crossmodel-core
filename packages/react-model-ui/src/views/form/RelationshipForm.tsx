@@ -2,26 +2,27 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import {
-   computeRelationshipName,
-   CrossModelValidationErrors,
-   ModelDiagnostic,
-   ModelFileType,
-   ModelStructure,
-   ReferenceableElement,
-   toId
-} from '@crossmodel/protocol';
+import { ModelFileType, ModelStructure, ReferenceableElement, computeRelationshipName, toId } from '@crossmodel/protocol';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
-import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly, useRelationship, useUntitled, useUri } from '../../ModelContext';
+import {
+   useDiagnosticsManager,
+   useModelDispatch,
+   useModelQueryApi,
+   useReadonly,
+   useRelationship,
+   useUntitled,
+   useUri
+} from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
 import AsyncAutoComplete from '../common/AsyncAutoComplete';
 import { RelationshipAttributesDataGrid } from '../common/RelationshipAttributesDataGrid';
 import { RelationshipCustomPropertiesDataGrid } from '../common/RelationshipCustomPropertiesDataGrid';
+import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
 // Form with tabs to edit an relationship's properties and attributes.
@@ -30,46 +31,9 @@ export function RelationshipForm(): React.ReactElement {
    const api = useModelQueryApi();
    const relationship = useRelationship();
    const readonly = useReadonly();
-   const baseDiagnostics = useDiagnostics();
+   const diagnostics = useDiagnosticsManager();
    const untitled = useUntitled();
    const uri = useUri();
-   const diagnostics = React.useMemo(() => {
-      const errors = CrossModelValidationErrors.getFieldErrors(baseDiagnostics);
-
-      // Process raw diagnostics for attributes
-      const attributeDiagnostics: Record<string, ModelDiagnostic[]> = {};
-      relationship?.attributes?.forEach((attr, idx) => {
-         baseDiagnostics.forEach(diagnostic => {
-            if (
-               diagnostic.message.includes('Could not resolve reference') &&
-               ((attr.parent === '_' && diagnostic.code === 'linking-error') || (attr.child === '_' && diagnostic.code === 'linking-error'))
-            ) {
-               if (attr.parent === '_') {
-                  const key = `attributes[${idx}].parent`;
-                  attributeDiagnostics[key] = [
-                     {
-                        ...diagnostic,
-                        message: 'Not a valid parent attribute.'
-                     }
-                  ];
-               }
-               if (attr.child === '_') {
-                  const key = `attributes[${idx}].child`;
-                  attributeDiagnostics[key] = [
-                     {
-                        ...diagnostic,
-                        message: 'Not a valid child attribute.'
-                     }
-                  ];
-               }
-            }
-         });
-      });
-
-      const combinedDiagnostics = { ...errors, ...attributeDiagnostics };
-
-      return combinedDiagnostics;
-   }, [baseDiagnostics, relationship?.attributes]);
 
    const usingDefaultName = React.useMemo(
       () => relationship.name === computeRelationshipName(relationship.parent, relationship.child),
@@ -127,6 +91,15 @@ export function RelationshipForm(): React.ReactElement {
       [untitled, dispatch, api, uri, relationship]
    );
 
+   const nameDiagnostics = diagnostics.info('relationship', 'name');
+   const descriptionDiagnostics = diagnostics.info('relationship', 'description');
+   const parentDiagnostics = diagnostics.info('relationship', 'parent');
+   const parentCardinalityDiagnostics = diagnostics.info('relationship', 'parentCardinality');
+   const parentRoleDiagnostics = diagnostics.info('relationship', 'parentRole');
+   const childDiagnostics = diagnostics.info('relationship', 'child');
+   const childCardinalityDiagnostics = diagnostics.info('relationship', 'childCardinality');
+   const childRoleDiagnostics = diagnostics.info('relationship', 'childRole');
+
    return (
       <Form id={relationship.id} name={relationship.name ?? ModelFileType.Relationship} iconClass={ModelStructure.Relationship.ICON_CLASS}>
          <FormSection label='General'>
@@ -139,10 +112,10 @@ export function RelationshipForm(): React.ReactElement {
                      onChange={handleNameChange}
                      disabled={readonly}
                      required={true}
-                     className={diagnostics.name?.length ? 'p-invalid' : ''}
+                     className={nameDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={nameDiagnostics} />
             </div>
 
             <div className='p-field p-fluid'>
@@ -157,10 +130,10 @@ export function RelationshipForm(): React.ReactElement {
                      disabled={readonly}
                      rows={3}
                      autoResize
-                     className={diagnostics.description?.length ? 'p-invalid' : ''}
+                     className={descriptionDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={descriptionDiagnostics} />
             </div>
 
             <AsyncAutoComplete
@@ -170,8 +143,8 @@ export function RelationshipForm(): React.ReactElement {
                onChange={handleParentChange}
                disabled={readonly}
                required={true}
-               error={!!diagnostics['attributes[0].parent']?.length}
-               helperText={diagnostics['attributes[0].parent']?.[0]?.message}
+               error={!parentDiagnostics.empty}
+               helperText={parentDiagnostics.text()}
             />
 
             <div className='p-field p-fluid'>
@@ -190,6 +163,7 @@ export function RelationshipForm(): React.ReactElement {
                      disabled={readonly}
                   />
                </div>
+               <ErrorInfo diagnostic={parentCardinalityDiagnostics} />
             </div>
 
             <div className='p-field p-fluid'>
@@ -204,10 +178,10 @@ export function RelationshipForm(): React.ReactElement {
                      disabled={readonly}
                      rows={2}
                      autoResize
-                     className={diagnostics.parentRole?.length ? 'p-invalid' : ''}
+                     className={parentRoleDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.parentRole?.length && <small className='p-error'>{diagnostics.parentRole?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={parentRoleDiagnostics} />
             </div>
 
             <AsyncAutoComplete
@@ -217,8 +191,8 @@ export function RelationshipForm(): React.ReactElement {
                onChange={handleChildChange}
                disabled={readonly}
                required={true}
-               error={!!diagnostics['attributes[0].child']?.length}
-               helperText={diagnostics['attributes[0].child']?.[0]?.message}
+               error={!childDiagnostics.empty}
+               helperText={childDiagnostics.text()}
             />
 
             <div className='p-field p-fluid'>
@@ -237,6 +211,7 @@ export function RelationshipForm(): React.ReactElement {
                      disabled={readonly}
                   />
                </div>
+               <ErrorInfo diagnostic={childCardinalityDiagnostics} />
             </div>
 
             <div className='p-field p-fluid'>
@@ -251,10 +226,10 @@ export function RelationshipForm(): React.ReactElement {
                      disabled={readonly}
                      rows={2}
                      autoResize
-                     className={diagnostics.childRole?.length ? 'p-invalid' : ''}
+                     className={childRoleDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.childRole?.length && <small className='p-error'>{diagnostics.childRole?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={childRoleDiagnostics} />
             </div>
          </FormSection>
          <FormSection label='Attributes'>

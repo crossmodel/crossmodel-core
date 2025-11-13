@@ -2,17 +2,18 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { CrossModelValidationErrors, ModelFileType, ModelStructure, toId } from '@crossmodel/protocol';
+import { ModelFileType, ModelStructure, toId } from '@crossmodel/protocol';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
-import { useDiagnostics, useEntity, useModelDispatch, useModelQueryApi, useReadonly, useUntitled, useUri } from '../../ModelContext';
+import { useDiagnosticsManager, useEntity, useModelDispatch, useModelQueryApi, useReadonly, useUntitled, useUri } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
 import { EntityAttributesDataGrid } from '../common';
 import { EntityCustomPropertiesDataGrid } from '../common/EntityCustomPropertiesDataGrid';
 import { EntityIdentifiersDataGrid } from '../common/EntityIdentifiersDataGrid';
+import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
 export function EntityForm(): React.ReactElement {
@@ -22,7 +23,7 @@ export function EntityForm(): React.ReactElement {
    const untitled = useUntitled();
    const uri = useUri();
    const readonly = useReadonly();
-   const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
+   const diagnostics = useDiagnosticsManager();
 
    const handleNameChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,6 +37,9 @@ export function EntityForm(): React.ReactElement {
       [untitled, dispatch, api, uri, entity]
    );
 
+   const nameDiagnostics = diagnostics.info('entity', 'name');
+   const descriptionDiagnostics = diagnostics.info('entity', 'description');
+
    return (
       <Form id={entity.id} name={entity.name ?? ModelFileType.LogicalEntity} iconClass={ModelStructure.LogicalEntity.ICON_CLASS}>
          <FormSection label='General'>
@@ -48,10 +52,10 @@ export function EntityForm(): React.ReactElement {
                      onChange={handleNameChange}
                      disabled={readonly}
                      required={true}
-                     className={diagnostics.name?.length ? 'p-invalid' : ''}
+                     className={nameDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={nameDiagnostics} />
             </div>
 
             <div className='p-field p-fluid'>
@@ -66,10 +70,10 @@ export function EntityForm(): React.ReactElement {
                      disabled={readonly}
                      rows={3}
                      autoResize
-                     className={diagnostics.description?.length ? 'p-invalid' : ''}
+                     className={descriptionDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={descriptionDiagnostics} />
             </div>
          </FormSection>
          <FormSection label='Attributes'>

@@ -2,13 +2,11 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
-import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
-import { Dropdown } from 'primereact/dropdown';
 import * as React from 'react';
-import { useDiagnostics, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
    $type: 'LogicalAttribute';
@@ -45,41 +43,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const entity = useEntity();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<EntityAttributeRow[]>([]);
    const identifiersRef = React.useRef(entity?.identifiers);
-
-   // Process diagnostics into validation errors
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      // Process server-side diagnostics
-      rawDiagnostics.forEach(diagnostic => {
-         entity?.attributes?.forEach((attr, idx) => {
-            const rowId = (attr as EntityAttributeRow).id || `attr${idx}`;
-
-            // Check for attribute-specific errors
-            if (diagnostic.code?.toString().includes(`attributes[${idx}]`)) {
-               if (diagnostic.message.includes('name')) {
-                  errors[`${rowId}.name`] = diagnostic.message;
-               } else if (diagnostic.message.includes('datatype')) {
-                  errors[`${rowId}.datatype`] = diagnostic.message;
-               }
-            }
-         });
-      });
-
-      // Add client-side validation for empty names
-      gridData.forEach(row => {
-         if (!row.name?.trim()) {
-            errors[`${row.id}.name`] = 'Name is required';
-         }
-      });
-
-      setValidationErrors(errors);
-   }, [entity?.attributes, rawDiagnostics, gridData]);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
@@ -95,9 +61,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    );
 
    const handleAddAttribute = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -211,31 +174,23 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          {
             field: 'name',
             header: 'Name',
-            editor: !readonly,
+            body: (rowData: EntityAttributeRow) => (
+               <EditorProperty basePath={['entity', 'attributes']} field='name' row={rowData} value={rowData.name || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'attributes']} field='name' />,
             headerStyle: { width: '20%' },
-            filterType: 'text',
-            body: (rowData: EntityAttributeRow) => {
-               const error = validationErrors[`${rowData.id}.name`];
-               return (
-                  <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
-                     <span>{rowData.name || ''}</span>
-                     {error && <p className='p-error m-0'>{error}</p>}
-                  </div>
-               );
-            }
+            filterType: 'text'
          },
          {
             field: 'datatype',
             header: 'Data Type',
             headerStyle: { width: '15%' },
             editor: (options: any) => (
-               <Dropdown
-                  value={options.value}
-                  options={dataTypeOptions}
-                  onChange={e => options.editorCallback(e.value)}
-                  onKeyDown={handleGridEditorKeyDown}
-                  disabled={readonly}
-                  className='w-full'
+               <GenericDropdownEditor
+                  options={options}
+                  basePath={['entity', 'attributes']}
+                  field='datatype'
+                  dropdownOptions={dataTypeOptions}
                />
             ),
             filterType: 'multiselect',
@@ -250,27 +205,21 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             body: (rowData: EntityAttributeRow) => (
                <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
             ),
-            editor: (options: any) => (
-               <div className='flex align-items-center justify-content-center'>
-                  <Checkbox
-                     checked={options.value ?? false}
-                     onChange={e => options.editorCallback(e.checked ?? false)}
-                     onKeyDown={handleGridEditorKeyDown}
-                     disabled={readonly}
-                  />
-               </div>
-            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='identifier' />,
             filterType: 'boolean',
             showFilterMatchModes: false
          },
          {
             field: 'description',
             header: 'Description',
-            editor: true,
+            body: (rowData: EntityAttributeRow) => (
+               <EditorProperty basePath={['entity', 'attributes']} field='description' row={rowData} value={rowData.description || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'attributes']} field='description' />,
             filterType: 'text'
          }
       ],
-      [readonly, validationErrors]
+      []
    );
 
    const handleIdentifierUpdate = React.useCallback(
@@ -341,21 +290,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = attribute.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
-
          // Get old attribute state
          const oldAttribute = entity.attributes[attribute.idx];
-
          if (attribute._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
@@ -486,7 +422,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          onRowMoveDown={handleAttributeDownward}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No attributes defined'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
@@ -503,9 +438,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state

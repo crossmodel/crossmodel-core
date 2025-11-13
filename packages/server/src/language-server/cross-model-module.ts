@@ -24,6 +24,7 @@ import { CrossModelCodeActionProvider } from './cross-model-code-action-provider
 import { CrossModelCompletionProvider } from './cross-model-completion-provider.js';
 import { CrossModelDataModelManager } from './cross-model-datamodel-manager.js';
 import { CrossModelDocumentBuilder } from './cross-model-document-builder.js';
+import { CrossModelDocumentValidator } from './cross-model-document-validator.js';
 import { CrossModelModelFormatter } from './cross-model-formatter.js';
 import { CrossModelIndexManager } from './cross-model-index-manager.js';
 import { CrossModelLangiumDocuments } from './cross-model-langium-documents.js';
@@ -180,6 +181,7 @@ export function createCrossModelModule(
          Linker: services => new CrossModelLinker(services)
       },
       validation: {
+         DocumentValidator: services => new CrossModelDocumentValidator(services),
          CrossModelValidator: services => new CrossModelValidator(services)
       },
       lsp: {

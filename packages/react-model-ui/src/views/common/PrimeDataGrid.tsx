@@ -20,7 +20,6 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
 export interface GridColumn<T> {
    field: keyof T;
@@ -52,7 +51,6 @@ export interface PrimeDataGridProps<T> {
    defaultNewRow?: Partial<T>;
    editable?: boolean;
    readonly?: boolean;
-   validationErrors?: Record<string, string>;
    className?: string;
    editingRows?: Record<string, boolean>;
    onRowEditChange?: (e: DataTableRowEditEvent) => void;
@@ -74,7 +72,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    defaultNewRow = {},
    editable = true,
    readonly = false,
-   validationErrors = {},
    className,
    editingRows,
    onRowEditChange,
@@ -474,16 +471,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       );
    };
 
-   const cellEditor = (options: any): React.JSX.Element => (
-      <InputText
-         value={options.value}
-         onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
-         className={validationErrors[options.field] ? 'p-invalid' : ''}
-         onKeyDown={handleGridEditorKeyDown}
-         disabled={readonly}
-         autoFocus
-      />
-   );
+   // Note: No default cell editor is provided. Grids should provide per-column editor functions
+   // (columns[].editor) that render their own editor components which read diagnostics locally.
+   const cellEditor = undefined;
 
    const filterTemplate = (
       options: any,
