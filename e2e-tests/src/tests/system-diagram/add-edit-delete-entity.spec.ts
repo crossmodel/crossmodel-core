@@ -3,14 +3,14 @@
  ********************************************************************************/
 import { expect } from '@eclipse-glsp/glsp-playwright';
 import { test } from '@playwright/test';
-import { CMApp } from '../../../page-objects/cm-app';
-import { LogicalEntity } from '../../../page-objects/system-diagram/diagram-elements';
-import { TheiaMinimalDialog } from '../../../page-objects/theia-minimal-dialog';
+import { CMApp } from '../../page-objects/cm-app';
+import { LogicalEntity } from '../../page-objects/system-diagram/diagram-elements';
+import { TheiaMinimalDialog } from '../../page-objects/theia-minimal-dialog';
 
 test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'ExampleCRM/diagrams/EMPTY.system-diagram.cm';
-   const NEW_ENTITY_PATH = 'ExampleCRM/entities/NewEntity.entity.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteEntityDiagram.system-diagram.cm';
+   const NEW_ENTITY_PATH = 'system-diagram/entities/NewEntity.entity.cm';
    const NEW_ENTITY_LABEL = 'NewEntity';
    const RENAMED_ENTITY_LABEL = 'NewEntityRenamed';
    const RENAMED_ENTITY_DESCRIPTION = 'NewEntityDescription';
@@ -27,7 +27,7 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       // Create new entity
       await diagramEditor.waitForCreationOfType(LogicalEntity, async () => {
-         const existingEntity = await diagramEditor.getLogicalEntity('EmptyEntity');
+         const existingEntity = await diagramEditor.getLogicalEntity('AddEditDeleteEntityEntity');
          await diagramEditor.enableTool('Create Entity');
          const taskBounds = await existingEntity.bounds();
          await taskBounds.position('top_center').moveRelative(0, -100).click();

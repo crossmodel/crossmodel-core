@@ -8,9 +8,9 @@ import { CMApp } from '../../../page-objects/cm-app';
 test.describe('Add/Edit/Delete identifiers via properties view', () => {
    let app: CMApp;
 
-   const SYSTEM_DIAGRAM_PATH = 'ExampleCRM/diagrams/EMPTY.system-diagram.cm';
-   const ENTITY_PATH = 'ExampleCRM/entities/EmptyEntity.entity.cm';
-   const EMPTY_ENTITY_ID = 'EmptyEntity';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteIdentifiersDiagram.system-diagram.cm';
+   const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteIdentifiersEntity.entity.cm';
+   const EMPTY_ENTITY_ID = 'AddEditDeleteIdentifiersEntity';
 
    const ATTRIBUTE_ONE = 'IdentifierAttrOne';
    const ATTRIBUTE_TWO = 'IdentifierAttrTwo';
