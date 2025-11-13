@@ -40,8 +40,10 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       const attributesCompartment = new AttributesCompartmentBuilder().set(this.proxy.id);
       for (const attribute of attributes) {
          const attributeNode = AttributeCompartment.builder().set(attribute, index);
-         // increase padding left and right so we have space for the identifier icon
-         attributeNode.addArg('identifier', attribute.identifier).addLayoutOption('paddingLeft', 8).addLayoutOption('paddingRight', 8);
+         // FIXME: Refactor the code below to derive the primary to the backend (model-service/server).
+         const primaryIdentifier = entityRef?.identifiers?.find(identifier => identifier.primary);
+         const isCurrentlyInPrimary = primaryIdentifier?.attributes.some(attr => attr.ref?.id === attribute.id);
+         attributeNode.addArg('identifier', !!isCurrentlyInPrimary).addLayoutOption('paddingLeft', 8).addLayoutOption('paddingRight', 8);
          attributesCompartment.add(attributeNode.build());
       }
       this.add(attributesCompartment.build());

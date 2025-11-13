@@ -1,0 +1,5 @@
+datamodel:
+    id: ExampleCRM_LDM
+    name: "ExampleCRM LDM"
+    type: logical
+    version: 1.0.0

@@ -35,7 +35,6 @@ interface LogicalAttribute extends DataElement, WithCustomProperties {
     length?: number;
     precision?: number;
     scale?: number;
-    identifier?: boolean;
 }
 
 LogicalAttribute returns LogicalAttribute:
@@ -44,7 +43,6 @@ LogicalAttribute returns LogicalAttribute:
     ('length' ':' length=NUMBER)?
     ('precision' ':' precision=NUMBER)?
     ('scale' ':' scale=NUMBER)?
-    (identifier?='identifier' ':' ('TRUE' | 'true'))? // To-be removed in future (identifiers collection on entity is replacement for this information).
     CustomPropertiesFragment?
 ;
 
