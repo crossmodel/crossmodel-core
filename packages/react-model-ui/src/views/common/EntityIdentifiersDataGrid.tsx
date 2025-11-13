@@ -2,11 +2,11 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { findNextUnique, LogicalIdentifier, toId } from '@crossmodel/protocol';
-import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { EditorContainer, EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
 
@@ -52,7 +52,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<EntityIdentifierRow[]>([]);
 
    const handleIdentifierDelete = React.useCallback(
@@ -64,14 +63,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       },
       [dispatch]
    );
-
-   const validateField = React.useCallback((rowData: EntityIdentifierRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.name) {
-         errors.name = 'Invalid Name';
-      }
-      return errors;
-   }, []);
 
    const defaultEntry = React.useMemo<EntityIdentifierRow>(
       () => ({
@@ -118,7 +109,10 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          {
             field: 'name',
             header: 'Name',
-            editor: !readonly,
+            body: (rowData: EntityIdentifierRow) => (
+               <EditorProperty basePath={['entity', 'identifiers']} field='name' row={rowData} value={rowData.name || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'identifiers']} field='name' />,
             headerStyle: { width: '20%' },
             filterType: 'text'
          },
@@ -130,16 +124,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             body: (rowData: EntityIdentifierRow) => (
                <div className='flex align-items-center justify-content-center'>{rowData.primary && <i className='pi pi-check' />}</div>
             ),
-            editor: (options: any) => (
-               <div className='flex align-items-center justify-content-center'>
-                  <Checkbox
-                     checked={options.value ?? false}
-                     onChange={e => options.editorCallback(e.checked ?? false)}
-                     onKeyDown={handleGridEditorKeyDown}
-                     disabled={readonly}
-                  />
-               </div>
-            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'identifiers']} field='primary' />,
             filterType: 'boolean',
             showFilterMatchModes: false
          },
@@ -152,23 +137,28 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                   .filter(attr => rowData.attributeIds.includes(attr.id))
                   .map(attr => attr.name)
                   .join(', ');
-               return <div className='flex align-items-center'>{selectedAttributes}</div>;
+               return <EditorProperty basePath={['entity', 'identifiers']} field='attributes' row={rowData} value={selectedAttributes} />;
             },
             editor: (options: any) => {
                const attributeOptions = entity.attributes.map(attr => ({
                   label: attr.name,
                   value: attr.id
                }));
+               const rowIdx = options.rowData?.idx ?? -1;
                return (
-                  <MultiSelect
-                     value={options.value}
-                     options={attributeOptions}
-                     onChange={(e: MultiSelectChangeEvent) => options.editorCallback(e.value)}
-                     onKeyDown={handleGridEditorKeyDown}
-                     disabled={readonly}
-                     className='w-full'
-                     display='chip'
-                  />
+                  <EditorContainer basePath={['entity', 'identifiers']} field='attributes' rowIdx={rowIdx}>
+                     {({ invalid, error, className }) => (
+                        <MultiSelect
+                           value={options.value}
+                           options={attributeOptions}
+                           onChange={(e: MultiSelectChangeEvent) => options.editorCallback(e.value)}
+                           onKeyDown={handleGridEditorKeyDown}
+                           disabled={readonly}
+                           className={`w-full ${className}`}
+                           display='chip'
+                        />
+                     )}
+                  </EditorContainer>
                );
             },
             filterType: 'text'
@@ -177,7 +167,10 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             field: 'description',
             header: 'Description',
             headerStyle: { width: '20%' },
-            editor: true,
+            body: (rowData: EntityIdentifierRow) => (
+               <EditorProperty basePath={['entity', 'identifiers']} field='description' row={rowData} value={rowData.description || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'identifiers']} field='description' />,
             filterType: 'text'
          }
       ],
@@ -185,9 +178,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    );
 
    const handleRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -208,13 +198,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       (identifier: EntityIdentifierRow): void => {
          // Ensure primary is always a boolean
          identifier.primary = Boolean(identifier.primary);
-
-         const errors = validateField(identifier);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-            return;
-         }
-         setValidationErrors({});
          if (identifier._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
@@ -323,7 +306,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          // Clear editing state after successful update
          setEditingRows({});
       },
-      [dispatch, validateField, entity, defaultEntry]
+      [dispatch, entity, defaultEntry]
    );
 
    if (!entity) {
@@ -342,7 +325,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          onRowUpdate={handleRowUpdate}
          onRowDelete={handleIdentifierDelete}
          readonly={readonly}
-         validationErrors={validationErrors}
          defaultNewRow={defaultEntry}
          noDataMessage='No identifiers defined'
          addButtonLabel='Add Identifier'
@@ -359,9 +341,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state
