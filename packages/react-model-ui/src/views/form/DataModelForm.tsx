@@ -238,7 +238,7 @@ export function DataModelForm(): React.ReactElement {
          <FormSection label='Dependencies'>
             <DataModelDependenciesDataGrid />
          </FormSection>
-         <FormSection label='Custom properties'>
+         <FormSection label='Custom properties' defaultCollapsed={true}>
             <DataModelCustomPropertiesDataGrid />
          </FormSection>
       </Form>
