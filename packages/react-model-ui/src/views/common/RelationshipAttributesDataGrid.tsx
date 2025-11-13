@@ -227,8 +227,6 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
    const onRowUpdate = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
-         // Diagnostics are shown by cell components; nothing to clear here.
-
          if (attribute._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = attribute.parent !== defaultEntry.parent || attribute.child !== defaultEntry.child;
@@ -265,8 +263,6 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    );
 
    const onRowAdd = React.useCallback((): void => {
-      // Diagnostics are shown by cell components; nothing to clear here.
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -387,8 +383,6 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Diagnostics are shown by cell components; nothing to clear here.
             }
 
             // Update editing state

@@ -20,7 +20,6 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
-// no default cell editor; per-column editors handle keyboard events themselves
 
 export interface GridColumn<T> {
    field: keyof T;
@@ -73,7 +72,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    defaultNewRow = {},
    editable = true,
    readonly = false,
-   // validationErrors removed: per-field editors handle their own validation via diagnostics or local checks
    className,
    editingRows,
    onRowEditChange,
