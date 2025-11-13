@@ -5,7 +5,12 @@ entity:
       - id: Code
         name: "Code"
         datatype: "Text"
-        identifier: true
       - id: Name
         name: "Name"
         datatype: "Text"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - Code

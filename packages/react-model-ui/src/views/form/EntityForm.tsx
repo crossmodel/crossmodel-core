@@ -12,6 +12,7 @@ import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
 import { EntityAttributesDataGrid } from '../common';
 import { EntityCustomPropertiesDataGrid } from '../common/EntityCustomPropertiesDataGrid';
+import { EntityIdentifiersDataGrid } from '../common/EntityIdentifiersDataGrid';
 import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
@@ -77,6 +78,9 @@ export function EntityForm(): React.ReactElement {
          </FormSection>
          <FormSection label='Attributes'>
             <EntityAttributesDataGrid />
+         </FormSection>
+         <FormSection label='Identifiers'>
+            <EntityIdentifiersDataGrid />
          </FormSection>
          <FormSection label='Custom properties'>
             <EntityCustomPropertiesDataGrid />

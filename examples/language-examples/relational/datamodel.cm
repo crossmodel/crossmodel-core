@@ -1,0 +1,5 @@
+datamodel:
+    id: ExampleCRM_RPDM
+    name: "ExampleCRM Relational PDM"
+    type: relational
+    version: 1.0.0

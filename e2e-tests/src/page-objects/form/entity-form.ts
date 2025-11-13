@@ -7,16 +7,19 @@ import { Locator } from '@playwright/test';
 import { TheiaPageObject } from '@theia/playwright';
 import { TheiaView } from '@theia/playwright/lib/theia-view';
 import { CMForm, FormIcons, FormSection, FormType } from './cm-form';
+import { LogicalEntityIdentifiersSection } from './sections/identifiers-section';
 
 export class LogicalEntityForm extends CMForm {
    readonly iconClass = FormIcons.LogicalEntity;
    readonly generalSection: LogicalEntityGeneralSection;
    readonly attributesSection: LogicalEntityAttributesSection;
+   readonly identifiersSection: LogicalEntityIdentifiersSection;
 
    constructor(view: TheiaView, baseSelector: string, formType: FormType) {
       super(view, baseSelector, formType);
       this.generalSection = new LogicalEntityGeneralSection(this);
       this.attributesSection = new LogicalEntityAttributesSection(this);
+      this.identifiersSection = new LogicalEntityIdentifiersSection(this);
    }
 }
 
@@ -99,7 +102,7 @@ export class LogicalEntityAttributesSection extends FormSection {
 
       // Wait for the edit mode to end using a direct selector
       const editingCell = this.locator.locator('td input[role="textbox"]');
-      await editingCell.waitFor({ state: 'hidden', timeout: 5000 });
+      await editingCell.waitFor({ state: 'hidden', timeout: 500 });
 
       // Give a little more time for the table to refresh
       await this.page.waitForTimeout(500);
@@ -153,7 +156,6 @@ export class LogicalEntityAttributesSection extends FormSection {
 export interface LogicalAttributeProperties {
    name: string;
    datatype: string;
-   identifier: boolean;
    description: string;
 }
 
@@ -211,7 +213,6 @@ export class LogicalAttribute extends TheiaPageObject {
       return {
          name: await this.getName(),
          datatype: await this.getDatatype(),
-         identifier: await this.isIdentifier(),
          description: await this.getDescription()
       };
    }
@@ -291,6 +292,8 @@ export class LogicalAttribute extends TheiaPageObject {
    }
 
    async setDescription(description: string): Promise<void> {
+      // Enter edit mode for the row
+      await this.actionsLocator.locator('button:has(.pi-pencil)').click(); // Re-enter edit mode
       const inputLocator = this.descriptionLocator.locator('input');
       await inputLocator.waitFor({ state: 'visible' });
       await inputLocator.fill(description);

@@ -5,7 +5,6 @@ entity:
       - id: Attribute
         name: "ProductID"
         datatype: "Guid"
-        identifier: true
       - id: Attribute1
         name: "Name"
         datatype: "Text"
@@ -15,3 +14,9 @@ entity:
       - id: Attribute123
         name: "Price"
         datatype: "Decimal"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - Attribute

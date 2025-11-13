@@ -1,9 +1,11 @@
 /********************************************************************************
- * Copyright (c) 2024 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { CustomProperty, LogicalAttribute, unreachable } from '@crossmodel/protocol';
+import { CustomProperty, LogicalAttribute, LogicalIdentifier as ProtocolLogicalIdentifier, unreachable } from '@crossmodel/protocol';
 import { DispatchAction, ModelAction, ModelState, moveDown, moveUp, undefinedIfEmpty } from './ModelReducer';
+
+export type LogicalIdentifier = ProtocolLogicalIdentifier;
 
 export interface EntityChangeNameAction extends ModelAction {
    type: 'entity:change-name';
@@ -72,6 +74,22 @@ export interface CustomPropertyDeleteAction extends ModelAction {
    customPropertyIdx: number;
 }
 
+export interface EntityIdentifierUpdateAction extends ModelAction {
+   type: 'entity:identifier:update';
+   identifierIdx: number;
+   identifier: LogicalIdentifier;
+}
+
+export interface EntityIdentifierAddAction extends ModelAction {
+   type: 'entity:identifier:add-identifier';
+   identifier: LogicalIdentifier;
+}
+
+export interface EntityIdentifierDeleteAction extends ModelAction {
+   type: 'entity:identifier:delete-identifier';
+   identifierIdx: number;
+}
+
 export type EntityDispatchAction =
    | EntityChangeNameAction
    | EntityChangeIdAction
@@ -81,6 +99,9 @@ export type EntityDispatchAction =
    | LogicalAttributeMoveUpAction
    | LogicalAttributeMoveDownAction
    | LogicalAttributeDeleteAction
+   | EntityIdentifierUpdateAction
+   | EntityIdentifierAddAction
+   | EntityIdentifierDeleteAction
    | CustomPropertyUpdateAction
    | CustomPropertyAddEmptyAction
    | CustomPropertyMoveUpAction
@@ -110,17 +131,25 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          entity.description = undefinedIfEmpty(action.description);
          break;
 
-      case 'entity:attribute:update':
+      case 'entity:attribute:update': {
+         // Filter out identifier property and update required fields
+         const cleanAttribute = { ...action.attribute };
+         delete cleanAttribute.identifier;
          entity.attributes[action.attributeIdx] = {
-            ...action.attribute,
-            name: undefinedIfEmpty(action.attribute.name),
-            description: undefinedIfEmpty(action.attribute.description)
+            ...cleanAttribute,
+            name: undefinedIfEmpty(cleanAttribute.name),
+            description: undefinedIfEmpty(cleanAttribute.description)
          };
          break;
+      }
 
-      case 'entity:attribute:add-attribute':
-         entity.attributes.push(action.attribute);
+      case 'entity:attribute:add-attribute': {
+         // Filter out identifier property when adding new attribute
+         const cleanAttribute = { ...action.attribute };
+         delete cleanAttribute.identifier;
+         entity.attributes.push(cleanAttribute);
          break;
+      }
 
       case 'entity:attribute:delete-attribute':
          entity.attributes.splice(action.attributeIdx, 1);
@@ -156,6 +185,27 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
 
       case 'entity:customProperty:move-customProperty-down':
          moveDown(entity.customProperties!, action.customPropertyIdx);
+         break;
+
+      case 'entity:identifier:update':
+         entity.identifiers = entity.identifiers || [];
+         entity.identifiers[action.identifierIdx] = {
+            ...action.identifier,
+            description: undefinedIfEmpty(action.identifier.description)
+         };
+         break;
+
+      case 'entity:identifier:add-identifier':
+         entity.identifiers = entity.identifiers || [];
+         entity.identifiers.push({
+            ...action.identifier,
+            description: undefinedIfEmpty(action.identifier.description)
+         });
+         break;
+
+      case 'entity:identifier:delete-identifier':
+         entity.identifiers = entity.identifiers || [];
+         entity.identifiers.splice(action.identifierIdx, 1);
          break;
 
       default:
