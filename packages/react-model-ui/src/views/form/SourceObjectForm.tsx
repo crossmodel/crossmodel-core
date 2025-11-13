@@ -41,6 +41,7 @@ export function SourceObjectForm(props: SourceObjectRenderProps): React.ReactEle
    const elementPath = ['mapping', 'sources@' + props.sourceObjectIndex];
    const idDiagnostics = diagnostics.info(elementPath, 'id');
    const entityDiagnostics = diagnostics.info(elementPath, 'entity');
+   const joinDiagnostics = diagnostics.info(elementPath, 'join');
 
    return (
       <Form id={mapping.id} name={sourceObject.id ?? 'Source Object'} iconClass='codicon-group-by-ref-type'>
@@ -72,20 +73,23 @@ export function SourceObjectForm(props: SourceObjectRenderProps): React.ReactEle
                </div>
                <ErrorInfo diagnostic={entityDiagnostics} />
             </div>
-            <Dropdown
-               value={sourceObject.join}
-               onChange={e => changeJoinType(e)}
-               options={[
-                  { label: 'From', value: 'from' },
-                  { label: 'Inner Join', value: 'inner-join' },
-                  { label: 'Cross Join', value: 'cross-join' },
-                  { label: 'Left Join', value: 'left-join' },
-                  { label: 'Apply', value: 'apply' }
-               ]}
-               placeholder='Select Join Type'
-               className='w-full'
-               disabled={readonly}
-            />
+            <div>
+               <Dropdown
+                  value={sourceObject.join}
+                  onChange={e => changeJoinType(e)}
+                  options={[
+                     { label: 'From', value: 'from' },
+                     { label: 'Inner Join', value: 'inner-join' },
+                     { label: 'Cross Join', value: 'cross-join' },
+                     { label: 'Left Join', value: 'left-join' },
+                     { label: 'Apply', value: 'apply' }
+                  ]}
+                  placeholder='Select Join Type'
+                  className={`w-full ${joinDiagnostics.inputClasses()}`}
+                  disabled={readonly}
+               />
+            </div>
+            <ErrorInfo diagnostic={joinDiagnostics} />
          </FormSection>
          <FormSection label='Dependencies'>
             <SourceObjectDependencyDataGrid mapping={mapping} sourceObjectIdx={props.sourceObjectIndex} />

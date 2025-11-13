@@ -181,8 +181,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    const readonly = useReadonly();
    const sourceObject = mapping.sources[sourceObjectIdx];
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-
-   // Diagnostics are read directly in cell components; no validationErrors map is required.
    const [gridData, setGridData] = React.useState<SourceObjectDependencyRow[]>([]);
 
    // Update grid data when dependencies change, preserving any uncommitted rows
@@ -229,8 +227,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const onRowUpdate = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
-         // No local validationErrors state; rely on diagnostics via language server.
-
          if (dependency._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = dependency.source !== defaultEntry.source;
@@ -281,9 +277,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    );
 
    const onRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      // nothing
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -367,11 +360,8 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       return <div>No mapping or source object available</div>;
    }
 
-   const generalError = undefined;
-
    return (
       <div className='source-dependencies-container'>
-         {generalError && <p className='p-error general-error'>{generalError}</p>}
          <PrimeDataGrid
             columns={columns}
             data={gridData}
@@ -384,7 +374,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             onRowMoveDown={onRowMoveDown}
             defaultNewRow={defaultEntry}
             readonly={readonly}
-            // diagnostics are shown by cell components directly
             noDataMessage='No dependencies'
             addButtonLabel='Add Dependency'
             editingRows={editingRows}
@@ -401,8 +390,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
                   if (currentRow?._uncommitted) {
                      setGridData(current => current.filter(row => row.id !== currentEditingId));
                   }
-
-                  // No local validationErrors to clear; diagnostics are read by cell components.
                }
 
                // Update editing state
