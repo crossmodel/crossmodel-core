@@ -217,13 +217,14 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
 
       // Save the property-view form.
       await propertyViewForDelete.save();
-      await diagramEditorForDelete.save();
+      await diagramEditorForDelete.saveAndClose();
 
       // Verify that the attribute node is deleted from the diagram
-      const entity = await diagramEditorForDelete.getLogicalEntity(EMPTY_ENTITY_ID);
+      const diagramEditorForCheck = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const entity = await diagramEditorForCheck.getLogicalEntity(EMPTY_ENTITY_ID);
       const attributeNodes = await entity.children.attributes();
       expect(attributeNodes).toHaveLength(0);
-      await diagramEditorForDelete.saveAndClose();
+      await diagramEditorForCheck.close();
 
       // Verify that the attribute is deleted from the entity file
       const entityCodeEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
