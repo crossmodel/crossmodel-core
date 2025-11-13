@@ -3,12 +3,12 @@
  ********************************************************************************/
 import { expect } from '@eclipse-glsp/glsp-playwright';
 import { test } from '@playwright/test';
-import { CMApp } from '../../../page-objects/cm-app';
-import { LogicalEntity } from '../../../page-objects/system-diagram/diagram-elements';
+import { CMApp } from '../../page-objects/cm-app';
+import { LogicalEntity } from '../../page-objects/system-diagram/diagram-elements';
 
 test.describe.serial('Add existing entity to a diagram', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'ExampleCRM/diagrams/EMPTY.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddExistingEntityDiagram.system-diagram.cm';
    const CUSTOMER_ENTITY_ID = 'Customer';
 
    test.beforeAll(async ({ browser, playwright }) => {

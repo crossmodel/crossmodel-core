@@ -1,9 +1,0 @@
-systemDiagram:
-    id: EMPTY
-    nodes:
-      - id: EmptyEntityNode
-        entity: EmptyEntity
-        x: 396
-        y: 429
-        width: 10
-        height: 10

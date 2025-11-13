@@ -1,0 +1,5 @@
+datamodel:
+    id: system-diagram
+    name: "System Diagram"
+    type: logical
+    version: 1.0.0

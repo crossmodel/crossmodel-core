@@ -2,11 +2,11 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { expect, test } from '@playwright/test';
-import { CMApp } from '../../page-objects/cm-app';
+import { CMApp } from '../../../page-objects/cm-app';
 
 test.describe('Add/Edit/Delete identifiers of an entity using the composite editor', () => {
    let app: CMApp;
-   const TEST_ENTITY_PATH = 'ExampleCRM/entities/Customer.entity.cm';
+   const TEST_ENTITY_PATH = 'composite-editor/entities/AddEditDeleteIdentifiers.entity.cm';
 
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
@@ -114,10 +114,10 @@ test.describe('Add/Edit/Delete identifiers of an entity using the composite edit
 
       // Switch to code editor to verify file contents.
       const entityCodeEditor = await formEditor.parent.switchToCodeEditor();
-
       expect(await entityCodeEditor.numberOfLines()).toBe(13);
 
       // Undo all changes made in this test.
+      expect(formEditor.isDirty()).toBeTruthy();
       await formEditor.closeWithoutSave();
    });
 
