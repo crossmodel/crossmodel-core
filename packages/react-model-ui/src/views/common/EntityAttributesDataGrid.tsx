@@ -1,13 +1,12 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { findNextUnique, LogicalAttribute, toId } from '@crossmodel/protocol';
+import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
-import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
-import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericTextEditor } from './GenericEditors';
+import { EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -304,8 +303,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow) => {
-         // Get old attribute state
-         const oldAttribute = entity.attributes[attribute.idx];
          if (attribute._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
