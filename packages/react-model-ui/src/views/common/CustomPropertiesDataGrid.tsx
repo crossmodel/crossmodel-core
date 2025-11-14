@@ -6,6 +6,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
+import { EditorProperty, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -31,7 +32,6 @@ export function CustomPropertiesDataGrid({
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);
 
    // Update grid data when properties change, preserving any uncommitted rows
@@ -50,14 +50,6 @@ export function CustomPropertiesDataGrid({
       });
    }, [customProperties, editingRows]);
 
-   const validateField = React.useCallback((rowData: CustomPropertyRow): Record<string, string> => {
-      const errors: Record<string, string> = {};
-      if (!rowData.name) {
-         errors.name = 'Invalid Name';
-      }
-      return errors;
-   }, []);
-
    const defaultEntry = React.useMemo<CustomPropertyRow>(
       () => ({
          $type: CustomPropertyType,
@@ -73,14 +65,6 @@ export function CustomPropertiesDataGrid({
 
    const onRowUpdate = React.useCallback(
       (customProperty: CustomPropertyRow) => {
-         // Handle validation
-         const errors = validateField(customProperty);
-         if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-            return;
-         }
-         setValidationErrors({});
-
          if (customProperty._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
@@ -147,13 +131,10 @@ export function CustomPropertiesDataGrid({
          // Clear editing state after successful update
          setEditingRows({});
       },
-      [dispatch, defaultEntry, validateField, customProperties, contextType]
+      [dispatch, defaultEntry, customProperties, contextType]
    );
 
    const onRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -199,13 +180,41 @@ export function CustomPropertiesDataGrid({
       [dispatch, contextType]
    );
 
+   const basePath = React.useMemo(() => [contextType, 'customProperties'], [contextType]);
+
    const columns = React.useMemo<GridColumn<CustomPropertyRow>[]>(
       () => [
-         { field: 'name', header: 'Name', editor: !readonly, style: { width: '20%' }, filterType: 'text' },
-         { field: 'value', header: 'Value', editor: !readonly, style: { width: '20%' }, filterType: 'text' },
-         { field: 'description', header: 'Description', editor: !readonly, filterType: 'text' }
+         {
+            field: 'name',
+            header: 'Name',
+            editor: (options: any) => <GenericTextEditor options={options} basePath={basePath} field='name' />,
+            body: (rowData: CustomPropertyRow) => (
+               <EditorProperty basePath={basePath} field='name' row={rowData} value={rowData.name || ''} />
+            ),
+            style: { width: '20%' },
+            filterType: 'text'
+         },
+         {
+            field: 'value',
+            header: 'Value',
+            editor: (options: any) => <GenericTextEditor options={options} basePath={basePath} field='value' />,
+            body: (rowData: CustomPropertyRow) => (
+               <EditorProperty basePath={basePath} field='value' row={rowData} value={rowData.value || ''} />
+            ),
+            style: { width: '20%' },
+            filterType: 'text'
+         },
+         {
+            field: 'description',
+            header: 'Description',
+            editor: (options: any) => <GenericTextEditor options={options} basePath={basePath} field='description' />,
+            body: (rowData: CustomPropertyRow) => (
+               <EditorProperty basePath={basePath} field='description' row={rowData} value={rowData.description || ''} />
+            ),
+            filterType: 'text'
+         }
       ],
-      [readonly]
+      [basePath]
    );
 
    if (!customProperties) {
@@ -226,7 +235,6 @@ export function CustomPropertiesDataGrid({
          onRowMoveDown={onRowMoveDown}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No custom properties'
          addButtonLabel='Add Property'
          editingRows={editingRows}
@@ -243,9 +251,6 @@ export function CustomPropertiesDataGrid({
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state

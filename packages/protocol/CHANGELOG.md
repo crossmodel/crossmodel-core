@@ -3,6 +3,41 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.11.3](https://github.com/crossmodel/crossmodel-core/compare/v0.11.2...v0.11.3) (2025-11-13)
+
+**Note:** Version bump only for package @crossmodel/protocol
+
+
+
+
+
+## [0.11.2](https://github.com/crossmodel/crossmodel-core/compare/v0.11.1...v0.11.2) (2025-11-13)
+
+
+### Bug Fixes
+
+* Enhance server-side diagnostics with element path ([#203](https://github.com/crossmodel/crossmodel-core/issues/203)) ([d6a7bd4](https://github.com/crossmodel/crossmodel-core/commit/d6a7bd4c768599669a4a20151c35b23b375f52a4))
+
+
+
+
+
+## [0.11.1](https://github.com/crossmodel/crossmodel-core/compare/v0.11.0...v0.11.1) (2025-11-13)
+
+**Note:** Version bump only for package @crossmodel/protocol
+
+
+
+
+
+# [0.11.0](https://github.com/crossmodel/crossmodel-core/compare/v0.10.9...v0.11.0) (2025-11-13)
+
+**Note:** Version bump only for package @crossmodel/protocol
+
+
+
+
+
 ## [0.10.9](https://github.com/crossmodel/crossmodel-core/compare/v0.10.8...v0.10.9) (2025-11-06)
 
 **Note:** Version bump only for package @crossmodel/protocol

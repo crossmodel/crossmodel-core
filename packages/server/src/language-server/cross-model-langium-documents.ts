@@ -1,23 +1,28 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { DefaultLangiumDocuments, DocumentState, LangiumDocument } from 'langium';
+import { AstNode, DefaultLangiumDocuments, DocumentState, LangiumDocument } from 'langium';
 import { CancellationToken } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+import { CrossModelDiagnostic } from './cross-model-document-validator.js';
 import { CrossModelRoot } from './generated/ast.js';
 import { fixDocument } from './util/ast-util.js';
 import { Utils } from './util/uri-util.js';
 
+export interface CrossModelLangiumDocument<T extends AstNode = CrossModelRoot> extends LangiumDocument<T> {
+   diagnostics?: CrossModelDiagnostic[];
+}
+
 export class CrossModelLangiumDocuments extends DefaultLangiumDocuments {
-   override async getOrCreateDocument(uri: URI): Promise<LangiumDocument> {
+   override async getOrCreateDocument(uri: URI): Promise<CrossModelLangiumDocument> {
       const document = this.getDocument(uri);
       if (document) {
-         return document;
+         return document as CrossModelLangiumDocument;
       }
       const documentUri = this.getDocumentUri(uri);
       if (documentUri) {
-         return super.getOrCreateDocument(documentUri);
+         return super.getOrCreateDocument(documentUri) as Promise<CrossModelLangiumDocument>;
       }
       return this.createEmptyDocument(uri);
    }
@@ -27,10 +32,10 @@ export class CrossModelLangiumDocuments extends DefaultLangiumDocuments {
       return Utils.toRealURIorUndefined(uri);
    }
 
-   createEmptyDocument(uri: URI, rootType = CrossModelRoot): LangiumDocument {
-      const document: LangiumDocument = {
+   createEmptyDocument(uri: URI): CrossModelLangiumDocument {
+      const document: CrossModelLangiumDocument = {
          uri,
-         parseResult: { lexerErrors: [], parserErrors: [], value: { $type: rootType } },
+         parseResult: { lexerErrors: [], parserErrors: [], value: { $type: CrossModelRoot } },
          references: [],
          state: DocumentState.Validated,
          textDocument: TextDocument.create(uri.toString(), '', 1, ''),

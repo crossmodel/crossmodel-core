@@ -7,7 +7,6 @@ entity:
       - id: ProductID
         name: "ProductID"
         datatype: "Guid"
-        identifier: true
       - id: WeightInKG
         name: "WeightInKG"
         datatype: "Decimal"
@@ -20,3 +19,9 @@ entity:
       - id: Depth
         name: "Depth"
         datatype: "Integer"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - ProductID

@@ -2,14 +2,14 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { CrossModelValidationErrors } from '@crossmodel/protocol';
 import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
-import { useDiagnostics, useMapping, useModelDispatch, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useMapping, useModelDispatch, useReadonly } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
 import { AttributeMappingSourcesDataGrid } from '../common/AttributeMappingSourcesDataGrid';
+import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
 export interface NewMappingRenderProps {
@@ -24,12 +24,20 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
    const mapping = useMapping();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
+   const diagnostics = useDiagnosticsManager();
 
    const attributeMapping = mapping.target.mappings[props.mappingIndex];
    if (!attributeMapping) {
       return <></>;
    }
+
+   const elementPath = ['mapping', 'target', 'mappings@' + props.mappingIndex];
+
+   const targetAttributeDiagnostics = diagnostics.info([...elementPath, 'attribute'], 'value');
+   // expression diagnostics are reported on the mapping node (no property) by the server
+   // (see checkAttributeMapping in the server validator), so request diagnostics
+   // for the mapping element itself rather than the 'expression' property.
+   const expressionDiagnostics = diagnostics.info(elementPath);
 
    return (
       <Form
@@ -41,9 +49,15 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
             <div className='p-field p-fluid'>
                <div>
                   <label htmlFor='targetAttribute'>Target Attribute</label>
-                  <InputText id='targetAttribute' value={attributeMapping.attribute?.value ?? ''} disabled={true} spellCheck={false} />
+                  <InputText
+                     id='targetAttribute'
+                     value={attributeMapping.attribute?.value ?? ''}
+                     disabled={true}
+                     spellCheck={false}
+                     className={expressionDiagnostics.inputClasses()}
+                  />
                </div>
-               {diagnostics.attribute?.length && <small className='p-error'>{diagnostics.attribute?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={targetAttributeDiagnostics} />
             </div>
 
             <div className='p-field p-fluid'>
@@ -60,9 +74,10 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
                            expression: e.target.value ?? ''
                         })
                      }
+                     className={expressionDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.expression?.length && <small className='p-error'>{diagnostics.expression?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={expressionDiagnostics} />
             </div>
          </FormSection>
          <FormSection label='Sources'>

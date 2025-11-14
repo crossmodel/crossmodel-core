@@ -24,7 +24,7 @@ import {
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
-import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
@@ -33,11 +33,15 @@ interface SourceObjectConditionEditorProps {
    options: any;
    isLeft: boolean;
    sourceObject: any;
+   sourceObjectIdx?: number;
 }
 
 function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): React.ReactElement {
    const { options, isLeft, sourceObject } = props;
    const { editorCallback } = options;
+   const diagnostics = useDiagnosticsManager();
+
+   const [errorMessage, setErrorMessage] = React.useState<string>('');
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
    const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
@@ -150,24 +154,60 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
       };
    }, []);
 
+   // watch diagnostics for this field (canonical lookup: deep element + 'value', then row-level)
+   React.useEffect(() => {
+      try {
+         const basePath = ['mapping', 'sources@' + (props.sourceObjectIdx ?? ''), 'conditions@' + (options.rowData?.idx ?? '-1')];
+         const field = isLeft ? 'expression.left' : 'expression.right';
+
+         const info = ((): any => {
+            try {
+               const parts = field.split('.');
+               if (parts.length === 2) {
+                  const parent = parts[0];
+                  const leaf = parts[1];
+                  const deep = diagnostics.info([...basePath, parent, leaf], 'value');
+                  if (!deep.empty) {
+                     return deep;
+                  }
+               }
+            } catch (e) {
+               // ignore
+            }
+            return diagnostics.info(basePath);
+         })();
+
+         if (!info.empty) {
+            setErrorMessage(info.text() || '');
+         } else {
+            setErrorMessage('');
+         }
+      } catch (e) {
+         // ignore
+      }
+   }, [diagnostics, options.rowData?.idx, props.sourceObjectIdx, isLeft]);
+
    return (
-      <AutoComplete
-         ref={autoCompleteRef}
-         value={currentValue?.value ?? ''}
-         suggestions={suggestions}
-         field='label'
-         completeMethod={search}
-         dropdown
-         className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
-         onDropdownClick={handleDropdownClick}
-         onChange={onChange}
-         onSelect={onSelect}
-         onShow={onShow}
-         onHide={onHide}
-         disabled={readonly}
-         autoFocus
-         onKeyDown={handleGridEditorKeyDown}
-      />
+      <>
+         <AutoComplete
+            ref={autoCompleteRef}
+            value={currentValue?.value ?? ''}
+            suggestions={suggestions}
+            field='label'
+            completeMethod={search}
+            dropdown
+            className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
+            onDropdownClick={handleDropdownClick}
+            onChange={onChange}
+            onSelect={onSelect}
+            onShow={onShow}
+            onHide={onHide}
+            disabled={readonly}
+            autoFocus
+            onKeyDown={handleGridEditorKeyDown}
+         />
+         {errorMessage && <small className='p-error block mt-1'>{errorMessage}</small>}
+      </>
    );
 }
 
@@ -226,9 +266,7 @@ export interface SourceObjectConditionDataGridProps {
 export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: SourceObjectConditionDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<SourceObjectConditionRow[]>([]);
 
    const sourceObject = mapping.sources[sourceObjectIdx];
@@ -265,45 +303,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
       });
    }, [sourceObject?.conditions, editingRows]);
 
-   // Process diagnostics into validation errors
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      try {
-         sourceObject?.conditions?.forEach((condition, idx) => {
-            const rowId = idx.toString();
-
-            // Client-side validation for empty required fields
-            if (!condition.expression.left?.value?.toString().trim()) {
-               errors[`${rowId}.left`] = 'Left expression is required';
-            }
-            if (!condition.expression.op) {
-               errors[`${rowId}.operator`] = 'Operator is required';
-            }
-            if (!condition.expression.right?.value?.toString().trim()) {
-               errors[`${rowId}.right`] = 'Right expression is required';
-            }
-
-            // Server-side validation from diagnostics
-            rawDiagnostics.forEach(diagnostic => {
-               if (diagnostic.code?.toString().includes(`conditions[${idx}]`)) {
-                  if (diagnostic.message.includes('left')) {
-                     errors[`${rowId}.left`] = diagnostic.message;
-                  } else if (diagnostic.message.includes('right')) {
-                     errors[`${rowId}.right`] = diagnostic.message;
-                  } else if (diagnostic.message.includes('operator')) {
-                     errors[`${rowId}.operator`] = diagnostic.message;
-                  }
-               }
-            });
-         });
-
-         setValidationErrors(errors);
-      } catch (e) {
-         console.error('Error processing diagnostics:', e);
-      }
-   }, [sourceObject?.conditions, rawDiagnostics]);
-
    const defaultEntry = React.useMemo<SourceObjectConditionRow>(
       () => ({
          $type: BinaryExpressionType,
@@ -329,18 +328,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
 
    const onRowUpdate = React.useCallback(
       (condition: SourceObjectConditionRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = condition.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
-
          if (condition._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
@@ -430,9 +417,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
    );
 
    const onRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -477,7 +461,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             field: 'left',
             header: 'Left Expression',
             body: rowData => {
-               const error = validationErrors[`${rowData.id}.left`];
                const displayValue =
                   rowData.left.$type === StringLiteralType
                      ? quote(rowData.left.value)
@@ -485,19 +468,27 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                        ? rowData.left.value.toString()
                        : rowData.left.value;
                return (
-                  <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
-                     <span>{displayValue}</span>
-                     {error && <p className='p-error m-0'>{error}</p>}
-                  </div>
+                  <ConditionProperty
+                     rowData={rowData}
+                     editingRows={editingRows}
+                     sourceObjectIdx={sourceObjectIdx}
+                     field='expression.left'
+                     displayValue={displayValue}
+                  />
                );
             },
-            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} />,
+            editor: (options: any) => (
+               <SourceObjectConditionEditor options={options} isLeft={true} sourceObject={sourceObject} sourceObjectIdx={sourceObjectIdx} />
+            ),
             filterType: 'text',
             filterField: 'left.value'
          },
          {
             field: 'operator',
             header: 'Operator',
+            body: rowData => (
+               <ConditionProperty rowData={rowData} editingRows={editingRows} sourceObjectIdx={sourceObjectIdx} field='expression.op' />
+            ),
             editor: (options: any) => <OperatorEditor options={options} />,
             filterType: 'multiselect',
             filterOptions: operatorOptions,
@@ -507,26 +498,97 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             field: 'right',
             header: 'Right Expression',
             body: rowData => {
-               if (rowData.right.$type === StringLiteralType) {
-                  return quote(rowData.right.value);
-               }
-               if (rowData.right.$type === NumberLiteralType) {
-                  return rowData.right.value.toString();
-               }
-               return rowData.right.value;
+               const displayValue =
+                  rowData.right.$type === StringLiteralType
+                     ? quote(rowData.right.value)
+                     : rowData.right.$type === NumberLiteralType
+                       ? rowData.right.value.toString()
+                       : rowData.right.value;
+               return (
+                  <ConditionProperty
+                     rowData={rowData}
+                     editingRows={editingRows}
+                     sourceObjectIdx={sourceObjectIdx}
+                     field='expression.right'
+                     displayValue={displayValue}
+                  />
+               );
             },
-            editor: (options: any) => <SourceObjectConditionEditor options={options} isLeft={false} sourceObject={sourceObject} />,
+            editor: (options: any) => (
+               <SourceObjectConditionEditor
+                  options={options}
+                  isLeft={false}
+                  sourceObject={sourceObject}
+                  sourceObjectIdx={sourceObjectIdx}
+               />
+            ),
             filterType: 'text',
             filterField: 'right.value'
          }
       ],
-      [sourceObject, validationErrors]
+      [sourceObject, editingRows, sourceObjectIdx]
    );
-
-   // Grid data is now managed by the useState and useEffect above
 
    if (!mapping || !sourceObject) {
       return <ErrorView errorMessage='No mapping or source object available' />;
+   }
+
+   function ConditionProperty({
+      rowData,
+      editingRows: editingRowsProp,
+      sourceObjectIdx: sourceIdx,
+      field,
+      displayValue
+   }: {
+      rowData: SourceObjectConditionRow;
+      editingRows: Record<string, boolean>;
+      sourceObjectIdx: number;
+      field: 'expression.left' | 'expression.right' | 'expression.op';
+      displayValue?: React.ReactNode;
+   }): React.ReactNode {
+      const diagnostics = useDiagnosticsManager();
+      const basePath = ['mapping', 'sources@' + sourceIdx.toString(), 'conditions@' + rowData.idx.toString()];
+
+      // Use only the canonical deep-element path (what server returns) and a
+      // row-level fallback as a last resort.
+      const info = ((): any => {
+         try {
+            const parts = field.split('.');
+            if (parts.length === 2) {
+               const parent = parts[0];
+               const leaf = parts[1];
+               const deep = diagnostics.info([...basePath, parent, leaf], 'value');
+               if (!deep.empty) {
+                  return deep;
+               }
+            }
+         } catch (e) {
+            // ignore
+         }
+         return diagnostics.info(basePath);
+      })();
+
+      const error = info.empty ? undefined : info.text();
+
+      // If displayValue not provided, compute default for right/left/operator
+      let valueToShow: React.ReactNode;
+      if (displayValue !== undefined) {
+         valueToShow = displayValue;
+      } else if (field === 'expression.op') {
+         valueToShow = rowData.operator;
+      } else if (field === 'expression.left') {
+         valueToShow = rowData.left.value;
+      } else {
+         // expression.right
+         valueToShow = rowData.right.value;
+      }
+
+      return (
+         <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
+            <span>{valueToShow}</span>
+            {error && !editingRowsProp[rowData.id] && <p className='p-error m-0'>{error}</p>}
+         </div>
+      );
    }
 
    return (
@@ -543,7 +605,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          onRowMoveDown={onRowMoveDown}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No conditions'
          addButtonLabel='Add Condition'
          editingRows={editingRows}
@@ -560,9 +621,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state

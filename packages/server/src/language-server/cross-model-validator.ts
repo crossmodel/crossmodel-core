@@ -2,42 +2,42 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import {
-    CrossModelValidationErrors,
-    findAllExpressions,
-    getExpression,
-    getExpressionPosition,
-    getExpressionText,
-    getSemanticRoot,
-    isMemberPermittedInModel,
-    ModelFileExtensions,
-    ModelMemberPermissions
+   CrossModelValidationErrors,
+   findAllExpressions,
+   getExpression,
+   getExpressionPosition,
+   getExpressionText,
+   getSemanticRoot,
+   isMemberPermittedInModel,
+   ModelFileExtensions,
+   ModelMemberPermissions
 } from '@crossmodel/protocol';
 import { AstNode, GrammarUtils, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
 import { Diagnostic } from 'vscode-languageserver-protocol';
 import type { CrossModelServices } from './cross-model-module.js';
 import { ID_PROPERTY, IdentifiableAstNode } from './cross-model-naming.js';
 import {
-    AttributeMapping,
-    CrossModelAstType,
-    IdentifiedObject,
-    InheritanceEdge,
-    isCrossModelRoot,
-    isLogicalEntity,
-    isMapping,
-    isSystemDiagram,
-    LogicalAttribute,
-    LogicalEntity,
-    Mapping,
-    NamedObject,
-    Relationship,
-    RelationshipEdge,
-    SourceObject,
-    SourceObjectAttribute,
-    SourceObjectCondition,
-    SourceObjectDependency,
-    TargetObject,
-    TargetObjectAttribute,
-    WithCustomProperties
+   AttributeMapping,
+   CrossModelAstType,
+   IdentifiedObject,
+   InheritanceEdge,
+   isCrossModelRoot,
+   isLogicalEntity,
+   isMapping,
+   isSystemDiagram,
+   LogicalAttribute,
+   LogicalEntity,
+   Mapping,
+   NamedObject,
+   Relationship,
+   RelationshipEdge,
+   SourceObject,
+   SourceObjectAttribute,
+   SourceObjectCondition,
+   SourceObjectDependency,
+   TargetObject,
+   TargetObjectAttribute,
+   WithCustomProperties
 } from './generated/ast.js';
 import { findDocument, getOwner, isSemanticRoot } from './util/ast-util.js';
 
@@ -219,6 +219,12 @@ export class CrossModelValidator {
             node: entity,
             property: 'identifiers'
          });
+      }
+
+      // Check each identifier has at least one attribute
+      const identifiersWithoutAttributes = entity.identifiers.filter(identifier => identifier.attributes.length === 0);
+      for (const identifier of identifiersWithoutAttributes) {
+         accept('error', 'Identifier must have at least one attribute.', { node: identifier, property: 'attributes' });
       }
 
       const cycle = this.findInheritanceCycle(entity);

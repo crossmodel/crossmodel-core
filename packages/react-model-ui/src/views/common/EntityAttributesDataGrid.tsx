@@ -1,21 +1,24 @@
 /********************************************************************************
- * Copyright (c) 2023 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { findNextUnique, LogicalAttribute, toId } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
 import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDiagnostics, useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
+import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
+   $type: 'LogicalAttribute';
+   $globalId: Reference<'LogicalAttribute'>;
+   id: string;
    idx: number;
    name: string;
    datatype: string;
    description?: string;
-   identifier?: boolean;
    _uncommitted?: boolean;
 }
 
@@ -43,40 +46,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const entity = useEntity();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
    const [gridData, setGridData] = React.useState<EntityAttributeRow[]>([]);
-
-   // Process diagnostics into validation errors
-   React.useEffect(() => {
-      const errors: Record<string, string> = {};
-
-      // Process server-side diagnostics
-      rawDiagnostics.forEach(diagnostic => {
-         entity?.attributes?.forEach((attr, idx) => {
-            const rowId = (attr as EntityAttributeRow).id || `attr${idx}`;
-
-            // Check for attribute-specific errors
-            if (diagnostic.code?.toString().includes(`attributes[${idx}]`)) {
-               if (diagnostic.message.includes('name')) {
-                  errors[`${rowId}.name`] = diagnostic.message;
-               } else if (diagnostic.message.includes('datatype')) {
-                  errors[`${rowId}.datatype`] = diagnostic.message;
-               }
-            }
-         });
-      });
-
-      // Add client-side validation for empty names
-      gridData.forEach(row => {
-         if (!row.name?.trim()) {
-            errors[`${row.id}.name`] = 'Name is required';
-         }
-      });
-
-      setValidationErrors(errors);
-   }, [entity?.attributes, rawDiagnostics, gridData]);
+   const identifiersRef = React.useRef(entity?.identifiers);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
@@ -85,7 +57,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          idx: -1,
          id: '', // ID will be assigned when adding the row
          description: '',
-         identifier: false,
          $type: 'LogicalAttribute',
          $globalId: 'toBeAssigned'
       }),
@@ -93,9 +64,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    );
 
    const handleAddAttribute = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -133,13 +101,43 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleAttributeDelete = React.useCallback(
       (attribute: EntityAttributeRow): void => {
+         // Get the current state of identifiers
+         const currentIdentifiers = identifiersRef.current;
+         // Update all identifiers that reference this attribute first
+         if (currentIdentifiers?.length > 0) {
+            // Create updates for all identifiers in parallel
+            currentIdentifiers.forEach((identifier, idx) => {
+               if (
+                  identifier?.attributes?.some((attr: any) => (typeof attr === 'string' ? attr === attribute.id : attr.id === attribute.id))
+               ) {
+                  // Update each identifier to remove the attribute reference
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: idx,
+                     identifier: {
+                        ...identifier,
+                        attributes: identifier.attributes.filter((attr: any) =>
+                           typeof attr === 'string' ? attr !== attribute.id : attr.id !== attribute.id
+                        )
+                     }
+                  });
+               }
+            });
+         }
+
+         // Then delete the attribute
          dispatch({
             type: 'entity:attribute:delete-attribute',
             attributeIdx: attribute.idx
          });
       },
-      [dispatch]
+      [dispatch, identifiersRef]
    );
+
+   // Keep identifiersRef updated with the latest identifiers
+   React.useEffect(() => {
+      identifiersRef.current = entity?.identifiers;
+   }, [entity?.identifiers]);
 
    // Update grid data when attributes change, preserving any uncommitted rows
    React.useEffect(() => {
@@ -161,25 +159,19 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
          return [...committedData, ...uncommittedRows];
       });
-   }, [entity.attributes, editingRows]);
+   }, [entity.attributes, entity.identifiers, editingRows]);
 
    const columns: GridColumn<EntityAttributeRow>[] = React.useMemo(
       () => [
          {
             field: 'name',
             header: 'Name',
-            editor: !readonly,
+            body: (rowData: EntityAttributeRow) => (
+               <EditorProperty basePath={['entity', 'attributes']} field='name' row={rowData} value={rowData.name || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'attributes']} field='name' />,
             headerStyle: { width: '20%' },
-            filterType: 'text',
-            body: (rowData: EntityAttributeRow) => {
-               const error = validationErrors[`${rowData.id}.name`];
-               return (
-                  <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
-                     <span>{rowData.name || ''}</span>
-                     {error && <p className='p-error m-0'>{error}</p>}
-                  </div>
-               );
-            }
+            filterType: 'text'
          },
          {
             field: 'datatype',
@@ -221,56 +213,105 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          },
          {
             field: 'identifier',
-            header: 'Key',
+            header: 'Primary',
             dataType: 'boolean',
             headerStyle: { width: '10%' },
             body: (rowData: EntityAttributeRow) => (
                <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
             ),
-            editor: (options: any) => (
-               <div className='flex align-items-center justify-content-center'>
-                  <Checkbox
-                     checked={options.value ?? false}
-                     onChange={e => options.editorCallback(e.checked ?? false)}
-                     onKeyDown={handleGridEditorKeyDown}
-                     disabled={readonly}
-                  />
-               </div>
-            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='identifier' />,
             filterType: 'boolean',
             showFilterMatchModes: false
          },
          {
             field: 'description',
             header: 'Description',
-            editor: true,
+            body: (rowData: EntityAttributeRow) => (
+               <EditorProperty basePath={['entity', 'attributes']} field='description' row={rowData} value={rowData.description || ''} />
+            ),
+            editor: (options: any) => <GenericTextEditor options={options} basePath={['entity', 'attributes']} field='description' />,
             filterType: 'text'
          }
       ],
-      [readonly, validationErrors]
+      []
+   );
+
+   const handleIdentifierUpdate = React.useCallback(
+      (attributeId: string, attributeName: string, shouldBeIdentifier: boolean, isNew = false) => {
+         // Check if there's an existing primary identifier
+         const existingPrimary = entity.identifiers?.find(i => i.primary);
+
+         if (shouldBeIdentifier) {
+            if (existingPrimary) {
+               // Add this attribute to the existing primary identifier
+               dispatch({
+                  type: 'entity:identifier:update',
+                  identifierIdx: entity.identifiers.indexOf(existingPrimary),
+                  identifier: {
+                     ...existingPrimary,
+                     attributes: [...existingPrimary.attributes, attributeId] as any
+                  }
+               });
+            } else {
+               // Create new primary identifier
+               const identifierId = findNextUnique(toId('Primary Identifier'), entity.identifiers || [], id => id.id || '');
+               dispatch({
+                  type: 'entity:identifier:add-identifier',
+                  identifier: {
+                     id: identifierId,
+                     name: 'Primary Identifier',
+                     primary: true,
+                     attributes: [attributeId] as any,
+                     $type: 'LogicalIdentifier',
+                     $globalId: `${entity.id}.${identifierId}`
+                  }
+               });
+            }
+         } else if (!isNew) {
+            // Only handle removal for existing attributes
+            // Find identifier containing this attribute
+            const identifierToUpdate = entity.identifiers?.find(identifier =>
+               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === attributeId : attr.id === attributeId))
+            );
+
+            if (identifierToUpdate) {
+               const remainingAttributes = identifierToUpdate.attributes.filter(attr =>
+                  typeof attr === 'string' ? attr !== attributeId : attr.id !== attributeId
+               );
+
+               if (remainingAttributes.length === 0) {
+                  // If no attributes left, remove the identifier
+                  dispatch({
+                     type: 'entity:identifier:delete-identifier',
+                     identifierIdx: entity.identifiers.indexOf(identifierToUpdate)
+                  });
+               } else {
+                  // Otherwise update the identifier with remaining attributes
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: entity.identifiers.indexOf(identifierToUpdate),
+                     identifier: {
+                        ...identifierToUpdate,
+                        attributes: remainingAttributes
+                     }
+                  });
+               }
+            }
+         }
+      },
+      [dispatch, entity.identifiers, entity.id]
    );
 
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = attribute.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
-
+         // Get old attribute state
+         const oldAttribute = entity.attributes[attribute.idx];
          if (attribute._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
                attribute.name !== defaultEntry.name ||
                attribute.datatype !== defaultEntry.datatype ||
-               attribute.description !== defaultEntry.description ||
-               attribute.identifier !== defaultEntry.identifier;
+               attribute.description !== defaultEntry.description;
 
             if (!hasChanges || !attribute.name) {
                // Remove the row if no changes or no name
@@ -284,7 +325,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, description, ...attributeData } = attribute;
+            const { _uncommitted: _, id: __, description, identifier, ...attributeData } = attribute;
             const finalAttribute = {
                ...attributeData,
                id: newId,
@@ -314,8 +355,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             }
          } else {
             // This is an existing row being updated
-            // Remove empty fields before updating
-            const { description, ...rest } = attribute;
+            // Remove empty and non-model fields before updating
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { description, identifier: _ignored, ...rest } = attribute;
             const updatedAttribute = {
                ...rest,
                ...(description ? { description } : {})
@@ -330,7 +372,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             setEditingRows({});
          }
       },
-      [dispatch, defaultEntry, entity.attributes]
+      [dispatch, defaultEntry, entity, handleIdentifierUpdate]
    );
 
    if (!entity) {
@@ -351,7 +393,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          onRowMoveDown={handleAttributeDownward}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No attributes defined'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
@@ -368,9 +409,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state

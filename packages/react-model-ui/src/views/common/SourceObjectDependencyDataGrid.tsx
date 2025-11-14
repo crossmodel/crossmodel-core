@@ -12,65 +12,41 @@ import {
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectDependencyEditorProps {
    options: any;
    sourceObject: SourceObject;
+   sourceObjectIdx: number;
 }
 
 function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps): React.ReactElement {
    const { options, sourceObject } = props;
    const { editorCallback } = options;
 
+   const diagnostics = useDiagnosticsManager();
+
    const [currentValue, setCurrentValue] = React.useState(options.value || '');
    const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
-   const [processedDiagnostics, setProcessedDiagnostics] = React.useState<Record<string, string>>({});
+
+   const [errorMessage, setErrorMessage] = React.useState<string>('');
 
    // Process diagnostics for this field
    React.useEffect(() => {
-      try {
-         const diagnostics: Record<string, string> = {};
-         const key = `dependencies[${options.rowData.idx}].source`;
+      const basePath = ['mapping', 'sources@' + props.sourceObjectIdx.toString(), 'dependencies@' + options.rowData.idx.toString()];
+      const fieldInfo = diagnostics.info(basePath, 'source');
 
-         // Clear previous diagnostics
-         setProcessedDiagnostics({});
-
-         rawDiagnostics.forEach(diagnostic => {
-            const diagnosticCode = String(diagnostic.code);
-
-            if (diagnostic.message.includes('Could not resolve reference')) {
-               // Check if this diagnostic is specifically for this field
-               if (diagnosticCode.includes(key)) {
-                  diagnostics[key] = diagnostic.message;
-               }
-               // Only check the value if we have a non-empty current value
-               else if (
-                  options.rowData.source &&
-                  !options.rowData.source.trim().startsWith('_') &&
-                  diagnostic.message.includes(options.rowData.source)
-               ) {
-                  diagnostics[key] = diagnostic.message;
-               }
-            }
-         });
-
-         setProcessedDiagnostics(diagnostics);
-      } catch (e) {
-         console.error('Error processing diagnostics:', e);
+      if (!fieldInfo.empty) {
+         setErrorMessage(fieldInfo.text() || '');
+      } else {
+         setErrorMessage('');
       }
-
-      // Cleanup function to clear diagnostics when component unmounts
-      return () => {
-         setProcessedDiagnostics({});
-      };
-   }, [rawDiagnostics, options.rowData, currentValue]);
+   }, [diagnostics, options.rowData.idx, props.sourceObjectIdx]);
    const isDropdownClicked = React.useRef(false);
    // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
@@ -164,9 +140,6 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
       };
    }, []);
 
-   const diagnosticKey = `dependencies[${options.rowData.idx}].source`;
-   const errorMessage = processedDiagnostics[diagnosticKey];
-
    return (
       <div className='grid-editor-container'>
          <div className={`p-field ${errorMessage ? 'p-error' : ''}`}>
@@ -206,57 +179,8 @@ export interface SourceObjectDependencyDataGridProps {
 export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: SourceObjectDependencyDataGridProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
-   const rawDiagnostics = useDiagnostics();
    const sourceObject = mapping.sources[sourceObjectIdx];
-   const [processedDiagnostics, setProcessedDiagnostics] = React.useState<Record<string, string>>({});
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
-
-   // Process diagnostics for the grid
-   React.useEffect(() => {
-      try {
-         const diagnostics: Record<string, string> = {};
-
-         // Clear old diagnostics first
-         setProcessedDiagnostics({});
-
-         rawDiagnostics.forEach(diagnostic => {
-            const diagnosticCode = String(diagnostic.code);
-
-            // Handle source join type validation
-            if (diagnostic.message.includes('join type "from" cannot have dependencies')) {
-               // This is a general dependencies error, store it with a special key
-               diagnostics['dependencies'] = diagnostic.message;
-            }
-
-            // Handle individual dependency diagnostics
-            sourceObject.dependencies?.forEach((dependency, idx) => {
-               const key = `dependencies[${idx}].source`;
-
-               // Check for reference resolution errors
-               if (diagnostic.message.includes('Could not resolve reference')) {
-                  // Only process if the diagnostic is specifically for this field
-                  if (diagnosticCode.includes(key)) {
-                     diagnostics[key] = diagnostic.message;
-                  }
-                  // Or if the message mentions the current value (for unresolved references)
-                  else if (dependency.source && diagnostic.message.includes(dependency.source)) {
-                     diagnostics[key] = diagnostic.message;
-                  }
-               }
-            });
-         });
-
-         setProcessedDiagnostics(diagnostics);
-      } catch (e) {
-         console.error('Error processing diagnostics:', e);
-      }
-
-      // Cleanup function to clear diagnostics when component unmounts
-      return () => {
-         setProcessedDiagnostics({});
-      };
-   }, [rawDiagnostics, sourceObject.dependencies]);
    const [gridData, setGridData] = React.useState<SourceObjectDependencyRow[]>([]);
 
    // Update grid data when dependencies change, preserving any uncommitted rows
@@ -303,18 +227,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const onRowUpdate = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = dependency.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
-
          if (dependency._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = dependency.source !== defaultEntry.source;
@@ -379,9 +291,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    );
 
    const onRowAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -420,38 +329,53 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       [dispatch, sourceObjectIdx]
    );
 
+   function SourceObjectDependencyProperty({
+      rowData,
+      editingRows: editingRowsProp,
+      sourceObjectIdx: sourceIdx
+   }: {
+      rowData: SourceObjectDependencyRow;
+      editingRows: Record<string, boolean>;
+      sourceObjectIdx: number;
+   }): React.ReactNode {
+      const diagnostics = useDiagnosticsManager();
+      const basePath = ['mapping', 'sources@' + sourceIdx.toString(), 'dependencies@' + rowData.idx.toString()];
+      const info = diagnostics.info(basePath, 'source');
+      const error = info.empty ? undefined : info.text();
+
+      return (
+         <div className={`grid-cell-container ${error ? 'p-invalid' : ''}`} title={error || undefined}>
+            {rowData.source}
+            {error && <p className='p-error m-0'>{error}</p>}
+         </div>
+      );
+   }
+
    const columns = React.useMemo<GridColumn<SourceObjectDependencyRow>[]>(
       () => [
          {
             field: 'source',
             header: 'Source',
-            body: (rowData: SourceObjectDependencyRow) => {
-               const errorMessage = processedDiagnostics[`dependencies[${rowData.idx}].source`];
-               return (
-                  <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage || undefined}>
-                     {rowData.source}
-                     {errorMessage && <p className='p-error m-0'>{errorMessage}</p>}
-                  </div>
-               );
-            },
-            editor: (options: any) => <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} />,
+            body: (rowData: SourceObjectDependencyRow) => (
+               <SourceObjectDependencyProperty rowData={rowData} editingRows={editingRows} sourceObjectIdx={sourceObjectIdx} />
+            ),
+            editor: (options: any) => (
+               <SourceObjectDependencyEditor options={options} sourceObject={sourceObject} sourceObjectIdx={sourceObjectIdx} />
+            ),
             filterType: 'multiselect',
             filterOptions: sourceOptions,
             showFilterMatchModes: false
          }
       ],
-      [sourceObject, sourceOptions, processedDiagnostics]
+      [sourceObject, sourceOptions, sourceObjectIdx, editingRows]
    );
 
    if (!mapping || !sourceObject) {
       return <div>No mapping or source object available</div>;
    }
 
-   const generalError = processedDiagnostics['dependencies'];
-
    return (
       <div className='source-dependencies-container'>
-         {generalError && <p className='p-error general-error'>{generalError}</p>}
          <PrimeDataGrid
             columns={columns}
             data={gridData}
@@ -464,7 +388,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             onRowMoveDown={onRowMoveDown}
             defaultNewRow={defaultEntry}
             readonly={readonly}
-            validationErrors={validationErrors}
             noDataMessage='No dependencies'
             addButtonLabel='Add Dependency'
             editingRows={editingRows}
@@ -481,9 +404,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
                   if (currentRow?._uncommitted) {
                      setGridData(current => current.filter(row => row.id !== currentEditingId));
                   }
-
-                  // Clear validation errors
-                  setValidationErrors({});
                }
 
                // Update editing state

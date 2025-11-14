@@ -7,10 +7,15 @@ entity:
       - id: Attribute
         name: "ProductID"
         datatype: "Guid"
-        identifier: true
       - id: SizeInKB
         name: "SizeInKB"
         datatype: "Decimal"
       - id: DownloadURL
         name: "DownloadURL"
         datatype: "Text"
+    identifiers:
+      - id: Primary_Identifier
+        name: "Primary Identifier"
+        primary: true
+        attributes:
+          - Attribute

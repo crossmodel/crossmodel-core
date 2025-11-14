@@ -2,7 +2,7 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { AllDataModelTypeInfos, CrossModelValidationErrors, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
+import { AllDataModelTypeInfos, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
 import { debounce } from 'lodash';
 import {
    AutoComplete,
@@ -14,12 +14,21 @@ import {
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
-import { useDataModel, useDiagnostics, useModelDispatch, useModelQueryApi, useReadonly, useUntitled, useUri } from '../../ModelContext';
+import {
+   useDataModel,
+   useDiagnosticsManager,
+   useModelDispatch,
+   useModelQueryApi,
+   useReadonly,
+   useUntitled,
+   useUri
+} from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
+import { FormSection } from '../FormSection';
 import { DataModelCustomPropertiesDataGrid } from '../common/DataModelCustomPropertiesDataGrid';
 import { DataModelDependenciesDataGrid } from '../common/DataModelDependenciesDataGrid';
-import { FormSection } from '../FormSection';
+import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
 export function DataModelForm(): React.ReactElement {
@@ -29,7 +38,7 @@ export function DataModelForm(): React.ReactElement {
    const untitled = useUntitled();
    const uri = useUri();
    const readonly = useReadonly();
-   const diagnostics = CrossModelValidationErrors.getFieldErrors(useDiagnostics());
+   const diagnostics = useDiagnosticsManager();
 
    const [filteredTypes, setFilteredTypes] = React.useState<DataModelTypeInfo[]>([]);
    const [currentTypeValue, setCurrentTypeValue] = React.useState<DataModelTypeInfo | undefined>(
@@ -152,6 +161,11 @@ export function DataModelForm(): React.ReactElement {
       return <div>No data model found</div>;
    }
 
+   const nameDiagnostics = diagnostics.info('datamodel', 'name');
+   const descriptionDiagnostics = diagnostics.info('datamodel', 'description');
+   const typeDiagnostics = diagnostics.info('datamodel', 'type');
+   const versionDiagnostics = diagnostics.info('datamodel', 'version');
+
    return (
       <Form id={dataModel.id} name={dataModel.name ?? 'Data Model'} iconClass={ModelStructure.DataModel.ICON_CLASS}>
          <FormSection label='General'>
@@ -164,10 +178,10 @@ export function DataModelForm(): React.ReactElement {
                      onChange={handleNameChange}
                      disabled={readonly}
                      required={true}
-                     className={diagnostics.name?.length ? 'p-invalid' : ''}
+                     className={nameDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.name?.length && <small className='p-error'>{diagnostics.name?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={nameDiagnostics} />
             </div>
             <div className='p-field p-fluid'>
                <div>
@@ -179,10 +193,10 @@ export function DataModelForm(): React.ReactElement {
                      disabled={readonly}
                      rows={3}
                      autoResize
-                     className={diagnostics.description?.length ? 'p-invalid' : ''}
+                     className={descriptionDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.description?.length && <small className='p-error'>{diagnostics.description?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={descriptionDiagnostics} />
             </div>
             <div className='p-field p-fluid'>
                <div>
@@ -198,14 +212,14 @@ export function DataModelForm(): React.ReactElement {
                      onSelect={handleTypeSelect}
                      disabled={readonly}
                      required={true}
-                     className={`${diagnostics.type?.length ? 'p-invalid' : ''} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
+                     className={`${typeDiagnostics.inputClasses()} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
                      dropdown
                      onDropdownClick={handleDropdownClick}
                      onShow={onShow}
                      onHide={onHide}
                   />
                </div>
-               {diagnostics.type?.length && <small className='p-error'>{diagnostics.type?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={typeDiagnostics} />
             </div>
             <div className='p-field p-fluid'>
                <div>
@@ -215,16 +229,16 @@ export function DataModelForm(): React.ReactElement {
                      value={dataModel.version ?? ''}
                      onChange={handleVersionChange}
                      disabled={readonly}
-                     className={diagnostics.version?.length ? 'p-invalid' : ''}
+                     className={versionDiagnostics.inputClasses()}
                   />
                </div>
-               {diagnostics.version?.length && <small className='p-error'>{diagnostics.version?.[0]?.message}</small>}
+               <ErrorInfo diagnostic={versionDiagnostics} />
             </div>
          </FormSection>
          <FormSection label='Dependencies'>
             <DataModelDependenciesDataGrid />
          </FormSection>
-         <FormSection label='Custom properties'>
+         <FormSection label='Custom properties' defaultCollapsed={true}>
             <DataModelCustomPropertiesDataGrid />
          </FormSection>
       </Form>

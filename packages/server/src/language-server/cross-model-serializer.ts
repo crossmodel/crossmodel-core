@@ -19,7 +19,6 @@ import {
    isDataModel,
    isDataModelDependency,
    isJoinCondition,
-   isLogicalAttribute,
    isLogicalIdentifier,
    isRelationship,
    isSourceObject,
@@ -55,7 +54,7 @@ const CUSTOM_PROPERTIES = ['customProperties'];
  */
 const PROPERTY_ORDER = new Map<string, string[]>([
    [LogicalEntity, [...NAMED_OBJECT_PROPERTIES, 'superEntities', 'attributes', 'identifiers', ...CUSTOM_PROPERTIES]],
-   [LogicalAttribute, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', 'identifier', ...CUSTOM_PROPERTIES]],
+   [LogicalAttribute, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', ...CUSTOM_PROPERTIES]],
    [
       Relationship,
       [
@@ -163,10 +162,6 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                }
                if (Array.isArray(propValue) && propValue.length === 0) {
                   // skip empty arrays
-                  return undefined;
-               }
-               if (isLogicalAttribute(value) && prop === 'identifier' && propValue === false) {
-                  // special: skip identifier property if it is false
                   return undefined;
                }
                if (isLogicalIdentifier(value) && prop === 'primary' && propValue === false) {

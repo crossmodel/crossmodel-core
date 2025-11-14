@@ -14,12 +14,36 @@ import {
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
+interface AttributeMappingSourceValueProps {
+   row: { idx: number };
+   mappingIdx: number;
+   value: string;
+}
+
+function AttributeMappingSourceValue({ row, mappingIdx, value }: AttributeMappingSourceValueProps): React.ReactNode {
+   const diagnostics = useDiagnosticsManager();
+   const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'sources@' + row.idx.toString()];
+   const valueInfo = diagnostics.info(basePath, 'value');
+   const errorMessage = valueInfo.empty ? undefined : valueInfo.text();
+
+   return (
+      <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage}>
+         {value}
+         {errorMessage && <p className='p-error m-0'>{errorMessage}</p>}
+      </div>
+   );
+}
+
 interface AttributeMappingSourceEditorProps {
-   options: any;
+   options: {
+      value: string;
+      editorCallback?: (value: string) => void;
+      rowData: AttributeMappingSourceRow;
+   };
    mappingIdx: number;
 }
 
@@ -27,6 +51,8 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
    const mapping = useMapping();
    const { options } = props;
    const { editorCallback } = options;
+   const diagnostics = useDiagnosticsManager();
+   const [errorMessage, setErrorMessage] = React.useState<string>('');
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
    const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
@@ -36,6 +62,18 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
    const isDropdownClicked = React.useRef(false);
    // eslint-disable-next-line no-null/no-null
    const autoCompleteRef = React.useRef<AutoComplete>(null);
+
+   React.useEffect(() => {
+      // Check for value-level diagnostics
+      const basePath = ['mapping', 'target', 'mappings@' + props.mappingIdx.toString(), 'sources@' + options.rowData.idx.toString()];
+      const valueInfo = diagnostics.info(basePath, 'value');
+
+      if (!valueInfo.empty) {
+         setErrorMessage(valueInfo.text() || '');
+      } else {
+         setErrorMessage('');
+      }
+   }, [diagnostics, props.mappingIdx, options.rowData.idx]);
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
@@ -129,22 +167,27 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
    }, []);
 
    return (
-      <AutoComplete
-         ref={autoCompleteRef}
-         value={currentValue ?? ''}
-         suggestions={suggestions}
-         field='label'
-         completeMethod={search}
-         dropdown
-         className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
-         onDropdownClick={handleDropdownClick}
-         onChange={onChange}
-         onShow={onShow}
-         onHide={onHide}
-         disabled={readonly}
-         autoFocus
-         onKeyDown={handleGridEditorKeyDown}
-      />
+      <div className='grid-editor-container'>
+         <div className={`p-field ${errorMessage ? 'p-error' : ''}`}>
+            <AutoComplete
+               ref={autoCompleteRef}
+               value={currentValue ?? ''}
+               suggestions={suggestions}
+               field='label'
+               completeMethod={search}
+               dropdown
+               className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''} ${errorMessage ? 'p-invalid' : ''}`}
+               onDropdownClick={handleDropdownClick}
+               onChange={onChange}
+               onShow={onShow}
+               onHide={onHide}
+               disabled={readonly}
+               autoFocus
+               onKeyDown={handleGridEditorKeyDown}
+            />
+            {errorMessage && <small className='p-error block mt-1'>{errorMessage}</small>}
+         </div>
+      </div>
    );
 }
 
@@ -167,7 +210,6 @@ export function AttributeMappingSourcesDataGrid({
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
    const defaultEntry = React.useMemo<Partial<AttributeMappingSourceRow>>(
       () => ({
@@ -207,18 +249,6 @@ export function AttributeMappingSourcesDataGrid({
 
    const onSourceUpdate = React.useCallback(
       (sourceToUpdate: AttributeMappingSourceRow) => {
-         // Clear any existing validation errors for this row
-         const rowId = sourceToUpdate.id;
-         setValidationErrors(current => {
-            const updated = { ...current };
-            Object.keys(updated).forEach(key => {
-               if (key.startsWith(`${rowId}.`)) {
-                  delete updated[key];
-               }
-            });
-            return updated;
-         });
-
          if (sourceToUpdate._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = sourceToUpdate.value !== defaultEntry.value;
@@ -283,9 +313,6 @@ export function AttributeMappingSourcesDataGrid({
    );
 
    const onSourceAdd = React.useCallback((): void => {
-      // Clear any previous validation errors
-      setValidationErrors({});
-
       // Clear any existing edit states first
       setEditingRows({});
 
@@ -321,7 +348,7 @@ export function AttributeMappingSourcesDataGrid({
          {
             field: 'value',
             header: 'Value',
-            body: rowData => rowData.value,
+            body: rowData => <AttributeMappingSourceValue row={rowData} mappingIdx={mappingIdx} value={rowData.value || ''} />,
             editor: (options: any) => <AttributeMappingSourceEditor options={options} mappingIdx={mappingIdx} />
          }
       ],
@@ -346,7 +373,6 @@ export function AttributeMappingSourcesDataGrid({
          onRowMoveDown={onSourceMoveDown}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         validationErrors={validationErrors}
          noDataMessage='No source expressions'
          addButtonLabel='Add Source'
          editingRows={editingRows}
@@ -363,9 +389,6 @@ export function AttributeMappingSourcesDataGrid({
                if (currentRow?._uncommitted) {
                   setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
-
-               // Clear validation errors
-               setValidationErrors({});
             }
 
             // Update editing state

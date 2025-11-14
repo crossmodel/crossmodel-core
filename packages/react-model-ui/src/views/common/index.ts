@@ -4,6 +4,5 @@
 export * from './AsyncAutoComplete';
 export * from './EditorError';
 export * from './EntityAttributesDataGrid';
-export * from './GridComponent';
 export * from './RelationshipAttributesDataGrid';
 export * from './SourceObjectDependencyDataGrid';
