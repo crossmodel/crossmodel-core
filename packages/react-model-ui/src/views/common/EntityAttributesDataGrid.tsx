@@ -51,7 +51,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
-         name: '',
+        name: '',
          datatype: '',
          idx: -1,
          id: '', // ID will be assigned when adding the row
@@ -142,16 +142,27 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    React.useEffect(() => {
       setGridData(current => {
          // Map the committed attributes
-         const committedData = (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => ({
-            idx,
-            name: attr.name || '',
-            datatype: attr.datatype || '',
-            description: attr.description || '',
-            identifier: (attr as any).identifier || false,
-            id: attr.id || '',
-            $type: 'LogicalAttribute',
-            $globalId: attr.id || ''
-         })) as EntityAttributeRow[];
+         const committedData = (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => {
+            // Find if this attribute is part of any primary identifier
+            const isPrimaryIdentifier =
+               entity.identifiers?.some(
+                  identifier =>
+                     identifier.primary && identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
+               ) || false;
+
+            // Use the primary identifier status for the identifier checkbox
+            // This ensures the grid reflects the actual primary identifier state
+            return {
+               idx,
+               name: attr.name || '',
+             datatype: attr.datatype || '',
+               description: attr.description || '',
+               identifier: isPrimaryIdentifier, // Only true if part of a primary identifier
+               id: attr.id || '',
+               $type: 'LogicalAttribute',
+               $globalId: attr.$globalId || ''
+            };
+         }) as EntityAttributeRow[];
 
          // Preserve any uncommitted rows that are currently being edited
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
@@ -176,7 +187,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             field: 'datatype',
             header: 'Data Type',
             headerStyle: { width: '15%' },
-            editor: (options: any) => {
+           editor: (options: any) => {
                const [suggestions, setSuggestions] = React.useState<{ label: string; value: string }[]>([]);
 
                const search = (event: AutoCompleteCompleteEvent) => {
@@ -205,7 +216,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      forceSelection={false}
                   />
                );
-            },
+            }, 
             filterType: 'multiselect',
             filterOptions: dataTypeOptions,
             showFilterMatchModes: false
@@ -303,6 +314,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleRowUpdate = React.useCallback(
       (attribute: EntityAttributeRow) => {
+         // Get old attribute state
+         const oldAttribute = entity.attributes[attribute.idx];
          if (attribute._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges =
@@ -335,8 +348,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                type: 'entity:attribute:add-attribute',
                attribute: finalAttribute
             });
-
-            // Create a new uncommitted row for continuous entry only if save was triggered by Enter key
+             // Create a new uncommitted row for continuous entry only if save was triggered by Enter key
             if (wasSaveTriggeredByEnter()) {
                const newTempRow: EntityAttributeRow = {
                   ...defaultEntry,
@@ -344,7 +356,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   _uncommitted: true
                };
 
-               setTimeout(() => {
+             setTimeout(() => {
                   setGridData(current => [...current, newTempRow]);
                   // Clear editing state after successful update
                   setEditingRows({ [newTempRow.id]: true });
@@ -366,8 +378,63 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                attribute: updatedAttribute
             });
 
-            setEditingRows({});
+            // Handle identifier changes separately
+            // Find the current primary identifier if it exists
+            const primaryIdentifier = entity.identifiers?.find(identifier => identifier.primary);
+            const isCurrentlyInPrimary = primaryIdentifier?.attributes.some(attr =>
+               typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id
+            );
+            const identifierChanged = attribute.identifier !== isCurrentlyInPrimary;
+
+            if (identifierChanged) {
+               if (attribute.identifier) {
+                  // Adding to primary identifier
+                  if (primaryIdentifier) {
+                     // Add to existing primary identifier
+                     dispatch({
+                        type: 'entity:identifier:update',
+                        identifierIdx: entity.identifiers.indexOf(primaryIdentifier),
+                        identifier: {
+                           ...primaryIdentifier,
+                           attributes: [...primaryIdentifier.attributes, oldAttribute.id] as any
+                        }
+                     });
+                  } else {
+                     // Create new primary identifier
+                     const identifierId = findNextUnique(toId('Primary Identifier'), entity.identifiers || [], id => id.id || '');
+                     dispatch({
+                        type: 'entity:identifier:add-identifier',
+                        identifier: {
+                           id: identifierId,
+                           name: 'Primary Identifier',
+                           primary: true,
+                           attributes: [oldAttribute.id] as any,
+                           $type: 'LogicalIdentifier',
+                           $globalId: `${entity.id}.${identifierId}`
+                        }
+                     });
+                  }
+               } else if (primaryIdentifier) {
+                  // Removing from primary identifier
+                  const remainingAttributes = primaryIdentifier.attributes.filter(attr =>
+                     typeof attr === 'string' ? attr !== oldAttribute.id : attr.id !== oldAttribute.id
+                  );
+
+                  // Always update the identifier with remaining attributes, even if empty
+                  dispatch({
+                     type: 'entity:identifier:update',
+                     identifierIdx: entity.identifiers.indexOf(primaryIdentifier),
+                     identifier: {
+                        ...primaryIdentifier,
+                        attributes: remainingAttributes
+                     }
+                  });
+               }
+            }
          }
+
+         // Clear editing state after successful update
+         setEditingRows({});
       },
       [dispatch, defaultEntry, entity, handleIdentifierUpdate]
    );
@@ -410,8 +477,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Update editing state
             setEditingRows(newEditingRows);
+
             // Clean up any stale uncommitted rows
-            if (newEditingId) {
+           if (newEditingId) {
                setGridData(current => {
                   // Keep all committed rows
                   const committedRows = current.filter(row => !row._uncommitted);
