@@ -152,7 +152,6 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
             datatype: undefinedIfEmpty(action.attribute.datatype)
          });
          break;
-      }
 
       case 'entity:attribute:delete-attribute':
          entity.attributes.splice(action.attributeIdx, 1);
