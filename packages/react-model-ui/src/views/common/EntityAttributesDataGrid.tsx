@@ -348,6 +348,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                type: 'entity:attribute:add-attribute',
                attribute: finalAttribute
             });
+
+// Handle identifier status for the new attribute
+            handleIdentifierUpdate(newId, attribute.name, identifier ?? false, true);
              // Create a new uncommitted row for continuous entry only if save was triggered by Enter key
             if (wasSaveTriggeredByEnter()) {
                const newTempRow: EntityAttributeRow = {
