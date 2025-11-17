@@ -30,7 +30,7 @@ interface LabelOptions {
 export class GridInputDialog extends WorkspaceInputDialog {
    protected readonly grid: HTMLDivElement;
    protected nameFieldEdited = false;
-   protected nameInputField: HTMLInputElement | null = null;
+   protected nameInputField: HTMLInputElement | undefined = undefined;
 
    constructor(
       @inject(GridInputDialogProps) protected override readonly props: GridInputDialogProps,

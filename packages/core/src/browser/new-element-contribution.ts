@@ -283,9 +283,9 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
                   options: targetOptions,
                   value: sourceEntityElement.label,
                   onValueChange: (targetValue: string, updateName: (name: string) => void) => {
-                     const entity = elements.find(e => e.label === targetValue);
-                     if (entity) {
-                        generateUniqueName(entity.label).then(updateName);
+                     const selectedEntity = elements.find(e => e.label === targetValue);
+                     if (selectedEntity) {
+                        generateUniqueName(selectedEntity.label).then(updateName);
                      }
                   }
                }
