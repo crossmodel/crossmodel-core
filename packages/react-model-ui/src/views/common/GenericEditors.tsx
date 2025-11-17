@@ -155,13 +155,15 @@ export function GenericAutoCompleteEditor({
 
    const search = (event: AutoCompleteCompleteEvent): void => {
       const query = event.query.toLowerCase();
-      const filtered = dropdownOptions.filter(option => option.label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query));
+      const filtered = dropdownOptions.filter(
+         option => option.label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query)
+      );
       setSuggestions(filtered);
    };
 
    const onChange = (e: { value: { label: string; value: string } | string }): void => {
       let finalValue = '';
-      if (typeof e.value === 'object' && e.value !== undefined && e.value !== null && 'value' in e.value) {
+      if (typeof e.value === 'object' && e.value !== undefined && 'value' in e.value) {
          finalValue = e.value.value;
       } else if (typeof e.value === 'string') {
          finalValue = e.value;
