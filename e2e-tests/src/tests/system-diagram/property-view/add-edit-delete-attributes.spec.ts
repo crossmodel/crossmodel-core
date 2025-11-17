@@ -189,6 +189,21 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
 
    test('Delete the attribute via properties view', async () => {
       const ATTRIBUTE_NAME_TO_DELETE = 'AttributeToDelete';
+      // Clean up leftover attribute from previous test if it exists
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForCleanup = await propertyViewForCleanup.form();
+      const attrs = await formForCleanup.attributesSection.getAllAttributes();
+      if (attrs.length > 0) {
+         const props = await attrs[0].getProperties();
+         await diagramEditorForCleanup.waitForModelUpdate(async () => {
+            await formForCleanup.attributesSection.deleteAttribute(props.name);
+            await formForCleanup.waitForDirty();
+         });
+         await propertyViewForCleanup.save();
+      }
+      await diagramEditorForCleanup.close();
+
       // Add an attribute first to ensure it exists for deletion
       const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
