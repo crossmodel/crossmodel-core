@@ -5,7 +5,7 @@ import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/p
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
-import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericTextEditor } from './GenericEditors';
+import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -187,7 +187,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             header: 'Data Type',
             headerStyle: { width: '15%' },
             editor: (options: any) => (
-               <GenericDropdownEditor
+               <GenericAutoCompleteEditor
                   options={options}
                   basePath={['entity', 'attributes']}
                   field='datatype'

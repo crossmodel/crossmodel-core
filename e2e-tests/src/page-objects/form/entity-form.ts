@@ -240,18 +240,19 @@ export class LogicalAttribute extends TheiaPageObject {
       // Enter edit mode for the row
       await this.actionsLocator.locator('button:has(.pi-pencil)').click(); // Re-enter edit mode
 
-      // Click the dropdown trigger within the cell to activate the dropdown
-      await this.dataType.locator('.p-dropdown-trigger').click();
+      // Click the autocomplete dropdown button within the cell to activate the autocomplete
+      const autocomplete = this.dataType.locator('.p-autocomplete');
+      await autocomplete.locator('.p-autocomplete-dropdown').click();
 
-      // The dropdown panel is usually rendered at the end of the body
-      const dropdownPanel = this.page.locator('.p-dropdown-panel').first();
-      await dropdownPanel.waitFor({ state: 'visible' });
+      // The autocomplete panel is usually rendered at the end of the body
+      const autocompletePanel = this.page.locator('.p-autocomplete-panel').first();
+      await autocompletePanel.waitFor({ state: 'visible' });
 
       // Find the option by its text/label and click it
-      await dropdownPanel.getByRole('option', { name: datatype }).click();
+      await autocompletePanel.getByRole('option', { name: datatype }).click();
 
-      // Wait for the dropdown panel to be hidden
-      await dropdownPanel.waitFor({ state: 'hidden' });
+      // Wait for the autocomplete panel to be hidden
+      await autocompletePanel.waitFor({ state: 'hidden' });
 
       await this.nameLocator.press('Enter');
    }

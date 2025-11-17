@@ -212,8 +212,10 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       const diagramEditorForDelete = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const propertyViewForDelete = await diagramEditorForDelete.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForDelete = await propertyViewForDelete.form();
-      await formForDelete.attributesSection.deleteAttribute(ATTRIBUTE_NAME_TO_DELETE);
-      await formForDelete.waitForDirty();
+      await diagramEditorForDelete.waitForModelUpdate(async () => {
+         await formForDelete.attributesSection.deleteAttribute(ATTRIBUTE_NAME_TO_DELETE);
+         await formForDelete.waitForDirty();
+      });
 
       // Verify the attribute is no longer found
       expect(await formForDelete.attributesSection.findAttribute(ATTRIBUTE_NAME_TO_DELETE)).toBeUndefined();
@@ -224,9 +226,11 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
 
       // Verify that the attribute node is deleted from the diagram
       const diagramEditorForCheck = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
-      const entity = await diagramEditorForCheck.getLogicalEntity(EMPTY_ENTITY_ID);
-      const attributeNodes = await entity.children.attributes();
-      expect(attributeNodes).toHaveLength(0);
+      await diagramEditorForCheck.waitForModelUpdate(async () => {
+         const entity = await diagramEditorForCheck.getLogicalEntity(EMPTY_ENTITY_ID);
+         const attributeNodes = await entity.children.attributes();
+         expect(attributeNodes).toHaveLength(0);
+      });
       await diagramEditorForCheck.close();
 
       // Verify that the attribute is deleted from the entity file
