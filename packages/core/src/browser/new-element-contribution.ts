@@ -40,7 +40,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorContextMenu } from '@theia/editor/lib/browser';
 import { FileNavigatorContribution, NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { WorkspaceCommandContribution } from '@theia/workspace/lib/browser/workspace-commands';
-import { WorkspaceInputDialog, WorkspaceInputDialogProps } from '@theia/workspace/lib/browser/workspace-input-dialog';
+import { WorkspaceInputDialogProps } from '@theia/workspace/lib/browser/workspace-input-dialog';
 import * as yaml from 'yaml';
 import { FieldValues, InputOptions, getGridInputOptions } from './grid-dialog';
 
@@ -243,54 +243,94 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       if (!targetDirectory) {
          return;
       }
-      const dialog = new WorkspaceInputDialog(
+
+      const elements = await this.modelService.findReferenceableElements({
+         container: { uri: targetDirectory.toString(), type: MappingType },
+         syntheticElements: [{ property: 'target', type: TargetObjectType }],
+         property: 'entity'
+      });
+      const sourceEntityElement = elements.find(element => element.uri === entityUri.toString());
+      if (!sourceEntityElement) {
+         this.messageService.error('Could not detect source entity at ' + entityUri.path.fsPath());
+         return;
+      }
+
+      const generateUniqueName = async (entityLabel: string): Promise<string> => {
+         const baseName = `${entityLabel}Mapping`;
+         let name = baseName;
+         let counter = 1;
+         while (await this.fileService.exists(targetDirectory.resolve(applyFileExtension(name, ModelFileExtensions.Mapping)))) {
+            name = `${baseName}${counter++}`;
+            if (counter > 1000) {
+               return `${baseName}${Date.now()}`;
+            }
+         }
+         return name;
+      };
+
+      const initialName = await generateUniqueName(sourceEntityElement.label);
+      const targetOptions = Object.fromEntries(elements.map(e => [e.label, e.label]));
+
+      const options = await getGridInputOptions(
          {
             title: 'New Mapping...',
             parentUri: targetDirectory,
-            initialValue: 'NewMapping',
-            placeholder: 'NewMapping',
-            validate: newName =>
-               newName && this.validateElementFileName(join(targetDirectory, newName, ModelFileExtensions.Mapping), newName)
+            inputs: [
+               { id: 'name', label: 'Name', value: initialName, placeholder: 'MappingName' },
+               {
+                  id: 'target',
+                  label: 'Target',
+                  options: targetOptions,
+                  value: sourceEntityElement.label,
+                  onValueChange: (targetValue: string, updateName: (name: string) => void) => {
+                     const entity = elements.find(e => e.label === targetValue);
+                     if (entity) {
+                        generateUniqueName(entity.label).then(updateName);
+                     }
+                  }
+               }
+            ] as const,
+            validate: value => {
+               const name = JSON.parse(value).name ?? '';
+               return name && this.validateElementFileName(join(targetDirectory, name, ModelFileExtensions.Mapping), name);
+            }
          },
          this.labelProvider
       );
-      const selectedSource = await dialog.open();
-      if (selectedSource) {
-         const fileName = applyFileExtension(selectedSource, ModelFileExtensions.Mapping);
-         const baseFileName = removeFileExtension(selectedSource, ModelFileExtensions.Mapping);
-         const mappingUri = targetDirectory.resolve(fileName);
 
-         const elements = await this.modelService.findReferenceableElements({
-            container: { uri: mappingUri.path.fsPath(), type: MappingType },
-            syntheticElements: [{ property: 'target', type: TargetObjectType }],
-            property: 'entity'
-         });
-         const entityElement = elements.find(element => element.uri === entityUri.toString());
-         if (!entityElement) {
-            this.messageService.error('Could not detect target element at ' + entityUri.path.fsPath());
-            return;
-         }
-
-         const document = await this.modelService.request(entityElement.uri);
-         const entity = document?.root.entity;
-         if (!entity) {
-            this.messageService.error('Could not resolve entity element at ' + entityUri.path.fsPath());
-            return;
-         }
-         const mappingName = toPascal(baseFileName);
-         const mapping = {
-            mapping: {
-               id: mappingName,
-               target: {
-                  entity: toIdReference(entityElement.label)
-               }
-            }
-         };
-         const content = yaml.stringify(mapping, { indent: 4 });
-         await this.fileService.create(mappingUri, content);
-         this.fireCreateNewFile({ parent: targetDirectory, uri: mappingUri });
-         open(this.openerService, mappingUri);
+      if (!options) {
+         return;
       }
+
+      const selectedEntityElement = elements.find(element => element.label === options.target);
+      if (!selectedEntityElement) {
+         this.messageService.error('Could not detect target element at ' + entityUri.path.fsPath());
+         return;
+      }
+
+      const document = await this.modelService.request(selectedEntityElement.uri);
+      const entity = document?.root.entity;
+      if (!entity) {
+         this.messageService.error('Could not resolve entity element at ' + entityUri.path.fsPath());
+         return;
+      }
+
+      const fileName = applyFileExtension(options.name, ModelFileExtensions.Mapping);
+      const mappingUri = targetDirectory.resolve(fileName);
+      const mappingName = toPascal(removeFileExtension(options.name, ModelFileExtensions.Mapping));
+
+      const mapping = {
+         mapping: {
+            id: mappingName,
+            target: {
+               entity: toIdReference(options.target)
+            }
+         }
+      };
+      const content = yaml.stringify(mapping, { indent: 4 });
+      await this.fileService.create(mappingUri, content);
+      this.fireCreateNewFile({ parent: targetDirectory, uri: mappingUri });
+      open(this.openerService, mappingUri);
    }
 
    protected async createNewElementFile(uri: URI, template: NewElementTemplate): Promise<void> {

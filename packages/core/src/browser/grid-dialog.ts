@@ -17,6 +17,7 @@ export interface InputOptions {
    id: string;
    label: string;
    options?: Record<string, string>;
+   onValueChange?: (value: string, updateName: (name: string) => void) => void;
 }
 
 export type FieldValues<T extends readonly InputOptions[]> = Record<T[number]['id'], string>;
@@ -28,6 +29,8 @@ interface LabelOptions {
 
 export class GridInputDialog extends WorkspaceInputDialog {
    protected readonly grid: HTMLDivElement;
+   protected nameFieldEdited = false;
+   protected nameInputField: HTMLInputElement | null = null;
 
    constructor(
       @inject(GridInputDialogProps) protected override readonly props: GridInputDialogProps,
@@ -53,9 +56,21 @@ export class GridInputDialog extends WorkspaceInputDialog {
             this.inputField.value = inputProps.value || this. inputField.value;
             this.grid.appendChild(this.inputField);
             this.inputField.select();
+            if (inputProps.id === 'name') {
+               this.nameInputField = this.inputField;
+               this.inputField.addEventListener('input', () => { this.nameFieldEdited = true; });
+            }
          } else {
-            const input = createInput({ ...inputProps, id: computedId });
+            const input = createInput({ ...inputProps, id: computedId }, inputProps.onValueChange ? (value: string) => {
+               if (this.nameInputField && !this.nameFieldEdited) {
+                  inputProps.onValueChange!(value, (name: string) => { this.nameInputField!.value = name; });
+               }
+            } : undefined);
             this.grid.appendChild(input);
+            if (inputProps.id === 'name' && input instanceof HTMLInputElement) {
+               this.nameInputField = input;
+               input.addEventListener('input', () => { this.nameFieldEdited = true; });
+            }
          }
       });
    }
@@ -96,7 +111,8 @@ export async function getGridInputOptions<T extends readonly InputOptions[]>(
 }
 
 function createInput<T extends InputOptions, U = T extends { options: Record<string, string> } ? HTMLSelectElement : HTMLInputElement>(
-   options: T
+   options: T,
+   onValueChange?: (value: string) => void
 ): U {
    const isSelect = !!options.options;
    const inputField = document.createElement(isSelect ? 'select' : 'input');
@@ -120,6 +136,11 @@ function createInput<T extends InputOptions, U = T extends { options: Record<str
    }
    if (options.id) {
       inputField.id = options.id;
+   }
+   if (onValueChange && inputField instanceof HTMLSelectElement) {
+      inputField.addEventListener('change', () => {
+         onValueChange(inputField.value);
+      });
    }
    return inputField as U;
 }
