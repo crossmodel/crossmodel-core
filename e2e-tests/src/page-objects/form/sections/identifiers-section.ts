@@ -27,12 +27,48 @@ export class LogicalEntityIdentifiersSection extends FormSection {
       // Wait for the table to be visible
       await this.locator.locator('.p-datatable-table').waitFor({ state: 'visible' });
 
+      // If there is an active input in another grid (e.g. attributes), blur it first so the previous edit is committed
+      // This prevents the situation where clicking the add button only focuses the button while the previous row is saved
+      // and a second click is required to actually add the new row.
+      try {
+         await this.page.evaluate(() => {
+            const active = document.activeElement as HTMLElement | null;
+            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+               active.blur();
+            }
+         });
+         // small pause to allow UI handlers to run
+         await this.page.waitForTimeout(50);
+      } catch (e) {
+         // ignore evaluation errors; we'll still try to click the add button
+      }
+
       // Click add button to start edit mode
       await this.addButtonLocator.click();
 
-      // Wait for the new editable row by looking for the input field
+      // Wait for the new editable row by looking for a row that contains an input
       const editRow = this.locator.locator('tr:has(input)');
-      await editRow.locator('input').first().waitFor({ state: 'visible' });
+
+      // First wait for the row to be attached to the DOM (faster than visible and avoids animation delays)
+      try {
+         await editRow.first().waitFor({ state: 'attached', timeout: 1000 });
+      } catch (err) {
+         // If the row didn't appear, the first click may have only triggered saving of a previous edit.
+         // Retry the add click once and wait again.
+         await this.page.waitForTimeout(100);
+         await this.addButtonLocator.click();
+         await editRow.first().waitFor({ state: 'attached', timeout: 1000 });
+      }
+
+      // Then try to wait for the input to become visible. If it's attached but not visible (e.g. due to animation),
+      // fall back to the attached input so we don't time out.
+      const inputLocator = editRow.locator('input').first();
+      try {
+         await inputLocator.waitFor({ state: 'visible', timeout: 1000 });
+      } catch (e) {
+         // Input didn't turn visible in time — ensure it's attached so callers can interact (focus/type) as needed
+         await inputLocator.waitFor({ state: 'attached', timeout: 1000 });
+      }
 
       // Return the identifier in edit mode
       return new LogicalIdentifier(editRow, this);

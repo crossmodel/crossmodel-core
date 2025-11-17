@@ -2,13 +2,12 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
-import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
-import { EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
+import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
+import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
    $type: 'LogicalAttribute';
@@ -51,7 +50,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
-        name: '',
+         name: '',
          datatype: '',
          idx: -1,
          id: '', // ID will be assigned when adding the row
@@ -155,7 +154,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             return {
                idx,
                name: attr.name || '',
-             datatype: attr.datatype || '',
+               datatype: attr.datatype || '',
                description: attr.description || '',
                identifier: isPrimaryIdentifier, // Only true if part of a primary identifier
                id: attr.id || '',
@@ -187,36 +186,14 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             field: 'datatype',
             header: 'Data Type',
             headerStyle: { width: '15%' },
-           editor: (options: any) => {
-               const [suggestions, setSuggestions] = React.useState<{ label: string; value: string }[]>([]);
-
-               const search = (event: AutoCompleteCompleteEvent) => {
-                  const query = event.query.toLowerCase();
-                  const filtered = query ? dataTypeOptions.filter(opt => opt.label.toLowerCase().includes(query)) : dataTypeOptions;
-                  setSuggestions(filtered);
-               };
-
-               const handleChange = (e: any) => {
-                  const value = typeof e.value === 'object' && e.value !== null ? e.value.value : e.value;
-                  options.editorCallback(value);
-               };
-
-               return (
-                  <AutoComplete
-                     value={options.value}
-                     suggestions={suggestions}
-                     completeMethod={search}
-                     onChange={handleChange}
-                     onSelect={handleChange}
-                     onKeyDown={handleGridEditorKeyDown}
-                     disabled={readonly}
-                     className='w-full'
-                     field='label'
-                     dropdown
-                     forceSelection={false}
-                  />
-               );
-            }, 
+            editor: (options: any) => (
+               <GenericDropdownEditor
+                  options={options}
+                  basePath={['entity', 'attributes']}
+                  field='datatype'
+                  dropdownOptions={dataTypeOptions}
+               />
+            ),
             filterType: 'multiselect',
             filterOptions: dataTypeOptions,
             showFilterMatchModes: false
@@ -349,9 +326,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                attribute: finalAttribute
             });
 
-// Handle identifier status for the new attribute
+            // Handle identifier status for the new attribute
             handleIdentifierUpdate(newId, attribute.name, identifier ?? false, true);
-             // Create a new uncommitted row for continuous entry only if save was triggered by Enter key
+            // Create a new uncommitted row for continuous entry only if save was triggered by Enter key
             if (wasSaveTriggeredByEnter()) {
                const newTempRow: EntityAttributeRow = {
                   ...defaultEntry,
@@ -359,7 +336,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   _uncommitted: true
                };
 
-             setTimeout(() => {
+               setTimeout(() => {
                   setGridData(current => [...current, newTempRow]);
                   // Clear editing state after successful update
                   setEditingRows({ [newTempRow.id]: true });
@@ -482,7 +459,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             setEditingRows(newEditingRows);
 
             // Clean up any stale uncommitted rows
-           if (newEditingId) {
+            if (newEditingId) {
                setGridData(current => {
                   // Keep all committed rows
                   const committedRows = current.filter(row => !row._uncommitted);

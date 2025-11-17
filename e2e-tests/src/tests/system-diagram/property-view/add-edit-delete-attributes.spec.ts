@@ -30,7 +30,9 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
 
       // Verify that the attribute is added to the properties view with correct properties
       const properties = await attribute.getProperties();
-      expect(properties).toMatchObject({ name: ATTRIBUTE_NAME_TO_ADD, datatype: 'Text' });
+      expect(properties).toMatchObject({ name: ATTRIBUTE_NAME_TO_ADD });
+      // Datatype is not present by default anymore
+      expect(properties.datatype).toBeFalsy();
       expect(properties.description).toBeFalsy();
       await propertyView.saveAndClose();
 
@@ -39,7 +41,8 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       const attributeNodes = await entity.children.attributes();
       expect(attributeNodes).toHaveLength(1);
       const attributeNode = attributeNodes[0];
-      expect(await attributeNode.datatype()).toEqual('Text');
+      // Datatype is not present by default anymore
+      expect(await attributeNode.datatype()).toBeFalsy();
       expect(await attributeNode.name()).toEqual(ATTRIBUTE_NAME_TO_ADD);
       await diagramEditor.saveAndClose();
 
@@ -51,7 +54,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       expect(await entityCodeEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(5)).toMatch(`- id: ${ATTRIBUTE_NAME_TO_ADD}`);
       expect(await entityCodeEditor.textContentOfLineByLineNumber(6)).toMatch(`name: "${ATTRIBUTE_NAME_TO_ADD}"`);
-      expect(await entityCodeEditor.textContentOfLineByLineNumber(7)).toMatch('datatype: "Text"');
+      // Datatype is not present by default anymore
 
       await entityCodeEditor.saveAndClose();
 
@@ -177,7 +180,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       expect(await entityEditor.textContentOfLineByLineNumber(4)).toMatch('attributes:');
       expect(await entityEditor.textContentOfLineByLineNumber(5)).toMatch(`- id: ${ATTRIBUTE_NAME_TO_EDIT}`);
       expect(await entityEditor.textContentOfLineByLineNumber(6)).toMatch(`name: "${ATTRIBUTE_NAME_TO_EDIT}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch('datatype: "Text"');
+      // Datatype is not set by default anymore
       await entityEditor.closeWithoutSave();
 
       // Close both editors without saving
