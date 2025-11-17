@@ -14,6 +14,7 @@ import {
    ModelStructure,
    RelationshipType,
    TargetObjectType,
+   findNextUnique,
    isMemberPermittedInModel,
    quote,
    toId,
@@ -257,15 +258,15 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
 
       const generateUniqueName = async (entityLabel: string): Promise<string> => {
          const baseName = `${entityLabel}Mapping`;
-         let name = baseName;
-         let counter = 1;
-         while (await this.fileService.exists(targetDirectory.resolve(applyFileExtension(name, ModelFileExtensions.Mapping)))) {
-            name = `${baseName}${counter++}`;
-            if (counter > 1000) {
-               return `${baseName}${Date.now()}`;
-            }
+         const existingNames = new Set(elements.map(e => e.label));
+         let uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
+         
+         while (await this.fileService.exists(targetDirectory.resolve(applyFileExtension(uniqueName, ModelFileExtensions.Mapping)))) {
+            existingNames.add(uniqueName);
+            uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
          }
-         return name;
+         
+         return uniqueName;
       };
 
       const initialName = await generateUniqueName(sourceEntityElement.label);
@@ -282,10 +283,11 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
                   label: 'Target',
                   options: targetOptions,
                   value: sourceEntityElement.label,
-                  onValueChange: (targetValue: string, updateName: (name: string) => void) => {
+                  onValueChange: async (targetValue: string, updateName: (name: string) => void) => {
                      const selectedEntity = elements.find(e => e.label === targetValue);
                      if (selectedEntity) {
-                        generateUniqueName(selectedEntity.label).then(updateName);
+                        const uniqueName = await generateUniqueName(selectedEntity.label);
+                        updateName(uniqueName);
                      }
                   }
                }
