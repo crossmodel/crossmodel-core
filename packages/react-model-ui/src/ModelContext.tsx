@@ -49,7 +49,50 @@ export class DiagnosticManager {
       const elementPathWithProperty = property
          ? `${indexedElementPath}${ModelDiagnostic.ELEMENT_PROPERTY_SEPARATOR}${property}`
          : indexedElementPath;
-      return this.result[elementPathWithProperty] ?? [];
+      // Primary lookup
+      let res = this.result[elementPathWithProperty];
+      if (res) {
+         return res;
+      }
+      // Final flexible fallback: scan all keys for a match that contains the
+      // requested index and ends with the requested property. This handles
+      // any ordering of index/property the server may emit.
+      const propSuffix = `${ModelDiagnostic.ELEMENT_PROPERTY_SEPARATOR}${property}`;
+      const idxMarker = `${ModelDiagnostic.ELEMENT_INDEX_SEPARATOR}${idx}`;
+      const keys = Object.keys(this.result);
+      const candidateKey = keys.find(k => k.endsWith(propSuffix) && k.includes(idxMarker));
+      if (candidateKey) {
+         return this.result[candidateKey];
+      }
+      // Fallback: some server diagnostics encode the index directly on the parent
+      // (e.g. '/entity@0^superEntities') instead of on the property segment
+      // ('/entity/superEntities@0^superEntities'). Try that variant as well.
+      if (property !== undefined && idx !== undefined) {
+         const idxSep = ModelDiagnostic.ELEMENT_INDEX_SEPARATOR;
+         const propSep = ModelDiagnostic.ELEMENT_PROPERTY_SEPARATOR;
+         const parentIndexPath = `${rootElementPath}${idxSep}${idx}${propSep}${property}`;
+         res = this.result[parentIndexPath];
+         if (res) {
+            return res;
+         }
+         // Additional fallback: if elementPath was provided as a path with a property
+         // (e.g. ['entity','superEntities']), the server may have encoded the
+         // index on the parent container instead of on the property segment
+         // (i.e. '/entity@0^superEntities'). Try that variant as well.
+         const parts = singleElementPath.split(ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR);
+         if (parts.length > 1) {
+            const parentSingle = parts.slice(0, -1).join(ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR);
+            const parentRoot = parentSingle.startsWith(ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR)
+               ? parentSingle
+               : `${ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR}${parentSingle}`;
+            const parentVariant = `${parentRoot}${idxSep}${idx}${propSep}${property}`;
+            res = this.result[parentVariant];
+            if (res) {
+               return res;
+            }
+         }
+      }
+      return [];
    }
 
    has(elementPath: string | string[], property?: string, idx?: number): boolean {

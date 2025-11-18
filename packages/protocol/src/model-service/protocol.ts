@@ -104,6 +104,7 @@ export interface LogicalIdentifier extends CrossModelElement, NamedObject, WithC
 
 export const EntityInheritType = 'EntityInherit';
 export interface EntityInherit extends CrossModelElement {
+   readonly $type: typeof EntityInheritType;
    parentId: Reference<LogicalEntity>;
 }
 

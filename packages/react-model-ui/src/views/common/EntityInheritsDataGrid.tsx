@@ -28,9 +28,9 @@ interface EntityInheritEditorProps {
 
 function EntityInheritEditor(props: EntityInheritEditorProps): React.ReactElement {
    const { options } = props;
-   const { editorCallback, rowData, field } = options;
+   const { editorCallback, rowData } = options;
 
-   const initialValue = field === 'parentId' ? rowData.parentId : '';
+   const initialValue = rowData?.parentId;
    const [currentValue, setCurrentValue] = React.useState(initialValue || '');
    const [suggestions, setSuggestions] = React.useState<string[]>([]);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
@@ -39,7 +39,7 @@ function EntityInheritEditor(props: EntityInheritEditorProps): React.ReactElemen
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
    const basePath = ['entity', 'superEntities'];
-   const fieldInfo = diagnostics.info(basePath, field, rowData.idx);
+   const fieldInfo = diagnostics.info(basePath, 'superEntities', rowData.idx);
    const error = fieldInfo.empty ? undefined : fieldInfo.text();
    const isDropdownClicked = React.useRef(false);
    // eslint-disable-next-line no-null/no-null
@@ -47,30 +47,21 @@ function EntityInheritEditor(props: EntityInheritEditorProps): React.ReactElemen
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: entity?.id || '' },
+         container: { globalId: entity?.$globalId || '' },
          syntheticElements: [{ property: 'superEntities', type: LogicalEntityType }],
          property: 'superEntities'
       }),
-      [entity]
+      [entity.$globalId]
    );
 
    const search = React.useCallback(
       async (event: AutoCompleteCompleteEvent) => {
-         // Log the reference context to help debug empty completion results
-         // eslint-disable-next-line no-console
-         console.log('[EntityInheritEditor] referenceCtx ->', referenceCtx);
          const elements = await queryApi.findReferenceableElements(referenceCtx);
-         // TEMP DEBUG - inspect returned referenceable elements
-         // eslint-disable-next-line no-console
-         console.log('[EntityInheritEditor] findReferenceableElements ->', referenceCtx, elements);
          const filteredSuggestions = elements
             .map(element => element.label || '')
             .filter(label =>
                isDropdownClicked.current ? true : event.query ? label.toLowerCase().includes(event.query.toLowerCase()) : true
             );
-         // TEMP DEBUG - check filtered suggestions
-         // eslint-disable-next-line no-console
-         console.log('[EntityInheritEditor] filteredSuggestions ->', filteredSuggestions);
          setSuggestions(filteredSuggestions);
          isDropdownClicked.current = false;
       },
@@ -168,7 +159,7 @@ function EntityInheritProperty({
 }): React.ReactNode {
    const diagnostics = useDiagnosticsManager();
    const basePath = ['entity', 'superEntities'];
-   const info = diagnostics.info(basePath, 'entity', rowData.idx);
+   const info = diagnostics.info(basePath, 'superEntities', rowData.idx);
    const error = info.empty ? undefined : info.text();
 
    const showInvalid = Boolean(error && !editingRows[rowData.id]);
@@ -191,7 +182,7 @@ export function EntityInheritsDataGrid(): React.ReactElement {
    // Update grid data when dependencies change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         const committedData = ((entity as any)?.superEntities || []).map((dep: any, idx: number) => {
+         const committedData = (entity?.superEntities || []).map((dep: any, idx: number) => {
             // dep can be either a string Reference or an object with different shapes
             const parentId =
                typeof dep === 'string' ? dep : (dep?.parentId ?? dep?.$refText ?? (dep?.ref && (dep.ref.id || dep.ref.$globalId)) ?? '');
@@ -208,7 +199,7 @@ export function EntityInheritsDataGrid(): React.ReactElement {
 
          return [...committedData, ...uncommittedRows];
       });
-   }, [(entity as any)?.superEntities, editingRows]);
+   }, [entity?.superEntities, editingRows]);
 
    const filterOptions = React.useMemo(() => {
       const uniqueInheritances = [...new Set(gridData.map(item => item.parentId).filter(Boolean))];
