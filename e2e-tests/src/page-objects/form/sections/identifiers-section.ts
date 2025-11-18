@@ -27,22 +27,6 @@ export class LogicalEntityIdentifiersSection extends FormSection {
       // Wait for the table to be visible
       await this.locator.locator('.p-datatable-table').waitFor({ state: 'visible' });
 
-      // If there is an active input in another grid (e.g. attributes), blur it first so the previous edit is committed
-      // This prevents the situation where clicking the add button only focuses the button while the previous row is saved
-      // and a second click is required to actually add the new row.
-      try {
-         await this.page.evaluate(() => {
-            const active = document.activeElement as HTMLElement | null;
-            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
-               active.blur();
-            }
-         });
-         // small pause to allow UI handlers to run
-         await this.page.waitForTimeout(50);
-      } catch (e) {
-         // ignore evaluation errors; we'll still try to click the add button
-      }
-
       // Click add button to start edit mode
       await this.addButtonLocator.click();
 

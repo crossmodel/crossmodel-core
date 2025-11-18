@@ -319,6 +319,25 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             return; // selecting from overlay shouldn't exit edit mode
          }
 
+         const isButton = target.tagName === 'BUTTON' || target.closest('button');
+         if (isButton) {
+           
+            const editingRow = tableElement.querySelector('tr.p-row-editing');
+            const isInEditingRow = editingRow && editingRow.contains(target);
+            const isEditorButton = target.closest('.p-autocomplete, .p-dropdown, .p-multiselect, .p-datepicker, .p-cell-editing');
+            
+            if (isInEditingRow || isEditorButton) {
+               return; 
+            }
+            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               setTimeout(() => {
+                  rowEditorSaveButton.click();
+               }, 10);
+            }
+            return;
+         }
+
          if (!isInsideTable) {
             // Outside table → save & exit
             const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
@@ -376,11 +395,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             }
          }
       };
-
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mouseup', handleClickOutside);
       document.addEventListener('focusout', handleFocusOut);
       return () => {
-         document.removeEventListener('mousedown', handleClickOutside);
+         document.removeEventListener('mouseup', handleClickOutside);
          document.removeEventListener('focusout', handleFocusOut);
       };
    }, [activeRowKey]);
