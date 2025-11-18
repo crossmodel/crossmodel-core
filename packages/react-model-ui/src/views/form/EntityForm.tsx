@@ -77,11 +77,11 @@ export function EntityForm(): React.ReactElement {
                <ErrorInfo diagnostic={descriptionDiagnostics} />
             </div>
          </FormSection>
+         <FormSection label='Inheritance' defaultCollapsed={true}>
+            <EntityInheritsDataGrid />
+         </FormSection>
          <FormSection label='Attributes'>
             <EntityAttributesDataGrid />
-         </FormSection>
-         <FormSection label='Inheritance'>
-            <EntityInheritsDataGrid />
          </FormSection>
          <FormSection label='Identifiers'>
             <EntityIdentifiersDataGrid />
