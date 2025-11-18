@@ -120,7 +120,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    };
 
    const handleAddRow = React.useCallback(() => {
-     if (onRowAdd) {
+      if (onRowAdd) {
          const addNewRow = (): void => {
             const newRow = { ...defaultNewRow };
             columns.forEach(col => {
@@ -134,7 +134,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          // Save any active edits in this grid
          const tableElement = tableRef.current?.getElement();
          if (tableElement && activeRowKey) {
-             const saveButton = tableElement.querySelector('.p-row-editor-save');
+            const saveButton = tableElement.querySelector('.p-row-editor-save');
             if (saveButton instanceof HTMLElement) {
                saveButton.click();
             }
@@ -334,13 +334,11 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
          const isButton = target.tagName === 'BUTTON' || target.closest('button');
          if (isButton) {
-           
             const editingRow = tableElement.querySelector('tr.p-row-editing');
             const isInEditingRow = editingRow && editingRow.contains(target);
             const isEditorButton = target.closest('.p-autocomplete, .p-dropdown, .p-multiselect, .p-datepicker, .p-cell-editing');
-            
             if (isInEditingRow || isEditorButton) {
-               return; 
+               return;
             }
             // Button clicked outside editing row - save first
             const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');

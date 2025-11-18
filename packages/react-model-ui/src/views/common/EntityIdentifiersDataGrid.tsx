@@ -285,16 +285,11 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                   _uncommitted: true
                };
 
-               Promise.resolve()
-                  .then(() => Promise.resolve())
-                  .then(() => {
-                     requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                           setGridData(current => [...current, newTempRow]);
-                           setEditingRows({ [newTempRow.id]: true });
-                        });
-                     });
-                  });
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  // Clear editing state after successful update
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
             }
          } else {
             // For existing rows

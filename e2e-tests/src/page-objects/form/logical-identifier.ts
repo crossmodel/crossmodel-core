@@ -107,8 +107,22 @@ export class LogicalIdentifier extends TheiaPageObject {
          throw new Error('Cannot save identifier - not in edit mode');
       }
 
-      // Save when we have both name and attributes
-      await inputLocator.press('Enter');
+      // Prefer clicking the row-editor save button to avoid triggering global Enter handlers
+      // which may open a new empty row in the grid. Fall back to Enter if button isn't found.
+      const tableRow = this.locator; // row element
+      const saveButton = tableRow.locator('button.p-row-editor-save, button:has(.p-row-editor-save)');
+      try {
+         if ((await saveButton.count()) > 0) {
+            // Click the visible save button in the row
+            await saveButton.first().click();
+         } else {
+            // Fallback: press Enter
+            await inputLocator.press('Enter');
+         }
+      } catch (error) {
+         // If clicking fails for any reason, fallback to Enter
+         await inputLocator.press('Enter');
+      }
 
       // Wait for edit mode to end
       await inputLocator.waitFor({ state: 'hidden', timeout: 5000 });
