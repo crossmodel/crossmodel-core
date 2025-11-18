@@ -3,9 +3,9 @@
  ********************************************************************************/
 import { GLSP_PORT_COMMAND } from '@crossmodel/protocol';
 import {
+   Deferred,
    LogLevel,
    LoggerFactory,
-   MaybePromise,
    ServerModule,
    SocketLaunchOptions,
    SocketServerLauncher,
@@ -15,7 +15,7 @@ import {
 import { Container, ContainerModule } from 'inversify';
 import { AddressInfo } from 'net';
 import { URI } from 'vscode-uri';
-import { CrossModelLSPServices } from '../integration.js';
+import { CrossModelLSPServices, IntegratedServer } from '../integration.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
 import { MappingDiagramModule } from './mapping-diagram/mapping-diagram-module.js';
 import { SystemDiagramModule } from './system-diagram/system-diagram-module.js';
@@ -26,7 +26,7 @@ import { SystemDiagramModule } from './system-diagram/system-diagram-module.js';
  * @param services language services
  * @returns a promise that is resolved as soon as the server is shut down or rejects if an error occurs
  */
-export function startGLSPServer(services: CrossModelLSPServices, workspaceFolder: URI): MaybePromise<void> {
+export function startGLSPServer(services: CrossModelLSPServices, workspaceFolder: URI): IntegratedServer {
    const launchOptions: SocketLaunchOptions = { ...defaultSocketLaunchOptions, host: '127.0.0.1', logLevel: LogLevel.info };
 
    // create module based on launch options, e.g., logging etc.
@@ -47,13 +47,22 @@ export function startGLSPServer(services: CrossModelLSPServices, workspaceFolder
    const launcher = appContainer.resolve<SocketServerLauncher>(SocketServerLauncher);
    launcher.configure(serverModule);
    try {
+      const started = new Deferred<void>();
       const stop = launcher.start(launchOptions);
-      launcher['netServer'].on('listening', () =>
-         services.shared.lsp.Connection?.onRequest(GLSP_PORT_COMMAND, () => getPort(launcher['netServer'].address()))
-      );
-      return stop;
+      launcher['netServer'].on('listening', () => {
+         services.shared.lsp.Connection?.onRequest(GLSP_PORT_COMMAND, () => getPort(launcher['netServer'].address()));
+         started.resolve();
+      });
+      return {
+         started: started.promise,
+         stopped: Promise.resolve(stop)
+      };
    } catch (error) {
       logger.error('Error in GLSP server launcher:', error);
+      return {
+         started: Promise.reject(error),
+         stopped: Promise.resolve()
+      };
    }
 }
 

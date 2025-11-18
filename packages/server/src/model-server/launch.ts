@@ -3,10 +3,11 @@
  ********************************************************************************/
 import { MODELSERVER_PORT_COMMAND } from '@crossmodel/protocol';
 import console from 'console';
+import { Deferred } from 'langium';
 import * as net from 'net';
 import * as rpc from 'vscode-jsonrpc/node.js';
 import { URI } from 'vscode-uri';
-import { CrossModelLSPServices } from '../integration.js';
+import { CrossModelLSPServices, IntegratedServer } from '../integration.js';
 import { ModelServer } from './model-server.js';
 
 const currentConnections: rpc.MessageConnection[] = [];
@@ -17,7 +18,10 @@ const currentConnections: rpc.MessageConnection[] = [];
  * @param services language services
  * @returns a promise that is resolved as soon as the server is shut down or rejects if an error occurs
  */
-export function startModelServer(services: CrossModelLSPServices, workspaceFolder: URI): Promise<void> {
+export function startModelServer(services: CrossModelLSPServices, workspaceFolder: URI): IntegratedServer {
+   const started = new Deferred();
+   const stopped = new Deferred();
+
    const netServer = net.createServer(socket => createClientConnection(socket, services));
    netServer.listen(0);
    netServer.on('listening', () => {
@@ -33,15 +37,24 @@ export function startModelServer(services: CrossModelLSPServices, workspaceFolde
       }
       console.log(`[ModelServer] Ready to accept new client requests on port: ${addressInfo.port}`);
       services.shared.lsp.Connection?.onRequest(MODELSERVER_PORT_COMMAND, () => addressInfo.port);
+      started.resolve();
    });
    netServer.on('error', err => {
       console.error('[ModelServer] Error: ', err);
       close(netServer);
    });
-   return new Promise((resolve, reject) => {
-      netServer.on('close', () => resolve(undefined));
-      netServer.on('error', error => reject(error));
+   netServer.on('close', () => {
+      started.reject();
+      stopped.resolve();
    });
+   netServer.on('error', error => {
+      started.reject(error);
+   });
+
+   return {
+      started: started.promise,
+      stopped: stopped.promise
+   };
 }
 
 /**

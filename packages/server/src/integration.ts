@@ -5,6 +5,11 @@ import { CrossModelServices, CrossModelSharedServices } from './language-server/
 
 export const CrossModelLSPServices = Symbol('CrossModelLSPServices');
 export interface CrossModelLSPServices {
-  shared: CrossModelSharedServices;
-  language: CrossModelServices;
+   shared: CrossModelSharedServices;
+   language: CrossModelServices;
+}
+
+export interface IntegratedServer {
+   started: Promise<void>;
+   stopped: Promise<void>;
 }

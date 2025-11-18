@@ -1,7 +1,16 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { AstNode, DefaultWorkspaceManager, Deferred, FileSelector, FileSystemNode, LangiumDocument, UriUtils } from 'langium';
+import {
+   AstNode,
+   DefaultWorkspaceManager,
+   Deferred,
+   DocumentState,
+   FileSelector,
+   FileSystemNode,
+   LangiumDocument,
+   UriUtils
+} from 'langium';
 import { CancellationToken, Emitter, Event, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CrossModelSharedServices } from './cross-model-module.js';
@@ -27,20 +36,31 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
 
    override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken | undefined): Promise<void> {
       try {
+         this.logger.info('[Workspace] Initialize...');
          await super.initializeWorkspace(folders, cancelToken);
-         this.logger.info('Workspace Initialized');
+         this.logger.info('[Workspace] Initialized');
 
          // notify that the workspace is initialized
+         this.logger.info('[Workspace] Notify Initialized');
          const uris = this.folders?.map(folder => this.getRootFolder(folder)) || [];
          this.workspaceInitializedDeferred.resolve(uris);
          this.onWorkspaceInitializedEmitter.fire(uris);
-
-         // relink all data models as their dependencies might not have properly resolved due to the order in which files are processed
-         const update = this.services.workspace.DataModelManager.getDataModelInfos().map((info: { uri: URI }) => info.uri);
-         await this.documentBuilder.update(update, [], cancelToken);
       } catch (error) {
          this.workspaceInitializedDeferred.reject(error as Error);
       }
+   }
+
+   async updateDataModels(wsUri: string | undefined = this.workspaceFolders?.[0].uri, cancelToken?: CancellationToken): Promise<void> {
+      if (!wsUri) {
+         this.logger.warn('[DataModel] Rebuild: No workspace folder found, skipping.');
+         return;
+      }
+      this.logger.info('[DataModel] Rebuild Links: Wait for finishing build.');
+      await this.documentBuilder.waitUntil(DocumentState.Validated);
+      const update = this.services.workspace.DataModelManager.getDataModelInfos().map((info: { uri: URI }) => info.uri);
+      this.logger.info('[DataModel] Rebuild Links: Updating ' + update.map(uri => UriUtils.relative(wsUri, uri.path)).join(', '));
+      await this.documentBuilder.update(update, [], cancelToken);
+      this.logger.info('[DataModel] Rebuild Links: Finished');
    }
 
    get onWorkspaceInitialized(): Event<URI[]> {
