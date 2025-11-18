@@ -8,7 +8,7 @@ import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorContainer, EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityIdentifierRow {
    idx: number;
@@ -277,6 +277,25 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                type: 'entity:identifier:add-identifier',
                identifier: finalIdentifier
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: EntityIdentifierRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true
+               };
+
+               Promise.resolve()
+                  .then(() => Promise.resolve())
+                  .then(() => {
+                     requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                           setGridData(current => [...current, newTempRow]);
+                           setEditingRows({ [newTempRow.id]: true });
+                        });
+                     });
+                  });
+            }
          } else {
             // For existing rows
             // If setting this as primary, first unset any existing primary
