@@ -1,0 +1,9 @@
+systemDiagram:
+    id: NewSystemDiagram
+    nodes:
+      - id: Example_EntityNode
+        entity: Example_Entity
+        x: 223
+        y: 171
+        width: 10
+        height: 10
