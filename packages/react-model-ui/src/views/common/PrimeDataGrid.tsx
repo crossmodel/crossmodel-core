@@ -120,24 +120,37 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    };
 
    const handleAddRow = React.useCallback(() => {
-      if (onRowAdd) {
-         // First check if we have any active edits that need to be saved
+     if (onRowAdd) {
+         const addNewRow = (): void => {
+            const newRow = { ...defaultNewRow };
+            columns.forEach(col => {
+               if (!(col.field in newRow)) {
+                  (newRow as any)[col.field] = '';
+               }
+            });
+            onRowAdd(newRow as T);
+         };
+
+         // Save any active edits in this grid
          const tableElement = tableRef.current?.getElement();
          if (tableElement && activeRowKey) {
-            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
-            if (rowEditorSaveButton instanceof HTMLElement) {
-               rowEditorSaveButton.click();
+             const saveButton = tableElement.querySelector('.p-row-editor-save');
+            if (saveButton instanceof HTMLElement) {
+               saveButton.click();
             }
          }
 
-         // Then add the new row
-         const newRow = { ...defaultNewRow };
-         columns.forEach(col => {
-            if (!(col.field in newRow)) {
-               (newRow as any)[col.field] = '';
+         // Save any active edits in other grids
+         document.querySelectorAll('.p-row-editor-save').forEach(button => {
+            if (button instanceof HTMLElement) {
+               button.click();
             }
          });
-         onRowAdd(newRow as T);
+
+         // Add new row immediately after saves are triggered
+         requestAnimationFrame(() => {
+            addNewRow();
+         });
       }
    }, [onRowAdd, defaultNewRow, columns, activeRowKey]);
 
@@ -329,11 +342,11 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             if (isInEditingRow || isEditorButton) {
                return; 
             }
+            // Button clicked outside editing row - save first
             const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
             if (rowEditorSaveButton instanceof HTMLElement) {
-               setTimeout(() => {
-                  rowEditorSaveButton.click();
-               }, 10);
+               // Trigger save immediately
+               rowEditorSaveButton.click();
             }
             return;
          }

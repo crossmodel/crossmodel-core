@@ -82,7 +82,7 @@ export function EntityForm(): React.ReactElement {
          <FormSection label='Identifiers'>
             <EntityIdentifiersDataGrid />
          </FormSection>
-         <FormSection label='Custom properties' defaultCollapsed={true}>
+         <FormSection label='Custom properties'>
             <EntityCustomPropertiesDataGrid />
          </FormSection>
       </Form>
