@@ -245,32 +245,15 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
          return;
       }
 
-      const elements = await this.modelService.findReferenceableElements({
-         container: { uri: targetDirectory.toString(), type: MappingType },
-         syntheticElements: [{ property: 'target', type: TargetObjectType }],
-         property: 'entity'
-      });
-      const sourceEntityElement = elements.find(element => element.uri === entityUri.toString());
+      const mappingTargetElements = await this.getMappingTargetElements(targetDirectory);
+      const sourceEntityElement = mappingTargetElements.find(element => element.uri === entityUri.toString());
       if (!sourceEntityElement) {
          this.messageService.error('Could not detect source entity at ' + entityUri.path.fsPath());
          return;
       }
 
-      const generateUniqueName = async (entityLabel: string): Promise<string> => {
-         const baseName = `${entityLabel}Mapping`;
-         const existingNames = new Set(elements.map(e => e.label));
-         let uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
-         
-         while (await this.fileService.exists(targetDirectory.resolve(applyFileExtension(uniqueName, ModelFileExtensions.Mapping)))) {
-            existingNames.add(uniqueName);
-            uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
-         }
-         
-         return uniqueName;
-      };
-
-      const initialName = await generateUniqueName(sourceEntityElement.label);
-      const targetOptions = Object.fromEntries(elements.map(e => [e.label, e.label]));
+      const initialName = await this.generateUniqueMappingName(sourceEntityElement.label, targetDirectory, mappingTargetElements);
+      const targetOptions = Object.fromEntries(mappingTargetElements.map(e => [e.label, e.label]));
 
       const options = await getGridInputOptions(
          {
@@ -284,9 +267,13 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
                   options: targetOptions,
                   value: sourceEntityElement.label,
                   onValueChange: async (targetValue: string, updateName: (name: string) => void) => {
-                     const selectedEntity = elements.find(e => e.label === targetValue);
+                     const selectedEntity = mappingTargetElements.find(e => e.label === targetValue);
                      if (selectedEntity) {
-                        const uniqueName = await generateUniqueName(selectedEntity.label);
+                        const uniqueName = await this.generateUniqueMappingName(
+                           selectedEntity.label,
+                           targetDirectory,
+                           mappingTargetElements
+                        );
                         updateName(uniqueName);
                      }
                   }
@@ -304,7 +291,7 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
          return;
       }
 
-      const selectedEntityElement = elements.find(element => element.label === options.target);
+      const selectedEntityElement = mappingTargetElements.find(element => element.label === options.target);
       if (!selectedEntityElement) {
          this.messageService.error('Could not detect target element at ' + entityUri.path.fsPath());
          return;
@@ -367,40 +354,51 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       }
    }
 
+   protected async getMappingTargetElements(parent: URI): Promise<any[]> {
+      return this.modelService.findReferenceableElements({
+         container: { uri: parent.toString(), type: MappingType },
+         syntheticElements: [{ property: 'target', type: TargetObjectType }],
+         property: 'entity'
+      });
+   }
+
+   protected async generateUniqueMappingName(entityLabel: string, targetDirectory: URI, elements: any[]): Promise<string> {
+      const baseName = `${entityLabel}Mapping`;
+      const existingNames = new Set(elements.map(e => e.label));
+      let uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
+
+      while (await this.fileService.exists(targetDirectory.resolve(applyFileExtension(uniqueName, ModelFileExtensions.Mapping)))) {
+         existingNames.add(uniqueName);
+         uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
+      }
+
+      return uniqueName;
+   }
+
    protected async getMemberOptions(
       baseProps: WorkspaceInputDialogProps,
       template: NewElementTemplate,
       parent: URI
    ): Promise<{ fileUri: URI; content: string } | undefined> {
       let inputs = (await template.getInputOptions?.(parent, this.modelService)) ?? [{ id: 'name', label: 'Name' }];
-      
+
       if (template.memberType === MappingType) {
-         const elements = await this.modelService.findReferenceableElements({
-            container: { uri: parent.toString(), type: MappingType },
-            syntheticElements: [{ property: 'target', type: TargetObjectType }],
-            property: 'entity'
-         });
-         if (elements.length > 0) {
-            const generateUniqueName = async (entityLabel: string): Promise<string> => {
-               const baseName = `${entityLabel}Mapping`;
-               const existingNames = new Set(elements.map(e => e.label));
-               let uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
-               while (await this.fileService.exists(parent.resolve(applyFileExtension(uniqueName, ModelFileExtensions.Mapping)))) {
-                  existingNames.add(uniqueName);
-                  uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
-               }
-               return uniqueName;
-            };
-            const initialName = await generateUniqueName(elements[0].label);
+         const mappingTargetElements = await this.getMappingTargetElements(parent);
+         if (mappingTargetElements.length > 0) {
+            const initialName = await this.generateUniqueMappingName(mappingTargetElements[0].label, parent, mappingTargetElements);
             inputs = inputs.map(input => {
-               if (input.id === 'name') return { ...input, value: initialName };
+               if (input.id === 'name') {
+                  return { ...input, value: initialName };
+               }
                if (input.id === 'target') {
                   return {
                      ...input,
-                     value: elements[0].label,
+                     value: mappingTargetElements[0].label,
                      onValueChange: async (targetValue: string, updateName: (name: string) => void) => {
-                        const entity = elements.find(e => e.label === targetValue);
-                        if (entity) updateName(await generateUniqueName(entity.label));
+                        const entity = mappingTargetElements.find(e => e.label === targetValue);
+                        if (entity) {
+                           updateName(await this.generateUniqueMappingName(entity.label, parent, mappingTargetElements));
+                        }
                      }
                   };
                }
@@ -408,7 +406,7 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
             });
          }
       }
-      
+
       const options = await getGridInputOptions(
          {
             ...baseProps,
