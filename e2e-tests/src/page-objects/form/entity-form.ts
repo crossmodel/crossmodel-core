@@ -95,7 +95,10 @@ export class LogicalEntityAttributesSection extends FormSection {
       await nameInput.fill(name);
 
       // Save the row by pressing Enter and wait for things to settle
-      await nameInput.press('Enter');
+      // Save the row by clicking the row save button to avoid Enter-driven global handlers
+      const saveButton = attribute.locator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
 
       // Wait a bit longer than our usual timeouts since this is a complex UI update
       await this.page.waitForTimeout(500);
@@ -226,9 +229,10 @@ export class LogicalAttribute extends TheiaPageObject {
       const inputLocator = this.nameLocator.locator('input');
       await inputLocator.waitFor({ state: 'visible' });
       await inputLocator.fill(name);
-      await this.nameLocator.press('Enter');
-      await waitForFunction(async () => (await this.getName()) === name);
-      await this.nameLocator.press('Enter');
+      // Click the save button instead of pressing Enter
+      const saveButton = this.actionsLocator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
       await waitForFunction(async () => (await this.getName()) === name);
    }
 
@@ -253,8 +257,10 @@ export class LogicalAttribute extends TheiaPageObject {
 
       // Wait for the autocomplete panel to be hidden
       await autocompletePanel.waitFor({ state: 'hidden' });
-
-      await this.nameLocator.press('Enter');
+      // Click save button to persist the datatype change
+      const saveButton = this.actionsLocator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
    }
 
    async isIdentifier(): Promise<boolean> {
@@ -298,7 +304,10 @@ export class LogicalAttribute extends TheiaPageObject {
       const inputLocator = this.descriptionLocator.locator('input');
       await inputLocator.waitFor({ state: 'visible' });
       await inputLocator.fill(description);
-      await this.descriptionLocator.press('Enter');
+      // Click the save button to persist the description change
+      const saveButton = this.actionsLocator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
       await waitForFunction(async () => (await this.getDescription()) === description);
    }
 

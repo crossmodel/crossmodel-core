@@ -83,12 +83,11 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
          const attributeInEdit = await formForAdd.attributesSection.startAddAttribute();
          await formForAdd.attributesSection.commitAttributeAdd(attributeInEdit, ATTRIBUTE_NAME_TO_EDIT);
          await formForAdd.waitForDirty();
-
-         // Verify the new attribute properties
-         const newAttribute = await formForAdd.attributesSection.getAttribute(ATTRIBUTE_NAME_TO_EDIT);
-         const newProperties = await newAttribute.getProperties();
-         expect(newProperties).toMatchObject({ name: ATTRIBUTE_NAME_TO_EDIT });
       });
+      // Verify the new attribute properties
+      const newAttribute = await formForAdd.attributesSection.getAttribute(ATTRIBUTE_NAME_TO_EDIT);
+      const newProperties = await newAttribute.getProperties();
+      expect(newProperties).toMatchObject({ name: ATTRIBUTE_NAME_TO_EDIT });
       await diagramEditorForAdd.saveAndClose();
 
       // Now, open the system diagram again to edit the attribute
@@ -105,14 +104,13 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
          await attribute.setDatatype('Boolean');
          await attribute.setDescription('New Description');
          await form.waitForDirty();
-
-         // Verify the changes took effect with clean properties
-         const properties = await attribute.getProperties();
-         expect(properties).toMatchObject({
-            name: RENAMED_ATTRIBUTE_LABEL,
-            datatype: 'Boolean',
-            description: 'New Description'
-         });
+      });
+      // Verify the changes took effect with clean properties
+      const properties = await attribute.getProperties();
+      expect(properties).toMatchObject({
+         name: RENAMED_ATTRIBUTE_LABEL,
+         datatype: 'Boolean',
+         description: 'New Description'
       });
 
       // Add identifier first, then verify it's set correctly
@@ -120,14 +118,13 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
          const identifierInEdit = await form.identifiersSection.startAddIdentifier();
          await form.identifiersSection.commitIdentifierAdd(identifierInEdit, 'PrimaryIdentifier', [RENAMED_ATTRIBUTE_LABEL], true);
          await form.waitForDirty();
-
-         // Verify the attribute properties after adding to identifier
-         const addedIdentifier = await form.identifiersSection.findIdentifier('PrimaryIdentifier');
-         expect(addedIdentifier).toBeDefined();
-         expect(await addedIdentifier?.getName()).toBe('PrimaryIdentifier');
-         expect(await addedIdentifier?.isPrimary()).toBe(true);
-         expect(await addedIdentifier?.getAttributes()).toEqual([RENAMED_ATTRIBUTE_LABEL]);
       });
+      // Verify the attribute properties after adding to identifier
+      const addedIdentifier = await form.identifiersSection.findIdentifier('PrimaryIdentifier');
+      expect(addedIdentifier).toBeDefined();
+      expect(await addedIdentifier?.getName()).toBe('PrimaryIdentifier');
+      expect(await addedIdentifier?.isPrimary()).toBe(true);
+      expect(await addedIdentifier?.getAttributes()).toEqual([RENAMED_ATTRIBUTE_LABEL]);
 
       await diagramEditorForAdd.saveAndClose();
 
