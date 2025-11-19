@@ -372,10 +372,47 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       template: NewElementTemplate,
       parent: URI
    ): Promise<{ fileUri: URI; content: string } | undefined> {
+      let inputs = (await template.getInputOptions?.(parent, this.modelService)) ?? [{ id: 'name', label: 'Name' }];
+      
+      if (template.memberType === MappingType) {
+         const elements = await this.modelService.findReferenceableElements({
+            container: { uri: parent.toString(), type: MappingType },
+            syntheticElements: [{ property: 'target', type: TargetObjectType }],
+            property: 'entity'
+         });
+         if (elements.length > 0) {
+            const generateUniqueName = async (entityLabel: string): Promise<string> => {
+               const baseName = `${entityLabel}Mapping`;
+               const existingNames = new Set(elements.map(e => e.label));
+               let uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
+               while (await this.fileService.exists(parent.resolve(applyFileExtension(uniqueName, ModelFileExtensions.Mapping)))) {
+                  existingNames.add(uniqueName);
+                  uniqueName = findNextUnique(baseName, Array.from(existingNames), name => name);
+               }
+               return uniqueName;
+            };
+            const initialName = await generateUniqueName(elements[0].label);
+            inputs = inputs.map(input => {
+               if (input.id === 'name') return { ...input, value: initialName };
+               if (input.id === 'target') {
+                  return {
+                     ...input,
+                     value: elements[0].label,
+                     onValueChange: async (targetValue: string, updateName: (name: string) => void) => {
+                        const entity = elements.find(e => e.label === targetValue);
+                        if (entity) updateName(await generateUniqueName(entity.label));
+                     }
+                  };
+               }
+               return input;
+            });
+         }
+      }
+      
       const options = await getGridInputOptions(
          {
             ...baseProps,
-            inputs: (await template.getInputOptions?.(parent, this.modelService)) ?? [{ id: 'name', label: 'Name' }],
+            inputs,
             validate: value => {
                const name = JSON.parse(value).name ?? '';
                return name && (template.validateName?.(name) || this.validateFile(template.toUri(parent, name)));
