@@ -11,7 +11,7 @@ import {
    LangiumDocument,
    UriUtils
 } from 'langium';
-import { CancellationToken, Emitter, Event, WorkspaceFolder } from 'vscode-languageserver';
+import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CrossModelSharedServices } from './cross-model-module.js';
 
@@ -22,8 +22,7 @@ import { CrossModelSharedServices } from './cross-model-module.js';
  * - validates all documents after workspace initialization
  */
 export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
-   protected onWorkspaceInitializedEmitter = new Emitter<URI[]>();
-   protected workspaceInitializedDeferred = new Deferred<URI[]>();
+   protected workspaceInitializedDeferred = new Deferred<URI>();
    workspaceInitialized = this.workspaceInitializedDeferred.promise;
 
    constructor(
@@ -36,35 +35,40 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
 
    override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken | undefined): Promise<void> {
       try {
-         this.logger.info('[Workspace] Initialize...');
+         this.logger.info(`[Workspace] Initialize: ${folders.length > 0 ? `${folders.map(f => f.name).join(', ')}` : '<empty>'}`);
          await super.initializeWorkspace(folders, cancelToken);
-         this.logger.info('[Workspace] Initialized');
+         this.logger.info('[Workspace] Initialized.');
 
          // notify that the workspace is initialized
-         this.logger.info('[Workspace] Notify Initialized');
-         const uris = this.folders?.map(folder => this.getRootFolder(folder)) || [];
-         this.workspaceInitializedDeferred.resolve(uris);
-         this.onWorkspaceInitializedEmitter.fire(uris);
+         this.logger.info('[Workspace] Notify Listeners...');
+         if (this.workspace) {
+            this.workspaceInitializedDeferred.resolve(this.getRootFolder(this.workspace));
+         }
       } catch (error) {
          this.workspaceInitializedDeferred.reject(error as Error);
       }
    }
 
-   async updateDataModels(wsUri: string | undefined = this.workspaceFolders?.[0].uri, cancelToken?: CancellationToken): Promise<void> {
-      if (!wsUri) {
-         this.logger.warn('[DataModel] Rebuild: No workspace folder found, skipping.');
-         return;
-      }
-      this.logger.info('[DataModel] Rebuild Links: Wait for finishing build.');
-      await this.documentBuilder.waitUntil(DocumentState.Validated);
-      const update = this.services.workspace.DataModelManager.getDataModelInfos().map((info: { uri: URI }) => info.uri);
-      this.logger.info('[DataModel] Rebuild Links: Updating ' + update.map(uri => UriUtils.relative(wsUri, uri.path)).join(', '));
-      await this.documentBuilder.update(update, [], cancelToken);
-      this.logger.info('[DataModel] Rebuild Links: Finished');
+   get workspace(): WorkspaceFolder | undefined {
+      return this.workspaceFolders?.[0];
    }
 
-   get onWorkspaceInitialized(): Event<URI[]> {
-      return this.onWorkspaceInitializedEmitter.event;
+   wsRelativePath(uri: URI, workspace?: string): string;
+   wsRelativePath(uri: string, workspace?: string): string;
+   wsRelativePath(uri: string | URI, workspace = this.workspace?.uri): string {
+      return workspace ? UriUtils.relative(workspace, uri) : typeof uri === 'string' ? uri : uri.path.toString();
+   }
+
+   async updateDataModels(wsUri: string | undefined = this.workspace?.uri, cancelToken?: CancellationToken): Promise<void> {
+      if (!wsUri) {
+         this.logger.warn('[Workspace] Rebuild DataModels: No workspace folder found, skipping.');
+         return;
+      }
+      this.logger.info('[Workspace] Rebuild DataModels: Wait for finishing build...');
+      await this.documentBuilder.waitUntil(DocumentState.Validated);
+      const update = this.services.workspace.DataModelManager.getDataModelInfos().map((info: { uri: URI }) => info.uri);
+      this.logger.info(`[Workspace] Rebuild DataModels: Update ${update.map(uri => this.wsRelativePath(uri.path, wsUri)).join(', ')}`);
+      await this.documentBuilder.update(update, [], cancelToken);
    }
 
    protected override async loadAdditionalDocuments(
@@ -72,6 +76,7 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
       _collector: (document: LangiumDocument<AstNode>) => void
    ): Promise<void> {
       // build up datamodel-system based on the workspace
+      this.logger.info('[Workspace] Initialize DataModels...');
       return this.services.workspace.DataModelManager.initialize(folders);
    }
 

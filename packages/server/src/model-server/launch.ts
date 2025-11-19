@@ -22,25 +22,27 @@ export function startModelServer(services: CrossModelLSPServices, workspaceFolde
    const started = new Deferred();
    const stopped = new Deferred();
 
+   const logger = services.shared.logger.ClientLogger;
    const netServer = net.createServer(socket => createClientConnection(socket, services));
    netServer.listen(0);
    netServer.on('listening', () => {
       const addressInfo = netServer.address();
       if (!addressInfo) {
-         console.error('[ModelServer] Could not resolve address info. Shutting down.');
+         logger.error('[ModelServer] Could not resolve address info. Shutting down.');
          close(netServer);
          return;
       } else if (typeof addressInfo === 'string') {
-         console.error(`[ModelServer] Unexpectedly listening to pipe or domain socket "${addressInfo}". Shutting down.`);
+         logger.error(`[ModelServer] Unexpectedly listening to pipe or domain socket "${addressInfo}". Shutting down.`);
          close(netServer);
          return;
       }
-      console.log(`[ModelServer] Ready to accept new client requests on port: ${addressInfo.port}`);
+      logger.info(`[ModelServer] Ready to accept new client requests on port: ${addressInfo.port}`);
       services.shared.lsp.Connection?.onRequest(MODELSERVER_PORT_COMMAND, () => addressInfo.port);
       started.resolve();
    });
    netServer.on('error', err => {
-      console.error('[ModelServer] Error: ', err);
+      console.log('[ModelServer] Error: ', err);
+      logger.error('[ModelServer] Error: ' + err.message);
       close(netServer);
    });
    netServer.on('close', () => {
@@ -65,7 +67,7 @@ export function startModelServer(services: CrossModelLSPServices, workspaceFolde
  * @returns a promise that is resolved as soon as the connection is closed or rejects if an error occurs
  */
 async function createClientConnection(socket: net.Socket, services: CrossModelLSPServices): Promise<void> {
-   console.info(`[ModelServer] Starting model server connection for client: '${socket.localAddress}'`);
+   services.shared.logger.ClientLogger.info(`[ModelServer] Starting model server connection for client: '${socket.localAddress}'`);
    const connection = createConnection(socket);
    currentConnections.push(connection);
 
@@ -74,7 +76,7 @@ async function createClientConnection(socket: net.Socket, services: CrossModelLS
    socket.on('close', () => modelServer.dispose());
 
    connection.listen();
-   console.info(`[ModelServer] Connecting to client: '${socket.localAddress}'`);
+   services.shared.logger.ClientLogger.info(`[ModelServer] Connecting to client: '${socket.localAddress}'`);
 
    return new Promise((resolve, rejects) => {
       connection.onClose(() => resolve(undefined));

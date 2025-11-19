@@ -28,17 +28,11 @@ const { shared, CrossModel } = createCrossModelServices({ connection, ...NodeFil
 // Start the language server with the shared services
 startLanguageServer(shared);
 
-shared.workspace.WorkspaceManager.onWorkspaceInitialized(async workspaceFolders => {
+shared.workspace.WorkspaceManager.workspaceInitialized.then(workspace => {
    // Start the graphical language server with the shared services
-   const glspServer = startGLSPServer({ shared, language: CrossModel }, workspaceFolders[0]);
+   startGLSPServer({ shared, language: CrossModel }, workspace);
    // Start the JSON server with the shared services
-   const modelServer = startModelServer({ shared, language: CrossModel }, workspaceFolders[0]);
-
-   await glspServer.started;
-   await modelServer.started;
-
-   // relink all data models as their dependencies might not have properly resolved due to the order in which files are processed
-   shared.workspace.WorkspaceManager.updateDataModels();
+   startModelServer({ shared, language: CrossModel }, workspace);
 });
 
 // Attach generic handles  to prevent the process from crashing in case of an error

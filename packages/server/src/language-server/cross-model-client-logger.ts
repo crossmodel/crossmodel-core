@@ -44,6 +44,17 @@ export class ClientLogger {
    }
 
    /**
+    * Show a debug message.
+    *
+    * @param message The message to debug.
+    */
+   debug(message?: string): void {
+      if (message) {
+         this.services.lsp.Connection?.console.debug(message);
+      }
+   }
+
+   /**
     * Log a message.
     *
     * @param message The message to log.
