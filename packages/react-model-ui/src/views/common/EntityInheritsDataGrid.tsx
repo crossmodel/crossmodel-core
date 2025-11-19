@@ -7,7 +7,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useEntity, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface EntityInheritRow extends EntityInherit {
@@ -244,6 +244,21 @@ export function EntityInheritsDataGrid(): React.ReactElement {
                type: 'entity:inherit:add',
                inherit: { $refText: toIdReference(inheritanceData.parentId) }
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               // Create a new uncommitted row with a unique temporary ID
+               const tempRow: EntityInheritRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`, // Ensure uniqueness
+                  _uncommitted: true
+               } as EntityInheritRow;
+
+               setTimeout(() => {
+                  // Add to grid data and set it to editing mode
+                  setGridData(current => [...current, tempRow]);
+                  setEditingRows({ [tempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             if (!row.parentId || row.parentId.trim() === '') {
@@ -262,7 +277,7 @@ export function EntityInheritsDataGrid(): React.ReactElement {
          // Clear editing state after successful update
          setEditingRows({});
       },
-      [dispatch, onRowDelete]
+      [dispatch, onRowDelete, defaultEntry]
    );
 
    const onRowAdd = React.useCallback(() => {
