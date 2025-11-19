@@ -1,0 +1,8 @@
+datamodel:
+    id: New_Data_Model
+    name: "New Data Model"
+    type: logical
+    version: 1.0.0
+    dependencies:
+      - datamodel: Another_model
+        version: 1.0.0

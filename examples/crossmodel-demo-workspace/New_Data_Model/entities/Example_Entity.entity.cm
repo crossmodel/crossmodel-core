@@ -1,0 +1,25 @@
+entity:
+    id: Example_Entity
+    name: "Example Entity"
+    attributes:
+      - id: New_Attribute
+        name: "Something"
+        datatype: "Boolean"
+      - id: New_Attribute1
+        name: "Something 2"
+        datatype: "Integer"
+      - id: New_Attribute2
+        name: "Something 3"
+        datatype: "Time"
+      - id: New_Attribute3
+        name: "New Attribute"
+        datatype: "Text"
+      - id: New_Attribute11
+        name: "New Attribute1"
+        datatype: "Text"
+      - id: New_Attribute21
+        name: "Something 5"
+        datatype: "Text"
+      - id: New_Attribute22
+        name: "Bla"
+        datatype: "DateTime"
