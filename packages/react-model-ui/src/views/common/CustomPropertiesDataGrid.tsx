@@ -8,6 +8,7 @@ import { useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface CustomPropertyRow extends CustomProperty {
    idx: number;
@@ -53,7 +54,7 @@ export function CustomPropertiesDataGrid({
       () => ({
          $type: CustomPropertyType,
          $globalId: 'toBeAssigned',
-         name: 'New custom property',
+         name: '',
          id: '', // ID will be assigned when adding the row
          value: '',
          description: '',
@@ -97,6 +98,19 @@ export function CustomPropertiesDataGrid({
                type: `${contextType}:customProperty:add-customProperty`,
                customProperty: finalProperty
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: CustomPropertyRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true
+               };
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             // Remove empty fields before updating

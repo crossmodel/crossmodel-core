@@ -73,11 +73,14 @@ export class LogicalEntityChildren extends ChildrenAccessor {
    type: 'comp:attribute'
 })
 export class LogicalAttribute extends PModelElement {
-   override async snapshot(): Promise<PModelElementSnapshot & { name: string; datatype: string }> {
+   // datatype is optional now; include it in snapshot only when present
+   override async snapshot(): Promise<PModelElementSnapshot & { name: string; datatype?: string }> {
+      const name = await this.name();
+      const datatype = await this.datatype();
       return {
          ...(await super.snapshot()),
-         name: await this.name(),
-         datatype: await this.datatype()
+         name,
+         ...(datatype ? { datatype } : {})
       };
    }
 
@@ -85,8 +88,19 @@ export class LogicalAttribute extends PModelElement {
       return defined(await this.locate().locator('.attribute').textContent());
    }
 
-   async datatype(): Promise<string> {
-      return defined(await this.locate().locator('.datatype').textContent());
+   // May return undefined when datatype is not set or empty.
+   // Use a short timeout and catch errors to avoid waiting for a missing element which can cause test timeouts.
+   async datatype(): Promise<string | undefined> {
+      try {
+         const txt = await this.locate().locator('.datatype').textContent({ timeout: 100 });
+         if (!txt) {
+            return undefined;
+         }
+         return txt;
+      } catch (e) {
+         // If the locator timed out or the element wasn't found, treat as undefined
+         return undefined;
+      }
    }
 }
 

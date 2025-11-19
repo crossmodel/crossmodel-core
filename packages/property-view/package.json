@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/property-view",
-  "version": "0.11.3",
+  "version": "0.12.0",
   "description": "Property view for crossmodel",
   "keywords": [
     "theia-extension"
@@ -29,10 +29,10 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/glsp-client": "0.11.3",
-    "@crossmodel/model-service": "0.11.3",
-    "@crossmodel/protocol": "0.11.3",
-    "@crossmodel/react-model-ui": "0.11.3",
+    "@crossmodel/glsp-client": "0.12.0",
+    "@crossmodel/model-service": "0.12.0",
+    "@crossmodel/protocol": "0.12.0",
+    "@crossmodel/react-model-ui": "0.12.0",
     "@eclipse-glsp/theia-integration": "2.5.0",
     "@theia/core": "1.64.1",
     "@theia/filesystem": "1.64.1",

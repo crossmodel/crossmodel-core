@@ -7,8 +7,8 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface DataModelDependencyRow extends DataModelDependency {
@@ -248,6 +248,20 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
                type: 'datamodel:dependency:add-dependency',
                dependency: dependencyData
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: DataModelDependencyRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true,
+                  idx: -1
+               } as DataModelDependencyRow;
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             if (

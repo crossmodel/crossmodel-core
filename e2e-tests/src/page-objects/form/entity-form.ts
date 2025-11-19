@@ -95,7 +95,10 @@ export class LogicalEntityAttributesSection extends FormSection {
       await nameInput.fill(name);
 
       // Save the row by pressing Enter and wait for things to settle
-      await nameInput.press('Enter');
+      // Save the row by clicking the row save button to avoid Enter-driven global handlers
+      const saveButton = attribute.locator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
 
       // Wait a bit longer than our usual timeouts since this is a complex UI update
       await this.page.waitForTimeout(500);
@@ -226,9 +229,10 @@ export class LogicalAttribute extends TheiaPageObject {
       const inputLocator = this.nameLocator.locator('input');
       await inputLocator.waitFor({ state: 'visible' });
       await inputLocator.fill(name);
-      await this.nameLocator.press('Enter');
-      await waitForFunction(async () => (await this.getName()) === name);
-      await this.nameLocator.press('Enter');
+      // Click the save button instead of pressing Enter
+      const saveButton = this.actionsLocator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
       await waitForFunction(async () => (await this.getName()) === name);
    }
 
@@ -240,20 +244,23 @@ export class LogicalAttribute extends TheiaPageObject {
       // Enter edit mode for the row
       await this.actionsLocator.locator('button:has(.pi-pencil)').click(); // Re-enter edit mode
 
-      // Click the dropdown trigger within the cell to activate the dropdown
-      await this.dataType.locator('.p-dropdown-trigger').click();
+      // Click the autocomplete dropdown button within the cell to activate the autocomplete
+      const autocomplete = this.dataType.locator('.p-autocomplete');
+      await autocomplete.locator('.p-autocomplete-dropdown').click();
 
-      // The dropdown panel is usually rendered at the end of the body
-      const dropdownPanel = this.page.locator('.p-dropdown-panel').first();
-      await dropdownPanel.waitFor({ state: 'visible' });
+      // The autocomplete panel is usually rendered at the end of the body
+      const autocompletePanel = this.page.locator('.p-autocomplete-panel').first();
+      await autocompletePanel.waitFor({ state: 'visible' });
 
       // Find the option by its text/label and click it
-      await dropdownPanel.getByRole('option', { name: datatype }).click();
+      await autocompletePanel.getByRole('option', { name: datatype }).click();
 
-      // Wait for the dropdown panel to be hidden
-      await dropdownPanel.waitFor({ state: 'hidden' });
-
-      await this.nameLocator.press('Enter');
+      // Wait for the autocomplete panel to be hidden
+      await autocompletePanel.waitFor({ state: 'hidden' });
+      // Click save button to persist the datatype change
+      const saveButton = this.actionsLocator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
    }
 
    async isIdentifier(): Promise<boolean> {
@@ -297,7 +304,10 @@ export class LogicalAttribute extends TheiaPageObject {
       const inputLocator = this.descriptionLocator.locator('input');
       await inputLocator.waitFor({ state: 'visible' });
       await inputLocator.fill(description);
-      await this.descriptionLocator.press('Enter');
+      // Click the save button to persist the description change
+      const saveButton = this.actionsLocator.locator('button.p-row-editor-save');
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
       await waitForFunction(async () => (await this.getDescription()) === description);
    }
 

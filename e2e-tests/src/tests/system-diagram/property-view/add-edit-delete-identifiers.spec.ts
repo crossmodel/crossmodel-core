@@ -46,12 +46,12 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       await diagramEditor.saveAndClose();
 
       const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
-      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('primary: true');
-      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(9)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(10)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch(`- ${ATTRIBUTE_ONE}`);
       entityEditor.closeWithoutSave();
 
       // Cleanup
@@ -92,13 +92,13 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       await diagramEditor.saveAndClose();
 
       const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
-      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('primary: true');
-      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`- ${ATTRIBUTE_ONE}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch(`- ${ATTRIBUTE_TWO}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(9)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(10)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch(`- ${ATTRIBUTE_TWO}`);
       entityEditor.closeWithoutSave();
 
       // Cleanup
@@ -133,17 +133,17 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       await diagramEditor.saveAndClose();
 
       const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
-      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('primary: true');
-      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(9)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(10)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch(`- ${ATTRIBUTE_ONE}`);
 
-      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(18)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(19)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(20)).toMatch(`- ${ATTRIBUTE_TWO}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(18)).toMatch(`- ${ATTRIBUTE_TWO}`);
 
       entityEditor.closeWithoutSave();
 
@@ -184,23 +184,23 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       await diagramEditor.saveAndClose();
 
       const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
-      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(9)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(10)).toMatch(`id: ${PRIMARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch(`name: "${PRIMARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`- ${ATTRIBUTE_ONE}`);
 
-      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(18)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(19)).toMatch(`- ${ATTRIBUTE_TWO}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(16)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(17)).toMatch(`- ${ATTRIBUTE_TWO}`);
 
-      expect(await entityEditor.textContentOfLineByLineNumber(20)).toMatch(`id: ${RENAMED_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(21)).toMatch(`name: "${RENAMED_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(22)).toMatch('primary: true');
-      expect(await entityEditor.textContentOfLineByLineNumber(23)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(24)).toMatch(`- ${ATTRIBUTE_ONE}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(25)).toMatch(`- ${ATTRIBUTE_TWO}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(18)).toMatch(`id: ${RENAMED_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(19)).toMatch(`name: "${RENAMED_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(20)).toMatch('primary: true');
+      expect(await entityEditor.textContentOfLineByLineNumber(21)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(22)).toMatch(`- ${ATTRIBUTE_ONE}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(23)).toMatch(`- ${ATTRIBUTE_TWO}`);
 
       entityEditor.closeWithoutSave();
 
@@ -246,11 +246,11 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       await diagramEditor.saveAndClose();
 
       const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
-      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch('identifiers:');
-      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(14)).toMatch('attributes:');
-      expect(await entityEditor.textContentOfLineByLineNumber(15)).toMatch(`- ${ATTRIBUTE_TWO}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(9)).toMatch('identifiers:');
+      expect(await entityEditor.textContentOfLineByLineNumber(10)).toMatch(`id: ${SECONDARY_IDENTIFIER_NAME}`);
+      expect(await entityEditor.textContentOfLineByLineNumber(11)).toMatch(`name: "${SECONDARY_IDENTIFIER_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(12)).toMatch('attributes:');
+      expect(await entityEditor.textContentOfLineByLineNumber(13)).toMatch(`- ${ATTRIBUTE_TWO}`);
       entityEditor.closeWithoutSave();
 
       // Cleanup

@@ -1,6 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
+import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
@@ -129,6 +130,67 @@ export function GenericDropdownEditor({
                   onKeyDown={handleGridEditorKeyDown}
                   disabled={readonly}
                   className='w-full'
+               />
+               {error && <small className='p-error m-0'>{error}</small>}
+            </div>
+         )}
+      </EditorContainer>
+   );
+}
+
+export function GenericAutoCompleteEditor({
+   options,
+   basePath,
+   field,
+   dropdownOptions
+}: {
+   options: any;
+   basePath: string[];
+   field: string;
+   dropdownOptions: Array<{ label: string; value: string }>;
+}): React.ReactElement {
+   const rowIdx = options.rowData?.idx ?? -1;
+   const readonly = useReadonly();
+   const [suggestions, setSuggestions] = React.useState<Array<{ label: string; value: string }>>(dropdownOptions);
+
+   const search = (event: AutoCompleteCompleteEvent): void => {
+      const query = event.query.toLowerCase();
+      const filtered = dropdownOptions.filter(
+         option => option.label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query)
+      );
+      setSuggestions(filtered);
+   };
+
+   const onChange = (e: { value: { label: string; value: string } | string }): void => {
+      let finalValue = '';
+      if (typeof e.value === 'object' && e.value !== undefined && 'value' in e.value) {
+         finalValue = e.value.value;
+      } else if (typeof e.value === 'string') {
+         finalValue = e.value;
+      }
+      options.editorCallback(finalValue);
+   };
+
+   const currentValue = React.useMemo(() => {
+      const option = dropdownOptions.find(opt => opt.value === options.value);
+      return option || options.value;
+   }, [options.value, dropdownOptions]);
+
+   return (
+      <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
+         {({ invalid, error, className }) => (
+            <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
+               <AutoComplete
+                  value={currentValue}
+                  suggestions={suggestions}
+                  completeMethod={search}
+                  field='label'
+                  onChange={onChange}
+                  onKeyDown={handleGridEditorKeyDown}
+                  disabled={readonly}
+                  className={`w-full ${className}`}
+                  autoFocus
+                  dropdown
                />
                {error && <small className='p-error m-0'>{error}</small>}
             </div>
