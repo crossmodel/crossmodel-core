@@ -136,20 +136,22 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          const cleanAttribute = { ...action.attribute };
          delete cleanAttribute.identifier;
          entity.attributes[action.attributeIdx] = {
-            ...cleanAttribute,
-            name: undefinedIfEmpty(cleanAttribute.name),
-            description: undefinedIfEmpty(cleanAttribute.description)
+            ...action.attribute,
+            name: undefinedIfEmpty(action.attribute.name),
+            description: undefinedIfEmpty(action.attribute.description),
+            datatype: undefinedIfEmpty(action.attribute.datatype)
          };
          break;
       }
 
-      case 'entity:attribute:add-attribute': {
-         // Filter out identifier property when adding new attribute
-         const cleanAttribute = { ...action.attribute };
-         delete cleanAttribute.identifier;
-         entity.attributes.push(cleanAttribute);
+      case 'entity:attribute:add-attribute':
+         entity.attributes.push({
+            ...action.attribute,
+            name: undefinedIfEmpty(action.attribute.name),
+            description: undefinedIfEmpty(action.attribute.description),
+            datatype: undefinedIfEmpty(action.attribute.datatype)
+         });
          break;
-      }
 
       case 'entity:attribute:delete-attribute':
          entity.attributes.splice(action.attributeIdx, 1);

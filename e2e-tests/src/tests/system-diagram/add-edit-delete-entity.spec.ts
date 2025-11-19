@@ -172,7 +172,9 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
       const commandPalette = await diagramEditor.invokeShowLogicalEntityToolAtPosition(position);
       const entitySuggestions = await commandPalette.suggestions();
       expect(entitySuggestions).not.toContain(NEW_ENTITY_LABEL);
+      // Close the command palette by pressing Escape
+      await diagramEditor.page.keyboard.press('Escape');
 
-      await diagramEditor.close();
+      await diagramEditor.saveAndClose();
    });
 });

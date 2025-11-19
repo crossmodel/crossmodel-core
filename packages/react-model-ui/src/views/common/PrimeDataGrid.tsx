@@ -121,23 +121,36 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {
-         // First check if we have any active edits that need to be saved
+         const addNewRow = (): void => {
+            const newRow = { ...defaultNewRow };
+            columns.forEach(col => {
+               if (!(col.field in newRow)) {
+                  (newRow as any)[col.field] = '';
+               }
+            });
+            onRowAdd(newRow as T);
+         };
+
+         // Save any active edits in this grid
          const tableElement = tableRef.current?.getElement();
          if (tableElement && activeRowKey) {
-            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
-            if (rowEditorSaveButton instanceof HTMLElement) {
-               rowEditorSaveButton.click();
+            const saveButton = tableElement.querySelector('.p-row-editor-save');
+            if (saveButton instanceof HTMLElement) {
+               saveButton.click();
             }
          }
 
-         // Then add the new row
-         const newRow = { ...defaultNewRow };
-         columns.forEach(col => {
-            if (!(col.field in newRow)) {
-               (newRow as any)[col.field] = '';
+         // Save any active edits in other grids
+         document.querySelectorAll('.p-row-editor-save').forEach(button => {
+            if (button instanceof HTMLElement) {
+               button.click();
             }
          });
-         onRowAdd(newRow as T);
+
+         // Add new row immediately after saves are triggered
+         requestAnimationFrame(() => {
+            addNewRow();
+         });
       }
    }, [onRowAdd, defaultNewRow, columns, activeRowKey]);
 
@@ -319,6 +332,23 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             return; // selecting from overlay shouldn't exit edit mode
          }
 
+         const isButton = target.tagName === 'BUTTON' || target.closest('button');
+         if (isButton) {
+            const editingRow = tableElement.querySelector('tr.p-row-editing');
+            const isInEditingRow = editingRow && editingRow.contains(target);
+            const isEditorButton = target.closest('.p-autocomplete, .p-dropdown, .p-multiselect, .p-datepicker, .p-cell-editing');
+            if (isInEditingRow || isEditorButton) {
+               return;
+            }
+            // Button clicked outside editing row - save first
+            const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
+            if (rowEditorSaveButton instanceof HTMLElement) {
+               // Trigger save immediately
+               rowEditorSaveButton.click();
+            }
+            return;
+         }
+
          if (!isInsideTable) {
             // Outside table → save & exit
             const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
@@ -376,11 +406,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             }
          }
       };
-
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mouseup', handleClickOutside);
       document.addEventListener('focusout', handleFocusOut);
       return () => {
-         document.removeEventListener('mousedown', handleClickOutside);
+         document.removeEventListener('mouseup', handleClickOutside);
          document.removeEventListener('focusout', handleFocusOut);
       };
    }, [activeRowKey]);

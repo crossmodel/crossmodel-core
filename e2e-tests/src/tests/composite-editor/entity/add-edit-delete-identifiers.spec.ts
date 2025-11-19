@@ -73,6 +73,8 @@ test.describe('Add/Edit/Delete identifiers of an entity using the composite edit
       await identifier.setPrimary(false);
       await identifier.setAttributes(['FirstName', 'LastName']);
       await identifier.setDescription('Modified identifier description');
+      await identifier.save();
+      await formEditor.waitForDirty();
 
       const modified = await identifiersSection.findIdentifier('ModifiedTest');
       expect(modified).toBeDefined();

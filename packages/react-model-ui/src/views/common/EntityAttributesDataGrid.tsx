@@ -5,8 +5,9 @@ import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/p
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
-import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericTextEditor } from './GenericEditors';
+import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
    $type: 'LogicalAttribute';
@@ -49,8 +50,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
-         name: 'New Attribute',
-         datatype: 'Text',
+         name: '',
+         datatype: '',
          idx: -1,
          id: '', // ID will be assigned when adding the row
          description: '',
@@ -153,7 +154,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             return {
                idx,
                name: attr.name || '',
-               datatype: attr.datatype || 'string',
+               datatype: attr.datatype || '',
                description: attr.description || '',
                identifier: isPrimaryIdentifier, // Only true if part of a primary identifier
                id: attr.id || '',
@@ -186,7 +187,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             header: 'Data Type',
             headerStyle: { width: '15%' },
             editor: (options: any) => (
-               <GenericDropdownEditor
+               <GenericAutoCompleteEditor
                   options={options}
                   basePath={['entity', 'attributes']}
                   field='datatype'
@@ -327,6 +328,20 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Handle identifier status for the new attribute
             handleIdentifierUpdate(newId, attribute.name, identifier ?? false, true);
+            // Create a new uncommitted row for continuous entry only if save was triggered by Enter key
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: EntityAttributeRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true
+               };
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  // Clear editing state after successful update
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             // Remove empty and non-model fields before updating
@@ -444,15 +459,14 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             setEditingRows(newEditingRows);
 
             // Clean up any stale uncommitted rows
-            setGridData(current => {
-               // Keep all committed rows
-               const committedRows = current.filter(row => !row._uncommitted);
-
-               // For uncommitted rows, only keep the one being edited (if any)
-               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
-
-               return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
-            });
+            if (newEditingId) {
+               setGridData(current => {
+                  // Keep all committed rows
+                  const committedRows = current.filter(row => !row._uncommitted);
+                  const activeUncommittedRow = current.find(row => row._uncommitted && row.id === newEditingId);
+                  return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+               });
+            }
          }}
          globalFilterFields={['name', 'datatype', 'description']}
       />

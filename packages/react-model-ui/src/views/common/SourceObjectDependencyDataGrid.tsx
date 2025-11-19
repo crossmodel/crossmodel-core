@@ -14,7 +14,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectDependencyEditorProps {
    options: any;
@@ -251,6 +251,20 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
                   source: dependency.source
                }
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: SourceObjectDependencyRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true,
+                  idx: -1
+               } as SourceObjectDependencyRow;
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             if (!dependency.source?.trim() || dependency.source === '_' || dependency.source === '-') {

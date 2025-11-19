@@ -16,7 +16,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface AttributeMappingSourceValueProps {
    row: { idx: number };
@@ -273,6 +273,20 @@ export function AttributeMappingSourcesDataGrid({
                   value: sourceToUpdate.value
                }
             });
+
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: AttributeMappingSourceRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  _uncommitted: true,
+                  idx: -1
+               } as AttributeMappingSourceRow;
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
          } else {
             // This is an existing row being updated
             if (!sourceToUpdate.value?.trim() || sourceToUpdate.value === '_' || sourceToUpdate.value === '-') {
