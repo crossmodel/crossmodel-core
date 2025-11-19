@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.2](https://github.com/crossmodel/crossmodel-core/compare/v0.12.1...v0.12.2) (2025-11-19)
+
+
+### Bug Fixes
+
+* Enhance stability of datamodel re-parsing after opening workspace ([#216](https://github.com/crossmodel/crossmodel-core/issues/216)) ([8c63307](https://github.com/crossmodel/crossmodel-core/commit/8c63307586c655f0339ac0814fefd78f5a542b4c))
+
+
+
+
+
 ## [0.12.1](https://github.com/crossmodel/crossmodel-core/compare/v0.12.0...v0.12.1) (2025-11-19)
 
 **Note:** Version bump only for package @crossmodel/server
