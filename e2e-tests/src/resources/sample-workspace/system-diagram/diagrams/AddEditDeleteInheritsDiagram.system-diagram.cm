@@ -1,0 +1,9 @@
+systemDiagram:
+    id: AddEditDeleteInheritsDiagram
+    nodes:
+      - id: AddEditDeleteInheritsEntityNode
+        entity: AddEditDeleteInheritsEntity
+        x: 396
+        y: 429
+        width: 10
+        height: 10
