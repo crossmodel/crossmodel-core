@@ -14,20 +14,24 @@ export class LogicalIdentifier extends TheiaPageObject {
       super(section.app);
    }
 
+   protected get dataCells(): Locator {
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)');
+   }
+
    protected get nameLocator(): Locator {
-      return this.locator.locator('td').first();
+      return this.dataCells.nth(0);
    }
 
    protected get primaryLocator(): Locator {
-      return this.locator.locator('td').nth(1);
+      return this.dataCells.nth(1);
    }
 
    protected get attributeIdsLocator(): Locator {
-      return this.locator.locator('td:nth-child(3)'); // More reliable than nth(2)
+      return this.dataCells.nth(2);
    }
 
    protected get descriptionLocator(): Locator {
-      return this.locator.locator('td').nth(3);
+      return this.dataCells.nth(3);
    }
 
    protected get actionsLocator(): Locator {

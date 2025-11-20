@@ -210,6 +210,12 @@ export function AttributeMappingSourcesDataGrid({
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
+   const [selectedRows, setSelectedRows] = React.useState<AttributeMappingSourceRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+
+   const handleSelectionChange = React.useCallback((e: { value: AttributeMappingSourceRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    const defaultEntry = React.useMemo<Partial<AttributeMappingSourceRow>>(
       () => ({
@@ -222,6 +228,39 @@ export function AttributeMappingSourcesDataGrid({
 
    const [gridData, setGridData] = React.useState<AttributeMappingSourceRow[]>([]);
 
+   const handleRowReorder = React.useCallback(
+      (e: { rows: AttributeMappingSourceRow[] }): void => {
+         if (pendingDeleteIdsRef.current.size > 0) {
+            return;
+         }
+         const sourceMap = new Map(
+            (attributeMapping.sources || []).map((source, idx) => [`source${idx}`, source])
+         );
+
+         const reorderedSources: AttributeMappingSource[] = [];
+         e.rows.forEach(row => {
+            if (row._uncommitted) {
+               return;
+            }
+            const existing = sourceMap.get(row.id);
+            if (existing) {
+               reorderedSources.push(existing);
+            }
+         });
+
+         if (reorderedSources.length !== (attributeMapping.sources || []).length) {
+            return;
+         }
+
+         dispatch({
+            type: 'attribute-mapping:source:reorder-sources',
+            mappingIdx,
+            sources: reorderedSources
+         });
+      },
+      [dispatch, attributeMapping.sources, mappingIdx]
+   );
+
    // Update grid data when sources change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
@@ -233,6 +272,13 @@ export function AttributeMappingSourcesDataGrid({
             value: String(source.value || '')
          })) as AttributeMappingSourceRow[];
 
+         const committedIds = new Set(committedData.map(row => row.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
          // Preserve any uncommitted rows that are currently being edited
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
@@ -242,6 +288,13 @@ export function AttributeMappingSourcesDataGrid({
 
    const onSourceDelete = React.useCallback(
       (sourceToDelete: AttributeMappingSourceRow) => {
+         if (sourceToDelete.id) {
+            pendingDeleteIdsRef.current.add(sourceToDelete.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== sourceToDelete.id));
+         setSelectedRows(current => current.filter(row => row.id !== sourceToDelete.id));
+
          dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx: sourceToDelete.idx });
       },
       [dispatch, mappingIdx]
@@ -327,20 +380,6 @@ export function AttributeMappingSourcesDataGrid({
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onSourceMoveUp = React.useCallback(
-      (sourceToMove: AttributeMappingSourceRow) => {
-         dispatch({ type: 'attribute-mapping:move-source-up', mappingIdx, sourceIdx: sourceToMove.idx });
-      },
-      [dispatch, mappingIdx]
-   );
-
-   const onSourceMoveDown = React.useCallback(
-      (sourceToMove: AttributeMappingSourceRow) => {
-         dispatch({ type: 'attribute-mapping:move-source-down', mappingIdx, sourceIdx: sourceToMove.idx });
-      },
-      [dispatch, mappingIdx]
-   );
-
    const columns: GridColumn<AttributeMappingSourceRow>[] = React.useMemo(
       () => [
          {
@@ -367,8 +406,9 @@ export function AttributeMappingSourcesDataGrid({
          onRowAdd={onSourceAdd}
          onRowUpdate={onSourceUpdate}
          onRowDelete={onSourceDelete}
-         onRowMoveUp={onSourceMoveUp}
-         onRowMoveDown={onSourceMoveDown}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No source expressions'

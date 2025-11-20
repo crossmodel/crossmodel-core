@@ -53,15 +53,61 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<EntityIdentifierRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<EntityIdentifierRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+
+   const handleSelectionChange = React.useCallback((e: { value: EntityIdentifierRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    const handleIdentifierDelete = React.useCallback(
       (identifier: EntityIdentifierRow): void => {
+         // Track the pending delete for drag-and-drop protection
+         if (identifier.id) {
+            pendingDeleteIdsRef.current.add(identifier.id);
+         }
+
+         // Immediately remove from grid for responsive UI
+         setGridData(current => current.filter(row => row.id !== identifier.id));
+         setSelectedRows(current => current.filter(row => row.id !== identifier.id));
+
          dispatch({
             type: 'entity:identifier:delete-identifier',
             identifierIdx: identifier.idx
          });
       },
       [dispatch]
+   );
+
+   const handleRowReorder = React.useCallback(
+      (e: { rows: EntityIdentifierRow[] }): void => {
+         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
+         
+         const identifierMap = new Map(
+            (entity.identifiers || []).map(identifier => [identifier.id, identifier])
+         );
+
+         const reorderedIdentifiers: LogicalIdentifier[] = [];
+         filteredRows.forEach(row => {
+            if (row._uncommitted) {
+               return;
+            }
+            const existing = identifierMap.get(row.id);
+            if (existing) {
+               reorderedIdentifiers.push(existing);
+            }
+         });
+
+         if (reorderedIdentifiers.length !== (entity.identifiers || []).length) {
+            return;
+         }
+
+         dispatch({
+            type: 'entity:identifier:reorder-identifiers',
+            identifiers: reorderedIdentifiers
+         });
+      },
+      [dispatch, entity.identifiers]
    );
 
    const defaultEntry = React.useMemo<EntityIdentifierRow>(
@@ -96,6 +142,14 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
       const updateGridData = async (): Promise<void> => {
          const newData = mapToGridData();
          setGridData(current => {
+                                                                                 // Clear pending deletes for identifiers that are no longer in the model
+            const currentIds = new Set(newData.map(row => row.id).filter((id): id is string => Boolean(id)));
+            pendingDeleteIdsRef.current.forEach(id => {
+               if (!currentIds.has(id)) {
+                  pendingDeleteIdsRef.current.delete(id);
+               }
+            });
+
             // Preserve any uncommitted rows that are currently being edited
             const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
             return [...newData, ...uncommittedRows];
@@ -339,6 +393,9 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          onRowAdd={handleRowAdd}
          onRowUpdate={handleRowUpdate}
          onRowDelete={handleIdentifierDelete}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          readonly={readonly}
          defaultNewRow={defaultEntry}
          noDataMessage='No identifiers defined'

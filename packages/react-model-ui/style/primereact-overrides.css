@@ -549,3 +549,26 @@ span.w-full.p-autocomplete {
    border: none;
    background: transparent;
 }
+
+.p-datatable .p-datatable-tbody > tr.drag-over-above {
+   border-top: 2px solid var(--theia-focusBorder);
+}
+
+.p-datatable .p-datatable-tbody > tr.drag-over-below {
+   border-bottom: 2px solid var(--theia-focusBorder);
+}
+
+.p-datatable .p-datatable-tbody > tr .drag-handle {
+   cursor: grab;
+   user-select: none;
+}
+
+.p-datatable .p-datatable-tbody > tr .drag-handle:active {
+   cursor: grabbing;
+}
+
+.p-datatable .p-datatable-tbody > tr > td.p-reorder-column {
+   width: 2rem;
+   text-align: center;
+   padding: 0;
+}

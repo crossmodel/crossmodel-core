@@ -268,8 +268,50 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<SourceObjectConditionRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<SourceObjectConditionRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+
+   const handleSelectionChange = React.useCallback((e: { value: SourceObjectConditionRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    const sourceObject = mapping.sources[sourceObjectIdx];
+
+   const handleRowReorder = React.useCallback(
+      (e: { rows: SourceObjectConditionRow[] }): void => {
+         if (pendingDeleteIdsRef.current.size > 0) {
+            return;
+         }
+         const conditionMap = new Map(
+            (sourceObject?.conditions || []).map((condition, idx) => [
+               idx.toString(),
+               condition
+            ])
+         );
+
+         const reorderedConditions: SourceObjectCondition[] = [];
+         e.rows.forEach(row => {
+            if (row._uncommitted) {
+               return;
+            }
+            const existing = conditionMap.get(row.id);
+            if (existing) {
+               reorderedConditions.push(existing);
+            }
+         });
+
+         if (reorderedConditions.length !== (sourceObject?.conditions || []).length) {
+            return;
+         }
+
+         dispatch({
+            type: 'source-object:reorder-conditions',
+            sourceObjectIdx,
+            conditions: reorderedConditions
+         });
+      },
+      [dispatch, sourceObject?.conditions, sourceObjectIdx]
+   );
 
    // Update grid data when conditions change, preserving any uncommitted rows
    React.useEffect(() => {
@@ -296,6 +338,13 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             id: idx.toString()
          })) as SourceObjectConditionRow[];
 
+         const committedIds = new Set(committedData.map(row => row.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
          // Preserve any uncommitted rows that are currently being edited
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
@@ -317,6 +366,13 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
 
    const onRowDelete = React.useCallback(
       (condition: SourceObjectConditionRow) => {
+         if (condition.id) {
+            pendingDeleteIdsRef.current.add(condition.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== condition.id));
+         setSelectedRows(current => current.filter(row => row.id !== condition.id));
+
          dispatch({
             type: 'source-object:delete-condition',
             sourceObjectIdx,
@@ -423,28 +479,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
       setGridData(current => [...current, tempRow]);
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
-
-   const onRowMoveUp = React.useCallback(
-      (condition: SourceObjectConditionRow) => {
-         dispatch({
-            type: 'source-object:move-condition-up',
-            sourceObjectIdx,
-            conditionIdx: condition.idx
-         });
-      },
-      [dispatch, sourceObjectIdx]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (condition: SourceObjectConditionRow) => {
-         dispatch({
-            type: 'source-object:move-condition-down',
-            sourceObjectIdx,
-            conditionIdx: condition.idx
-         });
-      },
-      [dispatch, sourceObjectIdx]
-   );
 
    const columns = React.useMemo<GridColumn<SourceObjectConditionRow>[]>(
       () => [
@@ -592,8 +626,9 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No conditions'

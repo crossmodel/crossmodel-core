@@ -76,6 +76,11 @@ export interface RelationshipAttributeDeleteAction extends ModelAction {
    attributeIdx: number;
 }
 
+export interface RelationshipAttributeReorderAction extends ModelAction {
+   type: 'relationship:attribute:reorder-attributes';
+   attributes: RelationshipAttribute[];
+}
+
 export interface CustomPropertyUpdateAction extends ModelAction {
    type: 'relationship:customProperty:update';
    customPropertyIdx: number;
@@ -102,6 +107,11 @@ export interface CustomPropertyDeleteAction extends ModelAction {
    customPropertyIdx: number;
 }
 
+export interface CustomPropertyReorderAction extends ModelAction {
+   type: 'relationship:customProperty:reorder-customProperties';
+   customProperties: CustomProperty[];
+}
+
 export type RelationshipDispatchAction =
    | RelationshipChangeNameAction
    | RelationshipChangeIdAction
@@ -117,11 +127,13 @@ export type RelationshipDispatchAction =
    | RelationshipAttributeMoveUpAction
    | RelationshipAttributeMoveDownAction
    | RelationshipAttributeDeleteAction
+   | RelationshipAttributeReorderAction
    | CustomPropertyUpdateAction
    | CustomPropertyAddEmptyAction
    | CustomPropertyMoveUpAction
    | CustomPropertyMoveDownAction
-   | CustomPropertyDeleteAction;
+   | CustomPropertyDeleteAction
+   | CustomPropertyReorderAction;
 
 export function isRelationshipDispatchAction(action: DispatchAction): action is RelationshipDispatchAction {
    return action.type.startsWith('relationship:');
@@ -190,6 +202,10 @@ export function RelationshipModelReducer(state: ModelState, action: Relationship
          relationship.attributes.splice(action.attributeIdx, 1);
          break;
 
+      case 'relationship:attribute:reorder-attributes':
+         relationship.attributes = action.attributes;
+         break;
+
       case 'relationship:customProperty:update':
          relationship.customProperties![action.customPropertyIdx] = {
             ...action.customProperty,
@@ -212,6 +228,10 @@ export function RelationshipModelReducer(state: ModelState, action: Relationship
 
       case 'relationship:customProperty:move-customProperty-down':
          moveDown(relationship.customProperties!, action.customPropertyIdx);
+         break;
+
+      case 'relationship:customProperty:reorder-customProperties':
+         relationship.customProperties = action.customProperties;
          break;
 
       default:
