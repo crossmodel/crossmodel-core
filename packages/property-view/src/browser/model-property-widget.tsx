@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, ShouldSaveDialog } from '@theia/core/lib/browser';
 import { PropertyDataService } from '@theia/property-view/lib/browser/property-data-service';
 import { PropertyViewContentWidget } from '@theia/property-view/lib/browser/property-view-content-widget';
 
@@ -64,6 +64,30 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    protected override getRenderProperties(): RenderProps {
       return { ...super.getRenderProperties(), ...this.renderData?.renderProps };
+   }
+
+   protected override async closeModel(uri: string): Promise<void> {
+      if (this.document && this.dirty) {
+         const isMappingFile = !!(this.document && (this.document as any).root && (this.document as any).root.mapping);
+         if (!isMappingFile) {
+            const shouldSave = await new ShouldSaveDialog(this).open();
+            if (shouldSave === true) {
+               await this.saveModel(this.document);
+               await super.closeModel(uri);
+               return;
+            } else if (shouldSave === false) {
+               await super.closeModel(uri);
+               return;
+            } else {
+               // Cancel: abort the close operation so callers (who await closeModel)
+               // do not continue with further model switches. Throwing here causes
+               // the awaiting caller to receive a rejected promise and leave the
+               // current document intact.
+               throw new Error('close-cancelled');
+            }
+         }
+      }
+      await super.closeModel(uri);
    }
 
    protected getDiagramWidget(): GLSPDiagramWidget | undefined {
