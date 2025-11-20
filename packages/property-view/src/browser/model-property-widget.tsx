@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { ApplicationShell, ShouldSaveDialog } from '@theia/core/lib/browser';
+import { ApplicationShell } from '@theia/core/lib/browser';
 import { PropertyDataService } from '@theia/property-view/lib/browser/property-data-service';
 import { PropertyViewContentWidget } from '@theia/property-view/lib/browser/property-view-content-widget';
 
@@ -64,18 +64,6 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    protected override getRenderProperties(): RenderProps {
       return { ...super.getRenderProperties(), ...this.renderData?.renderProps };
-   }
-
-   protected override async closeModel(uri: string): Promise<void> {
-      if (this.document && this.dirty) {
-         const toSave = this.document;
-         this.document = undefined;
-         const shouldSave = await new ShouldSaveDialog(this).open();
-         if (shouldSave) {
-            await this.saveModel(toSave);
-         }
-      }
-      super.closeModel(uri);
    }
 
    protected getDiagramWidget(): GLSPDiagramWidget | undefined {
