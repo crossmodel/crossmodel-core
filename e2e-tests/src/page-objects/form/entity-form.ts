@@ -8,18 +8,21 @@ import { TheiaPageObject } from '@theia/playwright';
 import { TheiaView } from '@theia/playwright/lib/theia-view';
 import { CMForm, FormIcons, FormSection, FormType } from './cm-form';
 import { LogicalEntityIdentifiersSection } from './sections/identifiers-section';
+import { LogicalEntityInheritsSection } from './sections/inherits-section';
 
 export class LogicalEntityForm extends CMForm {
    readonly iconClass = FormIcons.LogicalEntity;
    readonly generalSection: LogicalEntityGeneralSection;
    readonly attributesSection: LogicalEntityAttributesSection;
    readonly identifiersSection: LogicalEntityIdentifiersSection;
+   readonly inheritsSection: LogicalEntityInheritsSection;
 
    constructor(view: TheiaView, baseSelector: string, formType: FormType) {
       super(view, baseSelector, formType);
       this.generalSection = new LogicalEntityGeneralSection(this);
       this.attributesSection = new LogicalEntityAttributesSection(this);
       this.identifiersSection = new LogicalEntityIdentifiersSection(this);
+      this.inheritsSection = new LogicalEntityInheritsSection(this);
    }
 }
 

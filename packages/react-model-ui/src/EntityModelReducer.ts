@@ -90,6 +90,32 @@ export interface EntityIdentifierDeleteAction extends ModelAction {
    identifierIdx: number;
 }
 
+export interface EntityInheritAddAction extends ModelAction {
+   type: 'entity:inherit:add';
+   inherit: any;
+}
+
+export interface EntityInheritUpdateAction extends ModelAction {
+   type: 'entity:inherit:update';
+   inheritIdx: number;
+   inherit: any;
+}
+
+export interface EntityInheritDeleteAction extends ModelAction {
+   type: 'entity:inherit:delete';
+   inheritIdx: number;
+}
+
+export interface EntityInheritMoveUpAction extends ModelAction {
+   type: 'entity:inherit:move-up';
+   inheritIdx: number;
+}
+
+export interface EntityInheritMoveDownAction extends ModelAction {
+   type: 'entity:inherit:move-down';
+   inheritIdx: number;
+}
+
 export type EntityDispatchAction =
    | EntityChangeNameAction
    | EntityChangeIdAction
@@ -106,7 +132,12 @@ export type EntityDispatchAction =
    | CustomPropertyAddEmptyAction
    | CustomPropertyMoveUpAction
    | CustomPropertyMoveDownAction
-   | CustomPropertyDeleteAction;
+   | CustomPropertyDeleteAction
+   | EntityInheritAddAction
+   | EntityInheritUpdateAction
+   | EntityInheritDeleteAction
+   | EntityInheritMoveUpAction
+   | EntityInheritMoveDownAction;
 
 export function isEntityDispatchAction(action: DispatchAction): action is EntityDispatchAction {
    return action.type.startsWith('entity:');
@@ -208,6 +239,31 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
       case 'entity:identifier:delete-identifier':
          entity.identifiers = entity.identifiers || [];
          entity.identifiers.splice(action.identifierIdx, 1);
+         break;
+
+      case 'entity:inherit:add':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         (entity as any).superEntities.push(typeof action.inherit === 'string' ? action.inherit : action.inherit);
+         break;
+
+      case 'entity:inherit:update':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         (entity as any).superEntities[action.inheritIdx] = typeof action.inherit === 'string' ? action.inherit : action.inherit;
+         break;
+
+      case 'entity:inherit:delete':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         (entity as any).superEntities.splice(action.inheritIdx, 1);
+         break;
+
+      case 'entity:inherit:move-up':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         moveUp((entity as any).superEntities, action.inheritIdx);
+         break;
+
+      case 'entity:inherit:move-down':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         moveDown((entity as any).superEntities, action.inheritIdx);
          break;
 
       default:

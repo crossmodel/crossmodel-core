@@ -229,7 +229,18 @@ export class CrossModelValidator {
 
       const cycle = this.findInheritanceCycle(entity);
       if (cycle.length > 0) {
-         accept('error', `Inheritance cycle detected: ${cycle.join(' -> ')}.`, { node: entity, property: 'superEntities' });
+         const message = `Inheritance cycle detected: ${cycle.join(' -> ')}.`;
+         for (let idx = 0; idx < entity.superEntities.length; idx++) {
+            const superEntityRef = entity.superEntities[idx];
+            const refEntity = superEntityRef.ref;
+            if (refEntity && refEntity.id && cycle.includes(refEntity.id)) {
+               // Provide the parent node plus the property and index. Langium's DiagnosticInfo
+               // may include an index for elements in lists; our CrossModelDocumentValidator
+               // will use that index to construct the element path. This avoids trying to
+               // cast the reference object to an AstNode.
+               accept('error', message, { node: entity, property: 'superEntities', index: idx });
+            }
+         }
       }
    }
 
