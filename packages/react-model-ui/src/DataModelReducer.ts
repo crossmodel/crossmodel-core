@@ -56,6 +56,11 @@ export interface DataModelDependencyDeleteAction extends ModelAction {
    dependencyIdx: number;
 }
 
+export interface DataModelDependencyReorderAction extends ModelAction {
+   type: 'datamodel:dependency:reorder-dependencies';
+   dependencies: DataModelDependency[];
+}
+
 export interface CustomPropertyUpdateAction extends ModelAction {
    type: 'datamodel:customProperty:update';
    customPropertyIdx: number;
@@ -82,6 +87,11 @@ export interface CustomPropertyDeleteAction extends ModelAction {
    customPropertyIdx: number;
 }
 
+export interface CustomPropertyReorderAction extends ModelAction {
+   type: 'datamodel:customProperty:reorder-customProperties';
+   customProperties: CustomProperty[];
+}
+
 export type DataModelDispatchAction =
    | DataModelChangeIdAction
    | DataModelChangeNameAction
@@ -93,11 +103,13 @@ export type DataModelDispatchAction =
    | DataModelDependencyMoveUpAction
    | DataModelDependencyMoveDownAction
    | DataModelDependencyDeleteAction
+   | DataModelDependencyReorderAction
    | CustomPropertyUpdateAction
    | CustomPropertyAddEmptyAction
    | CustomPropertyMoveUpAction
    | CustomPropertyMoveDownAction
-   | CustomPropertyDeleteAction;
+   | CustomPropertyDeleteAction
+   | CustomPropertyReorderAction;
 
 export function isDataModelDispatchAction(action: DispatchAction): action is DataModelDispatchAction {
    return action.type.startsWith('datamodel:');
@@ -160,6 +172,10 @@ export function DataModelReducer(state: ModelState, action: DataModelDispatchAct
          }
          break;
 
+      case 'datamodel:dependency:reorder-dependencies':
+         dataModel.dependencies = action.dependencies;
+         break;
+
       case 'datamodel:customProperty:update':
          dataModel.customProperties![action.customPropertyIdx] = {
             ...action.customProperty,
@@ -182,6 +198,10 @@ export function DataModelReducer(state: ModelState, action: DataModelDispatchAct
 
       case 'datamodel:customProperty:move-customProperty-down':
          moveDown(dataModel.customProperties!, action.customPropertyIdx);
+         break;
+
+      case 'datamodel:customProperty:reorder-customProperties':
+         dataModel.customProperties = action.customProperties;
          break;
 
       default:

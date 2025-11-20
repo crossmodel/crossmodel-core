@@ -48,6 +48,11 @@ export interface LogicalAttributeDeleteAction extends ModelAction {
    attributeIdx: number;
 }
 
+export interface LogicalAttributeReorderAction extends ModelAction {
+   type: 'entity:attribute:reorder-attributes';
+   attributes: LogicalAttribute[];
+}
+
 export interface CustomPropertyUpdateAction extends ModelAction {
    type: 'entity:customProperty:update';
    customPropertyIdx: number;
@@ -72,6 +77,11 @@ export interface CustomPropertyMoveDownAction extends ModelAction {
 export interface CustomPropertyDeleteAction extends ModelAction {
    type: 'entity:customProperty:delete-customProperty';
    customPropertyIdx: number;
+}
+
+export interface CustomPropertyReorderAction extends ModelAction {
+   type: 'entity:customProperty:reorder-customProperties';
+   customProperties: CustomProperty[];
 }
 
 export interface EntityIdentifierUpdateAction extends ModelAction {
@@ -116,6 +126,11 @@ export interface EntityInheritMoveDownAction extends ModelAction {
    inheritIdx: number;
 }
 
+export interface EntityIdentifierReorderAction extends ModelAction {
+   type: 'entity:identifier:reorder-identifiers';
+   identifiers: LogicalIdentifier[];
+}
+
 export type EntityDispatchAction =
    | EntityChangeNameAction
    | EntityChangeIdAction
@@ -125,9 +140,11 @@ export type EntityDispatchAction =
    | LogicalAttributeMoveUpAction
    | LogicalAttributeMoveDownAction
    | LogicalAttributeDeleteAction
+   | LogicalAttributeReorderAction
    | EntityIdentifierUpdateAction
    | EntityIdentifierAddAction
    | EntityIdentifierDeleteAction
+   | EntityIdentifierReorderAction
    | CustomPropertyUpdateAction
    | CustomPropertyAddEmptyAction
    | CustomPropertyMoveUpAction
@@ -137,7 +154,8 @@ export type EntityDispatchAction =
    | EntityInheritUpdateAction
    | EntityInheritDeleteAction
    | EntityInheritMoveUpAction
-   | EntityInheritMoveDownAction;
+   | EntityInheritMoveDownAction
+   | CustomPropertyReorderAction;
 
 export function isEntityDispatchAction(action: DispatchAction): action is EntityDispatchAction {
    return action.type.startsWith('entity:');
@@ -196,6 +214,10 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          moveDown(entity.attributes, action.attributeIdx);
          break;
 
+      case 'entity:attribute:reorder-attributes':
+         entity.attributes = action.attributes;
+         break;
+
       case 'entity:customProperty:update':
          entity.customProperties![action.customPropertyIdx] = {
             ...action.customProperty,
@@ -218,6 +240,10 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
 
       case 'entity:customProperty:move-customProperty-down':
          moveDown(entity.customProperties!, action.customPropertyIdx);
+         break;
+
+      case 'entity:customProperty:reorder-customProperties':
+         entity.customProperties = action.customProperties;
          break;
 
       case 'entity:identifier:update':
@@ -264,6 +290,10 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
       case 'entity:inherit:move-down':
          (entity as any).superEntities = (entity as any).superEntities || [];
          moveDown((entity as any).superEntities, action.inheritIdx);
+         break;
+
+      case 'entity:identifier:reorder-identifiers':
+         entity.identifiers = action.identifiers;
          break;
 
       default:

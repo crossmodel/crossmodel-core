@@ -33,6 +33,12 @@ export function CustomPropertiesDataGrid({
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<CustomPropertyRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+
+   const handleSelectionChange = React.useCallback((e: { value: CustomPropertyRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    // Update grid data when properties change, preserving any uncommitted rows
    React.useEffect(() => {
@@ -42,6 +48,13 @@ export function CustomPropertiesDataGrid({
             ...prop,
             idx
          }));
+
+         const currentIds = new Set(committedData.map(prop => prop.id).filter((id): id is string => Boolean(id)));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!currentIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
 
          // Preserve any uncommitted rows that are currently being edited
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
@@ -160,6 +173,38 @@ export function CustomPropertiesDataGrid({
       [dispatch, contextType]
    );
 
+   const handleRowReorder = React.useCallback(
+      (e: { rows: CustomPropertyRow[] }): void => {
+          if (!customProperties) {
+             return;
+          }
+          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
+          
+          const propertyMap = new Map(customProperties.map(prop => [prop.id, prop]));
+          const reorderedProperties: CustomProperty[] = [];
+
+          filteredRows.forEach(row => {
+             if (row._uncommitted) {
+                return;
+             }
+             const existing = propertyMap.get(row.id);
+             if (existing) {
+                reorderedProperties.push(existing);
+             }
+          });
+
+          if (reorderedProperties.length !== customProperties.length) {
+             return;
+          }
+
+          dispatch({
+             type: `${contextType}:customProperty:reorder-customProperties`,
+             customProperties: reorderedProperties
+          });
+      },
+      [dispatch, contextType, customProperties]
+   );
+
    const onRowMoveDown = React.useCallback(
       (customProperty: CustomPropertyRow): void => {
          dispatch({
@@ -172,6 +217,13 @@ export function CustomPropertiesDataGrid({
 
    const onRowDelete = React.useCallback(
       (customProperty: CustomPropertyRow): void => {
+         if (customProperty.id) {
+            pendingDeleteIdsRef.current.add(customProperty.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== customProperty.id));
+         setSelectedRows(current => current.filter(row => row.id !== customProperty.id));
+
          dispatch({
             type: `${contextType}:customProperty:delete-customProperty`,
             customPropertyIdx: customProperty.idx
@@ -233,6 +285,9 @@ export function CustomPropertiesDataGrid({
          onRowDelete={onRowDelete}
          onRowMoveUp={onRowMoveUp}
          onRowMoveDown={onRowMoveDown}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No custom properties'

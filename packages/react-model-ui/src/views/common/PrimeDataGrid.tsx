@@ -46,6 +46,9 @@ export interface PrimeDataGridProps<T> {
    onRowDelete?: (rowData: T) => void;
    onRowMoveUp?: (rowData: T) => void;
    onRowMoveDown?: (rowData: T) => void;
+   onRowReorder?: (e: { rows: T[] }) => void;
+   selectedRows?: T[];
+   onSelectionChange?: (e: { value: T[] }) => void;
    addButtonLabel?: string;
    noDataMessage?: string;
    defaultNewRow?: Partial<T>;
@@ -67,6 +70,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    onRowDelete,
    onRowMoveUp,
    onRowMoveDown,
+   onRowReorder,
+   selectedRows,
+   onSelectionChange,
    addButtonLabel = 'Add',
    noDataMessage = 'No records found',
    defaultNewRow = {},
@@ -83,6 +89,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const lastInteractedCellRef = React.useRef<HTMLElement | null>(null);
    // eslint-disable-next-line no-null/no-null
    const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
+
+   const dragImageRef = React.useRef<HTMLElement | null>(null);
+   const currentDragOverRowKeyRef = React.useRef<string | number | null>(null);
+   const currentDropPositionRef = React.useRef<'above' | 'below' | null>(null);
 
    const initFilters = (): DataTableFilterMeta => {
       const initialFilters: DataTableFilterMeta = {
@@ -156,19 +166,40 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    }, [onRowAdd, defaultNewRow, columns, activeRowKey]);
 
+   const handleMultiDelete = React.useCallback((): void => {
+      if (selectedRows && selectedRows.length > 0 && onRowDelete) {
+         const sortedRows = [...selectedRows].sort((a, b) => {
+            const aIdx = (a as any).idx ?? -1;
+            const bIdx = (b as any).idx ?? -1;
+            return bIdx - aIdx; // Descending order
+         });
+
+         // Delete all selected rows (from highest index to lowest)
+         sortedRows.forEach(row => {
+            onRowDelete(row);
+         });
+         // Clear selection after deletion
+         if (onSelectionChange) {
+            onSelectionChange({ value: [] });
+         }
+      }
+   }, [selectedRows, onRowDelete, onSelectionChange]);
+
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
-         {onRowAdd && (
-            <Button
-               label={addButtonLabel}
-               icon='pi pi-plus'
-               severity='info'
-               onClick={handleAddRow}
-               className='p-datatable-add-button'
-               onMouseDown={e => e.preventDefault()}
-               disabled={readonly}
-            />
-         )}
+         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {onRowAdd && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} disabled={readonly} />}
+            {onRowDelete && (
+               <Button
+                  label={`Delete ${addButtonLabel.replace('Add ', '')}${selectedRows && selectedRows.length > 1 ? 's' : ''}`}
+                  icon='pi pi-trash'
+                  severity='danger'
+                  onClick={handleMultiDelete}
+                  disabled={readonly || !selectedRows || selectedRows.length === 0}
+                  style={{ backgroundColor: '#fbbf24', borderColor: '#fbbf24' }}
+               />
+            )}
+         </div>
          <div className='datatable-filter-section'>
             <div className='keyword-search-container'>
                <IconField iconPosition='left'>
@@ -435,6 +466,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
       const buttons: React.ReactElement[] = [];
 
+      const hasRowReorder = Boolean(onRowReorder);
+      const showMoveButtons = !hasRowReorder;
+
       if (isEditing && !readonly) {
          buttons.push(
             <Button
@@ -454,6 +488,17 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                disabled={readonly}
             />
          );
+         if (onRowDelete) {
+            buttons.push(
+               <Button
+                  icon='pi pi-trash'
+                  className='p-button-text p-button-danger p-row-action-button'
+                  onClick={() => onRowDelete(rowData)}
+                  tooltip='Delete'
+                  disabled={readonly}
+               />
+            );
+         }
       } else {
          if (editable) {
             buttons.push(
@@ -466,7 +511,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                />
             );
          }
-         if (onRowMoveUp) {
+         if (showMoveButtons && onRowMoveUp) {
             buttons.push(
                <Button
                   icon='pi pi-arrow-up'
@@ -477,7 +522,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                />
             );
          }
-         if (onRowMoveDown) {
+         if (showMoveButtons && onRowMoveDown) {
             buttons.push(
                <Button
                   icon='pi pi-arrow-down'
@@ -519,6 +564,178 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    // Note: No default cell editor is provided. Grids should provide per-column editor functions
    // (columns[].editor) that render their own editor components which read diagnostics locally.
    const cellEditor = undefined;
+
+   const handleMouseDown = React.useCallback(
+      (e: React.MouseEvent, rowData: T): void => {
+         const target = e.target as HTMLElement;
+         if (!target.closest('.drag-handle')) {
+            return;
+         }
+
+         e.preventDefault();
+         e.stopPropagation();
+
+         const rowKey = rowData[keyField];
+         if (rowKey === undefined) {
+            return;
+         }
+
+         currentDragOverRowKeyRef.current = null;
+         currentDropPositionRef.current = null;
+
+         const tableElement = tableRef.current?.getElement();
+         if (!tableElement) {
+            return;
+         }
+
+         const rowElement = target.closest('tr');
+         if (!rowElement) {
+            return;
+         }
+
+         const dragImage = rowElement.cloneNode(true) as HTMLElement;
+         dragImage.style.position = 'absolute';
+         dragImage.style.top = '-1000px';
+         dragImage.style.opacity = '0.8';
+         dragImage.style.pointerEvents = 'none';
+         document.body.appendChild(dragImage);
+         dragImageRef.current = dragImage;
+
+         const handleMouseMove = (moveEvent: MouseEvent): void => {
+            requestAnimationFrame(() => {
+               if (!tableElement) {
+                  return;
+               }
+
+               const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+               let closestRow: HTMLElement | null = null;
+               let minDistance = Infinity;
+               const buffer = 10;
+
+               for (const row of allRows) {
+                  const rect = row.getBoundingClientRect();
+                  const rowCenterY = rect.top + rect.height / 2;
+                  const distance = Math.abs(moveEvent.clientY - rowCenterY);
+
+                  if (
+                     moveEvent.clientY >= rect.top - buffer &&
+                     moveEvent.clientY <= rect.bottom + buffer &&
+                     distance < minDistance
+                  ) {
+                     minDistance = distance;
+                     closestRow = row;
+                  }
+               }
+
+               if (closestRow) {
+                  let foundRowKey: string | number | null = null;
+                  const rowIndex = allRows.indexOf(closestRow);
+                  if (rowIndex >= 0 && rowIndex < data.length) {
+                     foundRowKey = data[rowIndex][keyField];
+                  }
+
+                  if (foundRowKey !== null && foundRowKey !== rowKey) {
+                     const rect = closestRow.getBoundingClientRect();
+                     const rowCenterY = rect.top + rect.height / 2;
+                     const position = moveEvent.clientY < rowCenterY ? 'above' : 'below';
+
+                     if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
+                        currentDragOverRowKeyRef.current = foundRowKey;
+                        currentDropPositionRef.current = position;
+
+                        // Remove previous indicators
+                        allRows.forEach(r => {
+                           r.classList.remove('drag-over-above', 'drag-over-below');
+                        });
+
+                        // Add indicator
+                        closestRow.classList.add(`drag-over-${position}`);
+                     }
+                  }
+               } else {
+                  if (currentDragOverRowKeyRef.current !== null) {
+                     currentDragOverRowKeyRef.current = null;
+                     currentDropPositionRef.current = null;
+                     allRows.forEach(r => {
+                        r.classList.remove('drag-over-above', 'drag-over-below');
+                     });
+                  }
+               }
+            });
+         };
+
+         const handleMouseUp = (upEvent: MouseEvent): void => {
+            upEvent.preventDefault();
+            upEvent.stopPropagation();
+
+            // Clean up drag image
+            if (dragImageRef.current) {
+               document.body.removeChild(dragImageRef.current);
+               dragImageRef.current = null;
+            }
+
+            const tableElement = tableRef.current?.getElement();
+            if (tableElement) {
+               const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+               allRows.forEach(r => {
+                  r.classList.remove('drag-over-above', 'drag-over-below');
+               });
+            }
+
+            if (currentDragOverRowKeyRef.current !== null && currentDropPositionRef.current && onRowReorder !== undefined) {
+               const sourceIndex = data.findIndex(row => row[keyField] === rowKey);
+               const targetIndex = data.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
+
+               if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
+                  const newData = [...data];
+                  const [removed] = newData.splice(sourceIndex, 1);
+
+                  let insertIndex = targetIndex;
+                  if (currentDropPositionRef.current === 'below' && sourceIndex < targetIndex) {
+                     insertIndex = targetIndex;
+                  } else if (currentDropPositionRef.current === 'below' && sourceIndex > targetIndex) {
+                     insertIndex = targetIndex + 1;
+                  } else if (currentDropPositionRef.current === 'above' && sourceIndex > targetIndex) {
+                     insertIndex = targetIndex;
+                  } else if (currentDropPositionRef.current === 'above' && sourceIndex < targetIndex) {
+                     insertIndex = targetIndex - 1;
+                  }
+
+                  newData.splice(insertIndex, 0, removed);
+                  onRowReorder({ rows: newData });
+               }
+            }
+
+            currentDragOverRowKeyRef.current = null;
+            currentDropPositionRef.current = null;
+
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+         };
+
+         document.addEventListener('mousemove', handleMouseMove);
+         document.addEventListener('mouseup', handleMouseUp);
+      },
+      [data, keyField, onRowReorder]
+   );
+
+   const dragHandleTemplate = React.useCallback(
+      (rowData: T): React.JSX.Element => {
+         if (!onRowReorder) {
+            return <></>;
+         }
+         return (
+            <div
+               className='drag-handle'
+               onMouseDown={e => handleMouseDown(e, rowData)}
+               style={{ cursor: 'grab', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+               <i className='pi pi-bars' style={{ fontSize: '0.875rem', color: '#6c757d' }} />
+            </div>
+         );
+      },
+      [onRowReorder, handleMouseDown]
+   );
 
    const filterTemplate = (
       options: any,
@@ -568,9 +785,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       );
    };
 
+   const DataTableComponent = DataTable as any;
    return (
       <div>
-         <DataTable
+         <DataTableComponent
             ref={tableRef}
             value={data}
             editMode={editable && !readonly ? 'row' : undefined}
@@ -580,6 +798,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onRowDoubleClick={!readonly ? handleRowDoubleClick : undefined}
             editingRows={editingRows}
             onRowEditChange={!readonly ? onRowEditChange : undefined}
+            selectionMode={onSelectionChange !== undefined ? 'multiple' : undefined}
+            selection={selectedRows}
+            onSelectionChange={onSelectionChange !== undefined ? (e: any) => onSelectionChange({ value: e.value as T[] }) : undefined}
             scrollable
             scrollHeight={height}
             className={`p-datatable-sm ${className || ''}`}
@@ -593,6 +814,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             header={header}
             globalFilterFields={globalFilterFields as string[]}
          >
+            {onSelectionChange !== undefined && <Column selectionMode='multiple' style={{ width: '3rem' }} />}
+            {onRowReorder && <Column body={dragHandleTemplate} bodyClassName='p-reorder-column' style={{ width: '2rem' }} />}
             {columns.map(col => {
                const filter = col.filter ?? col.filterType !== undefined;
                const showFilterMatchModes = col.showFilterMatchModes === undefined ? col.filterType === 'text' : col.showFilterMatchModes;
@@ -623,7 +846,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             {(onRowDelete || onRowMoveUp || onRowMoveDown || editable) && (
                <Column header='Actions' rowEditor={editable && !readonly} body={allActionsTemplate} style={{ width: '10rem' }} />
             )}
-         </DataTable>
+         </DataTableComponent>
       </div>
    );
 }

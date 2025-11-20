@@ -42,13 +42,20 @@ export interface AttributeMappingDeleteSourceAction extends ModelAction {
    sourceIdx: number;
 }
 
+export interface AttributeMappingReorderSourcesAction extends ModelAction {
+   type: 'attribute-mapping:source:reorder-sources';
+   mappingIdx: number;
+   sources: AttributeMappingSource[];
+}
+
 export type MappingTargetDispatchAction =
    | AttributeMappingChangeExpressionAction
    | AttributeMappingUpdateSourceAction
    | AttributeMappingAddEmptySourceAction
    | AttributeMappingMoveSourceUpAction
    | AttributeMappingMoveSourceDownAction
-   | AttributeMappingDeleteSourceAction;
+   | AttributeMappingDeleteSourceAction
+   | AttributeMappingReorderSourcesAction;
 
 export function isMappingTargetDispatchAction(action: DispatchAction): action is MappingTargetDispatchAction {
    return action.type.startsWith('attribute-mapping:');
@@ -88,6 +95,10 @@ export function MappingTargetModelReducer(state: ModelState, action: MappingTarg
 
       case 'attribute-mapping:delete-source':
          attributeMapping.sources.splice(action.sourceIdx, 1);
+         break;
+
+      case 'attribute-mapping:source:reorder-sources':
+         attributeMapping.sources = action.sources;
          break;
    }
    return state;
