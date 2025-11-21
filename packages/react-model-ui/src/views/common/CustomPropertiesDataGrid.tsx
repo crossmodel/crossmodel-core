@@ -24,6 +24,12 @@ export interface CustomPropertiesDataGridProps {
    errorMessage: string;
 }
 
+const deriveCustomPropertyRowId = (prop: Partial<CustomProperty>, idx: number): string => {
+   const persistedId = prop.id as string | undefined;
+   const globalId = prop.$globalId as string | undefined;
+   return persistedId ?? globalId ?? `customProperty-${idx}`;
+};
+
 export function CustomPropertiesDataGrid({
    contextType,
    customProperties,
@@ -35,6 +41,7 @@ export function CustomPropertiesDataGrid({
    const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);
    const [selectedRows, setSelectedRows] = React.useState<CustomPropertyRow[]>([]);
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+   const propertiesRef = React.useRef(customProperties || []);
 
    const handleSelectionChange = React.useCallback((e: { value: CustomPropertyRow[] }): void => {
       setSelectedRows(e.value);
@@ -43,23 +50,24 @@ export function CustomPropertiesDataGrid({
    // Update grid data when properties change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Map the committed properties
+         propertiesRef.current = customProperties || [];
          const committedData = (customProperties || []).map((prop, idx) => ({
             ...prop,
-            idx
+            idx,
+            id: deriveCustomPropertyRowId(prop, idx)
          }));
 
-         const currentIds = new Set(committedData.map(prop => prop.id).filter((id): id is string => Boolean(id)));
+         const committedIds = new Set(committedData.map(prop => prop.id));
          pendingDeleteIdsRef.current.forEach(id => {
-            if (!currentIds.has(id)) {
+            if (!committedIds.has(id)) {
                pendingDeleteIdsRef.current.delete(id);
             }
          });
 
-         // Preserve any uncommitted rows that are currently being edited
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         return [...visibleCommittedData, ...uncommittedRows];
       });
    }, [customProperties, editingRows]);
 
@@ -165,51 +173,73 @@ export function CustomPropertiesDataGrid({
 
    const handleRowReorder = React.useCallback(
       (e: { rows: CustomPropertyRow[] }): void => {
-          if (!customProperties) {
-             return;
-          }
-          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-          
-          const propertyMap = new Map(customProperties.map(prop => [prop.id, prop]));
-          const reorderedProperties: CustomProperty[] = [];
+         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
 
-          filteredRows.forEach(row => {
-             if (row._uncommitted) {
-                return;
-             }
-             const existing = propertyMap.get(row.id);
-             if (existing) {
-                reorderedProperties.push(existing);
-             }
-          });
+         const propertyEntries = (propertiesRef.current || []).map((prop, idx) => {
+            const key = deriveCustomPropertyRowId(prop, idx);
+            return { key, prop };
+         });
+         const propertyMap = new Map(propertyEntries.map(entry => [entry.key, entry.prop]));
+         const committedPropertyCount = propertyEntries.reduce(
+            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
+            0
+         );
 
-          if (reorderedProperties.length !== customProperties.length) {
-             return;
-          }
+         const reorderedProperties: CustomProperty[] = [];
 
-          dispatch({
-             type: `${contextType}:customProperty:reorder-customProperties`,
-             customProperties: reorderedProperties
-          });
+         filteredRows.forEach(row => {
+            if (row._uncommitted) {
+               return;
+            }
+            const existing = propertyMap.get(row.id);
+            if (existing) {
+               reorderedProperties.push(existing);
+            }
+         });
+
+         if (reorderedProperties.length !== committedPropertyCount) {
+            return;
+         }
+
+         dispatch({
+            type: `${contextType}:customProperty:reorder-customProperties`,
+            customProperties: reorderedProperties
+         });
       },
-      [dispatch, contextType, customProperties]
+      [dispatch, contextType]
    );
 
-   const onRowDelete = React.useCallback(
+   const handleRowDelete = React.useCallback(
       (customProperty: CustomPropertyRow): void => {
-         if (customProperty.id) {
+         if (customProperty.id && !customProperty._uncommitted) {
             pendingDeleteIdsRef.current.add(customProperty.id);
          }
 
          setGridData(current => current.filter(row => row.id !== customProperty.id));
          setSelectedRows(current => current.filter(row => row.id !== customProperty.id));
 
+         if (customProperty._uncommitted) {
+            if (customProperty.id) {
+               pendingDeleteIdsRef.current.delete(customProperty.id);
+            }
+            return;
+         }
+
+         const customPropertyIdx =
+            (customProperties || []).findIndex((prop, idx) => deriveCustomPropertyRowId(prop, idx) === customProperty.id);
+         if (customPropertyIdx === -1) {
+            if (customProperty.id) {
+               pendingDeleteIdsRef.current.delete(customProperty.id);
+            }
+            return;
+         }
+
          dispatch({
             type: `${contextType}:customProperty:delete-customProperty`,
-            customPropertyIdx: customProperty.idx
+            customPropertyIdx
          });
       },
-      [dispatch, contextType]
+      [dispatch, contextType, customProperties]
    );
 
    const basePath = React.useMemo(() => [contextType, 'customProperties'], [contextType]);
@@ -262,7 +292,7 @@ export function CustomPropertiesDataGrid({
          height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
-         onRowDelete={onRowDelete}
+         onRowDelete={handleRowDelete}
          onRowReorder={handleRowReorder}
          selectedRows={selectedRows}
          onSelectionChange={handleSelectionChange}

@@ -212,6 +212,13 @@ export function AttributeMappingSourcesDataGrid({
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [selectedRows, setSelectedRows] = React.useState<AttributeMappingSourceRow[]>([]);
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+   const sourcesRef = React.useRef<AttributeMappingSource[]>(attributeMapping.sources || []);
+
+   const deriveSourceRowId = React.useCallback((source: Partial<AttributeMappingSource>, idx: number): string => {
+      const globalId = (source as { $globalId?: string })?.$globalId;
+      const value = source.value || 'source';
+      return globalId ?? `${value}-${idx}`;
+   }, []);
 
    const handleSelectionChange = React.useCallback((e: { value: AttributeMappingSourceRow[] }): void => {
       setSelectedRows(e.value);
@@ -230,15 +237,20 @@ export function AttributeMappingSourcesDataGrid({
 
    const handleRowReorder = React.useCallback(
       (e: { rows: AttributeMappingSourceRow[] }): void => {
-         if (pendingDeleteIdsRef.current.size > 0) {
-            return;
-         }
-         const sourceMap = new Map(
-            (attributeMapping.sources || []).map((source, idx) => [`source${idx}`, source])
+         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
+
+         const sourceEntries = (sourcesRef.current || []).map((source: AttributeMappingSource, idx: number) => {
+            const key = deriveSourceRowId(source, idx);
+            return { key, source };
+         });
+         const sourceMap = new Map(sourceEntries.map(entry => [entry.key, entry.source]));
+         const committedSourceCount = sourceEntries.reduce(
+            (count: number, entry: { key: string }) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
+            0
          );
 
          const reorderedSources: AttributeMappingSource[] = [];
-         e.rows.forEach(row => {
+         filteredRows.forEach(row => {
             if (row._uncommitted) {
                return;
             }
@@ -248,7 +260,7 @@ export function AttributeMappingSourcesDataGrid({
             }
          });
 
-         if (reorderedSources.length !== (attributeMapping.sources || []).length) {
+         if (reorderedSources.length !== committedSourceCount) {
             return;
          }
 
@@ -258,17 +270,17 @@ export function AttributeMappingSourcesDataGrid({
             sources: reorderedSources
          });
       },
-      [dispatch, attributeMapping.sources, mappingIdx]
+      [dispatch, mappingIdx, deriveSourceRowId]
    );
 
    // Update grid data when sources change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Map the committed sources
-         const committedData = (attributeMapping.sources || []).map((source, idx) => ({
+         sourcesRef.current = attributeMapping.sources || [];
+         const committedData = (attributeMapping.sources || []).map((source: AttributeMappingSource, idx: number) => ({
             ...source,
             idx,
-            id: `source${idx}`,
+            id: deriveSourceRowId(source, idx),
             value: String(source.value || '')
          })) as AttributeMappingSourceRow[];
 
@@ -279,25 +291,42 @@ export function AttributeMappingSourcesDataGrid({
             }
          });
 
-         // Preserve any uncommitted rows that are currently being edited
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         return [...visibleCommittedData, ...uncommittedRows];
       });
-   }, [attributeMapping.sources, editingRows]);
+   }, [attributeMapping.sources, editingRows, deriveSourceRowId]);
 
    const onSourceDelete = React.useCallback(
       (sourceToDelete: AttributeMappingSourceRow) => {
-         if (sourceToDelete.id) {
+         if (sourceToDelete.id && !sourceToDelete._uncommitted) {
             pendingDeleteIdsRef.current.add(sourceToDelete.id);
          }
 
          setGridData(current => current.filter(row => row.id !== sourceToDelete.id));
          setSelectedRows(current => current.filter(row => row.id !== sourceToDelete.id));
 
-         dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx: sourceToDelete.idx });
+         if (sourceToDelete._uncommitted) {
+            if (sourceToDelete.id) {
+               pendingDeleteIdsRef.current.delete(sourceToDelete.id);
+            }
+            return;
+         }
+
+         const sourceIdx = (attributeMapping.sources || []).findIndex(
+            (source: AttributeMappingSource, idx: number) => deriveSourceRowId(source, idx) === sourceToDelete.id
+         );
+         if (sourceIdx === -1) {
+            if (sourceToDelete.id) {
+               pendingDeleteIdsRef.current.delete(sourceToDelete.id);
+            }
+            return;
+         }
+
+         dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx });
       },
-      [dispatch, mappingIdx]
+      [dispatch, mappingIdx, attributeMapping.sources, deriveSourceRowId]
    );
 
    const onSourceUpdate = React.useCallback(

@@ -184,6 +184,13 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    const [gridData, setGridData] = React.useState<SourceObjectDependencyRow[]>([]);
    const [selectedRows, setSelectedRows] = React.useState<SourceObjectDependencyRow[]>([]);
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+   const dependenciesRef = React.useRef(sourceObject.dependencies || []);
+
+   const deriveDependencyRowId = React.useCallback((dependency: Partial<SourceObjectDependency>, idx: number): string => {
+      const globalId = (dependency as { $globalId?: string })?.$globalId;
+      const source = dependency.source || 'source';
+      return globalId ?? `${source}-${idx}`;
+   }, []);
 
    const handleSelectionChange = React.useCallback((e: { value: SourceObjectDependencyRow[] }): void => {
       setSelectedRows(e.value);
@@ -192,26 +199,26 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    // Update grid data when dependencies change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Map the committed dependencies
+         dependenciesRef.current = sourceObject.dependencies || [];
          const committedData = (sourceObject.dependencies || []).map((dep, idx) => ({
             ...dep,
             idx,
-            id: `dep${idx}`
+            id: deriveDependencyRowId(dep, idx)
          })) as SourceObjectDependencyRow[];
 
-         const currentIds = new Set(committedData.map(dep => dep.id));
+         const committedIds = new Set(committedData.map(dep => dep.id));
          pendingDeleteIdsRef.current.forEach(id => {
-            if (!currentIds.has(id)) {
+            if (!committedIds.has(id)) {
                pendingDeleteIdsRef.current.delete(id);
             }
          });
 
-         // Preserve any uncommitted rows that are currently being edited
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         return [...visibleCommittedData, ...uncommittedRows];
       });
-   }, [sourceObject.dependencies, editingRows]);
+   }, [sourceObject.dependencies, editingRows, deriveDependencyRowId]);
 
    const defaultEntry = React.useMemo<Partial<SourceObjectDependencyRow>>(
       () => ({
@@ -229,20 +236,36 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const onRowDelete = React.useCallback(
       (dependency: SourceObjectDependencyRow) => {
-         if (dependency.id) {
+         if (dependency.id && !dependency._uncommitted) {
             pendingDeleteIdsRef.current.add(dependency.id);
          }
 
          setGridData(current => current.filter(row => row.id !== dependency.id));
          setSelectedRows(current => current.filter(row => row.id !== dependency.id));
 
+         if (dependency._uncommitted) {
+            if (dependency.id) {
+               pendingDeleteIdsRef.current.delete(dependency.id);
+            }
+            return;
+         }
+
+         const dependencyIdx =
+            (sourceObject.dependencies || []).findIndex((dep, idx) => deriveDependencyRowId(dep, idx) === dependency.id);
+         if (dependencyIdx === -1) {
+            if (dependency.id) {
+               pendingDeleteIdsRef.current.delete(dependency.id);
+            }
+            return;
+         }
+
          dispatch({
             type: 'source-object:delete-dependency',
             sourceObjectIdx,
-            dependencyIdx: dependency.idx
+            dependencyIdx
          });
       },
-      [dispatch, sourceObjectIdx]
+      [dispatch, sourceObjectIdx, sourceObject.dependencies, deriveDependencyRowId]
    );
 
    const onRowUpdate = React.useCallback(
@@ -325,11 +348,16 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const handleRowReorder = React.useCallback(
       (e: { rows: SourceObjectDependencyRow[] }): void => {
-         // Filter out any rows that are pending deletion
          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-         
-         const dependencyMap = new Map(
-            (sourceObject.dependencies || []).map((dep, idx) => [`dep${idx}`, dep as SourceObjectDependency])
+
+         const dependencyEntries = (dependenciesRef.current || []).map((dep, idx) => {
+            const key = deriveDependencyRowId(dep, idx);
+            return { key, dep };
+         });
+         const dependencyMap = new Map(dependencyEntries.map(entry => [entry.key, entry.dep as SourceObjectDependency]));
+         const committedDependencyCount = dependencyEntries.reduce(
+            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
+            0
          );
 
          const reorderedDependencies: SourceObjectDependency[] = [];
@@ -343,7 +371,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             }
          });
 
-         if (reorderedDependencies.length !== (sourceObject.dependencies || []).length) {
+         if (reorderedDependencies.length !== committedDependencyCount) {
             return;
          }
 
@@ -353,7 +381,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             dependencies: reorderedDependencies
          });
       },
-      [dispatch, sourceObjectIdx, sourceObject.dependencies]
+      [dispatch, sourceObjectIdx, deriveDependencyRowId]
    );
 
    function SourceObjectDependencyProperty({

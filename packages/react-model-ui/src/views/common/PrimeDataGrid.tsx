@@ -64,7 +64,13 @@ function useFilters<T>(columns: GridColumn<T>[]): {
    clearFilters: () => void;
    onGlobalFilterChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
    filterTemplate: (options: any, filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean', filterOptions?: any[]) => React.JSX.Element;
-   renderHeader: (addButtonLabel: string, onRowAdd?: () => void, onRowDelete?: () => void, selectedRowsCount?: number, readonly?: boolean) => React.JSX.Element;
+      renderHeader: (
+      addButtonLabel: string,
+      onRowAdd?: () => void,
+      onRowDelete?: () => void,
+      selectedRowsCount?: number,
+      readonly?: boolean
+   ) => React.JSX.Element;
 } {
    const initFilters = (): DataTableFilterMeta => {
       const initialFilters: DataTableFilterMeta = {
@@ -212,9 +218,9 @@ function useDragDrop<T extends Record<string, any>>(
    onRowReorder?: (e: { rows: T[] }) => void,
    tableRef?: React.RefObject<any>
 ): { dragHandleTemplate: (rowData: T) => React.JSX.Element } {
-   const dragImageRef = React.useRef<HTMLElement | null>(null);
-   const currentDragOverRowKeyRef = React.useRef<string | number | null>(null);
-   const currentDropPositionRef = React.useRef<'above' | 'below' | null>(null);
+   const dragImageRef = React.useRef<HTMLElement | undefined>(undefined);
+   const currentDragOverRowKeyRef = React.useRef<string | number | undefined>(undefined);
+   const currentDropPositionRef = React.useRef<'above' | 'below' | undefined>(undefined);
 
    const handleMouseDown = React.useCallback(
       (e: React.MouseEvent, rowData: T): void => {
@@ -231,8 +237,8 @@ function useDragDrop<T extends Record<string, any>>(
             return;
          }
 
-         currentDragOverRowKeyRef.current = null;
-         currentDropPositionRef.current = null;
+         currentDragOverRowKeyRef.current = undefined;
+         currentDropPositionRef.current = undefined;
 
          const tableElement = tableRef?.current?.getElement();
          if (!tableElement) {
@@ -259,7 +265,7 @@ function useDragDrop<T extends Record<string, any>>(
                }
 
                const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
-               let closestRow: HTMLElement | null = null;
+               let closestRow: HTMLElement | undefined;
                let minDistance = Infinity;
                const buffer = 10;
 
@@ -279,13 +285,13 @@ function useDragDrop<T extends Record<string, any>>(
                }
 
                if (closestRow) {
-                  let foundRowKey: string | number | null = null;
+                  let foundRowKey: string | number | undefined;
                   const rowIndex = allRows.indexOf(closestRow);
                   if (rowIndex >= 0 && rowIndex < data.length) {
                      foundRowKey = data[rowIndex][keyField];
                   }
 
-                  if (foundRowKey !== null && foundRowKey !== rowKey) {
+                  if (foundRowKey !== undefined && foundRowKey !== rowKey) {
                      const rect = closestRow.getBoundingClientRect();
                      const rowCenterY = rect.top + rect.height / 2;
                      const position = moveEvent.clientY < rowCenterY ? 'above' : 'below';
@@ -304,9 +310,9 @@ function useDragDrop<T extends Record<string, any>>(
                      }
                   }
                } else {
-                  if (currentDragOverRowKeyRef.current !== null) {
-                     currentDragOverRowKeyRef.current = null;
-                     currentDropPositionRef.current = null;
+                  if (currentDragOverRowKeyRef.current !== undefined) {
+                     currentDragOverRowKeyRef.current = undefined;
+                     currentDropPositionRef.current = undefined;
                      allRows.forEach(r => {
                         r.classList.remove('drag-over-above', 'drag-over-below');
                      });
@@ -322,18 +328,18 @@ function useDragDrop<T extends Record<string, any>>(
             // Clean up drag image
             if (dragImageRef.current) {
                document.body.removeChild(dragImageRef.current);
-               dragImageRef.current = null;
+               dragImageRef.current = undefined;
             }
 
-            const tableElement = tableRef?.current?.getElement();
-            if (tableElement) {
-               const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+            const dragTableElement = tableRef?.current?.getElement();
+            if (dragTableElement) {
+               const allRows = Array.from(dragTableElement.querySelectorAll('tbody tr')) as HTMLElement[];
                allRows.forEach(r => {
                   r.classList.remove('drag-over-above', 'drag-over-below');
                });
             }
 
-            if (currentDragOverRowKeyRef.current !== null && currentDropPositionRef.current && onRowReorder !== undefined) {
+            if (currentDragOverRowKeyRef.current !== undefined && currentDropPositionRef.current && onRowReorder !== undefined) {
                const sourceIndex = data.findIndex(row => row[keyField] === rowKey);
                const targetIndex = data.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
 
@@ -357,8 +363,8 @@ function useDragDrop<T extends Record<string, any>>(
                }
             }
 
-            currentDragOverRowKeyRef.current = null;
-            currentDropPositionRef.current = null;
+            currentDragOverRowKeyRef.current = undefined;
+            currentDropPositionRef.current = undefined;
 
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
@@ -396,7 +402,7 @@ function renderActionsColumn<T>(
    props: any,
    editable: boolean,
    readonly: boolean,
-   onRowDelete?: (rowData: T) => void
+   onRowDelete?: (row: T) => void
 ): React.JSX.Element {
    const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
    const buttons: React.ReactElement[] = [];
@@ -552,7 +558,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          sortedRows.forEach(row => {
             onRowDelete(row);
          });
-         
+
          // Clear selection after all deletes are dispatched
          if (onSelectionChange) {
             onSelectionChange({ value: [] });
@@ -799,9 +805,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const cellEditor = undefined;
 
    const allActionsTemplate = React.useCallback(
-      (rowData: T, props: any): React.JSX.Element => {
-         return renderActionsColumn(rowData, props, editable, readonly, onRowDelete);
-      },
+      (rowData: T, props: any): React.JSX.Element =>
+         renderActionsColumn(rowData, props, editable, readonly, onRowDelete),
       [editable, readonly, onRowDelete]
    );
 
