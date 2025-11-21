@@ -30,8 +30,8 @@ export class LogicalEntityIdentifiersSection extends FormSection {
       // Click add button to start edit mode
       await this.addButtonLocator.click();
 
-      // Wait for the new editable row by looking for a row that contains an input
-      const editRow = this.locator.locator('tr:has(td:not(.p-selection-column):not(.p-reorder-column) input[type="text"])');
+      // Wait for the new editable row by looking for a text input in data columns (not checkbox)
+      const editRow = this.locator.locator('tr:has(td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"]))');
 
       // First wait for the row to be attached to the DOM (faster than visible and avoids animation delays)
       try {
@@ -44,9 +44,9 @@ export class LogicalEntityIdentifiersSection extends FormSection {
          await editRow.first().waitFor({ state: 'attached', timeout: 1000 });
       }
 
-      // Then try to wait for the input to become visible. If it's attached but not visible (e.g. due to animation),
+      // Then try to wait for the text input to become visible. If it's attached but not visible (e.g. due to animation),
       // fall back to the attached input so we don't time out.
-      const inputLocator = editRow.locator('td:not(.p-selection-column):not(.p-reorder-column) input[type="text"]').first();
+      const inputLocator = editRow.locator('td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"])').first();
       try {
          await inputLocator.waitFor({ state: 'visible', timeout: 1000 });
       } catch (e) {

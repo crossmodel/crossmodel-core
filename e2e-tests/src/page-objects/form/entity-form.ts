@@ -79,18 +79,9 @@ export class LogicalEntityAttributesSection extends FormSection {
       // Click add button to start edit mode
       await this.addButtonLocator.click();
 
-    
-      await this.page.waitForTimeout(200);
-
-     
-      const editRow = this.locator.locator('tr:has(td:not(.p-selection-column):not(.p-reorder-column) input[type="text"])').first();
-      
-      await editRow.waitFor({ state: 'visible', timeout: 5000 });
-      
-      await this.page.waitForTimeout(300);
-      
-      const inputInRow = editRow.locator('td:not(.p-selection-column):not(.p-reorder-column) input[type="text"]').first();
-      await inputInRow.waitFor({ state: 'visible', timeout: 5000 });
+      // Wait for the new editable row by looking for a text input in data columns (not checkbox)
+      const editRow = this.locator.locator('tr:has(td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"]))');
+      await editRow.locator('td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"])').first().waitFor({ state: 'visible' });
 
       // Return the attribute in edit mode
       return new LogicalAttribute(editRow, this);
@@ -101,64 +92,36 @@ export class LogicalEntityAttributesSection extends FormSection {
          throw new Error('Attribute name is required to save the row');
       }
 
-      await attribute.locator.waitFor({ state: 'visible' });
-      await attribute.locator.waitFor({ state: 'attached' });
-      
-      await this.page.waitForTimeout(500);
-
-      let nameInput: Locator;
-      
-      try {
-         nameInput = attribute.locator.locator('td:not(.p-selection-column):not(.p-reorder-column) input[type="text"]').first();
-         await nameInput.waitFor({ state: 'visible', timeout: 3000 });
-      } catch (error) {
-         await this.page.waitForTimeout(500);
-         nameInput = attribute.locator.locator('input[type="text"]').first();
-         await nameInput.waitFor({ state: 'visible', timeout: 5000 });
-      }
-      
-      await nameInput.fill(name);
+      // Set the name in the new row (exclude selection and reorder columns)
+      // Wait a bit for the row to fully enter edit mode
       await this.page.waitForTimeout(100);
+      const nameInput = attribute.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').first().locator('input:not([type="checkbox"])');
+      await nameInput.waitFor({ state: 'visible' });
+      await nameInput.fill(name);
 
+      // Save the row by pressing Enter and wait for things to settle
+      // Save the row by clicking the row save button to avoid Enter-driven global handlers
       const saveButton = attribute.locator.locator('button.p-row-editor-save');
-      await saveButton.waitFor({ state: 'visible', timeout: 2000 });
-      await saveButton.click();
+      await saveButton.first().waitFor({ state: 'visible', timeout: 500 });
+      await saveButton.first().click();
 
-      await this.page.waitForTimeout(200);
-      try {
-         await nameInput.waitFor({ state: 'hidden', timeout: 3000 });
-      } catch {
-         await this.page.waitForTimeout(300);
-      }
-
+      // Wait a bit longer than our usual timeouts since this is a complex UI update
       await this.page.waitForTimeout(500);
 
-      let savedRow: LogicalAttribute | undefined;
-      
-      try {
-         await waitForFunction(async () => {
-            try {
-               savedRow = await this.findAttribute(name);
-               return savedRow !== undefined;
-            } catch {
-               return false;
-            }
-         });
-      } catch (error) {
-         for (let i = 0; i < 5; i++) {
-            await this.page.waitForTimeout(400);
-            savedRow = await this.findAttribute(name);
-            if (savedRow) {
-               break;
-            }
-         }
-      }
+      // Wait for the edit mode to end using a direct selector
+      const editingCell = this.locator.locator('td input[role="textbox"]');
+      await editingCell.waitFor({ state: 'hidden', timeout: 500 });
 
-      if (!savedRow) {
-         throw new Error(`Failed to find saved attribute with name: ${name} after save operation`);
-      }
+      // Give a little more time for the table to refresh
+      await this.page.waitForTimeout(500);
 
-      return savedRow;
+      // Locate the cell containing the attribute name
+      const nameCell = this.locator.locator('td').filter({ hasText: name }).first();
+      await nameCell.waitFor({ state: 'visible', timeout: 500 });
+
+      // Get the parent row and return the attribute
+      const row = nameCell.locator('xpath=..');
+      return new LogicalAttribute(row, this);
    }
 
    /** @deprecated Use startAddAttribute() and commitAttributeAdd() instead */
@@ -234,24 +197,20 @@ export class LogicalAttribute extends TheiaPageObject {
       super(section.app);
    }
 
-   protected get dataCells(): Locator {
-      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)');
-   }
-
    protected get nameLocator(): Locator {
-      return this.dataCells.nth(0);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').first();
    }
 
    protected get dataType(): Locator {
-      return this.dataCells.nth(1);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(1);
    }
 
    protected get identifierLocator(): Locator {
-      return this.dataCells.nth(2);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(2);
    }
 
    protected get descriptionLocator(): Locator {
-      return this.dataCells.nth(3);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(3);
    }
 
    protected get actionsLocator(): Locator {

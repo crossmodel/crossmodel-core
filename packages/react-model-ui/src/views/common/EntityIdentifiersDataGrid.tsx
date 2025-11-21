@@ -62,12 +62,10 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
 
    const handleIdentifierDelete = React.useCallback(
       (identifier: EntityIdentifierRow): void => {
-         // Track the pending delete for drag-and-drop protection
          if (identifier.id) {
             pendingDeleteIdsRef.current.add(identifier.id);
          }
 
-         // Immediately remove from grid for responsive UI
          setGridData(current => current.filter(row => row.id !== identifier.id));
          setSelectedRows(current => current.filter(row => row.id !== identifier.id));
 
