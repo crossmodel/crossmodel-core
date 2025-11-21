@@ -40,6 +40,12 @@ const dataTypeOptions = [
    { label: 'Location', value: 'Location' }
 ];
 
+const deriveAttributeRowId = (attr: Partial<LogicalAttribute>, idx: number): string => {
+   const persistedId = attr.id as string | undefined;
+   const globalId = attr.$globalId as string | undefined;
+   return persistedId ?? globalId ?? `attr-${idx}`;
+};
+
 export function EntityAttributesDataGrid(): React.ReactElement {
    const entity = useEntity();
    const dispatch = useModelDispatch();
@@ -49,6 +55,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const [selectedRows, setSelectedRows] = React.useState<EntityAttributeRow[]>([]);
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
    const identifiersRef = React.useRef(entity?.identifiers);
+   const attributesRef = React.useRef(entity?.attributes || []);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
@@ -82,9 +89,15 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const handleRowReorder = React.useCallback(
       (e: { rows: EntityAttributeRow[] }): void => {
          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-         
-         const attributeMap = new Map(
-            (entity.attributes || []).map(attr => [attr.id, attr as LogicalAttribute])
+
+         const attributeEntries = (attributesRef.current || []).map((attr, idx) => {
+            const key = deriveAttributeRowId(attr, idx);
+            return { key, attr: attr as LogicalAttribute };
+         });
+         const attributeMap = new Map(attributeEntries.map(entry => [entry.key, entry.attr]));
+         const committedAttributeCount = attributeEntries.reduce(
+            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
+            0
          );
 
          const reorderedAttributes: LogicalAttribute[] = [];
@@ -98,7 +111,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             }
          });
 
-         if (reorderedAttributes.length !== (entity.attributes || []).length) {
+         if (reorderedAttributes.length !== committedAttributeCount) {
             return;
          }
 
@@ -107,7 +120,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             attributes: reorderedAttributes
          });
       },
-      [dispatch, entity.attributes]
+      [dispatch]
    );
 
    const handleSelectionChange = React.useCallback((e: { value: EntityAttributeRow[] }): void => {
@@ -116,7 +129,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleAttributeDelete = React.useCallback(
       (attribute: EntityAttributeRow): void => {
-         if (attribute.id) {
+         if (attribute.id && !attribute._uncommitted) {
             pendingDeleteIdsRef.current.add(attribute.id);
          }
 
@@ -147,13 +160,26 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             });
          }
 
+         if (attribute._uncommitted) {
+            if (attribute.id) {
+               pendingDeleteIdsRef.current.delete(attribute.id);
+            }
+            return;
+         }
+
+         const attributeIdx = (entity.attributes || []).findIndex((attr, idx) => deriveAttributeRowId(attr, idx) === attribute.id);
+         if (attributeIdx === -1) {
+            pendingDeleteIdsRef.current.delete(attribute.id);
+            return;
+         }
+
          // Then delete the attribute
          dispatch({
             type: 'entity:attribute:delete-attribute',
-            attributeIdx: attribute.idx
+            attributeIdx
          });
       },
-      [dispatch, identifiersRef]
+      [dispatch, identifiersRef, entity.attributes]
    );
 
    // Keep identifiersRef updated with the latest identifiers
@@ -163,6 +189,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    // Update grid data when attributes change, preserving any uncommitted rows
    React.useEffect(() => {
+      attributesRef.current = entity.attributes || [];
       setGridData(current => {
          const committedData = (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => {
             const isPrimaryIdentifier =
@@ -171,15 +198,16 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      identifier.primary && identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
                ) || false;
 
+            const id = deriveAttributeRowId(attr, idx);
             return {
                idx,
                name: attr.name || '',
                datatype: attr.datatype || '',
                description: attr.description || '',
                identifier: isPrimaryIdentifier,
-               id: attr.id || '',
+               id,
                $type: 'LogicalAttribute',
-               $globalId: attr.$globalId || ''
+               $globalId: attr.$globalId || id
             };
          }) as EntityAttributeRow[];
 
@@ -192,7 +220,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             }
          });
 
-         return [...committedData, ...uncommittedRows];
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
+
+         return [...visibleCommittedData, ...uncommittedRows];
       });
    }, [entity.attributes, entity.identifiers, editingRows]);
 

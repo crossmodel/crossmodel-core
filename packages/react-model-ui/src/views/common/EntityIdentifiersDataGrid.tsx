@@ -22,13 +22,20 @@ export interface EntityIdentifierRow {
    _uncommitted?: boolean;
 }
 
+const deriveIdentifierRowId = (identifier: Partial<LogicalIdentifier>, idx: number): string => {
+   const persistedId = identifier.id as string | undefined;
+   const globalId = identifier.$globalId as string | undefined;
+   return persistedId ?? globalId ?? `identifier-${idx}`;
+};
+
 function convertIdentifierToRow(identifier: LogicalIdentifier, idx: number): EntityIdentifierRow {
    const attributeIds = (identifier.attributes || []).map(attr =>
       typeof attr === 'object' ? attr.id : String(attr).replace(/^[-_]+/, '')
    );
+   const id = deriveIdentifierRowId(identifier, idx);
    return {
       idx,
-      id: identifier.id || '',
+      id,
       name: identifier.name || '',
       primary: Boolean(identifier.primary),
       attributeIds,
@@ -55,6 +62,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    const [gridData, setGridData] = React.useState<EntityIdentifierRow[]>([]);
    const [selectedRows, setSelectedRows] = React.useState<EntityIdentifierRow[]>([]);
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+    const identifiersRef = React.useRef(entity?.identifiers || []);
 
    const handleSelectionChange = React.useCallback((e: { value: EntityIdentifierRow[] }): void => {
       setSelectedRows(e.value);
@@ -62,27 +70,48 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
 
    const handleIdentifierDelete = React.useCallback(
       (identifier: EntityIdentifierRow): void => {
-         if (identifier.id) {
+         if (identifier.id && !identifier._uncommitted) {
             pendingDeleteIdsRef.current.add(identifier.id);
          }
 
          setGridData(current => current.filter(row => row.id !== identifier.id));
          setSelectedRows(current => current.filter(row => row.id !== identifier.id));
 
+         if (identifier._uncommitted) {
+            if (identifier.id) {
+               pendingDeleteIdsRef.current.delete(identifier.id);
+            }
+            return;
+         }
+
+         const identifierIdx = (entity.identifiers || []).findIndex((item, idx) => deriveIdentifierRowId(item, idx) === identifier.id);
+         if (identifierIdx === -1) {
+            if (identifier.id) {
+               pendingDeleteIdsRef.current.delete(identifier.id);
+            }
+            return;
+         }
+
          dispatch({
             type: 'entity:identifier:delete-identifier',
-            identifierIdx: identifier.idx
+            identifierIdx
          });
       },
-      [dispatch]
+      [dispatch, entity.identifiers]
    );
 
    const handleRowReorder = React.useCallback(
       (e: { rows: EntityIdentifierRow[] }): void => {
          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-         
-         const identifierMap = new Map(
-            (entity.identifiers || []).map(identifier => [identifier.id, identifier])
+
+         const identifierEntries = (identifiersRef.current || []).map((identifier, idx) => {
+            const key = deriveIdentifierRowId(identifier, idx);
+            return { key, identifier };
+         });
+         const identifierMap = new Map(identifierEntries.map(entry => [entry.key, entry.identifier]));
+         const committedIdentifierCount = identifierEntries.reduce(
+            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
+            0
          );
 
          const reorderedIdentifiers: LogicalIdentifier[] = [];
@@ -96,7 +125,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             }
          });
 
-         if (reorderedIdentifiers.length !== (entity.identifiers || []).length) {
+         if (reorderedIdentifiers.length !== committedIdentifierCount) {
             return;
          }
 
@@ -105,7 +134,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             identifiers: reorderedIdentifiers
          });
       },
-      [dispatch, entity.identifiers]
+      [dispatch]
    );
 
    const defaultEntry = React.useMemo<EntityIdentifierRow>(
@@ -123,34 +152,33 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    );
 
    // Map entity data to grid data with proper updates
-   const mapToGridData = React.useCallback(() => {
-      const committedData = (entity.identifiers || []).map((identifier, idx) => {
-         const row = convertIdentifierToRow(identifier, idx);
-         // Ensure primary status is current
-         row.primary = identifier.primary || false;
-         return row;
-      });
-
-      return committedData;
-   }, [entity.identifiers]);
+   const mapToGridData = React.useCallback(
+      () =>
+         (entity.identifiers || []).map((identifier, idx) => {
+            const row = convertIdentifierToRow(identifier, idx);
+            row.primary = identifier.primary || false;
+            return row;
+         }),
+      [entity.identifiers]
+   );
 
    // Update grid data whenever identifiers change
    React.useEffect(() => {
       // Immediate update of grid data
       const updateGridData = async (): Promise<void> => {
-         const newData = mapToGridData();
+         const committedData = mapToGridData();
          setGridData(current => {
-                                                                                 // Clear pending deletes for identifiers that are no longer in the model
-            const currentIds = new Set(newData.map(row => row.id).filter((id): id is string => Boolean(id)));
+            identifiersRef.current = entity.identifiers || [];
+            const committedIds = new Set(committedData.map(row => row.id));
             pendingDeleteIdsRef.current.forEach(id => {
-               if (!currentIds.has(id)) {
+               if (!committedIds.has(id)) {
                   pendingDeleteIdsRef.current.delete(id);
                }
             });
 
-            // Preserve any uncommitted rows that are currently being edited
+            const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
             const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
-            return [...newData, ...uncommittedRows];
+            return [...visibleCommittedData, ...uncommittedRows];
          });
       };
       updateGridData();

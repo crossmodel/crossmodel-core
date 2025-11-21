@@ -331,7 +331,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    const handleRowReorder = React.useCallback(
       (e: { rows: RelationshipAttributeRow[] }): void => {
          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-         
+
          const attributeMap = new Map<string, RelationshipAttribute>(
             (relationship.attributes || []).map((attr, idx) => {
                const persistedId = (attr as any).id as string | undefined;
