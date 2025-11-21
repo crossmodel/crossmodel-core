@@ -32,8 +32,7 @@ export function AttributeProperty({ field, row, value }: AttributePropertyProps)
 
 export interface RelationshipAttributeRow extends RelationshipAttribute {
    idx: number;
-   id?: string;
-   $rowKey: string;
+   id: string;
    _uncommitted?: boolean;
 }
 
@@ -188,7 +187,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<RelationshipAttributeRow[]>([]);
    const [selectedRows, setSelectedRows] = React.useState<RelationshipAttributeRow[]>([]);
-   const pendingDeleteKeysRef = React.useRef<Set<string>>(new Set());
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
 
    const handleSelectionChange = React.useCallback((e: { value: RelationshipAttributeRow[] }): void => {
       setSelectedRows(e.value);
@@ -200,23 +199,22 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          const committedData = (relationship.attributes || []).map((attr, idx) => {
             const persistedId = (attr as any).id as string | undefined;
             const globalId = (attr as any).$globalId as string | undefined;
-            const rowKey = persistedId ?? globalId ?? `attr-${idx}`;
+            const id = persistedId ?? globalId ?? `attr-${idx}`;
             return {
                ...attr,
                idx,
-               id: persistedId,
-               $rowKey: rowKey
+               id
             };
          }) as RelationshipAttributeRow[];
 
-         const committedKeys = new Set(committedData.map(row => row.$rowKey));
-         pendingDeleteKeysRef.current.forEach(key => {
-            if (!committedKeys.has(key)) {
-               pendingDeleteKeysRef.current.delete(key);
+         const committedIds = new Set(committedData.map(row => row.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
             }
          });
 
-         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.$rowKey]);
+         const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
          return [...committedData, ...uncommittedRows];
       });
@@ -238,8 +236,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          parent: '',
          child: '',
          idx: -1,
-         id: undefined,
-         $rowKey: ''
+         id: ''
       }),
       []
    );
@@ -259,7 +256,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, $rowKey: _rowKey, ...attributeData } = attribute;
+            const { _uncommitted, id: _id, ...attributeData } = attribute;
 
             // Add the new attribute through dispatch
             dispatch({
@@ -268,16 +265,16 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             });
 
             if (wasSaveTriggeredByEnter()) {
-               const tempKey = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+               const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`;
                const newTempRow: RelationshipAttributeRow = {
                   ...defaultEntry,
-                  $rowKey: tempKey,
+                  id: tempId,
                   _uncommitted: true
                };
 
                setTimeout(() => {
                   setGridData(current => [...current, newTempRow]);
-                  setEditingRows({ [tempKey]: true });
+                  setEditingRows({ [tempId]: true });
                }, 50);
             }
          } else {
@@ -302,48 +299,38 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
       // Create a new uncommitted row with a unique temporary ID
       const tempRow: RelationshipAttributeRow = {
          ...defaultEntry,
-         $rowKey: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
          _uncommitted: true
       };
 
       // Add to grid data and set it to editing mode
       setGridData(current => [...current, tempRow]);
-      setEditingRows({ [tempRow.$rowKey]: true });
+      setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
    const onRowDelete = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
          if (!attribute._uncommitted) {
-            pendingDeleteKeysRef.current.add(attribute.$rowKey);
+            pendingDeleteIdsRef.current.add(attribute.id);
 
-            setGridData(current => current.filter(row => row.$rowKey !== attribute.$rowKey));
-            setSelectedRows(current => current.filter(row => row.$rowKey !== attribute.$rowKey));
+            setGridData(current => current.filter(row => row.id !== attribute.id));
+            setSelectedRows(current => current.filter(row => row.id !== attribute.id));
 
             dispatch({
                type: 'relationship:attribute:delete-attribute',
                attributeIdx: attribute.idx
             });
          } else {
-            setGridData(current => current.filter(row => row.$rowKey !== attribute.$rowKey));
-            setSelectedRows(current => current.filter(row => row.$rowKey !== attribute.$rowKey));
+            setGridData(current => current.filter(row => row.id !== attribute.id));
+            setSelectedRows(current => current.filter(row => row.id !== attribute.id));
          }
-      },
-      [dispatch]
-   );
-
-   const onRowMoveUp = React.useCallback(
-      (attribute: RelationshipAttributeRow) => {
-         dispatch({
-            type: 'relationship:attribute:move-attribute-up',
-            attributeIdx: attribute.idx
-         });
       },
       [dispatch]
    );
 
    const handleRowReorder = React.useCallback(
       (e: { rows: RelationshipAttributeRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteKeysRef.current.has(row.$rowKey));
+         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          
          const attributeMap = new Map<string, RelationshipAttribute>(
             (relationship.attributes || []).map((attr, idx) => {
@@ -359,7 +346,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             if (row._uncommitted) {
                return;
             }
-            const existing = attributeMap.get(row.$rowKey);
+            const existing = attributeMap.get(row.id);
             if (existing) {
                reorderedAttributes.push(existing);
             }
@@ -375,16 +362,6 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          });
       },
       [dispatch, relationship.attributes]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (attribute: RelationshipAttributeRow) => {
-         dispatch({
-            type: 'relationship:attribute:move-attribute-down',
-            attributeIdx: attribute.idx
-         });
-      },
-      [dispatch]
    );
 
    const columns = React.useMemo<GridColumn<RelationshipAttributeRow>[]>(
@@ -437,13 +414,11 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          className='relationship-attributes-datatable'
          columns={columns}
          data={gridData}
-         keyField='$rowKey'
+         keyField='id'
          height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
          onRowReorder={handleRowReorder}
          selectedRows={selectedRows}
          onSelectionChange={handleSelectionChange}
@@ -459,11 +434,11 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
             // If we're stopping editing a row (either by cancelling or completing)
             if (currentEditingId && !newEditingRows[currentEditingId]) {
-               const currentRow = gridData.find(row => row.$rowKey === currentEditingId);
+               const currentRow = gridData.find(row => row.id === currentEditingId);
 
                // Always remove uncommitted rows when editing stops
                if (currentRow?._uncommitted) {
-                  setGridData(current => current.filter(row => row.$rowKey !== currentEditingId));
+                  setGridData(current => current.filter(row => row.id !== currentEditingId));
                }
             }
 
@@ -476,7 +451,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
                const committedRows = current.filter(row => !row._uncommitted);
 
                // For uncommitted rows, only keep the one being edited (if any)
-               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.$rowKey === newEditingId) : undefined;
+               const activeUncommittedRow = newEditingId ? current.find(row => row._uncommitted && row.id === newEditingId) : undefined;
 
                return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
             });

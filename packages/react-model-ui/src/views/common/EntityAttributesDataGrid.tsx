@@ -79,26 +79,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const handleAttributeUpward = React.useCallback(
-      (attribute: EntityAttributeRow): void => {
-         dispatch({
-            type: 'entity:attribute:move-attribute-up',
-            attributeIdx: attribute.idx
-         });
-      },
-      [dispatch]
-   );
-
-   const handleAttributeDownward = React.useCallback(
-      (attribute: EntityAttributeRow): void => {
-         dispatch({
-            type: 'entity:attribute:move-attribute-down',
-            attributeIdx: attribute.idx
-         });
-      },
-      [dispatch]
-   );
-
    const handleRowReorder = React.useCallback(
       (e: { rows: EntityAttributeRow[] }): void => {
          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
@@ -480,8 +460,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          onRowAdd={handleAddAttribute}
          onRowUpdate={handleRowUpdate}
          onRowDelete={handleAttributeDelete}
-         onRowMoveUp={handleAttributeUpward}
-         onRowMoveDown={handleAttributeDownward}
          onRowReorder={handleRowReorder}
          selectedRows={selectedRows}
          onSelectionChange={handleSelectionChange}

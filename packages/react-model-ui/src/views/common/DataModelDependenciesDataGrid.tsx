@@ -322,26 +322,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onRowMoveUp = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         dispatch({
-            type: 'datamodel:dependency:move-dependency-up',
-            dependencyIdx: dependency.idx
-         });
-      },
-      [dispatch]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         dispatch({
-            type: 'datamodel:dependency:move-dependency-down',
-            dependencyIdx: dependency.idx
-         });
-      },
-      [dispatch]
-   );
-
    const handleRowReorder = React.useCallback(
       (e: { rows: DataModelDependencyRow[] }): void => {
          const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
@@ -412,8 +392,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
          onRowReorder={handleRowReorder}
          selectedRows={selectedRows}
          onSelectionChange={handleSelectionChange}

@@ -163,16 +163,6 @@ export function CustomPropertiesDataGrid({
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onRowMoveUp = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
-         dispatch({
-            type: `${contextType}:customProperty:move-customProperty-up`,
-            customPropertyIdx: customProperty.idx
-         });
-      },
-      [dispatch, contextType]
-   );
-
    const handleRowReorder = React.useCallback(
       (e: { rows: CustomPropertyRow[] }): void => {
           if (!customProperties) {
@@ -203,16 +193,6 @@ export function CustomPropertiesDataGrid({
           });
       },
       [dispatch, contextType, customProperties]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
-         dispatch({
-            type: `${contextType}:customProperty:move-customProperty-down`,
-            customPropertyIdx: customProperty.idx
-         });
-      },
-      [dispatch, contextType]
    );
 
    const onRowDelete = React.useCallback(
@@ -283,8 +263,6 @@ export function CustomPropertiesDataGrid({
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
          onRowReorder={handleRowReorder}
          selectedRows={selectedRows}
          onSelectionChange={handleSelectionChange}

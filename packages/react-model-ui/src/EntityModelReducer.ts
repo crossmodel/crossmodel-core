@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { CustomProperty, LogicalAttribute, LogicalIdentifier as ProtocolLogicalIdentifier, unreachable } from '@crossmodel/protocol';
-import { DispatchAction, ModelAction, ModelState, moveDown, moveUp, undefinedIfEmpty } from './ModelReducer';
+import { DispatchAction, ModelAction, ModelState, undefinedIfEmpty } from './ModelReducer';
 
 export type LogicalIdentifier = ProtocolLogicalIdentifier;
 
@@ -33,16 +33,6 @@ export interface LogicalAttributeAddEmptyAction extends ModelAction {
    attribute: LogicalAttribute;
 }
 
-export interface LogicalAttributeMoveUpAction extends ModelAction {
-   type: 'entity:attribute:move-attribute-up';
-   attributeIdx: number;
-}
-
-export interface LogicalAttributeMoveDownAction extends ModelAction {
-   type: 'entity:attribute:move-attribute-down';
-   attributeIdx: number;
-}
-
 export interface LogicalAttributeDeleteAction extends ModelAction {
    type: 'entity:attribute:delete-attribute';
    attributeIdx: number;
@@ -62,16 +52,6 @@ export interface CustomPropertyUpdateAction extends ModelAction {
 export interface CustomPropertyAddEmptyAction extends ModelAction {
    type: 'entity:customProperty:add-customProperty';
    customProperty: CustomProperty;
-}
-
-export interface CustomPropertyMoveUpAction extends ModelAction {
-   type: 'entity:customProperty:move-customProperty-up';
-   customPropertyIdx: number;
-}
-
-export interface CustomPropertyMoveDownAction extends ModelAction {
-   type: 'entity:customProperty:move-customProperty-down';
-   customPropertyIdx: number;
 }
 
 export interface CustomPropertyDeleteAction extends ModelAction {
@@ -137,8 +117,6 @@ export type EntityDispatchAction =
    | EntityChangeDescriptionAction
    | LogicalAttributeUpdateAction
    | LogicalAttributeAddEmptyAction
-   | LogicalAttributeMoveUpAction
-   | LogicalAttributeMoveDownAction
    | LogicalAttributeDeleteAction
    | LogicalAttributeReorderAction
    | EntityIdentifierUpdateAction
@@ -147,8 +125,6 @@ export type EntityDispatchAction =
    | EntityIdentifierReorderAction
    | CustomPropertyUpdateAction
    | CustomPropertyAddEmptyAction
-   | CustomPropertyMoveUpAction
-   | CustomPropertyMoveDownAction
    | CustomPropertyDeleteAction
    | EntityInheritAddAction
    | EntityInheritUpdateAction
@@ -206,14 +182,6 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          entity.attributes.splice(action.attributeIdx, 1);
          break;
 
-      case 'entity:attribute:move-attribute-up':
-         moveUp(entity.attributes, action.attributeIdx);
-         break;
-
-      case 'entity:attribute:move-attribute-down':
-         moveDown(entity.attributes, action.attributeIdx);
-         break;
-
       case 'entity:attribute:reorder-attributes':
          entity.attributes = action.attributes;
          break;
@@ -232,14 +200,6 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
 
       case 'entity:customProperty:delete-customProperty':
          entity.customProperties!.splice(action.customPropertyIdx, 1);
-         break;
-
-      case 'entity:customProperty:move-customProperty-up':
-         moveUp(entity.customProperties!, action.customPropertyIdx);
-         break;
-
-      case 'entity:customProperty:move-customProperty-down':
-         moveDown(entity.customProperties!, action.customPropertyIdx);
          break;
 
       case 'entity:customProperty:reorder-customProperties':

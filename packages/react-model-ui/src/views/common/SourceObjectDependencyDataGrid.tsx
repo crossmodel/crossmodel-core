@@ -323,28 +323,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onRowMoveUp = React.useCallback(
-      (dependency: SourceObjectDependencyRow) => {
-         dispatch({
-            type: 'source-object:move-dependency-up',
-            sourceObjectIdx,
-            dependencyIdx: dependency.idx
-         });
-      },
-      [dispatch, sourceObjectIdx]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (dependency: SourceObjectDependencyRow) => {
-         dispatch({
-            type: 'source-object:move-dependency-down',
-            sourceObjectIdx,
-            dependencyIdx: dependency.idx
-         });
-      },
-      [dispatch, sourceObjectIdx]
-   );
-
    const handleRowReorder = React.useCallback(
       (e: { rows: SourceObjectDependencyRow[] }): void => {
          // Filter out any rows that are pending deletion
@@ -433,8 +411,6 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             onRowAdd={onRowAdd}
             onRowUpdate={onRowUpdate}
             onRowDelete={onRowDelete}
-            onRowMoveUp={onRowMoveUp}
-            onRowMoveDown={onRowMoveDown}
             onRowReorder={handleRowReorder}
             selectedRows={selectedRows}
             onSelectionChange={handleSelectionChange}

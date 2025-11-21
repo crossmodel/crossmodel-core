@@ -14,24 +14,20 @@ export class LogicalIdentifier extends TheiaPageObject {
       super(section.app);
    }
 
-   protected get dataCells(): Locator {
-      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)');
-   }
-
    protected get nameLocator(): Locator {
-      return this.dataCells.nth(0);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').first();
    }
 
    protected get primaryLocator(): Locator {
-      return this.dataCells.nth(1);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(1);
    }
 
    protected get attributeIdsLocator(): Locator {
-      return this.dataCells.nth(2);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(2);
    }
 
    protected get descriptionLocator(): Locator {
-      return this.dataCells.nth(3);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(3);
    }
 
    protected get actionsLocator(): Locator {
@@ -51,7 +47,10 @@ export class LogicalIdentifier extends TheiaPageObject {
    }
 
    async setName(name: string): Promise<void> {
-      const inputLocator = this.nameLocator.locator('input');
+      const inputLocator = this.nameLocator.locator('input:not([type="checkbox"])');
+
+      // Wait a bit for the row to be fully in edit mode if it was just created
+      await this.page.waitForTimeout(100);
 
       // If input is not immediately visible, enter edit mode
       if (!(await inputLocator.isVisible())) {
