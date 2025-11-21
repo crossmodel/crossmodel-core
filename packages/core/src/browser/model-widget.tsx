@@ -167,8 +167,13 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          return;
       }
       console.debug(`[${this.options.clientId}] Save model`);
-      this.setDirty(false);
-      await this.modelService.save({ uri: doc.uri.toString(), model: doc.root, clientId: this.options.clientId });
+      try {
+         await this.modelService.save({ uri: doc.uri.toString(), model: doc.root, clientId: this.options.clientId });
+         this.setDirty(false);
+      } catch (e) {
+         console.error(`[${this.options.clientId}] Save model failed for ${doc.uri}`, e);
+         throw e;
+      }
    }
 
    protected async openModelInEditor(): Promise<void> {

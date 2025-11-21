@@ -65,16 +65,19 @@ export class ReverseCompositeSaveable
          this.fileResourceResolver.autoOverwrite = true;
          const activeEditor = this.editor.activeWidget();
          const activeSaveable = Saveable.get(activeEditor);
-         if (activeSaveable) {
-            await activeSaveable.save(options);
-            // manually reset the dirty flag on the other editors (saveables) without triggering an actual save
-            this.resetDirtyState(activeSaveable);
-         } else {
-            // could not determine active editor, so execute save sequentially on all editors
-            for (const saveable of this.saveables) {
+         // Always save all saveables in reverse order (text editor first) to ensure
+         // that the file-backed saveable writes to disk. Saving only the active
+         // saveable (e.g. the GLSP diagram) can leave the text editor unsaved and
+         // still be marked as not dirty by resetDirtyState, causing data loss.
+         for (const saveable of this.saveables) {
+            try {
                await saveable.save(options);
+            } catch (e) {
+               console.error('[ReverseCompositeSaveable] save failed for', saveable, e);
             }
          }
+         // After saving all saveables, ensure they are marked as not dirty.
+         this.resetDirtyState(activeSaveable);
       } finally {
          this.fileResourceResolver.autoOverwrite = autoOverwrite;
       }

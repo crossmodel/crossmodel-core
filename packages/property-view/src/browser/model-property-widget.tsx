@@ -8,6 +8,7 @@ import { PropertyViewContentWidget } from '@theia/property-view/lib/browser/prop
 
 import { CrossModelWidget } from '@crossmodel/core/lib/browser';
 import { RenderProps } from '@crossmodel/protocol';
+import { ModelProviderProps } from '@crossmodel/react-model-ui';
 import { GLSPDiagramWidget, GlspSelection, getDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as deepEqual from 'fast-deep-equal';
@@ -85,6 +86,18 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
                // current document intact.
                throw new Error('close-cancelled');
             }
+         } else {
+            // For mapping files: propagate the current in-memory model to the server
+            // so the diagram is updated, but keep the widget dirty so the user must
+            // explicitly save the file.
+            try {
+               if (this.document) {
+                  await this.modelService.update({ uri: this.document.uri, model: this.document.root, clientId: this.options.clientId });
+               }
+            } catch (e) {
+               console.error('[ModelPropertyWidget.closeModel] failed to propagate mapping update', e);
+            }
+            this.setDirty(true);
          }
       }
       await super.closeModel(uri);
@@ -114,5 +127,14 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
             input.focus();
          }
       }, 50);
+   }
+
+   protected override getModelProviderProps(): ModelProviderProps {
+      const props = super.getModelProviderProps();
+      // For mapping documents we don't want the Open/Save buttons in the property header.
+      if (this.document?.root?.mapping) {
+         return { ...props, onModelSave: undefined, onModelOpen: undefined };
+      }
+      return props;
    }
 }
