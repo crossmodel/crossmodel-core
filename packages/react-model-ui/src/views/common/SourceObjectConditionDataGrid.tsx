@@ -662,6 +662,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          noDataMessage='No conditions'
          addButtonLabel='Add Condition'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

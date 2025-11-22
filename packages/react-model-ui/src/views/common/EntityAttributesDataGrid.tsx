@@ -498,6 +498,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          noDataMessage='No attributes defined'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

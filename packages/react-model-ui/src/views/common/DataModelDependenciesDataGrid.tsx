@@ -430,6 +430,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          noDataMessage='No dependencies'
          addButtonLabel='Add Dependency'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

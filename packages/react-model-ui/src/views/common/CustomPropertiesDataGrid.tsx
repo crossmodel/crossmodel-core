@@ -301,6 +301,7 @@ export function CustomPropertiesDataGrid({
          noDataMessage='No custom properties'
          addButtonLabel='Add Property'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

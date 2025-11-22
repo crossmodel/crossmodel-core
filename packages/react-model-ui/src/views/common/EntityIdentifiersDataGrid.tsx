@@ -427,6 +427,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          noDataMessage='No identifiers defined'
          addButtonLabel='Add Identifier'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
