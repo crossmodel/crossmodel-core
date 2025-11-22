@@ -427,6 +427,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          noDataMessage='No attributes'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

@@ -56,6 +56,7 @@ export interface PrimeDataGridProps<T> {
    editingRows?: Record<string, boolean>;
    onRowEditChange?: (e: DataTableRowEditEvent) => void;
    globalFilterFields?: string[];
+   metaKeySelection?: boolean;
 }
 
 function useFilters<T>(columns: GridColumn<T>[]): {
@@ -496,7 +497,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    className,
    editingRows,
    onRowEditChange,
-   globalFilterFields
+   globalFilterFields,
+   metaKeySelection = true
 }: PrimeDataGridProps<T>): React.ReactElement {
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
@@ -825,6 +827,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onRowEditChange={!readonly ? onRowEditChange : undefined}
             selectionMode={onSelectionChange !== undefined ? 'multiple' : undefined}
             selection={selectedRows}
+            metaKeySelection={metaKeySelection}
             onSelectionChange={onSelectionChange !== undefined ? (e: any) => onSelectionChange({ value: e.value as T[] }) : undefined}
             scrollable
             scrollHeight={height}
