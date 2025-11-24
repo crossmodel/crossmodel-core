@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { CustomProperty, LogicalAttribute, LogicalIdentifier as ProtocolLogicalIdentifier, unreachable } from '@crossmodel/protocol';
-import { DispatchAction, ModelAction, ModelState, undefinedIfEmpty } from './ModelReducer';
+import { DispatchAction, ModelAction, ModelState, moveDown, moveUp, undefinedIfEmpty } from './ModelReducer';
 
 export type LogicalIdentifier = ProtocolLogicalIdentifier;
 

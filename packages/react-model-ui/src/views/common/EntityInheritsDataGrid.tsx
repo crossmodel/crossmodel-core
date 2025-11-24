@@ -296,25 +296,24 @@ export function EntityInheritsDataGrid(): React.ReactElement {
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onRowMoveUp = React.useCallback(
-      (row: EntityInheritRow) => {
-         dispatch({
-            type: 'entity:inherit:move-up',
-            inheritIdx: row.idx
-         });
-      },
-      [dispatch]
-   );
+   //    (row: EntityInheritRow) => {
+   //       dispatch({
+   //          type: 'entity:inherit:move-up',
+   //          inheritIdx: row.idx
+   //       });
+   //    },
+   //    [dispatch]
+   // );
 
-   const onRowMoveDown = React.useCallback(
-      (row: EntityInheritRow) => {
-         dispatch({
-            type: 'entity:inherit:move-down',
-            inheritIdx: row.idx
-         });
-      },
-      [dispatch]
-   );
+   // const onRowMoveDown = React.useCallback(
+   //    (row: EntityInheritRow) => {
+   //       dispatch({
+   //          type: 'entity:inherit:move-down',
+   //          inheritIdx: row.idx
+   //       });
+   //    },
+   //    [dispatch]
+   // );
 
    const columns = React.useMemo<GridColumn<EntityInheritRow>[]>(
       () => [
@@ -345,8 +344,6 @@ export function EntityInheritsDataGrid(): React.ReactElement {
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No parent entities'
