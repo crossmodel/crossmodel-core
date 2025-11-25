@@ -65,10 +65,26 @@ export class ReverseCompositeSaveable
          this.fileResourceResolver.autoOverwrite = true;
          const activeEditor = this.editor.activeWidget();
          const activeSaveable = Saveable.get(activeEditor);
-         // Always save all saveables in reverse order (text editor first) to ensure
-         // that the file-backed saveable writes to disk. Saving only the active
-         // saveable (e.g. the GLSP diagram) can leave the text editor unsaved and
-         // still be marked as not dirty by resetDirtyState, causing data loss.
+         // If the active saveable is a GLSP diagram saveable, prefer a targeted
+         // server-side save: request the current semantic model for the URI and
+         // call modelService.save with clientId='save'. That ensures a single
+         // server write persists the canonical model to disk even when the
+         // diagram is active. If this path fails, fall back to saving all
+         // individual saveables.
+         if (activeSaveable instanceof GLSPSaveable) {
+            try {
+               const ok = await this.editor.saveSemanticModel('save');
+               if (ok) {
+                  this.resetDirtyState(activeSaveable);
+                  return;
+               }
+            } catch (e) {
+               console.error('[ReverseCompositeSaveable] server-side save failed, falling back to per-saveable saves', e);
+               // fall through to per-saveable saving below
+            }
+         }
+
+         // Fallback / default: save all saveables in reverse order (text editor first)
          for (const saveable of this.saveables) {
             try {
                await saveable.save(options);
@@ -240,6 +256,24 @@ export class CompositeEditor
 
    getResourceUri(): URI {
       return new URI(this.options.uri);
+   }
+
+   /**
+    * Helper to request the current semantic model for this composite resource
+    * and persist it via the ModelService. Returns true on success.
+    */
+   async saveSemanticModel(clientId = 'save'): Promise<boolean> {
+      try {
+         const doc = await this.modelService.request(this.uri);
+         if (!doc) {
+            return false;
+         }
+         await this.modelService.save({ uri: this.uri, model: doc.root, clientId });
+         return true;
+      } catch (e) {
+         console.error('[CompositeEditor] saveSemanticModel failed for', this.uri, e);
+         return false;
+      }
    }
 
    /** Updates ID of untitled editor to match user's name input. */

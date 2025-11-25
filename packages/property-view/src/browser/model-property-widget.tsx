@@ -86,18 +86,6 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
                // current document intact.
                throw new Error('close-cancelled');
             }
-         } else {
-            // For mapping files: propagate the current in-memory model to the server
-            // so the diagram is updated, but keep the widget dirty so the user must
-            // explicitly save the file.
-            try {
-               if (this.document) {
-                  await this.modelService.update({ uri: this.document.uri, model: this.document.root, clientId: this.options.clientId });
-               }
-            } catch (e) {
-               console.error('[ModelPropertyWidget.closeModel] failed to propagate mapping update', e);
-            }
-            this.setDirty(true);
          }
       }
       await super.closeModel(uri);
