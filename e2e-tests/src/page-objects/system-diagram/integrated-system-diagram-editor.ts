@@ -62,21 +62,7 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
    /**
     * Helper method to open context menu on an element and click "Show properties"
     */
-   private async openPropertiesViaContextMenuForEntity(element: LogicalEntity): Promise<void> {
-      await element.click();
-      await this.page.waitForTimeout(100);
-      await element.locate().click({ button: 'right' });
-      const contextMenu = this.app.integration.contextMenuLocator;
-      await contextMenu.waitFor({ state: 'visible', timeout: 10000 });
-      const showPropertiesMenuItem = contextMenu.locator('text="Show properties"').first();
-      await showPropertiesMenuItem.waitFor({ state: 'visible', timeout: 5000 });
-      await showPropertiesMenuItem.click();
-   }
-
-   /**
-    * Helper method to open context menu on a relationship and click "Show properties"
-    */
-   private async openPropertiesViaContextMenuForRelationship(element: Relationship): Promise<void> {
+   private async openPropertiesViaContextMenu(element: LogicalEntity | Relationship): Promise<void> {
       await element.click();
       await this.page.waitForTimeout(100);
       await element.locate().click({ button: 'right' });
@@ -89,7 +75,7 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
 
    async selectLogicalEntityAndOpenProperties(logicalEntityLabel: string): Promise<EntityPropertiesView> {
       const logicalEntity = await this.diagram.graph.getNodeByLabel(logicalEntityLabel, LogicalEntity);
-      await this.openPropertiesViaContextMenuForEntity(logicalEntity);
+      await this.openPropertiesViaContextMenu(logicalEntity);
       const view = new EntityPropertiesView(this.app);
       await view.waitForVisible();
       await this.page.waitForSelector('#property-view i.codicon-git-commit', { state: 'visible', timeout: 10000 });
@@ -97,7 +83,7 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
    }
 
    async selectRelationshipAndOpenProperties(relationship: Relationship): Promise<RelationshipPropertiesView> {
-      await this.openPropertiesViaContextMenuForRelationship(relationship);
+      await this.openPropertiesViaContextMenu(relationship);
       const view = new RelationshipPropertiesView(this.app);
       await view.waitForVisible();
       await this.page.waitForSelector('#property-view i.codicon-git-compare', { state: 'visible', timeout: 10000 });

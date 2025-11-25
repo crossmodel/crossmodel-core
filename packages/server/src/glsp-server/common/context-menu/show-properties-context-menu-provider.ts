@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2024 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { ShowPropertiesAction } from '@crossmodel/protocol';
 import { ContextActionsProvider, EditorContext, LabeledAction } from '@eclipse-glsp/server';

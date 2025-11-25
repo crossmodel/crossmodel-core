@@ -22,6 +22,8 @@ export class CrossModelDiagramWidget extends GLSPDiagramWidget {
       // See https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
       // and  https://developer.mozilla.org/en-US/docs/Web/Events for more details and possible events.
       this.addEventListener(this.node, 'drop', evt => this.onDrop(evt), true);
+      this.addEventListener(this.node, 'mouseup', evt => this.onPrimaryButtonClick(evt), true);
+      
       super.onAfterAttach(msg);
    }
 
@@ -50,6 +52,35 @@ export class CrossModelDiagramWidget extends GLSPDiagramWidget {
          return selectedFileNodes.map(node => node.uri.path.fsPath());
       }
       return [];
+   }
+
+   /**
+    * Handles primary button (button === 0) clicks to show context menu.
+    * Primary button is always button === 0, regardless of OS mouse button settings.
+    */
+   protected onPrimaryButtonClick(event: MouseEvent): void {
+      if (event.button !== 0) {
+         return;
+      }
+
+      const selectedElementIds = this.editorContext.selectedElements.map(el => el.id);
+      if (selectedElementIds.length === 0) {
+         return;
+      }
+
+      const contextMenuEvent = new MouseEvent('contextmenu', {
+         bubbles: true,
+         cancelable: true,
+         clientX: event.clientX,
+         clientY: event.clientY,
+         button: 2,
+         buttons: 0,
+         view: event.view
+      });
+
+      setTimeout(() => {
+         this.node.dispatchEvent(contextMenuEvent);
+      }, 0);
    }
 
    override restoreState(oldState: AnyObject): void {

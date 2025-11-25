@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2024 CrossBreeze.
+ * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { ShowPropertiesAction } from '@crossmodel/protocol';
 import { Action, IActionDispatcher, IActionHandler, ICommand, TYPES } from '@eclipse-glsp/client';
@@ -24,7 +24,7 @@ export class ShowPropertiesActionHandler implements IActionHandler {
          return;
       }
       this.propertiesActivationStore.request(action.elementId);
-      this.openPropertyView(action.elementId).catch(error => console.error('Failed to open properties view', error));
+      this.openPropertyView(action.elementId);
    }
 
    protected async openPropertyView(elementId?: string): Promise<void> {
