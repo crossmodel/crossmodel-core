@@ -124,6 +124,29 @@ export namespace SetUIExtensionVisibilityAction {
    }
 }
 
+/**
+ * Action that requests the frontend to open the property widget for the current selection.
+ */
+export interface ShowPropertiesAction extends Action {
+   kind: typeof ShowPropertiesAction.KIND;
+   elementId?: string;
+}
+
+export namespace ShowPropertiesAction {
+   export const KIND = 'showProperties';
+
+   export function is(object: unknown): object is ShowPropertiesAction {
+      return Action.hasKind(object, KIND);
+   }
+
+   export function create(options?: { elementId?: string }): ShowPropertiesAction {
+      return {
+         kind: KIND,
+         elementId: options?.elementId
+      };
+   }
+}
+
 export function activateDefaultToolsAction(): Action {
    return EnableDefaultToolsAction.create();
 }
@@ -131,3 +154,4 @@ export function activateDefaultToolsAction(): Action {
 export function activateDeleteToolAction(): Action {
    return EnableToolsAction.create(['glsp.delete-mouse']);
 }
+

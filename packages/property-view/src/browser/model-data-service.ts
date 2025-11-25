@@ -28,25 +28,46 @@ export class ModelDataService implements PropertyDataService {
    }
 
    async providePropertyData(selection: GlspSelection | undefined): Promise<PropertiesRenderData | undefined> {
-      if (!selection || !GlspSelection.is(selection) || !selection.sourceUri || selection.selectedElementsIDs.length === 0) {
+      if (!selection || !GlspSelection.is(selection) || !selection.sourceUri) {
          return undefined;
       }
-      const selectionData = selection.additionalSelectionData as CrossModelSelectionData;
-      for (const selectedElementId of selection.selectedElementsIDs) {
-         const renderData = await this.getPropertyData(selection, selectionData?.selectionDataMap.get(selectedElementId));
-         if (renderData) {
-            return renderData;
+
+      const selectionData = selection.additionalSelectionData as CrossModelSelectionData | undefined;
+      const hasElementSelection = selection.selectedElementsIDs?.length > 0;
+      const showElementProperties = !!selectionData?.showProperties;
+
+      if (hasElementSelection && showElementProperties) {
+         for (const selectedElementId of selection.selectedElementsIDs) {
+            const renderData = await this.getPropertyData(
+               selection,
+               selectionData?.selectionDataMap.get(selectedElementId)
+            );
+            if (renderData) {
+               return renderData;
+            }
          }
       }
-      return undefined;
+
+      try {
+         const model = await this.modelService.request(selection.sourceUri);
+         if (!model) {
+            return undefined;
+         }
+
+         return {
+            uri: selection.sourceUri,
+            renderProps: {}
+         };
+      } catch (e) {
+         console.error('Error while loading file-level properties', e);
+         return undefined;
+      }
    }
 
    protected async getPropertyData(selection: GlspSelection, info?: GModelElementInfo): Promise<PropertiesRenderData | undefined> {
       if (info?.reference) {
          const reference = await this.modelService.resolveReference(info.reference);
-
          const renderProps = { ...info.renderProps, focusField: info.reference.property };
-
          return reference ? { uri: reference?.uri, renderProps } : undefined;
       } else if (selection.sourceUri && info?.renderProps) {
          return { uri: selection.sourceUri, renderProps: info.renderProps };

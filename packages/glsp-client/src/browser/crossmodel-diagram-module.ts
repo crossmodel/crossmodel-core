@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { GRID } from '@crossmodel/protocol';
+import { GRID, ShowPropertiesAction } from '@crossmodel/protocol';
 import {
    ConsoleLogger,
    GLSPHiddenBoundsUpdater,
@@ -20,6 +20,7 @@ import {
    isRoutable,
    toElementAndRoutingPoints
 } from '@eclipse-glsp/client';
+import { configureActionHandler } from '@eclipse-glsp/sprotty';
 import { GlspSelectionDataService } from '@eclipse-glsp/theia-integration';
 import { ContainerModule, injectable, interfaces } from '@theia/core/shared/inversify';
 import { VNode } from 'snabbdom';
@@ -35,6 +36,8 @@ import { CrossModelDiagramStartup } from './cross-model-diagram-startup';
 import { CrossModelErrorExtension } from './cross-model-error-extension';
 import { CrossModelToolPalette } from './cross-model-tool-palette';
 import { CrossModelGLSPSelectionDataService } from './crossmodel-selection-data-service';
+import { PropertiesActivationStore } from './properties-activation-store';
+import { ShowPropertiesActionHandler } from './show-properties-action-handler';
 
 export function createCrossModelDiagramModule(registry: interfaces.ContainerModuleCallBack): ContainerModule {
    return new ContainerModule((bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation) => {
@@ -46,6 +49,7 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       bind(CrossModelMouseDeleteTool).toSelf().inSingletonScope();
       rebind(MouseDeleteTool).toService(CrossModelMouseDeleteTool);
       rebind(ToolPalette).toService(CrossModelToolPalette);
+      bind(PropertiesActivationStore).toSelf().inSingletonScope();
       bindAsService(context, GlspSelectionDataService, CrossModelGLSPSelectionDataService);
       bindAsService(context, TYPES.IDiagramStartup, CrossModelDiagramStartup);
       registry(bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation);
@@ -59,6 +63,9 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
 
       bind(CrossModelToolManager).toSelf().inSingletonScope();
       bindOrRebind(context, TYPES.IToolManager).toService(CrossModelToolManager);
+
+      bind(ShowPropertiesActionHandler).toSelf().inSingletonScope();
+      configureActionHandler(context, ShowPropertiesAction.KIND, ShowPropertiesActionHandler);
 
       bindAsService(bind, TYPES.IUIExtension, CrossModelErrorExtension);
       rebind(MetadataPlacer).to(CmMetadataPlacer).inSingletonScope();

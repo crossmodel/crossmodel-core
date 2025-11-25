@@ -5,13 +5,19 @@ import { CrossReference, REFERENCE_CONTAINER_TYPE, REFERENCE_PROPERTY, REFERENCE
 import { GModelElement, GModelRoot, hasArgs } from '@eclipse-glsp/client';
 import { GlspSelectionDataService } from '@eclipse-glsp/theia-integration';
 import { isDefined } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { PropertiesActivationStore } from './properties-activation-store';
 
 @injectable()
 export class CrossModelGLSPSelectionDataService extends GlspSelectionDataService {
+   constructor(@inject(PropertiesActivationStore) protected readonly propertiesActivationStore: PropertiesActivationStore) {
+      super();
+   }
+
    async getSelectionData(root: Readonly<GModelRoot>, selectedElementIds: string[]): Promise<CrossModelSelectionData> {
       const selection = selectedElementIds.map(id => root.index.getById(id)).filter(isDefined);
-      return getSelectionDataFor(selection);
+      const showProperties = this.propertiesActivationStore.consume(selectedElementIds);
+      return getSelectionDataFor(selection, showProperties);
    }
 }
 
@@ -23,12 +29,13 @@ export interface GModelElementInfo {
 
 export interface CrossModelSelectionData {
    selectionDataMap: Map<string, GModelElementInfo>;
+   showProperties?: boolean;
 }
 
-export function getSelectionDataFor(selection: GModelElement[]): CrossModelSelectionData {
+export function getSelectionDataFor(selection: GModelElement[], showProperties = false): CrossModelSelectionData {
    const selectionDataMap = new Map<string, GModelElementInfo>();
    selection.forEach(element => selectionDataMap.set(element.id, getElementInfo(element)));
-   return { selectionDataMap };
+   return { selectionDataMap, showProperties };
 }
 
 export function getElementInfo(element: GModelElement): GModelElementInfo {

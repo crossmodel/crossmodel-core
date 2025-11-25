@@ -6,9 +6,9 @@ import { GLSPBaseCommandPalette, InteractablePosition, PModelElement, PModelElem
 import { normalizeId } from '@theia/playwright';
 import { CMCompositeEditor, hasViewError } from '../cm-composite-editor';
 import { IntegratedEditor } from '../cm-integrated-editor';
-import { EntityPropertiesView } from '../cm-properties-view';
+import { EntityPropertiesView, RelationshipPropertiesView } from '../cm-properties-view';
 import { CMTheiaIntegration } from '../cm-theia-integration';
-import { LogicalEntity } from './diagram-elements';
+import { LogicalEntity, Relationship } from './diagram-elements';
 import { SystemDiagram, WaitForModelUpdateOptions } from './system-diagram';
 import { SystemTools } from './system-tool-box';
 
@@ -59,11 +59,48 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
       return logicalEntities.length > 0 ? logicalEntities[0] : undefined;
    }
 
+   /**
+    * Helper method to open context menu on an element and click "Show properties"
+    */
+   private async openPropertiesViaContextMenuForEntity(element: LogicalEntity): Promise<void> {
+      await element.click();
+      await this.page.waitForTimeout(100);
+      await element.locate().click({ button: 'right' });
+      const contextMenu = this.app.integration.contextMenuLocator;
+      await contextMenu.waitFor({ state: 'visible', timeout: 10000 });
+      const showPropertiesMenuItem = contextMenu.locator('text="Show properties"').first();
+      await showPropertiesMenuItem.waitFor({ state: 'visible', timeout: 5000 });
+      await showPropertiesMenuItem.click();
+   }
+
+   /**
+    * Helper method to open context menu on a relationship and click "Show properties"
+    */
+   private async openPropertiesViaContextMenuForRelationship(element: Relationship): Promise<void> {
+      await element.click();
+      await this.page.waitForTimeout(100);
+      await element.locate().click({ button: 'right' });
+      const contextMenu = this.app.integration.contextMenuLocator;
+      await contextMenu.waitFor({ state: 'visible', timeout: 10000 });
+      const showPropertiesMenuItem = contextMenu.locator('text="Show properties"').first();
+      await showPropertiesMenuItem.waitFor({ state: 'visible', timeout: 5000 });
+      await showPropertiesMenuItem.click();
+   }
+
    async selectLogicalEntityAndOpenProperties(logicalEntityLabel: string): Promise<EntityPropertiesView> {
       const logicalEntity = await this.diagram.graph.getNodeByLabel(logicalEntityLabel, LogicalEntity);
-      await logicalEntity.select();
+      await this.openPropertiesViaContextMenuForEntity(logicalEntity);
       const view = new EntityPropertiesView(this.app);
-      await view.open();
+      await view.waitForVisible();
+      await this.page.waitForSelector('#property-view i.codicon-git-commit', { state: 'visible', timeout: 10000 });
+      return view;
+   }
+
+   async selectRelationshipAndOpenProperties(relationship: Relationship): Promise<RelationshipPropertiesView> {
+      await this.openPropertiesViaContextMenuForRelationship(relationship);
+      const view = new RelationshipPropertiesView(this.app);
+      await view.waitForVisible();
+      await this.page.waitForSelector('#property-view i.codicon-git-compare', { state: 'visible', timeout: 10000 });
       return view;
    }
 

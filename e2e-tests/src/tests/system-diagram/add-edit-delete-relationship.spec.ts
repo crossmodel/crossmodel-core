@@ -4,7 +4,6 @@
 
 import { expect, test } from '@playwright/test';
 import { CMApp } from '../../page-objects/cm-app';
-import { RelationshipPropertiesView } from '../../page-objects/cm-properties-view';
 import { Relationship } from '../../page-objects/system-diagram/diagram-elements';
 import { IntegratedSystemDiagramEditor } from '../../page-objects/system-diagram/integrated-system-diagram-editor';
 
@@ -67,8 +66,7 @@ test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
       // Open the system diagram and change it using the property widget
       const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
       const relationship = await getNewRelationship(diagramEditor);
-      await relationship.select();
-      const properties = await app.openView(RelationshipPropertiesView);
+      const properties = await diagramEditor.selectRelationshipAndOpenProperties(relationship);
       const form = await properties.form();
       await form.generalSection.setName('RenamedRelationship');
       await form.generalSection.setDescription('RenamedRelationshipDescription');

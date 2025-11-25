@@ -2,6 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
+import { CrossModelSelectionData } from '@crossmodel/glsp-client/lib/browser/crossmodel-selection-data-service';
 import { GlspSelection } from '@eclipse-glsp/theia-integration';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DefaultPropertyViewWidgetProvider } from '@theia/property-view/lib/browser/property-view-widget-provider';
@@ -29,6 +30,12 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
    override updateContentWidget(selection: GlspSelection | undefined): void {
       if (selection === undefined) {
          this.modelPropertyWidget.updatePropertyViewContent(undefined, undefined);
+         return;
+      }
+
+      const selectionData = selection.additionalSelectionData as CrossModelSelectionData | undefined;
+      if (!selectionData?.showProperties) {
+         this.modelPropertyWidget.updatePropertyViewContent(undefined, { sourceUri: selection.sourceUri } as any);
          return;
       }
 
