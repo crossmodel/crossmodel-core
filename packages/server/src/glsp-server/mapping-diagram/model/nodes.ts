@@ -58,7 +58,7 @@ export class GTargetObjectNode extends GNode {
 }
 
 export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
-   set(node: TargetObject, index: MappingModelIndex): this {
+   set(node: TargetObject, index: MappingModelIndex, diagramUri: string): this {
       if (!node) {
          return this;
       }
@@ -69,7 +69,7 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       this.addCssClasses('diagram-node', 'target-node');
 
       // Add isExternal flag based on entity document URI comparison
-      this.addArg('isExternal', this.isEntityExternal(node, index));
+      this.addArg('isExternal', this.isEntityExternal(node, diagramUri));
 
       // Add the label/name of the node
       this.add(createHeader(node.entity?.ref?.name || node.entity?.ref?.id || 'unresolved', id));
@@ -105,7 +105,7 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
     * An entity is considered external if its document URI differs from the
     * current diagram's document URI.
     */
-   protected isEntityExternal(node: TargetObject, index: MappingModelIndex): boolean {
+   protected isEntityExternal(node: TargetObject, diagramUri: string): boolean {
       // Get the entity reference
       const entityRef = node.entity?.ref;
       if (!entityRef || !entityRef.$document) {
@@ -116,18 +116,11 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       // Get document URI of the referenced entity
       const entityDocumentUri = entityRef.$document.uri.toString();
 
-      // Get document URI of the current diagram from the node itself
-      const diagramDocumentUri = node.$document?.uri.toString();
-      if (!diagramDocumentUri) {
-         console.log('[isEntityExternal] No diagram document URI');
-         return false; // Cannot determine, treat as local
-      }
-
       // Compare URIs: external if different
-      const isExternal = entityDocumentUri !== diagramDocumentUri;
+      const isExternal = entityDocumentUri !== diagramUri;
       console.log('[isEntityExternal] Entity:', entityRef.name || entityRef.id,
                   '\n  Entity URI:', entityDocumentUri,
-                  '\n  Diagram URI:', diagramDocumentUri,
+                  '\n  Diagram URI:', diagramUri,
                   '\n  Is External:', isExternal);
       return isExternal;
    }

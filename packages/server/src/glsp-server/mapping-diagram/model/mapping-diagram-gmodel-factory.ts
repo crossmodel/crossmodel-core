@@ -48,6 +48,6 @@ export class MappingDiagramGModelFactory implements GModelFactory {
    }
 
    protected createTargetNode(target: TargetObject): GNode {
-      return GTargetObjectNode.builder().set(target, this.modelState.index).build();
+      return GTargetObjectNode.builder().set(target, this.modelState.index, this.modelState.semanticUri).build();
    }
 }
