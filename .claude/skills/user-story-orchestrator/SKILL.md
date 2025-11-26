@@ -106,7 +106,16 @@ Monitor: Both skills complete successfully
 Verify: Interface contracts are followed
 ```
 
-**Step 3 - Integration:**
+**Step 3 - Build Verification:**
+```
+Invoke: build-verification skill
+Input: Current branch name
+Monitor: CI/CD build status
+Auto-fix: Compilation errors if build fails
+Verify: Build passes (green check)
+```
+
+**Step 4 - Integration:**
 ```
 Invoke: testing-integration skill
 Input: All implementation artifacts
@@ -122,7 +131,14 @@ Input: Specification document
 Output: Frontend changes
 ```
 
-**Step 2 - Testing (if needed):**
+**Step 2 - Build Verification:**
+```
+Invoke: build-verification skill
+Input: Current branch name
+Verify: Build passes
+```
+
+**Step 3 - Testing (if needed):**
 ```
 If integration tests required:
   Invoke: testing-integration skill
@@ -137,7 +153,14 @@ Input: Specification document
 Output: Backend changes
 ```
 
-**Step 2 - Testing (if needed):**
+**Step 2 - Build Verification:**
+```
+Invoke: build-verification skill
+Input: Current branch name
+Verify: Build passes
+```
+
+**Step 3 - Testing (if needed):**
 ```
 If integration tests required:
   Invoke: testing-integration skill
@@ -145,15 +168,17 @@ If integration tests required:
 
 ### 5. Ensure Quality Gates
 
-After implementation, verify:
+After build verification passes, verify:
+- [ ] ✅ CI/CD build passes (verified by build-verification skill)
 - [ ] All affected perspectives work correctly (diagram, form, code)
-- [ ] TypeScript compilation successful (`yarn build`)
 - [ ] Linting passes (`yarn lint`)
 - [ ] Unit tests pass (`yarn test`)
 - [ ] Integration tests pass (if applicable)
 - [ ] E2E tests pass (if modified) (`yarn ui-test`)
 - [ ] Multi-client scenarios tested
 - [ ] Document store sync verified
+
+**Note:** TypeScript compilation is automatically verified by build-verification skill. Do not duplicate this check.
 
 ### 6. Commit Changes
 
