@@ -63,25 +63,21 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
 
    /**
     * Determines if an entity is external (from another model or npm package).
-    * An entity is considered external if its document URI differs from the
-    * current diagram's document URI.
+    * An entity is considered external if its reference text contains a qualified ID
+    * with a dot separator (e.g., "ModelId.EntityId").
     */
    protected isEntityExternal(node: LogicalEntityNode, diagramUri: string): boolean {
-      // Get the entity reference
-      const entityRef = node.entity?.ref;
-      if (!entityRef || !entityRef.$document) {
-         console.log('[isEntityExternal] No entity reference or document');
-         return false; // Unresolved reference or no document
+      // Get the reference text which contains qualified IDs for external entities
+      const refText = node.entity?.$refText;
+      if (!refText) {
+         console.log('[isEntityExternal] No reference text');
+         return false; // Unresolved reference
       }
 
-      // Get document URI of the referenced entity
-      const entityDocumentUri = entityRef.$document.uri.toString();
-
-      // Compare URIs: external if different
-      const isExternal = entityDocumentUri !== diagramUri;
-      console.log('[isEntityExternal] Entity:', entityRef.name || entityRef.id,
-                  '\n  Entity URI:', entityDocumentUri,
-                  '\n  Diagram URI:', diagramUri,
+      // External entities have qualified names with dots: "ModelId.EntityId"
+      // Local entities have only their ID: "EntityId"
+      const isExternal = refText.includes('.');
+      console.log('[isEntityExternal] Entity:', refText,
                   '\n  Is External:', isExternal);
       return isExternal;
    }
