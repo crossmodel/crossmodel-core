@@ -3,6 +3,7 @@
  ********************************************************************************/
 import { RenderProps, SOURCE_OBJECT_NODE_TYPE, TARGET_OBJECT_NODE_TYPE } from '@crossmodel/protocol';
 import { ArgsUtil, GLabel, GNode, GNodeBuilder } from '@eclipse-glsp/server';
+import { URI } from 'vscode-uri';
 import { SourceObject, TargetObject, TargetObjectAttribute } from '../../../language-server/generated/ast.js';
 import { getAttributes } from '../../../language-server/util/ast-util.js';
 import { AttributeCompartment, AttributesCompartmentBuilder, createHeader } from '../../common/nodes.js';
@@ -68,8 +69,8 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       // Options which are the same for every node
       this.addCssClasses('diagram-node', 'target-node');
 
-      // Add isExternal flag based on entity document URI comparison
-      this.addArg('isExternal', this.isEntityExternal(node, diagramUri));
+      // Add isExternal flag based on data model comparison
+      this.addArg('isExternal', this.isEntityExternal(node, index, diagramUri));
 
       // Add the label/name of the node
       this.add(createHeader(node.entity?.ref?.name || node.entity?.ref?.id || 'unresolved', id));
@@ -102,21 +103,31 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
 
    /**
     * Determines if an entity is external (from another model or npm package).
-    * An entity is considered external if its reference text contains a qualified ID
-    * with a dot separator (e.g., "ModelId.EntityId").
+    * An entity is considered external if its data model ID differs from the
+    * current diagram's data model ID.
     */
-   protected isEntityExternal(node: TargetObject, diagramUri: string): boolean {
-      // Get the reference text which contains qualified IDs for external entities
-      const refText = node.entity?.$refText;
-      if (!refText) {
-         console.log('[isEntityExternal] No reference text');
+   protected isEntityExternal(node: TargetObject, index: MappingModelIndex, diagramUri: string): boolean {
+      // Get the referenced entity
+      const entityRef = node.entity?.ref;
+      if (!entityRef || !entityRef.$document) {
+         console.log('[isEntityExternal] No entity reference or document');
          return false; // Unresolved reference
       }
 
-      // External entities have qualified names with dots: "ModelId.EntityId"
-      // Local entities have only their ID: "EntityId"
-      const isExternal = refText.includes('.');
-      console.log('[isEntityExternal] Entity:', refText,
+      // Access the data model manager through the index services
+      const dataModelManager = index.services.shared.workspace.DataModelManager;
+
+      // Get the data model ID of the current diagram
+      const diagramDataModelId = dataModelManager.getDataModelInfoByURI(URI.parse(diagramUri))?.id;
+
+      // Get the data model ID of the referenced entity's document
+      const entityDataModelId = dataModelManager.getDataModelInfoByDocument(entityRef.$document)?.id;
+
+      // External if the data models are different
+      const isExternal = diagramDataModelId !== entityDataModelId;
+      console.log('[isEntityExternal] Entity:', entityRef.name || entityRef.id,
+                  '\n  Diagram Model ID:', diagramDataModelId,
+                  '\n  Entity Model ID:', entityDataModelId,
                   '\n  Is External:', isExternal);
       return isExternal;
    }
