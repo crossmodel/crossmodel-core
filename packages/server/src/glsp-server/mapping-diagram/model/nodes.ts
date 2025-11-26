@@ -109,6 +109,7 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       // Get the entity reference
       const entityRef = node.entity?.ref;
       if (!entityRef || !entityRef.$document) {
+         console.log('[isEntityExternal] No entity reference or document');
          return false; // Unresolved reference or no document
       }
 
@@ -118,10 +119,16 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       // Get document URI of the current diagram from the node itself
       const diagramDocumentUri = node.$document?.uri.toString();
       if (!diagramDocumentUri) {
+         console.log('[isEntityExternal] No diagram document URI');
          return false; // Cannot determine, treat as local
       }
 
       // Compare URIs: external if different
-      return entityDocumentUri !== diagramDocumentUri;
+      const isExternal = entityDocumentUri !== diagramDocumentUri;
+      console.log('[isEntityExternal] Entity:', entityRef.name || entityRef.id,
+                  '\n  Entity URI:', entityDocumentUri,
+                  '\n  Diagram URI:', diagramDocumentUri,
+                  '\n  Is External:', isExternal);
+      return isExternal;
    }
 }
