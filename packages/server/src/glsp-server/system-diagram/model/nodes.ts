@@ -34,7 +34,10 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       this.addArg(REFERENCE_VALUE, node.entity?.$refText);
 
       // Add isExternal flag based on data model comparison
-      this.addArg('isExternal', this.isEntityExternal(node, index, diagramUri));
+      const externalInfo = this.checkIfExternal(node, index, diagramUri);
+      this.addArg('isExternal', externalInfo.isExternal);
+      this.addArg('_debug_diagramModelId', externalInfo.diagramModelId);
+      this.addArg('_debug_entityModelId', externalInfo.entityModelId);
 
       // Add the label/name of the node
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));
@@ -67,12 +70,16 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
     * An entity is considered external if its data model ID differs from the
     * current diagram's data model ID.
     */
-   protected isEntityExternal(node: LogicalEntityNode, index: SystemModelIndex, diagramUri: string): boolean {
+   protected checkIfExternal(node: LogicalEntityNode, index: SystemModelIndex, diagramUri: string): {
+      isExternal: boolean;
+      diagramModelId?: string;
+      entityModelId?: string;
+   } {
       // Get the referenced entity
       const entityRef = node.entity?.ref;
       if (!entityRef || !entityRef.$document) {
-         console.log('[isEntityExternal] No entity reference or document');
-         return false; // Unresolved reference
+         console.log('[checkIfExternal] No entity reference or document');
+         return { isExternal: false }; // Unresolved reference
       }
 
       // Access the data model manager through the index services
@@ -86,10 +93,15 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
 
       // External if the data models are different
       const isExternal = diagramDataModelId !== entityDataModelId;
-      console.log('[isEntityExternal] Entity:', entityRef.name || entityRef.id,
+      console.log('[checkIfExternal] Entity:', entityRef.name || entityRef.id,
                   '\n  Diagram Model ID:', diagramDataModelId,
                   '\n  Entity Model ID:', entityDataModelId,
                   '\n  Is External:', isExternal);
-      return isExternal;
+
+      return {
+         isExternal,
+         diagramModelId: diagramDataModelId,
+         entityModelId: entityDataModelId
+      };
    }
 }
