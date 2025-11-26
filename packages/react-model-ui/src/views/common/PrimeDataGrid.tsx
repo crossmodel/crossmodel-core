@@ -219,7 +219,7 @@ function useDragDrop<T extends Record<string, any>>(
    onRowReorder?: (e: { rows: T[] }) => void,
    tableRef?: React.RefObject<any>
 ): { dragHandleTemplate: (rowData: T) => React.JSX.Element } {
-   const dragImageRef = React.useRef<HTMLElement | undefined>(undefined);
+   const dragPreviewRef = React.useRef<HTMLElement | undefined>(undefined);
    const currentDragOverRowKeyRef = React.useRef<string | number | undefined>(undefined);
    const currentDropPositionRef = React.useRef<'above' | 'below' | undefined>(undefined);
 
@@ -251,15 +251,42 @@ function useDragDrop<T extends Record<string, any>>(
             return;
          }
 
-         const dragImage = rowElement.cloneNode(true) as HTMLElement;
-         dragImage.style.position = 'absolute';
-         dragImage.style.top = '-1000px';
-         dragImage.style.opacity = '0.8';
-         dragImage.style.pointerEvents = 'none';
-         document.body.appendChild(dragImage);
-         dragImageRef.current = dragImage;
+         const clonedRowElement = rowElement.cloneNode(true) as HTMLElement;
+
+         const dragPreviewTable = document.createElement('table');
+         dragPreviewTable.className = tableElement.className;
+         dragPreviewTable.style.cssText = getComputedStyle(tableElement).cssText; // Copy all computed styles
+         dragPreviewTable.style.position = 'fixed';
+         dragPreviewTable.style.top = `${e.clientY - 20}px`;
+         dragPreviewTable.style.left = `${e.clientX - 100}px`;
+         dragPreviewTable.style.width = `${tableElement.offsetWidth}px`;
+         dragPreviewTable.style.opacity = '0.8';
+         dragPreviewTable.style.pointerEvents = 'none';
+         dragPreviewTable.style.zIndex = '9999';
+         dragPreviewTable.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+         dragPreviewTable.style.borderRadius = '4px';
+         dragPreviewTable.style.overflow = 'hidden';
+
+         const dragPreviewBody = document.createElement('tbody');
+         dragPreviewBody.className = tableElement.querySelector('tbody')?.className || '';
+         dragPreviewBody.appendChild(clonedRowElement);
+         dragPreviewTable.appendChild(dragPreviewBody);
+
+         const interactiveElements = dragPreviewTable.querySelectorAll('button, input, select, textarea, [tabindex]');
+         interactiveElements.forEach(el => {
+            (el as HTMLElement).style.pointerEvents = 'none';
+            el.setAttribute('tabindex', '-1');
+         });
+
+         document.body.appendChild(dragPreviewTable);
+         dragPreviewRef.current = dragPreviewTable;
 
          const handleMouseMove = (moveEvent: MouseEvent): void => {
+            if (dragPreviewRef.current) {
+               dragPreviewRef.current.style.top = `${moveEvent.clientY - 20}px`;
+               dragPreviewRef.current.style.left = `${moveEvent.clientX - 70}px`;
+            }
+
             requestAnimationFrame(() => {
                if (!tableElement) {
                   return;
@@ -326,10 +353,10 @@ function useDragDrop<T extends Record<string, any>>(
             upEvent.preventDefault();
             upEvent.stopPropagation();
 
-            // Clean up drag image
-            if (dragImageRef.current) {
-               document.body.removeChild(dragImageRef.current);
-               dragImageRef.current = undefined;
+            // Clean up drag preview
+            if (dragPreviewRef.current) {
+               document.body.removeChild(dragPreviewRef.current);
+               dragPreviewRef.current = undefined;
             }
 
             const dragTableElement = tableRef?.current?.getElement();
@@ -387,6 +414,7 @@ function useDragDrop<T extends Record<string, any>>(
                className='drag-handle'
                onMouseDown={e => handleMouseDown(e, rowData)}
                style={{ cursor: 'grab', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+               title="Drag to reorder"
             >
                <i className='pi pi-bars' style={{ fontSize: '0.875rem', color: '#6c757d' }} />
             </div>
