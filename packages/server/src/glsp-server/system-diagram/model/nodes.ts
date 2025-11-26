@@ -76,8 +76,8 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       // Get document URI of the referenced entity
       const entityDocumentUri = entityRef.$document.uri.toString();
 
-      // Get document URI of the current diagram (from model state)
-      const diagramDocumentUri = (index as any).modelState?.semanticUri;
+      // Get document URI of the current diagram from the node itself
+      const diagramDocumentUri = node.$document?.uri.toString();
       if (!diagramDocumentUri) {
          return false; // Cannot determine, treat as local
       }
