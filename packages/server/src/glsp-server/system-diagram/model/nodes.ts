@@ -32,6 +32,9 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       this.addArg(REFERENCE_PROPERTY, 'entity');
       this.addArg(REFERENCE_VALUE, node.entity?.$refText);
 
+      // Add isExternal flag based on entity document URI comparison
+      this.addArg('isExternal', this.isEntityExternal(node, index));
+
       // Add the label/name of the node
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));
 
@@ -56,5 +59,30 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
          .addLayoutOption('prefHeight', node.height || 100);
 
       return this;
+   }
+
+   /**
+    * Determines if an entity is external (from another model or npm package).
+    * An entity is considered external if its document URI differs from the
+    * current diagram's document URI.
+    */
+   protected isEntityExternal(node: LogicalEntityNode, index: SystemModelIndex): boolean {
+      // Get the entity reference
+      const entityRef = node.entity?.ref;
+      if (!entityRef || !entityRef.$document) {
+         return false; // Unresolved reference or no document
+      }
+
+      // Get document URI of the referenced entity
+      const entityDocumentUri = entityRef.$document.uri.toString();
+
+      // Get document URI of the current diagram (from model state)
+      const diagramDocumentUri = (index as any).modelState?.semanticUri;
+      if (!diagramDocumentUri) {
+         return false; // Cannot determine, treat as local
+      }
+
+      // Compare URIs: external if different
+      return entityDocumentUri !== diagramDocumentUri;
    }
 }
