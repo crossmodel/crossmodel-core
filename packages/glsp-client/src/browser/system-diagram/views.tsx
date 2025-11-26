@@ -4,7 +4,7 @@
 /** @jsx svg */
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/jsx-key */
-import { ArgsUtil, GGraph, GGraphView, GNode, Hoverable, RenderingContext, Selectable, TYPES, ViewerOptions, svg } from '@eclipse-glsp/client';
+import { GGraph, GGraphView, GNode, Hoverable, RenderingContext, Selectable, TYPES, ViewerOptions, svg } from '@eclipse-glsp/client';
 import { inject } from '@theia/core/shared/inversify';
 import { injectable } from 'inversify';
 import { ReactNode } from 'react';
@@ -17,7 +17,7 @@ export class EntityNodeView extends DiagramNodeView {
       const view = super.render(node, context);
 
       // Add external entity icon if isExternal flag is true
-      const isExternal = ArgsUtil.getBoolean(node, 'isExternal', false);
+      const isExternal = node.args?.isExternal === true;
       if (view && isExternal) {
          this.addExternalEntityIcon(view, node);
       }

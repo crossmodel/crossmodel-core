@@ -5,7 +5,6 @@
 /** @jsx svg */
 
 import {
-   ArgsUtil,
    findParentByFeature,
    GConnectableElement,
    GNode,
@@ -37,7 +36,7 @@ export class TargetObjectNodeView extends DiagramNodeView {
       const view = super.render(node, context);
 
       // Add external entity icon if isExternal flag is true
-      const isExternal = ArgsUtil.getBoolean(node, 'isExternal', false);
+      const isExternal = node.args?.isExternal === true;
       if (view && isExternal) {
          this.addExternalEntityIcon(view, node);
       }
