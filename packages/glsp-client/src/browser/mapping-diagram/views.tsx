@@ -37,8 +37,16 @@ export class TargetObjectNodeView extends DiagramNodeView {
       const view = super.render(node, context);
 
       // Add external entity icon if isExternal flag is true
-      const isExternal = hasArgs(node) && node.args.isExternal === true;
+      const nodeHasArgs = hasArgs(node);
+      const isExternal = nodeHasArgs && node.args.isExternal === true;
+
+      console.log('[TargetObjectNodeView] Node:', node.id,
+                  '\n  hasArgs:', nodeHasArgs,
+                  '\n  args:', nodeHasArgs ? node.args : 'N/A',
+                  '\n  isExternal:', isExternal);
+
       if (view && isExternal) {
+         console.log('[TargetObjectNodeView] Adding external icon to:', node.id);
          this.addExternalEntityIcon(view, node);
       }
 
