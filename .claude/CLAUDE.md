@@ -105,6 +105,13 @@ When implementing user stories, follow this strict workflow:
   - `backend-model-server` - For form-based operations
 - Parallel execution when independent
 
+**Phase 3.5: Build Verification (AUTOMATIC)**
+- Use `build-verification` skill
+- Monitor CI/CD build status
+- Auto-fix compilation errors
+- Ensure TypeScript compilation passes
+- Output: Green CI/CD build
+
 **Phase 4: Testing & Integration**
 - Use `testing-integration` skill
 - Verify cross-component communication
