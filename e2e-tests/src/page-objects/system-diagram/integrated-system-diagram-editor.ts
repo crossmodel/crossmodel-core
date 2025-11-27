@@ -73,21 +73,28 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
       await showPropertiesMenuItem.click();
    }
 
-   async selectLogicalEntityAndOpenProperties(logicalEntityLabel: string): Promise<EntityPropertiesView> {
-      const logicalEntity = await this.diagram.graph.getNodeByLabel(logicalEntityLabel, LogicalEntity);
-      await this.openPropertiesViaContextMenu(logicalEntity);
-      const view = new EntityPropertiesView(this.app);
+   async selectElementAndOpenProperties<T extends { waitForVisible(): Promise<void> }>(
+      elementOrLabel: string | Relationship,
+      ViewClass: new (app: any) => T,
+      iconSelector: string
+   ): Promise<T> {
+      const element = typeof elementOrLabel === 'string' 
+         ? await this.diagram.graph.getNodeByLabel(elementOrLabel, LogicalEntity)
+         : elementOrLabel;
+      
+      await this.openPropertiesViaContextMenu(element);
+      const view = new ViewClass(this.app);
       await view.waitForVisible();
-      await this.page.waitForSelector('#property-view i.codicon-git-commit', { state: 'visible', timeout: 10000 });
+      await this.page.waitForSelector(`#property-view i.${iconSelector}`, { state: 'visible', timeout: 10000 });
       return view;
    }
 
+   async selectLogicalEntityAndOpenProperties(logicalEntityLabel: string): Promise<EntityPropertiesView> {
+      return this.selectElementAndOpenProperties(logicalEntityLabel, EntityPropertiesView, 'codicon-git-commit');
+   }
+
    async selectRelationshipAndOpenProperties(relationship: Relationship): Promise<RelationshipPropertiesView> {
-      await this.openPropertiesViaContextMenu(relationship);
-      const view = new RelationshipPropertiesView(this.app);
-      await view.waitForVisible();
-      await this.page.waitForSelector('#property-view i.codicon-git-compare', { state: 'visible', timeout: 10000 });
-      return view;
+      return this.selectElementAndOpenProperties(relationship, RelationshipPropertiesView, 'codicon-git-compare');
    }
 
    /**

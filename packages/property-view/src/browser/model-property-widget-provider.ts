@@ -17,6 +17,8 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
 
    @inject(ModelPropertyWidget) protected modelPropertyWidget: ModelPropertyWidget;
    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+   
+   private currentSelection: GlspSelection | undefined;
 
    override canHandle(selection: GlspSelection | undefined): number {
       // issue with how selection is determined, if the additionalSelectionData is empty we simply delete the property
@@ -26,7 +28,24 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
       return GlspSelection.is(selection) ? 100 : 0;
    }
 
-   override async provideWidget(_selection: GlspSelection | undefined): Promise<ModelPropertyWidget> {
+   override async provideWidget(selection: GlspSelection | undefined): Promise<ModelPropertyWidget> {
+      const hasSelectedElements = (selection?.selectedElementsIDs?.length ?? 0) > 0;
+      const targetSelection = hasSelectedElements ? selection : this.currentSelection;
+      
+      if (targetSelection) {
+         const storedSelectionData = targetSelection.additionalSelectionData as CrossModelSelectionData | undefined;
+         const modifiedSelectionData: CrossModelSelectionData = {
+            selectionDataMap: storedSelectionData?.selectionDataMap ?? new Map(),
+            showProperties: true
+         } as CrossModelSelectionData;
+         const modifiedSelection: GlspSelection = {
+            ...targetSelection,
+            additionalSelectionData: modifiedSelectionData
+         };
+         this.getPropertyDataService(modifiedSelection).then(service => {
+            this.modelPropertyWidget.updatePropertyViewContent(service, modifiedSelection);
+         });
+      }
       return this.modelPropertyWidget;
    }
 
@@ -46,6 +65,7 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
    override updateContentWidget(selection: GlspSelection | undefined): void {
       if (selection === undefined) {
          this.modelPropertyWidget.updatePropertyViewContent(undefined, undefined);
+         this.currentSelection = undefined;
          return;
       }
 
@@ -54,6 +74,10 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
       const hasSelectedElements = (selection.selectedElementsIDs?.length ?? 0) > 0;
       const isWidgetOpen = this.isPropertyWidgetOpen();
 
+      if (hasSelectedElements) {
+         this.currentSelection = selection;
+      }
+
       if (showProperties) {
          this.getPropertyDataService(selection).then(service => {
             this.modelPropertyWidget.updatePropertyViewContent(service, selection);
@@ -61,13 +85,15 @@ export class ModelPropertyWidgetProvider extends DefaultPropertyViewWidgetProvid
          return;
       }
 
-      if (isWidgetOpen && hasSelectedElements) {
+      if (isWidgetOpen && (hasSelectedElements || this.currentSelection)) {
+         const targetSelection = hasSelectedElements ? selection : this.currentSelection!;
+         const targetSelectionData = targetSelection.additionalSelectionData as CrossModelSelectionData | undefined;
          const modifiedSelectionData: CrossModelSelectionData = {
-            selectionDataMap: selectionData?.selectionDataMap ?? new Map(),
+            selectionDataMap: targetSelectionData?.selectionDataMap ?? new Map(),
             showProperties: true
          } as CrossModelSelectionData;
          const modifiedSelection: GlspSelection = {
-            ...selection,
+            ...targetSelection,
             additionalSelectionData: modifiedSelectionData
          };
          this.getPropertyDataService(modifiedSelection).then(service => {
