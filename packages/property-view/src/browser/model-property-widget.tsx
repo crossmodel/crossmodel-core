@@ -67,6 +67,16 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
    }
 
    protected override async closeModel(uri: string): Promise<void> {
+      // Wait for any pending debounced updates to flush and complete.
+      // The blur event has already fired by the time closeModel is called,
+      // so we just need to ensure the async update chain completes:
+      // 1. blur event already fired → save button clicked
+      // 2. onRowUpdate called → dispatch() updates React state
+      // 3. React re-renders
+      // 4. useEffect runs → onModelUpdate called → handleUpdateRequest (debounced)
+      // 5. handleUpdateRequest.flush() → sendUpdate → modelService.update
+      await this.idle();
+
       if (this.document && this.dirty) {
          const isMappingFile = !!(this.document && (this.document as any).root && (this.document as any).root.mapping);
          if (!isMappingFile) {
