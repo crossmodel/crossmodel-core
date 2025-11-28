@@ -90,6 +90,16 @@
    background: var(--theia-selection-background) !important;
 }
 
+.p-datatable .p-datatable-tbody > tr > td .p-checkbox {
+   opacity: 0;
+   transition: opacity 0.2s ease;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover > td .p-checkbox,
+.p-datatable .p-datatable-tbody > tr.p-highlight > td .p-checkbox {
+   opacity: 1;
+}
+
 .p-datatable .p-datatable-tbody > tr > td.p-cell-editing {
    padding-left: 0.2rem;
 }

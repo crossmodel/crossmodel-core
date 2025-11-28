@@ -217,160 +217,282 @@ function useDragDrop<T extends Record<string, any>>(
    data: T[],
    keyField: keyof T,
    onRowReorder?: (e: { rows: T[] }) => void,
-   tableRef?: React.RefObject<any>
-): { dragHandleTemplate: (rowData: T) => React.JSX.Element } {
+   tableRef?: React.RefObject<any>,
+   selectedRows?: T[],
+   isDraggingRef?: React.MutableRefObject<boolean>
+): void {
    const dragPreviewRef = React.useRef<HTMLElement | undefined>(undefined);
    const currentDragOverRowKeyRef = React.useRef<string | number | undefined>(undefined);
    const currentDropPositionRef = React.useRef<'above' | 'below' | undefined>(undefined);
 
-   const handleMouseDown = React.useCallback(
-      (e: React.MouseEvent, rowData: T): void => {
-         const target = e.target as HTMLElement;
-         if (!target.closest('.drag-handle')) {
-            return;
+   const selectedRowsRef = React.useRef(selectedRows);
+   selectedRowsRef.current = selectedRows;
+
+   const dragStartRef = React.useRef<{ x: number; y: number; rowData: T; rowElement: HTMLElement } | undefined>(undefined);
+
+   const startDrag = (e: MouseEvent, rowData: T, rowElement: HTMLElement): void => {
+      const rowKey = rowData[keyField];
+      if (rowKey === undefined) {
+         return;
+      }
+
+      const tableElement = tableRef?.current?.getElement();
+      if (!tableElement) {
+         return;
+      }
+
+      currentDragOverRowKeyRef.current = undefined;
+      currentDropPositionRef.current = undefined;
+
+      const currentSelectedRows = selectedRowsRef.current;
+      const isDraggingSelectedRows = currentSelectedRows && currentSelectedRows.length > 1 &&
+         currentSelectedRows.some(row => row[keyField] === rowKey);
+
+      const dragPreviewTable = document.createElement('table');
+      dragPreviewTable.className = tableElement.className;
+      dragPreviewTable.style.cssText = getComputedStyle(tableElement).cssText;
+      dragPreviewTable.style.position = 'fixed';
+      dragPreviewTable.style.top = `${e.clientY - 20}px`;
+      dragPreviewTable.style.left = `${e.clientX - 100}px`;
+      dragPreviewTable.style.width = `${tableElement.offsetWidth}px`;
+      dragPreviewTable.style.opacity = '0.8';
+      dragPreviewTable.style.pointerEvents = 'none';
+      dragPreviewTable.style.zIndex = '9999';
+      dragPreviewTable.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+      dragPreviewTable.style.borderRadius = '4px';
+      dragPreviewTable.style.overflow = 'hidden';
+
+      const dragPreviewBody = document.createElement('tbody');
+      dragPreviewBody.className = tableElement.querySelector('tbody')?.className || '';
+
+      if (isDraggingSelectedRows && currentSelectedRows) {
+         const selectedRowKeys = new Set(currentSelectedRows.map(row => row[keyField]));
+         const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+         const maxPreviewRows = 3;
+         let addedRows = 0;
+         let lastSelectedIndex = -1;
+         let hasGaps = false;
+
+         const selectedIndices: number[] = [];
+         for (let i = 0; i < data.length; i++) {
+            if (selectedRowKeys.has(data[i][keyField])) {
+               selectedIndices.push(i);
+            }
          }
 
-         e.preventDefault();
-         e.stopPropagation();
-
-         const rowKey = rowData[keyField];
-         if (rowKey === undefined) {
-            return;
+         for (let i = 1; i < selectedIndices.length; i++) {
+            if (selectedIndices[i] - selectedIndices[i-1] > 1) {
+               hasGaps = true;
+               break;
+            }
          }
 
-         currentDragOverRowKeyRef.current = undefined;
-         currentDropPositionRef.current = undefined;
-
-         const tableElement = tableRef?.current?.getElement();
-         if (!tableElement) {
-            return;
-         }
-
-         const rowElement = target.closest('tr');
-         if (!rowElement) {
-            return;
-         }
-
-         const clonedRowElement = rowElement.cloneNode(true) as HTMLElement;
-
-         const dragPreviewTable = document.createElement('table');
-         dragPreviewTable.className = tableElement.className;
-         dragPreviewTable.style.cssText = getComputedStyle(tableElement).cssText; // Copy all computed styles
-         dragPreviewTable.style.position = 'fixed';
-         dragPreviewTable.style.top = `${e.clientY - 20}px`;
-         dragPreviewTable.style.left = `${e.clientX - 100}px`;
-         dragPreviewTable.style.width = `${tableElement.offsetWidth}px`;
-         dragPreviewTable.style.opacity = '0.8';
-         dragPreviewTable.style.pointerEvents = 'none';
-         dragPreviewTable.style.zIndex = '9999';
-         dragPreviewTable.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-         dragPreviewTable.style.borderRadius = '4px';
-         dragPreviewTable.style.overflow = 'hidden';
-
-         const dragPreviewBody = document.createElement('tbody');
-         dragPreviewBody.className = tableElement.querySelector('tbody')?.className || '';
-         dragPreviewBody.appendChild(clonedRowElement);
-         dragPreviewTable.appendChild(dragPreviewBody);
-
-         const interactiveElements = dragPreviewTable.querySelectorAll('button, input, select, textarea, [tabindex]');
-         interactiveElements.forEach(el => {
-            (el as HTMLElement).style.pointerEvents = 'none';
-            el.setAttribute('tabindex', '-1');
-         });
-
-         document.body.appendChild(dragPreviewTable);
-         dragPreviewRef.current = dragPreviewTable;
-
-         const handleMouseMove = (moveEvent: MouseEvent): void => {
-            if (dragPreviewRef.current) {
-               dragPreviewRef.current.style.top = `${moveEvent.clientY - 20}px`;
-               dragPreviewRef.current.style.left = `${moveEvent.clientX - 70}px`;
+         for (const row of allRows) {
+            if (addedRows >= maxPreviewRows) {
+               break;
             }
 
-            requestAnimationFrame(() => {
-               if (!tableElement) {
-                  return;
+            const rowIndex = allRows.indexOf(row);
+            if (rowIndex >= 0 && rowIndex < data.length) {
+               const rData = data[rowIndex];
+               if (selectedRowKeys.has(rData[keyField])) {
+                  const clonedRow = row.cloneNode(true) as HTMLElement;
+
+                  if (hasGaps && lastSelectedIndex !== -1 && rowIndex - lastSelectedIndex > 1 && addedRows > 0) {
+                     const gapIndicator = document.createElement('tr');
+                     gapIndicator.innerHTML =
+                        '<td colspan="100%" style="text-align: center; font-style: italic; padding: 4px; ' +
+                        'background: rgba(0,0,0,0.1); font-size: 11px;">⋮ gap ⋮</td>';
+                     dragPreviewBody.appendChild(gapIndicator);
+                  }
+
+                  dragPreviewBody.appendChild(clonedRow);
+                  lastSelectedIndex = rowIndex;
+                  addedRows++;
+               }
+            }
+         }
+
+         if (currentSelectedRows.length > 1) {
+            const countBadge = document.createElement('div');
+            countBadge.style.cssText = `
+               position: absolute;
+               top: -8px;
+               right: -8px;
+               background: #007acc;
+               color: white;
+               border-radius: 50%;
+               width: 24px;
+               height: 24px;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+               font-size: 12px;
+               font-weight: bold;
+               box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            countBadge.textContent = currentSelectedRows.length.toString();
+            dragPreviewTable.style.position = 'relative';
+            dragPreviewTable.appendChild(countBadge);
+         }
+
+         if (currentSelectedRows.length > maxPreviewRows) {
+            const moreRowsIndicator = document.createElement('tr');
+            const gapText = hasGaps ? ' (with gaps)' : '';
+            moreRowsIndicator.innerHTML =
+               `<td colspan="100%" style="text-align: center; font-style: italic; padding: 8px; background: rgba(0,0,0,0.05);">... and ${
+                  currentSelectedRows.length - maxPreviewRows
+               } more rows${gapText}</td>`;
+            dragPreviewBody.appendChild(moreRowsIndicator);
+         }
+      } else {
+         const clonedRowElement = rowElement.cloneNode(true) as HTMLElement;
+         dragPreviewBody.appendChild(clonedRowElement);
+      }
+
+      dragPreviewTable.appendChild(dragPreviewBody);
+
+      const interactiveElements = dragPreviewTable.querySelectorAll('button, input, select, textarea, [tabindex]');
+      interactiveElements.forEach(el => {
+         (el as HTMLElement).style.pointerEvents = 'none';
+         el.setAttribute('tabindex', '-1');
+      });
+
+      document.body.appendChild(dragPreviewTable);
+      dragPreviewRef.current = dragPreviewTable;
+
+      const handleMouseMove = (moveEvent: MouseEvent): void => {
+         if (dragPreviewRef.current) {
+            dragPreviewRef.current.style.top = `${moveEvent.clientY - 20}px`;
+            dragPreviewRef.current.style.left = `${moveEvent.clientX - 70}px`;
+         }
+
+         requestAnimationFrame(() => {
+            if (!tableElement) {
+               return;
+            }
+
+            const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+            let closestRow: HTMLElement | undefined;
+            let minDistance = Infinity;
+            const buffer = 10;
+
+            for (const row of allRows) {
+               const rect = row.getBoundingClientRect();
+               const rowCenterY = rect.top + rect.height / 2;
+               const distance = Math.abs(moveEvent.clientY - rowCenterY);
+
+               if (
+                  moveEvent.clientY >= rect.top - buffer &&
+                  moveEvent.clientY <= rect.bottom + buffer &&
+                  distance < minDistance
+               ) {
+                  minDistance = distance;
+                  closestRow = row;
+               }
+            }
+
+            if (closestRow) {
+               let foundRowKey: string | number | undefined;
+               const rowIndex = allRows.indexOf(closestRow);
+               if (rowIndex >= 0 && rowIndex < data.length) {
+                  foundRowKey = data[rowIndex][keyField];
                }
 
-               const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
-               let closestRow: HTMLElement | undefined;
-               let minDistance = Infinity;
-               const buffer = 10;
-
-               for (const row of allRows) {
-                  const rect = row.getBoundingClientRect();
+               if (foundRowKey !== undefined && foundRowKey !== rowKey) {
+                  const rect = closestRow.getBoundingClientRect();
                   const rowCenterY = rect.top + rect.height / 2;
-                  const distance = Math.abs(moveEvent.clientY - rowCenterY);
+                  const position = moveEvent.clientY < rowCenterY ? 'above' : 'below';
 
-                  if (
-                     moveEvent.clientY >= rect.top - buffer &&
-                     moveEvent.clientY <= rect.bottom + buffer &&
-                     distance < minDistance
-                  ) {
-                     minDistance = distance;
-                     closestRow = row;
-                  }
-               }
+                  if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
+                     currentDragOverRowKeyRef.current = foundRowKey;
+                     currentDropPositionRef.current = position;
 
-               if (closestRow) {
-                  let foundRowKey: string | number | undefined;
-                  const rowIndex = allRows.indexOf(closestRow);
-                  if (rowIndex >= 0 && rowIndex < data.length) {
-                     foundRowKey = data[rowIndex][keyField];
-                  }
-
-                  if (foundRowKey !== undefined && foundRowKey !== rowKey) {
-                     const rect = closestRow.getBoundingClientRect();
-                     const rowCenterY = rect.top + rect.height / 2;
-                     const position = moveEvent.clientY < rowCenterY ? 'above' : 'below';
-
-                     if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
-                        currentDragOverRowKeyRef.current = foundRowKey;
-                        currentDropPositionRef.current = position;
-
-                        // Remove previous indicators
-                        allRows.forEach(r => {
-                           r.classList.remove('drag-over-above', 'drag-over-below');
-                        });
-
-                        // Add indicator
-                        closestRow.classList.add(`drag-over-${position}`);
-                     }
-                  }
-               } else {
-                  if (currentDragOverRowKeyRef.current !== undefined) {
-                     currentDragOverRowKeyRef.current = undefined;
-                     currentDropPositionRef.current = undefined;
                      allRows.forEach(r => {
                         r.classList.remove('drag-over-above', 'drag-over-below');
                      });
+
+                     closestRow.classList.add(`drag-over-${position}`);
                   }
                }
+            } else {
+               if (currentDragOverRowKeyRef.current !== undefined) {
+                  currentDragOverRowKeyRef.current = undefined;
+                  currentDropPositionRef.current = undefined;
+                  allRows.forEach(r => {
+                     r.classList.remove('drag-over-above', 'drag-over-below');
+                  });
+               }
+            }
+         });
+      };
+
+      const handleMouseUp = (upEvent: MouseEvent): void => {
+         upEvent.preventDefault();
+         upEvent.stopPropagation();
+
+         if (dragPreviewRef.current) {
+            document.body.removeChild(dragPreviewRef.current);
+            dragPreviewRef.current = undefined;
+         }
+
+         const dragTableElement = tableRef?.current?.getElement();
+         if (dragTableElement) {
+            const allRows = Array.from(dragTableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+            allRows.forEach(r => {
+               r.classList.remove('drag-over-above', 'drag-over-below');
             });
-         };
+         }
 
-         const handleMouseUp = (upEvent: MouseEvent): void => {
-            upEvent.preventDefault();
-            upEvent.stopPropagation();
+         if (currentDragOverRowKeyRef.current !== undefined && currentDropPositionRef.current && onRowReorder !== undefined) {
+            const targetIndex = data.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
 
-            // Clean up drag preview
-            if (dragPreviewRef.current) {
-               document.body.removeChild(dragPreviewRef.current);
-               dragPreviewRef.current = undefined;
-            }
+            const currentSelectedRowsForDrop = selectedRowsRef.current;
+            const isDraggingSelectedRowsForDrop = currentSelectedRowsForDrop && currentSelectedRowsForDrop.length > 1 &&
+               currentSelectedRowsForDrop.some(row => row[keyField] === rowKey);
 
-            const dragTableElement = tableRef?.current?.getElement();
-            if (dragTableElement) {
-               const allRows = Array.from(dragTableElement.querySelectorAll('tbody tr')) as HTMLElement[];
-               allRows.forEach(r => {
-                  r.classList.remove('drag-over-above', 'drag-over-below');
+            if (isDraggingSelectedRowsForDrop && currentSelectedRowsForDrop) {
+               const selectedRowKeys = new Set(currentSelectedRowsForDrop.map(row => row[keyField]));
+               const targetRow = data[targetIndex];
+               const isTargetSelected = selectedRowKeys.has(targetRow[keyField]);
+               const selectedRowsInOrder: T[] = [];
+               data.forEach(row => {
+                  if (selectedRowKeys.has(row[keyField])) {
+                     selectedRowsInOrder.push(row);
+                  }
                });
-            }
 
-            if (currentDragOverRowKeyRef.current !== undefined && currentDropPositionRef.current && onRowReorder !== undefined) {
+               const nonSelectedRows = data.filter(row => !selectedRowKeys.has(row[keyField]));
+
+               let insertIndex: number;
+               if (isTargetSelected) {
+                  let nextNonSelectedIndex = -1;
+                  for (let i = targetIndex + 1; i < data.length; i++) {
+                     if (!selectedRowKeys.has(data[i][keyField])) {
+                        nextNonSelectedIndex = nonSelectedRows.findIndex(row => row[keyField] === data[i][keyField]);
+                        break;
+                     }
+                  }
+
+                  if (nextNonSelectedIndex !== -1) {
+                     insertIndex = nextNonSelectedIndex;
+                  } else {
+                     insertIndex = nonSelectedRows.length;
+                  }
+               } else {
+                  const targetIndexInNonSelected = nonSelectedRows.findIndex(row => row[keyField] === targetRow[keyField]);
+                  insertIndex = targetIndexInNonSelected;
+
+                  if (currentDropPositionRef.current === 'below') {
+                     insertIndex = targetIndexInNonSelected + 1;
+                  }
+               }
+
+               const newData = [...nonSelectedRows];
+               newData.splice(insertIndex, 0, ...selectedRowsInOrder);
+               onRowReorder({ rows: newData });
+            } else {
                const sourceIndex = data.findIndex(row => row[keyField] === rowKey);
-               const targetIndex = data.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
-
                if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
                   const newData = [...data];
                   const [removed] = newData.splice(sourceIndex, 1);
@@ -390,40 +512,107 @@ function useDragDrop<T extends Record<string, any>>(
                   onRowReorder({ rows: newData });
                }
             }
+         }
 
-            currentDragOverRowKeyRef.current = undefined;
-            currentDropPositionRef.current = undefined;
+         currentDragOverRowKeyRef.current = undefined;
+         currentDropPositionRef.current = undefined;
 
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+         document.removeEventListener('mousemove', handleMouseMove);
+         document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+   };
+
+   React.useEffect(() => {
+      if (!onRowReorder || !tableRef?.current) {
+         return;
+      }
+
+      const tableElement = tableRef.current.getElement();
+      if (!tableElement) {
+         return;
+      }
+
+      const handleMouseDown = (e: MouseEvent): void => {
+         const target = e.target as HTMLElement;
+         if (target.closest(
+            'button, a, input, select, textarea, .p-checkbox, .p-radiobutton, .p-row-toggler, ' +
+            '.p-row-editor-init, .p-row-editor-save, .p-row-editor-cancel'
+         )) {
+            return;
+         }
+
+         const rowElement = target.closest('tr');
+         if (!rowElement || !tableElement.contains(rowElement)) {
+            return;
+         }
+
+         const tbody = rowElement.parentElement;
+         if (tbody?.tagName !== 'TBODY') {
+            return;
+         }
+
+         const allRows = Array.from(tbody.children);
+         const index = allRows.indexOf(rowElement);
+         if (index < 0 || index >= data.length) {
+            return;
+         }
+
+         const rowData = data[index];
+
+         if (isDraggingRef) {
+            isDraggingRef.current = false;
+         }
+
+         dragStartRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+            rowData,
+            rowElement: rowElement as HTMLElement
          };
 
-         document.addEventListener('mousemove', handleMouseMove);
-         document.addEventListener('mouseup', handleMouseUp);
-      },
-      [data, keyField, onRowReorder, tableRef]
-   );
+         document.addEventListener('mousemove', handleMouseMoveGlobal);
+         document.addEventListener('mouseup', handleMouseUpGlobal);
+      };
 
-   const dragHandleTemplate = React.useCallback(
-      (rowData: T): React.JSX.Element => {
-         if (!onRowReorder) {
-            return <></>;
+      const handleMouseMoveGlobal = (e: MouseEvent): void => {
+         if (!dragStartRef.current) {
+            return;
          }
-         return (
-            <div
-               className='drag-handle'
-               onMouseDown={e => handleMouseDown(e, rowData)}
-               style={{ cursor: 'grab', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-               title="Drag to reorder"
-            >
-               <i className='pi pi-bars' style={{ fontSize: '0.875rem', color: '#6c757d' }} />
-            </div>
-         );
-      },
-      [onRowReorder, handleMouseDown]
-   );
 
-   return { dragHandleTemplate };
+         const { x, y, rowData, rowElement } = dragStartRef.current;
+         const dx = e.clientX - x;
+         const dy = e.clientY - y;
+         const dist = Math.sqrt(dx * dx + dy * dy);
+
+         if (dist > 5) {
+            if (isDraggingRef) {
+               isDraggingRef.current = true;
+            }
+
+            document.removeEventListener('mousemove', handleMouseMoveGlobal);
+            document.removeEventListener('mouseup', handleMouseUpGlobal);
+
+            startDrag(e, rowData, rowElement);
+         }
+      };
+
+      const handleMouseUpGlobal = (e: MouseEvent): void => {
+         dragStartRef.current = undefined;
+         document.removeEventListener('mousemove', handleMouseMoveGlobal);
+         document.removeEventListener('mouseup', handleMouseUpGlobal);
+      };
+
+      tableElement.addEventListener('mousedown', handleMouseDown);
+      return () => {
+         tableElement.removeEventListener('mousedown', handleMouseDown);
+         document.removeEventListener('mousemove', handleMouseMoveGlobal);
+         document.removeEventListener('mouseup', handleMouseUpGlobal);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [data, keyField, onRowReorder, tableRef]);
 }
 
 function renderActionsColumn<T>(
@@ -535,8 +724,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    // eslint-disable-next-line no-null/no-null
    const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
 
+   const isDraggingRef = React.useRef(false);
+
    const { filters, setFilters, filterTemplate, renderHeader: renderFilterHeader } = useFilters(columns);
-   const { dragHandleTemplate } = useDragDrop(data, keyField, onRowReorder, tableRef);
+   useDragDrop(data, keyField, onRowReorder, tableRef, selectedRows, isDraggingRef);
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {
@@ -694,6 +885,11 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    };
 
    const handleRowClick = (e: DataTableRowClickEvent): void => {
+      if (isDraggingRef.current) {
+         isDraggingRef.current = false;
+         return;
+      }
+
       if (!activeRowKey) {
          return; // nothing is being edited
       }
@@ -871,7 +1067,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             globalFilterFields={globalFilterFields as string[]}
          >
             {onSelectionChange !== undefined && <Column selectionMode='multiple' style={{ width: '3rem' }} />}
-            {onRowReorder && <Column body={dragHandleTemplate} bodyClassName='p-reorder-column' style={{ width: '2rem' }} />}
             {columns.map(col => {
                const filter = col.filter ?? col.filterType !== undefined;
                const showFilterMatchModes = col.showFilterMatchModes === undefined ? col.filterType === 'text' : col.showFilterMatchModes;
