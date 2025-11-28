@@ -75,7 +75,8 @@ export class ReverseCompositeSaveable
             try {
                const ok = await this.editor.saveSemanticModel('save');
                if (ok) {
-                  this.resetDirtyState(activeSaveable);
+                  // Clear dirty state for all saveables (including the active GLSPSaveable)
+                  this.resetDirtyState();
                   return;
                }
             } catch (e) {
