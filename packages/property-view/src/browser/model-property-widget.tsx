@@ -17,6 +17,7 @@ import { PropertiesRenderData } from './model-data-service';
 @injectable()
 export class ModelPropertyWidget extends CrossModelWidget implements PropertyViewContentWidget {
    protected renderData?: PropertiesRenderData;
+   private _closeInProgress: Promise<void> | undefined;
 
    constructor() {
       super();
@@ -67,37 +68,52 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
    }
 
    protected override async closeModel(uri: string): Promise<void> {
-      // Wait for any pending debounced updates to flush and complete.
-      // The blur event has already fired by the time closeModel is called,
-      // so we just need to ensure the async update chain completes:
-      // 1. blur event already fired → save button clicked
-      // 2. onRowUpdate called → dispatch() updates React state
-      // 3. React re-renders
-      // 4. useEffect runs → onModelUpdate called → handleUpdateRequest (debounced)
-      // 5. handleUpdateRequest.flush() → sendUpdate → modelService.update
-      await this.idle();
-
-      if (this.document && this.dirty) {
-         const isMappingFile = !!(this.document && (this.document as any).root && (this.document as any).root.mapping);
-         if (!isMappingFile) {
-            const shouldSave = await new ShouldSaveDialog(this).open();
-            if (shouldSave === true) {
-               await this.saveModel(this.document);
-               await super.closeModel(uri);
-               return;
-            } else if (shouldSave === false) {
-               await super.closeModel(uri);
-               return;
-            } else {
-               // Cancel: abort the close operation so callers (who await closeModel)
-               // do not continue with further model switches. Throwing here causes
-               // the awaiting caller to receive a rejected promise and leave the
-               // current document intact.
-               throw new Error('close-cancelled');
-            }
-         }
+      // Prevent re-entrant calls: if a close is already in progress, return
+      // the in-flight promise so we don't show the save dialog multiple times.
+      if (this._closeInProgress) {
+         return this._closeInProgress;
       }
-      await super.closeModel(uri);
+
+      this._closeInProgress = (async () => {
+         try {
+            // Wait for any pending debounced updates to flush and complete.
+            // The blur event has already fired by the time closeModel is called,
+            // so we just need to ensure the async update chain completes:
+            // 1. blur event already fired → save button clicked
+            // 2. onRowUpdate called → dispatch() updates React state
+            // 3. React re-renders
+            // 4. useEffect runs → onModelUpdate called → handleUpdateRequest (debounced)
+            // 5. handleUpdateRequest.flush() → sendUpdate → modelService.update
+            await this.idle();
+
+            if (this.document && this.dirty) {
+               const isMappingFile = !!(this.document && (this.document as any).root && (this.document as any).root.mapping);
+               if (!isMappingFile) {
+                  const shouldSave = await new ShouldSaveDialog(this).open();
+                  if (shouldSave === true) {
+                     await this.saveModel(this.document);
+                     await super.closeModel(uri);
+                     return;
+                  } else if (shouldSave === false) {
+                     await super.closeModel(uri);
+                     return;
+                  } else {
+                     // Cancel: abort the close operation so callers (who await closeModel)
+                     // do not continue with further model switches. Throwing here causes
+                     // the awaiting caller to receive a rejected promise and leave the
+                     // current document intact.
+                     throw new Error('close-cancelled');
+                  }
+               }
+            }
+            await super.closeModel(uri);
+         } finally {
+            // Clear in-flight marker so future closes can proceed
+            this._closeInProgress = undefined;
+         }
+      })();
+
+      return this._closeInProgress;
    }
 
    protected getDiagramWidget(): GLSPDiagramWidget | undefined {
