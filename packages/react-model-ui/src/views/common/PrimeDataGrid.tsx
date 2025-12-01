@@ -133,16 +133,18 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
          // Save any active edits in this grid
          const tableElement = tableRef.current?.getElement();
+         let currentGridSaveButton: Element | null = null;
          if (tableElement && activeRowKey) {
             const saveButton = tableElement.querySelector('.p-row-editor-save');
             if (saveButton instanceof HTMLElement) {
                saveButton.click();
+               currentGridSaveButton = saveButton;
             }
          }
 
          // Save any active edits in other grids
          document.querySelectorAll('.p-row-editor-save').forEach(button => {
-            if (button instanceof HTMLElement) {
+            if (button instanceof HTMLElement && button !== currentGridSaveButton) {
                button.click();
             }
          });
