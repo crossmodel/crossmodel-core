@@ -156,7 +156,17 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
-         {onRowAdd && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={handleAddRow} disabled={readonly} />}
+         {onRowAdd && (
+            <Button
+               label={addButtonLabel}
+               icon='pi pi-plus'
+               severity='info'
+               onClick={handleAddRow}
+               className='p-datatable-add-button'
+               onMouseDown={e => e.preventDefault()}
+               disabled={readonly}
+            />
+         )}
          <div className='datatable-filter-section'>
             <div className='keyword-search-container'>
                <IconField iconPosition='left'>
@@ -336,7 +346,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          if (isButton) {
             const editingRow = tableElement.querySelector('tr.p-row-editing');
             const isInEditingRow = editingRow && editingRow.contains(target);
-            const isEditorButton = target.closest('.p-autocomplete, .p-dropdown, .p-multiselect, .p-datepicker, .p-cell-editing');
+            const isEditorButton = target.closest(
+               '.p-autocomplete, .p-dropdown, .p-multiselect, .p-datepicker, .p-cell-editing, .p-datatable-add-button'
+            );
             if (isInEditingRow || isEditorButton) {
                return;
             }
@@ -375,7 +387,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             // Check if the focus is still within the Properties View or its overlays
             const isStillInPropertyView = propertyView.contains(relatedTarget);
             const isInOverlayPanel = relatedTarget.closest(
-               '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
+               '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel, .p-datatable-add-button'
             );
 
             // Only save if we're leaving the Properties View completely
@@ -391,7 +403,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          // Regular form editor handling
          const isInsideTable = tableElement.contains(relatedTarget);
          const isInsideOverlay = relatedTarget.closest(
-            '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
+            '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel, .p-datatable-add-button'
          );
 
          if (isInsideOverlay) {
