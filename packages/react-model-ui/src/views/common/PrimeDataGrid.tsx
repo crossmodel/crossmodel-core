@@ -133,7 +133,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
          // Save any active edits in this grid
          const tableElement = tableRef.current?.getElement();
-         let currentGridSaveButton: Element | null = null;
+         let currentGridSaveButton: Element | undefined = undefined;
          if (tableElement && activeRowKey) {
             const saveButton = tableElement.querySelector('.p-row-editor-save');
             if (saveButton instanceof HTMLElement) {
@@ -389,7 +389,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             // Check if the focus is still within the Properties View or its overlays
             const isStillInPropertyView = propertyView.contains(relatedTarget);
             const isInOverlayPanel = relatedTarget.closest(
-               '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel, .p-datatable-add-button'
+               '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, ' +
+                  '.p-dialog, .p-overlaypanel, .p-datatable-add-button'
             );
 
             // Only save if we're leaving the Properties View completely
@@ -405,7 +406,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          // Regular form editor handling
          const isInsideTable = tableElement.contains(relatedTarget);
          const isInsideOverlay = relatedTarget.closest(
-            '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel, .p-datatable-add-button'
+            '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, ' +
+               '.p-dialog, .p-overlaypanel, .p-datatable-add-button'
          );
 
          if (isInsideOverlay) {
