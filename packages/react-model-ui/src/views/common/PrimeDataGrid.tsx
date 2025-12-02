@@ -248,6 +248,9 @@ function useDragDrop<T extends Record<string, any>>(
       const isDraggingSelectedRows = currentSelectedRows && currentSelectedRows.length > 1 &&
          currentSelectedRows.some(row => row[keyField] === rowKey);
 
+      document.body.style.userSelect = 'none';
+      window.getSelection()?.removeAllRanges();
+
       const dragPreviewTable = document.createElement('table');
       dragPreviewTable.className = tableElement.className;
       dragPreviewTable.style.cssText = getComputedStyle(tableElement).cssText;
@@ -362,6 +365,7 @@ function useDragDrop<T extends Record<string, any>>(
       dragPreviewRef.current = dragPreviewTable;
 
       const handleMouseMove = (moveEvent: MouseEvent): void => {
+         moveEvent.preventDefault();
          if (dragPreviewRef.current) {
             dragPreviewRef.current.style.top = `${moveEvent.clientY - 20}px`;
             dragPreviewRef.current.style.left = `${moveEvent.clientX - 70}px`;
@@ -430,6 +434,8 @@ function useDragDrop<T extends Record<string, any>>(
       const handleMouseUp = (upEvent: MouseEvent): void => {
          upEvent.preventDefault();
          upEvent.stopPropagation();
+
+         document.body.style.userSelect = '';
 
          if (dragPreviewRef.current) {
             document.body.removeChild(dragPreviewRef.current);
@@ -588,6 +594,7 @@ function useDragDrop<T extends Record<string, any>>(
          const dist = Math.sqrt(dx * dx + dy * dy);
 
          if (dist > 5) {
+            e.preventDefault();
             if (isDraggingRef) {
                isDraggingRef.current = true;
             }
