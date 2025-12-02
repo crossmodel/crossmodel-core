@@ -6,6 +6,7 @@ import {
    BindingTarget,
    CommandPaletteActionProvider,
    ComputedBoundsActionHandler,
+   ContextActionsProvider,
    DiagramConfiguration,
    DiagramModule,
    GModelFactory,
@@ -14,12 +15,14 @@ import {
    LayoutEngine,
    ModelState,
    ModelSubmissionHandler,
+   MultiBinding,
    OperationHandlerConstructor,
    SourceModelStorage,
    ToolPaletteItemProvider,
    bindAsService
 } from '@eclipse-glsp/server';
 import { injectable } from 'inversify';
+import { ShowPropertiesContextMenuProvider } from '../common/context-menu/show-properties-context-menu-provider.js';
 import { CrossModelIndex } from '../common/cross-model-index.js';
 import { CrossModelState } from '../common/cross-model-state.js';
 import { CrossModelStorage } from '../common/cross-model-storage.js';
@@ -67,6 +70,11 @@ export class MappingDiagramModule extends DiagramModule {
       binding.add(MappingDiagramAddSourceObjectOperationHandler);
       binding.add(MappingDiagramDeleteElementOperationHandler);
       binding.add(MappingEdgeCreationOperationHandler);
+   }
+
+   protected override configureContextActionProviders(binding: MultiBinding<ContextActionsProvider>): void {
+      super.configureContextActionProviders(binding);
+      binding.add(ShowPropertiesContextMenuProvider);
    }
 
    protected override bindCommandPaletteActionProvider(): BindingTarget<CommandPaletteActionProvider> | undefined {
