@@ -49,13 +49,7 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
             this.focusField(renderData.renderProps.focusField as string);
          }
 
-         if (renderData && selection) {
-            this.shell.expandPanel('right');
-         }
 
-         if (renderData && selection) {
-            this.shell.expandPanel('right');
-         }
       } else {
          this.renderData = undefined;
          this.setModel();
