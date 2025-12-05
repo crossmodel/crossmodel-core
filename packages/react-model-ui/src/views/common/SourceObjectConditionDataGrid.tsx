@@ -8,11 +8,11 @@ import {
    JoinConditionType,
    Mapping,
    NumberLiteralType,
+   quote,
    ReferenceableElement,
    SourceObjectAttributeReferenceType,
    SourceObjectCondition,
-   StringLiteralType,
-   quote
+   StringLiteralType
 } from '@crossmodel/protocol';
 import {
    AutoComplete,
@@ -26,7 +26,7 @@ import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
 import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectConditionEditorProps {
@@ -287,37 +287,19 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
 
    const handleRowReorder = React.useCallback(
       (e: { rows: SourceObjectConditionRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-         const conditionEntries = (conditionsRef.current || []).map((condition, idx) => {
-            const key = deriveConditionRowId(condition, idx);
-            return { key, condition };
-         });
-         const conditionMap = new Map(conditionEntries.map(entry => [entry.key, entry.condition]));
-         const committedConditionCount = conditionEntries.reduce(
-            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
-            0
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            conditionsRef.current || [],
+            deriveConditionRowId,
+            reorderedConditions => {
+               dispatch({
+                  type: 'source-object:reorder-conditions',
+                  sourceObjectIdx,
+                  conditions: reorderedConditions
+               });
+            }
          );
-
-         const reorderedConditions: SourceObjectCondition[] = [];
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = conditionMap.get(row.id);
-            if (existing) {
-               reorderedConditions.push(existing);
-            }
-         });
-
-         if (reorderedConditions.length !== committedConditionCount) {
-            return;
-         }
-
-         dispatch({
-            type: 'source-object:reorder-conditions',
-            sourceObjectIdx,
-            conditions: reorderedConditions
-         });
       },
       [dispatch, deriveConditionRowId, sourceObjectIdx]
    );

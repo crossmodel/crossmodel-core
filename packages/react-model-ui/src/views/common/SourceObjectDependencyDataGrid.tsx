@@ -2,18 +2,18 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 import {
-   CrossReferenceContext,
-   Mapping,
-   ReferenceableElement,
-   SourceObject,
-   SourceObjectDependency,
-   SourceObjectDependencyType
+    CrossReferenceContext,
+    Mapping,
+    ReferenceableElement,
+    SourceObject,
+    SourceObjectDependency,
+    SourceObjectDependencyType
 } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectDependencyEditorProps {
@@ -348,38 +348,19 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
 
    const handleRowReorder = React.useCallback(
       (e: { rows: SourceObjectDependencyRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-
-         const dependencyEntries = (dependenciesRef.current || []).map((dep, idx) => {
-            const key = deriveDependencyRowId(dep, idx);
-            return { key, dep };
-         });
-         const dependencyMap = new Map(dependencyEntries.map(entry => [entry.key, entry.dep as SourceObjectDependency]));
-         const committedDependencyCount = dependencyEntries.reduce(
-            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
-            0
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            dependenciesRef.current || [],
+            deriveDependencyRowId,
+            reorderedDependencies => {
+               dispatch({
+                  type: 'source-object:reorder-dependencies',
+                  sourceObjectIdx,
+                  dependencies: reorderedDependencies
+               });
+            }
          );
-
-         const reorderedDependencies: SourceObjectDependency[] = [];
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = dependencyMap.get(row.id);
-            if (existing) {
-               reorderedDependencies.push(existing);
-            }
-         });
-
-         if (reorderedDependencies.length !== committedDependencyCount) {
-            return;
-         }
-
-         dispatch({
-            type: 'source-object:reorder-dependencies',
-            sourceObjectIdx,
-            dependencies: reorderedDependencies
-         });
       },
       [dispatch, sourceObjectIdx, deriveDependencyRowId]
    );

@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface CustomPropertyRow extends CustomProperty {
@@ -173,38 +173,18 @@ export function CustomPropertiesDataGrid({
 
    const handleRowReorder = React.useCallback(
       (e: { rows: CustomPropertyRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-
-         const propertyEntries = (propertiesRef.current || []).map((prop, idx) => {
-            const key = deriveCustomPropertyRowId(prop, idx);
-            return { key, prop };
-         });
-         const propertyMap = new Map(propertyEntries.map(entry => [entry.key, entry.prop]));
-         const committedPropertyCount = propertyEntries.reduce(
-            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
-            0
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            propertiesRef.current || [],
+            deriveCustomPropertyRowId,
+            reorderedProperties => {
+               dispatch({
+                  type: `${contextType}:customProperty:reorder-customProperties`,
+                  customProperties: reorderedProperties
+               });
+            }
          );
-
-         const reorderedProperties: CustomProperty[] = [];
-
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = propertyMap.get(row.id);
-            if (existing) {
-               reorderedProperties.push(existing);
-            }
-         });
-
-         if (reorderedProperties.length !== committedPropertyCount) {
-            return;
-         }
-
-         dispatch({
-            type: `${contextType}:customProperty:reorder-customProperties`,
-            customProperties: reorderedProperties
-         });
       },
       [dispatch, contextType]
    );

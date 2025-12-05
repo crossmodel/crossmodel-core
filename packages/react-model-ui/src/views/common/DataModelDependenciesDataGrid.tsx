@@ -9,7 +9,7 @@ import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi
 import { ErrorView } from '../ErrorView';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface DataModelDependencyRow extends DataModelDependency {
    idx: number;
@@ -348,37 +348,18 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
 
    const handleRowReorder = React.useCallback(
       (e: { rows: DataModelDependencyRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-
-         const dependencyEntries = (dependenciesRef.current || []).map((dep, idx) => {
-            const key = deriveDependencyRowId(dep, idx);
-            return { key, dep };
-         });
-         const dependencyMap = new Map(dependencyEntries.map(entry => [entry.key, entry.dep as DataModelDependency]));
-         const committedDependencyCount = dependencyEntries.reduce(
-            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
-            0
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            dependenciesRef.current || [],
+            deriveDependencyRowId,
+            reorderedDependencies => {
+               dispatch({
+                  type: 'datamodel:dependency:reorder-dependencies',
+                  dependencies: reorderedDependencies
+               });
+            }
          );
-
-         const reorderedDependencies: DataModelDependency[] = [];
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = dependencyMap.get(row.id);
-            if (existing) {
-               reorderedDependencies.push(existing);
-            }
-         });
-
-         if (reorderedDependencies.length !== committedDependencyCount) {
-            return;
-         }
-
-         dispatch({
-            type: 'datamodel:dependency:reorder-dependencies',
-            dependencies: reorderedDependencies
-         });
       },
       [dispatch, deriveDependencyRowId]
    );

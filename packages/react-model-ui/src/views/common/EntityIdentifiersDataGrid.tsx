@@ -7,7 +7,7 @@ import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorContainer, EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityIdentifierRow {
@@ -102,37 +102,18 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
 
    const handleRowReorder = React.useCallback(
       (e: { rows: EntityIdentifierRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-
-         const identifierEntries = (identifiersRef.current || []).map((identifier, idx) => {
-            const key = deriveIdentifierRowId(identifier, idx);
-            return { key, identifier };
-         });
-         const identifierMap = new Map(identifierEntries.map(entry => [entry.key, entry.identifier]));
-         const committedIdentifierCount = identifierEntries.reduce(
-            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
-            0
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            identifiersRef.current || [],
+            deriveIdentifierRowId,
+            reorderedIdentifiers => {
+               dispatch({
+                  type: 'entity:identifier:reorder-identifiers',
+                  identifiers: reorderedIdentifiers
+               });
+            }
          );
-
-         const reorderedIdentifiers: LogicalIdentifier[] = [];
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = identifierMap.get(row.id);
-            if (existing) {
-               reorderedIdentifiers.push(existing);
-            }
-         });
-
-         if (reorderedIdentifiers.length !== committedIdentifierCount) {
-            return;
-         }
-
-         dispatch({
-            type: 'entity:identifier:reorder-identifiers',
-            identifiers: reorderedIdentifiers
-         });
       },
       [dispatch]
    );

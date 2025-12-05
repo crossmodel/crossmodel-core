@@ -6,7 +6,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
@@ -88,37 +88,18 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    const handleRowReorder = React.useCallback(
       (e: { rows: EntityAttributeRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-
-         const attributeEntries = (attributesRef.current || []).map((attr, idx) => {
-            const key = deriveAttributeRowId(attr, idx);
-            return { key, attr: attr as LogicalAttribute };
-         });
-         const attributeMap = new Map(attributeEntries.map(entry => [entry.key, entry.attr]));
-         const committedAttributeCount = attributeEntries.reduce(
-            (count, entry) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
-            0
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            attributesRef.current || [],
+            deriveAttributeRowId,
+            reorderedAttributes => {
+               dispatch({
+                  type: 'entity:attribute:reorder-attributes',
+                  attributes: reorderedAttributes
+               });
+            }
          );
-
-         const reorderedAttributes: LogicalAttribute[] = [];
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = attributeMap.get(row.id);
-            if (existing) {
-               reorderedAttributes.push(existing);
-            }
-         });
-
-         if (reorderedAttributes.length !== committedAttributeCount) {
-            return;
-         }
-
-         dispatch({
-            type: 'entity:attribute:reorder-attributes',
-            attributes: reorderedAttributes
-         });
       },
       [dispatch]
    );
