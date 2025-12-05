@@ -21,6 +21,44 @@ import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
 
+
+export function handleGenericRowReorder<TRow extends { id: string; _uncommitted?: boolean }, TModel>(
+   e: { rows: TRow[] },
+   pendingDeleteIds: Set<string>,
+   currentItems: TModel[],
+   deriveId: (item: TModel, idx: number) => string,
+   onReorder: (reorderedItems: TModel[]) => void
+): void {
+   const filteredRows = e.rows.filter(row => !pendingDeleteIds.has(row.id));
+
+   const itemEntries = currentItems.map((item, idx) => {
+      const key = deriveId(item, idx);
+      return { key, item };
+   });
+   const itemMap = new Map(itemEntries.map(entry => [entry.key, entry.item]));
+   const committedItemCount = itemEntries.reduce(
+      (count, entry) => (pendingDeleteIds.has(entry.key) ? count : count + 1),
+      0
+   );
+
+   const reorderedItems: TModel[] = [];
+   filteredRows.forEach(row => {
+      if (row._uncommitted) {
+         return;
+      }
+      const existing = itemMap.get(row.id);
+      if (existing) {
+         reorderedItems.push(existing);
+      }
+   });
+
+   if (reorderedItems.length !== committedItemCount) {
+      return;
+   }
+
+   onReorder(reorderedItems);
+}
+
 export interface GridColumn<T> {
    field: keyof T;
    header: string;
@@ -219,11 +257,15 @@ function useDragDrop<T extends Record<string, any>>(
    onRowReorder?: (e: { rows: T[] }) => void,
    tableRef?: React.RefObject<any>,
    selectedRows?: T[],
-   isDraggingRef?: React.MutableRefObject<boolean>
+   isDraggingRef?: React.MutableRefObject<boolean>,
+   onDragStart?: () => void
 ): void {
    const dragPreviewRef = React.useRef<HTMLElement | undefined>(undefined);
    const currentDragOverRowKeyRef = React.useRef<string | number | undefined>(undefined);
    const currentDropPositionRef = React.useRef<'above' | 'below' | undefined>(undefined);
+
+   const dataRef = React.useRef(data);
+   dataRef.current = data;
 
    const selectedRowsRef = React.useRef(selectedRows);
    selectedRowsRef.current = selectedRows;
@@ -231,6 +273,7 @@ function useDragDrop<T extends Record<string, any>>(
    const dragStartRef = React.useRef<{ x: number; y: number; rowData: T; rowElement: HTMLElement } | undefined>(undefined);
 
    const startDrag = (e: MouseEvent, rowData: T, rowElement: HTMLElement): void => {
+      const data = dataRef.current;
       const rowKey = rowData[keyField];
       if (rowKey === undefined) {
          return;
@@ -599,6 +642,10 @@ function useDragDrop<T extends Record<string, any>>(
                isDraggingRef.current = true;
             }
 
+            if (onDragStart) {
+               onDragStart();
+            }
+
             document.removeEventListener('mousemove', handleMouseMoveGlobal);
             document.removeEventListener('mouseup', handleMouseUpGlobal);
 
@@ -734,7 +781,18 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const isDraggingRef = React.useRef(false);
 
    const { filters, setFilters, filterTemplate, renderHeader: renderFilterHeader } = useFilters(columns);
-   useDragDrop(data, keyField, onRowReorder, tableRef, selectedRows, isDraggingRef);
+
+   const handleDragStart = React.useCallback(() => {
+      const tableElement = tableRef.current?.getElement();
+      if (tableElement && activeRowKey) {
+         const saveButton = tableElement.querySelector('.p-row-editor-save');
+         if (saveButton instanceof HTMLElement) {
+            saveButton.click();
+         }
+      }
+   }, [activeRowKey]);
+
+   useDragDrop(data, keyField, onRowReorder, tableRef, selectedRows, isDraggingRef, handleDragStart);
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {

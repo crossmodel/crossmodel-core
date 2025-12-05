@@ -47,7 +47,7 @@ export class LogicalIdentifier extends TheiaPageObject {
    }
 
    async setName(name: string): Promise<void> {
-      const inputLocator = this.nameLocator.locator('input:not([type="checkbox"])');
+      const inputLocator = this.nameLocator.locator('input');
 
       // Wait a bit for the row to be fully in edit mode if it was just created
       await this.page.waitForTimeout(100);

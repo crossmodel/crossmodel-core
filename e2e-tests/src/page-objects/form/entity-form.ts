@@ -95,7 +95,7 @@ export class LogicalEntityAttributesSection extends FormSection {
       // Set the name in the new row (exclude selection and reorder columns)
       // Wait a bit for the row to fully enter edit mode
       await this.page.waitForTimeout(100);
-      const nameInput = attribute.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').first().locator('input:not([type="checkbox"])');
+      const nameInput = attribute.nameLocator.locator('input:not([type="checkbox"])');
       await nameInput.waitFor({ state: 'visible' });
       await nameInput.fill(name);
 
@@ -197,7 +197,7 @@ export class LogicalAttribute extends TheiaPageObject {
       super(section.app);
    }
 
-   protected get nameLocator(): Locator {
+   public get nameLocator(): Locator {
       return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').first();
    }
 

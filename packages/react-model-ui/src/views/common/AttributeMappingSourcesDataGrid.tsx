@@ -2,20 +2,20 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import {
-   AttributeMapping,
-   AttributeMappingSource,
-   AttributeMappingSourceType,
-   AttributeMappingType,
-   CrossModelElement,
-   CrossReferenceContext,
-   ReferenceableElement,
-   TargetObjectType
+    AttributeMapping,
+    AttributeMappingSource,
+    AttributeMappingSourceType,
+    AttributeMappingType,
+    CrossModelElement,
+    CrossReferenceContext,
+    ReferenceableElement,
+    TargetObjectType
 } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface AttributeMappingSourceValueProps {
@@ -237,38 +237,19 @@ export function AttributeMappingSourcesDataGrid({
 
    const handleRowReorder = React.useCallback(
       (e: { rows: AttributeMappingSourceRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-
-         const sourceEntries = (sourcesRef.current || []).map((source: AttributeMappingSource, idx: number) => {
-            const key = deriveSourceRowId(source, idx);
-            return { key, source };
-         });
-         const sourceMap = new Map(sourceEntries.map(entry => [entry.key, entry.source]));
-         const committedSourceCount = sourceEntries.reduce(
-            (count: number, entry: { key: string }) => (pendingDeleteIdsRef.current.has(entry.key) ? count : count + 1),
-            0
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            sourcesRef.current || [],
+            deriveSourceRowId,
+            reorderedSources => {
+               dispatch({
+                  type: 'attribute-mapping:source:reorder-sources',
+                  mappingIdx,
+                  sources: reorderedSources
+               });
+            }
          );
-
-         const reorderedSources: AttributeMappingSource[] = [];
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = sourceMap.get(row.id);
-            if (existing) {
-               reorderedSources.push(existing);
-            }
-         });
-
-         if (reorderedSources.length !== committedSourceCount) {
-            return;
-         }
-
-         dispatch({
-            type: 'attribute-mapping:source:reorder-sources',
-            mappingIdx,
-            sources: reorderedSources
-         });
       },
       [dispatch, mappingIdx, deriveSourceRowId]
    );

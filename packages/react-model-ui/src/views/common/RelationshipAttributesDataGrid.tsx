@@ -7,7 +7,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid, handleGenericRowReorder } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface AttributePropertyProps {
@@ -330,36 +330,22 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
    const handleRowReorder = React.useCallback(
       (e: { rows: RelationshipAttributeRow[] }): void => {
-         const filteredRows = e.rows.filter(row => !pendingDeleteIdsRef.current.has(row.id));
-
-         const attributeMap = new Map<string, RelationshipAttribute>(
-            (relationship.attributes || []).map((attr, idx) => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            relationship.attributes || [],
+            (attr, idx) => {
                const persistedId = (attr as any).id as string | undefined;
                const globalId = (attr as any).$globalId as string | undefined;
-               const key = persistedId ?? globalId ?? `attr-${idx}`;
-               return [key, attr];
-            })
+               return persistedId ?? globalId ?? `attr-${idx}`;
+            },
+            reorderedAttributes => {
+               dispatch({
+                  type: 'relationship:attribute:reorder-attributes',
+                  attributes: reorderedAttributes
+               });
+            }
          );
-
-         const reorderedAttributes: RelationshipAttribute[] = [];
-         filteredRows.forEach(row => {
-            if (row._uncommitted) {
-               return;
-            }
-            const existing = attributeMap.get(row.id);
-            if (existing) {
-               reorderedAttributes.push(existing);
-            }
-         });
-
-         if (reorderedAttributes.length !== (relationship.attributes || []).length) {
-            return;
-         }
-
-         dispatch({
-            type: 'relationship:attribute:reorder-attributes',
-            attributes: reorderedAttributes
-         });
       },
       [dispatch, relationship.attributes]
    );
