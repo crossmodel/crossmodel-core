@@ -231,8 +231,8 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = attribute.parent !== defaultEntry.parent || attribute.child !== defaultEntry.child;
 
-            if (!hasChanges || !attribute.parent || !attribute.child) {
-               // Remove the row if no changes or incomplete data
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== attribute.id));
                setEditingRows({});
                return;

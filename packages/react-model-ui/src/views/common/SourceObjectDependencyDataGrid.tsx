@@ -231,12 +231,8 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             // For uncommitted rows, check if anything actually changed
             const hasChanges = dependency.source !== defaultEntry.source;
 
-            // Check if the source is valid (not empty or default value)
-            const isValidSource =
-               dependency.source && dependency.source.trim() !== '' && dependency.source !== '_' && dependency.source !== '-';
-
-            if (!hasChanges || !isValidSource) {
-               // Remove the row if no changes or invalid source
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== dependency.id));
                setEditingRows({});
                return;

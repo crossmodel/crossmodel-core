@@ -205,8 +205,8 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                identifier.description !== defaultEntry.description ||
                identifier.attributeIds.length > 0;
 
-            if (!hasChanges || !identifier.name) {
-               // Remove the row if no changes or no name
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== identifier.id));
                setEditingRows({});
                return;

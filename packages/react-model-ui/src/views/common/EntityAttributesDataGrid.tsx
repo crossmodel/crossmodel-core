@@ -300,8 +300,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                attribute.datatype !== defaultEntry.datatype ||
                attribute.description !== defaultEntry.description;
 
-            if (!hasChanges || !attribute.name) {
-               // Remove the row if no changes or no name
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== attribute.id));
                setEditingRows({});
                return;
