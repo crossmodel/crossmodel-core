@@ -3,7 +3,7 @@
  ********************************************************************************/
 import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
-import { Column, ColumnBodyOptions } from 'primereact/column';
+import { Column } from 'primereact/column';
 import {
    DataTable,
    DataTableFilterEvent,
@@ -20,6 +20,44 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
+
+
+export function handleGenericRowReorder<TRow extends { id: string; _uncommitted?: boolean }, TModel>(
+   e: { rows: TRow[] },
+   pendingDeleteIds: Set<string>,
+   currentItems: TModel[],
+   deriveId: (item: TModel, idx: number) => string,
+   onReorder: (reorderedItems: TModel[]) => void
+): void {
+   const filteredRows = e.rows.filter(row => !pendingDeleteIds.has(row.id));
+
+   const itemEntries = currentItems.map((item, idx) => {
+      const key = deriveId(item, idx);
+      return { key, item };
+   });
+   const itemMap = new Map(itemEntries.map(entry => [entry.key, entry.item]));
+   const committedItemCount = itemEntries.reduce(
+      (count, entry) => (pendingDeleteIds.has(entry.key) ? count : count + 1),
+      0
+   );
+
+   const reorderedItems: TModel[] = [];
+   filteredRows.forEach(row => {
+      if (row._uncommitted) {
+         return;
+      }
+      const existing = itemMap.get(row.id);
+      if (existing) {
+         reorderedItems.push(existing);
+      }
+   });
+
+   if (reorderedItems.length !== committedItemCount) {
+      return;
+   }
+
+   onReorder(reorderedItems);
+}
 
 export interface GridColumn<T> {
    field: keyof T;
@@ -44,8 +82,9 @@ export interface PrimeDataGridProps<T> {
    onRowAdd?: (newData: T) => void;
    onRowUpdate?: (newData: T) => void;
    onRowDelete?: (rowData: T) => void;
-   onRowMoveUp?: (rowData: T) => void;
-   onRowMoveDown?: (rowData: T) => void;
+   onRowReorder?: (e: { rows: T[] }) => void;
+   selectedRows?: T[];
+   onSelectionChange?: (e: { value: T[] }) => void;
    addButtonLabel?: string;
    noDataMessage?: string;
    defaultNewRow?: Partial<T>;
@@ -55,35 +94,23 @@ export interface PrimeDataGridProps<T> {
    editingRows?: Record<string, boolean>;
    onRowEditChange?: (e: DataTableRowEditEvent) => void;
    globalFilterFields?: string[];
+   metaKeySelection?: boolean;
 }
 
-export function PrimeDataGrid<T extends Record<string, any>>({
-   columns,
-   data,
-   keyField = 'id',
-   height = '400px',
-   onRowAdd,
-   onRowUpdate,
-   onRowDelete,
-   onRowMoveUp,
-   onRowMoveDown,
-   addButtonLabel = 'Add',
-   noDataMessage = 'No records found',
-   defaultNewRow = {},
-   editable = true,
-   readonly = false,
-   className,
-   editingRows,
-   onRowEditChange,
-   globalFilterFields
-}: PrimeDataGridProps<T>): React.ReactElement {
-   // eslint-disable-next-line no-null/no-null
-   const tableRef = React.useRef<DataTable<T[]>>(null);
-   // eslint-disable-next-line no-null/no-null
-   const lastInteractedCellRef = React.useRef<HTMLElement | null>(null);
-   // eslint-disable-next-line no-null/no-null
-   const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
-
+function useFilters<T>(columns: GridColumn<T>[]): {
+   filters: DataTableFilterMeta;
+   setFilters: React.Dispatch<React.SetStateAction<DataTableFilterMeta>>;
+   clearFilters: () => void;
+   onGlobalFilterChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+   filterTemplate: (options: any, filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean', filterOptions?: any[]) => React.JSX.Element;
+      renderHeader: (
+      addButtonLabel: string,
+      onRowAdd?: () => void,
+      onRowDelete?: () => void,
+      selectedRowsCount?: number,
+      readonly?: boolean
+   ) => React.JSX.Element;
+} {
    const initFilters = (): DataTableFilterMeta => {
       const initialFilters: DataTableFilterMeta = {
          // eslint-disable-next-line no-null/no-null
@@ -118,6 +145,654 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       (_filters['global'] as DataTableFilterMetaData).value = value;
       setFilters(_filters);
    };
+
+   const filterTemplate = (
+      options: any,
+      filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean',
+      filterOptions?: any[]
+   ): React.JSX.Element => {
+      if (filterType === 'dropdown') {
+         return (
+            <Dropdown
+               value={options.value}
+               options={filterOptions}
+               onChange={e => options.filterCallback(e.value, options.index)}
+               itemTemplate={option => <span>{option}</span>}
+               placeholder='Select a value'
+               className='p-column-filter'
+               showClear
+            />
+         );
+      }
+      if (filterType === 'multiselect') {
+         return (
+            <MultiSelect
+               value={options.value}
+               options={filterOptions}
+               onChange={e => options.filterCallback(e.value)}
+               placeholder='Any'
+               className='p-column-filter'
+               maxSelectedLabels={1}
+               showClear
+            />
+         );
+      }
+      if (filterType === 'boolean') {
+         return (
+            <div className='flex align-items-center justify-content-center'>
+               <TriStateCheckbox value={options.value} onChange={e => options.filterCallback(e.value)} />
+            </div>
+         );
+      }
+      return (
+         <InputText
+            value={options.value || ''}
+            onChange={e => options.filterCallback(e.target.value)}
+            placeholder={`Search by ${options.field}`}
+            className='p-column-filter'
+         />
+      );
+   };
+
+   const renderHeader = (
+      addButtonLabel: string,
+      onRowAdd?: () => void,
+      onRowDelete?: () => void,
+      selectedRowsCount?: number,
+      readonly?: boolean
+   ): React.JSX.Element => (
+      <div className='datatable-global-filter'>
+         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {onRowAdd && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={onRowAdd} disabled={readonly} />}
+            {onRowDelete && (
+               <Button
+                  label={`Delete ${addButtonLabel.replace('Add ', '')}${selectedRowsCount && selectedRowsCount > 1 ? 's' : ''}`}
+                  icon='pi pi-trash'
+                  severity='danger'
+                  onClick={onRowDelete}
+                  disabled={readonly || !selectedRowsCount || selectedRowsCount === 0}
+                  style={{ backgroundColor: '#fbbf24', borderColor: '#fbbf24' }}
+               />
+            )}
+         </div>
+         <div className='datatable-filter-section'>
+            <div className='keyword-search-container'>
+               <IconField iconPosition='left'>
+                  <InputIcon className='pi pi-search' />
+                  <InputText
+                     value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
+                     onChange={onGlobalFilterChange}
+                     placeholder='Keyword Search'
+                  />
+               </IconField>
+               {(filters['global'] as DataTableFilterMetaData)?.value && (
+                  <i
+                     className='pi pi-times'
+                     onClick={() => {
+                        const _filters = { ...filters };
+                        (_filters['global'] as DataTableFilterMetaData).value = '';
+                        setFilters(_filters);
+                     }}
+                  />
+               )}
+            </div>
+            <Button
+               type='button'
+               icon='pi pi-filter-slash'
+               label='Clear Filters'
+               outlined
+               onClick={clearFilters}
+               style={{ marginLeft: '0.5rem' }}
+            />
+         </div>
+      </div>
+   );
+
+   return { filters, setFilters, clearFilters, onGlobalFilterChange, filterTemplate, renderHeader };
+}
+
+function useDragDrop<T extends Record<string, any>>(
+   data: T[],
+   keyField: keyof T,
+   onRowReorder?: (e: { rows: T[] }) => void,
+   tableRef?: React.RefObject<any>,
+   selectedRows?: T[],
+   isDraggingRef?: React.MutableRefObject<boolean>,
+   onDragStart?: () => void
+): void {
+   const dragPreviewRef = React.useRef<HTMLElement | undefined>(undefined);
+   const currentDragOverRowKeyRef = React.useRef<string | number | undefined>(undefined);
+   const currentDropPositionRef = React.useRef<'above' | 'below' | undefined>(undefined);
+
+   const dataRef = React.useRef(data);
+   dataRef.current = data;
+
+   const selectedRowsRef = React.useRef(selectedRows);
+   selectedRowsRef.current = selectedRows;
+
+   const dragStartRef = React.useRef<{ x: number; y: number; rowData: T; rowElement: HTMLElement } | undefined>(undefined);
+
+   const startDrag = (e: MouseEvent, rowData: T, rowElement: HTMLElement): void => {
+      const data = dataRef.current;
+      const rowKey = rowData[keyField];
+      if (rowKey === undefined) {
+         return;
+      }
+
+      const tableElement = tableRef?.current?.getElement();
+      if (!tableElement) {
+         return;
+      }
+
+      currentDragOverRowKeyRef.current = undefined;
+      currentDropPositionRef.current = undefined;
+
+      const currentSelectedRows = selectedRowsRef.current;
+      const isDraggingSelectedRows = currentSelectedRows && currentSelectedRows.length > 1 &&
+         currentSelectedRows.some(row => row[keyField] === rowKey);
+
+      document.body.style.userSelect = 'none';
+      window.getSelection()?.removeAllRanges();
+
+      const dragPreviewTable = document.createElement('table');
+      dragPreviewTable.className = tableElement.className;
+      dragPreviewTable.style.cssText = getComputedStyle(tableElement).cssText;
+      dragPreviewTable.style.position = 'fixed';
+      dragPreviewTable.style.top = `${e.clientY - 20}px`;
+      dragPreviewTable.style.left = `${e.clientX - 100}px`;
+      dragPreviewTable.style.width = `${tableElement.offsetWidth}px`;
+      dragPreviewTable.style.opacity = '0.8';
+      dragPreviewTable.style.pointerEvents = 'none';
+      dragPreviewTable.style.zIndex = '9999';
+      dragPreviewTable.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+      dragPreviewTable.style.borderRadius = '4px';
+      dragPreviewTable.style.overflow = 'hidden';
+
+      const dragPreviewBody = document.createElement('tbody');
+      dragPreviewBody.className = tableElement.querySelector('tbody')?.className || '';
+
+      if (isDraggingSelectedRows && currentSelectedRows) {
+         const selectedRowKeys = new Set(currentSelectedRows.map(row => row[keyField]));
+         const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+         const maxPreviewRows = 3;
+         let addedRows = 0;
+         let lastSelectedIndex = -1;
+         let hasGaps = false;
+
+         const selectedIndices: number[] = [];
+         for (let i = 0; i < data.length; i++) {
+            if (selectedRowKeys.has(data[i][keyField])) {
+               selectedIndices.push(i);
+            }
+         }
+
+         for (let i = 1; i < selectedIndices.length; i++) {
+            if (selectedIndices[i] - selectedIndices[i-1] > 1) {
+               hasGaps = true;
+               break;
+            }
+         }
+
+         for (const row of allRows) {
+            if (addedRows >= maxPreviewRows) {
+               break;
+            }
+
+            const rowIndex = allRows.indexOf(row);
+            if (rowIndex >= 0 && rowIndex < data.length) {
+               const rData = data[rowIndex];
+               if (selectedRowKeys.has(rData[keyField])) {
+                  const clonedRow = row.cloneNode(true) as HTMLElement;
+
+                  if (hasGaps && lastSelectedIndex !== -1 && rowIndex - lastSelectedIndex > 1 && addedRows > 0) {
+                     const gapIndicator = document.createElement('tr');
+                     gapIndicator.innerHTML =
+                        '<td colspan="100%" style="text-align: center; font-style: italic; padding: 4px; ' +
+                        'background: rgba(0,0,0,0.1); font-size: 11px;">⋮ gap ⋮</td>';
+                     dragPreviewBody.appendChild(gapIndicator);
+                  }
+
+                  dragPreviewBody.appendChild(clonedRow);
+                  lastSelectedIndex = rowIndex;
+                  addedRows++;
+               }
+            }
+         }
+
+         if (currentSelectedRows.length > 1) {
+            const countBadge = document.createElement('div');
+            countBadge.style.cssText = `
+               position: absolute;
+               top: -8px;
+               right: -8px;
+               background: #007acc;
+               color: white;
+               border-radius: 50%;
+               width: 24px;
+               height: 24px;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+               font-size: 12px;
+               font-weight: bold;
+               box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            countBadge.textContent = currentSelectedRows.length.toString();
+            dragPreviewTable.style.position = 'relative';
+            dragPreviewTable.appendChild(countBadge);
+         }
+
+         if (currentSelectedRows.length > maxPreviewRows) {
+            const moreRowsIndicator = document.createElement('tr');
+            const gapText = hasGaps ? ' (with gaps)' : '';
+            moreRowsIndicator.innerHTML =
+               `<td colspan="100%" style="text-align: center; font-style: italic; padding: 8px; background: rgba(0,0,0,0.05);">... and ${
+                  currentSelectedRows.length - maxPreviewRows
+               } more rows${gapText}</td>`;
+            dragPreviewBody.appendChild(moreRowsIndicator);
+         }
+      } else {
+         const clonedRowElement = rowElement.cloneNode(true) as HTMLElement;
+         dragPreviewBody.appendChild(clonedRowElement);
+      }
+
+      dragPreviewTable.appendChild(dragPreviewBody);
+
+      const interactiveElements = dragPreviewTable.querySelectorAll('button, input, select, textarea, [tabindex]');
+      interactiveElements.forEach(el => {
+         (el as HTMLElement).style.pointerEvents = 'none';
+         el.setAttribute('tabindex', '-1');
+      });
+
+      document.body.appendChild(dragPreviewTable);
+      dragPreviewRef.current = dragPreviewTable;
+
+      const handleMouseMove = (moveEvent: MouseEvent): void => {
+         moveEvent.preventDefault();
+         if (dragPreviewRef.current) {
+            dragPreviewRef.current.style.top = `${moveEvent.clientY - 20}px`;
+            dragPreviewRef.current.style.left = `${moveEvent.clientX - 70}px`;
+         }
+
+         requestAnimationFrame(() => {
+            if (!tableElement) {
+               return;
+            }
+
+            const allRows = Array.from(tableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+            let closestRow: HTMLElement | undefined;
+            let minDistance = Infinity;
+            const buffer = 10;
+
+            for (const row of allRows) {
+               const rect = row.getBoundingClientRect();
+               const rowCenterY = rect.top + rect.height / 2;
+               const distance = Math.abs(moveEvent.clientY - rowCenterY);
+
+               if (
+                  moveEvent.clientY >= rect.top - buffer &&
+                  moveEvent.clientY <= rect.bottom + buffer &&
+                  distance < minDistance
+               ) {
+                  minDistance = distance;
+                  closestRow = row;
+               }
+            }
+
+            if (closestRow) {
+               let foundRowKey: string | number | undefined;
+               const rowIndex = allRows.indexOf(closestRow);
+               if (rowIndex >= 0 && rowIndex < data.length) {
+                  foundRowKey = data[rowIndex][keyField];
+               }
+
+               if (foundRowKey !== undefined && foundRowKey !== rowKey) {
+                  const rect = closestRow.getBoundingClientRect();
+                  const rowCenterY = rect.top + rect.height / 2;
+                  const position = moveEvent.clientY < rowCenterY ? 'above' : 'below';
+
+                  if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
+                     currentDragOverRowKeyRef.current = foundRowKey;
+                     currentDropPositionRef.current = position;
+
+                     allRows.forEach(r => {
+                        r.classList.remove('drag-over-above', 'drag-over-below');
+                     });
+
+                     closestRow.classList.add(`drag-over-${position}`);
+                  }
+               }
+            } else {
+               if (currentDragOverRowKeyRef.current !== undefined) {
+                  currentDragOverRowKeyRef.current = undefined;
+                  currentDropPositionRef.current = undefined;
+                  allRows.forEach(r => {
+                     r.classList.remove('drag-over-above', 'drag-over-below');
+                  });
+               }
+            }
+         });
+      };
+
+      const handleMouseUp = (upEvent: MouseEvent): void => {
+         upEvent.preventDefault();
+         upEvent.stopPropagation();
+
+         document.body.style.userSelect = '';
+
+         if (dragPreviewRef.current) {
+            document.body.removeChild(dragPreviewRef.current);
+            dragPreviewRef.current = undefined;
+         }
+
+         const dragTableElement = tableRef?.current?.getElement();
+         if (dragTableElement) {
+            const allRows = Array.from(dragTableElement.querySelectorAll('tbody tr')) as HTMLElement[];
+            allRows.forEach(r => {
+               r.classList.remove('drag-over-above', 'drag-over-below');
+            });
+         }
+
+         if (currentDragOverRowKeyRef.current !== undefined && currentDropPositionRef.current && onRowReorder !== undefined) {
+            const targetIndex = data.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
+
+            const currentSelectedRowsForDrop = selectedRowsRef.current;
+            const isDraggingSelectedRowsForDrop = currentSelectedRowsForDrop && currentSelectedRowsForDrop.length > 1 &&
+               currentSelectedRowsForDrop.some(row => row[keyField] === rowKey);
+
+            if (isDraggingSelectedRowsForDrop && currentSelectedRowsForDrop) {
+               const selectedRowKeys = new Set(currentSelectedRowsForDrop.map(row => row[keyField]));
+               const targetRow = data[targetIndex];
+               const isTargetSelected = selectedRowKeys.has(targetRow[keyField]);
+               const selectedRowsInOrder: T[] = [];
+               data.forEach(row => {
+                  if (selectedRowKeys.has(row[keyField])) {
+                     selectedRowsInOrder.push(row);
+                  }
+               });
+
+               const nonSelectedRows = data.filter(row => !selectedRowKeys.has(row[keyField]));
+
+               let insertIndex: number;
+               if (isTargetSelected) {
+                  let nextNonSelectedIndex = -1;
+                  for (let i = targetIndex + 1; i < data.length; i++) {
+                     if (!selectedRowKeys.has(data[i][keyField])) {
+                        nextNonSelectedIndex = nonSelectedRows.findIndex(row => row[keyField] === data[i][keyField]);
+                        break;
+                     }
+                  }
+
+                  if (nextNonSelectedIndex !== -1) {
+                     insertIndex = nextNonSelectedIndex;
+                  } else {
+                     insertIndex = nonSelectedRows.length;
+                  }
+               } else {
+                  const targetIndexInNonSelected = nonSelectedRows.findIndex(row => row[keyField] === targetRow[keyField]);
+                  insertIndex = targetIndexInNonSelected;
+
+                  if (currentDropPositionRef.current === 'below') {
+                     insertIndex = targetIndexInNonSelected + 1;
+                  }
+               }
+
+               const newData = [...nonSelectedRows];
+               newData.splice(insertIndex, 0, ...selectedRowsInOrder);
+               onRowReorder({ rows: newData });
+            } else {
+               const sourceIndex = data.findIndex(row => row[keyField] === rowKey);
+               if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
+                  const newData = [...data];
+                  const [removed] = newData.splice(sourceIndex, 1);
+
+                  let insertIndex = targetIndex;
+                  if (currentDropPositionRef.current === 'below' && sourceIndex < targetIndex) {
+                     insertIndex = targetIndex;
+                  } else if (currentDropPositionRef.current === 'below' && sourceIndex > targetIndex) {
+                     insertIndex = targetIndex + 1;
+                  } else if (currentDropPositionRef.current === 'above' && sourceIndex > targetIndex) {
+                     insertIndex = targetIndex;
+                  } else if (currentDropPositionRef.current === 'above' && sourceIndex < targetIndex) {
+                     insertIndex = targetIndex - 1;
+                  }
+
+                  newData.splice(insertIndex, 0, removed);
+                  onRowReorder({ rows: newData });
+               }
+            }
+         }
+
+         currentDragOverRowKeyRef.current = undefined;
+         currentDropPositionRef.current = undefined;
+
+         document.removeEventListener('mousemove', handleMouseMove);
+         document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+   };
+
+   React.useEffect(() => {
+      if (!onRowReorder || !tableRef?.current) {
+         return;
+      }
+
+      const tableElement = tableRef.current.getElement();
+      if (!tableElement) {
+         return;
+      }
+
+      const handleMouseDown = (e: MouseEvent): void => {
+         const target = e.target as HTMLElement;
+         if (target.closest(
+            'button, a, input, select, textarea, .p-checkbox, .p-radiobutton, .p-row-toggler, ' +
+            '.p-row-editor-init, .p-row-editor-save, .p-row-editor-cancel'
+         )) {
+            return;
+         }
+
+         const rowElement = target.closest('tr');
+         if (!rowElement || !tableElement.contains(rowElement)) {
+            return;
+         }
+
+         const tbody = rowElement.parentElement;
+         if (tbody?.tagName !== 'TBODY') {
+            return;
+         }
+
+         const allRows = Array.from(tbody.children);
+         const index = allRows.indexOf(rowElement);
+         if (index < 0 || index >= data.length) {
+            return;
+         }
+
+         const rowData = data[index];
+
+         if (isDraggingRef) {
+            isDraggingRef.current = false;
+         }
+
+         dragStartRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+            rowData,
+            rowElement: rowElement as HTMLElement
+         };
+
+         document.addEventListener('mousemove', handleMouseMoveGlobal);
+         document.addEventListener('mouseup', handleMouseUpGlobal);
+      };
+
+      const handleMouseMoveGlobal = (e: MouseEvent): void => {
+         if (!dragStartRef.current) {
+            return;
+         }
+
+         const { x, y, rowData, rowElement } = dragStartRef.current;
+         const dx = e.clientX - x;
+         const dy = e.clientY - y;
+         const dist = Math.sqrt(dx * dx + dy * dy);
+
+         if (dist > 5) {
+            e.preventDefault();
+            if (isDraggingRef) {
+               isDraggingRef.current = true;
+            }
+
+            if (onDragStart) {
+               onDragStart();
+            }
+
+            document.removeEventListener('mousemove', handleMouseMoveGlobal);
+            document.removeEventListener('mouseup', handleMouseUpGlobal);
+
+            startDrag(e, rowData, rowElement);
+         }
+      };
+
+      const handleMouseUpGlobal = (e: MouseEvent): void => {
+         dragStartRef.current = undefined;
+         document.removeEventListener('mousemove', handleMouseMoveGlobal);
+         document.removeEventListener('mouseup', handleMouseUpGlobal);
+      };
+
+      tableElement.addEventListener('mousedown', handleMouseDown);
+      return () => {
+         tableElement.removeEventListener('mousedown', handleMouseDown);
+         document.removeEventListener('mousemove', handleMouseMoveGlobal);
+         document.removeEventListener('mouseup', handleMouseUpGlobal);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [data, keyField, onRowReorder, tableRef]);
+}
+
+function renderActionsColumn<T>(
+   rowData: T,
+   props: any,
+   editable: boolean,
+   readonly: boolean,
+   onRowDelete?: (row: T) => void
+): React.JSX.Element {
+   const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
+   const buttons: React.ReactElement[] = [];
+
+   if (isEditing && !readonly) {
+      buttons.push(
+         <Button
+            icon='pi pi-check'
+            className='p-button-text p-button-success p-row-action-button p-row-editor-save'
+            onClick={props.rowEditor?.onSaveClick} // eslint-disable-line react/prop-types
+            tooltip='Save'
+            disabled={readonly}
+         />
+      );
+      buttons.push(
+         <Button
+            icon='pi pi-times'
+            className='p-button-text p-button-danger p-row-action-button p-row-editor-cancel'
+            onClick={props.rowEditor?.onCancelClick} // eslint-disable-line react/prop-types
+            tooltip='Cancel'
+            disabled={readonly}
+         />
+      );
+      if (onRowDelete) {
+         buttons.push(
+            <Button
+               icon='pi pi-trash'
+               className='p-button-text p-button-danger p-row-action-button'
+               onClick={() => onRowDelete(rowData)}
+               tooltip='Delete'
+               disabled={readonly}
+            />
+         );
+      }
+   } else {
+      if (editable) {
+         buttons.push(
+            <Button
+               icon='pi pi-pencil'
+               className='p-button-text p-row-action-button'
+               onClick={props.rowEditor?.onInitClick} // eslint-disable-line react/prop-types
+               tooltip='Edit'
+               disabled={readonly}
+            />
+         );
+      }
+      if (onRowDelete) {
+         buttons.push(
+            <Button
+               icon='pi pi-trash'
+               className='p-button-text p-button-danger p-row-action-button'
+               onClick={() => onRowDelete(rowData)}
+               tooltip='Delete'
+               disabled={readonly}
+            />
+         );
+      }
+   }
+
+   return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+         {buttons.map((button, index) =>
+            React.cloneElement(button, {
+               key: button.key || index,
+               style: {
+                  ...button.props.style,
+                  ...(index < buttons.length - 1 ? { marginRight: '0.5rem' } : {})
+               }
+            })
+         )}
+      </div>
+   );
+}
+
+export function PrimeDataGrid<T extends Record<string, any>>({
+   columns,
+   data,
+   keyField = 'id',
+   height = '400px',
+   onRowAdd,
+   onRowUpdate,
+   onRowDelete,
+   onRowReorder,
+   selectedRows,
+   onSelectionChange,
+   addButtonLabel = 'Add',
+   noDataMessage = 'No records found',
+   defaultNewRow = {},
+   editable = true,
+   readonly = false,
+   className,
+   editingRows,
+   onRowEditChange,
+   globalFilterFields,
+   metaKeySelection = true
+}: PrimeDataGridProps<T>): React.ReactElement {
+   // eslint-disable-next-line no-null/no-null
+   const tableRef = React.useRef<DataTable<T[]>>(null);
+   // eslint-disable-next-line no-null/no-null
+   const lastInteractedCellRef = React.useRef<HTMLElement | null>(null);
+   // eslint-disable-next-line no-null/no-null
+   const activeRowKey = editingRows ? Object.keys(editingRows)[0] : null;
+
+   const isDraggingRef = React.useRef(false);
+
+   const { filters, setFilters, filterTemplate, renderHeader: renderFilterHeader } = useFilters(columns);
+
+   const handleDragStart = React.useCallback(() => {
+      const tableElement = tableRef.current?.getElement();
+      if (tableElement && activeRowKey) {
+         const saveButton = tableElement.querySelector('.p-row-editor-save');
+         if (saveButton instanceof HTMLElement) {
+            saveButton.click();
+         }
+      }
+   }, [activeRowKey]);
+
+   useDragDrop(data, keyField, onRowReorder, tableRef, selectedRows, isDraggingRef, handleDragStart);
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {
@@ -156,53 +831,34 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    }, [onRowAdd, defaultNewRow, columns, activeRowKey]);
 
-   const renderHeader = (): React.JSX.Element => (
-      <div className='datatable-global-filter'>
-         {onRowAdd && (
-            <Button
-               label={addButtonLabel}
-               icon='pi pi-plus'
-               severity='info'
-               onClick={handleAddRow}
-               className='p-datatable-add-button'
-               onMouseDown={e => e.preventDefault()}
-               disabled={readonly}
-            />
-         )}
-         <div className='datatable-filter-section'>
-            <div className='keyword-search-container'>
-               <IconField iconPosition='left'>
-                  <InputIcon className='pi pi-search' />
-                  <InputText
-                     value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
-                     onChange={onGlobalFilterChange}
-                     placeholder='Keyword Search'
-                  />
-               </IconField>
-               {(filters['global'] as DataTableFilterMetaData)?.value && (
-                  <i
-                     className='pi pi-times'
-                     onClick={() => {
-                        const _filters = { ...filters };
-                        (_filters['global'] as DataTableFilterMetaData).value = '';
-                        setFilters(_filters);
-                     }}
-                  />
-               )}
-            </div>
-            <Button
-               type='button'
-               icon='pi pi-filter-slash'
-               label='Clear Filters'
-               outlined
-               onClick={clearFilters}
-               style={{ marginLeft: '0.5rem' }}
-            />
-         </div>
-      </div>
-   );
+   const handleMultiDelete = React.useCallback((): void => {
+      if (selectedRows && selectedRows.length > 0 && onRowDelete) {
+         // Sort by idx descending to delete from bottom to top (avoids index shifting issues)
+         const sortedRows = [...selectedRows].sort((a, b) => {
+            const aIdx = (a as any).idx ?? -1;
+            const bIdx = (b as any).idx ?? -1;
+            return bIdx - aIdx;
+         });
 
-   const header = renderHeader();
+         // Dispatch all delete actions first (before any grid data filtering)
+         sortedRows.forEach(row => {
+            onRowDelete(row);
+         });
+
+         // Clear selection after all deletes are dispatched
+         if (onSelectionChange) {
+            onSelectionChange({ value: [] });
+         }
+      }
+   }, [selectedRows, onRowDelete, onSelectionChange]);
+
+   const header = renderFilterHeader(
+      addButtonLabel,
+      handleAddRow,
+      handleMultiDelete,
+      selectedRows?.length,
+      readonly
+   );
 
    React.useEffect(() => {
       if (!tableRef.current || !editingRows || Object.keys(editingRows).length === 0) {
@@ -249,7 +905,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const onRowEditComplete = (e: DataTableRowEditCompleteEvent): void => {
       if (onRowUpdate) {
-         // don’t mutate e.newData directly
+         // don't mutate e.newData directly
          // spread into a new object
          const updated = { ...e.newData } as T;
          onRowUpdate(updated);
@@ -294,6 +950,11 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    };
 
    const handleRowClick = (e: DataTableRowClickEvent): void => {
+      if (isDraggingRef.current) {
+         isDraggingRef.current = false;
+         return;
+      }
+
       if (!activeRowKey) {
          return; // nothing is being edited
       }
@@ -430,147 +1091,20 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       };
    }, [activeRowKey]);
 
-   // eslint-disable-next-line react/prop-types
-   const allActionsTemplate = (rowData: T, props: ColumnBodyOptions): React.JSX.Element => {
-      const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
-      const buttons: React.ReactElement[] = [];
-
-      if (isEditing && !readonly) {
-         buttons.push(
-            <Button
-               icon='pi pi-check'
-               className='p-button-text p-button-success p-row-action-button p-row-editor-save'
-               onClick={props.rowEditor?.onSaveClick} // eslint-disable-line react/prop-types
-               tooltip='Save'
-               disabled={readonly}
-            />
-         );
-         buttons.push(
-            <Button
-               icon='pi pi-times'
-               className='p-button-text p-button-danger p-row-action-button p-row-editor-cancel'
-               onClick={props.rowEditor?.onCancelClick} // eslint-disable-line react/prop-types
-               tooltip='Cancel'
-               disabled={readonly}
-            />
-         );
-      } else {
-         if (editable) {
-            buttons.push(
-               <Button
-                  icon='pi pi-pencil'
-                  className='p-button-text p-row-action-button'
-                  onClick={props.rowEditor?.onInitClick} // eslint-disable-line react/prop-types
-                  tooltip='Edit'
-                  disabled={readonly}
-               />
-            );
-         }
-         if (onRowMoveUp) {
-            buttons.push(
-               <Button
-                  icon='pi pi-arrow-up'
-                  className='p-button-text p-row-action-button'
-                  onClick={() => onRowMoveUp(rowData)}
-                  tooltip='Move Up'
-                  disabled={readonly}
-               />
-            );
-         }
-         if (onRowMoveDown) {
-            buttons.push(
-               <Button
-                  icon='pi pi-arrow-down'
-                  className='p-button-text p-row-action-button'
-                  onClick={() => onRowMoveDown(rowData)}
-                  tooltip='Move Down'
-                  disabled={readonly}
-               />
-            );
-         }
-         if (onRowDelete) {
-            buttons.push(
-               <Button
-                  icon='pi pi-trash'
-                  className='p-button-text p-button-danger p-row-action-button'
-                  onClick={() => onRowDelete(rowData)}
-                  tooltip='Delete'
-                  disabled={readonly}
-               />
-            );
-         }
-      }
-
-      return (
-         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-            {buttons.map((button, index) =>
-               React.cloneElement(button, {
-                  key: button.key || index,
-                  style: {
-                     ...button.props.style,
-                     ...(index < buttons.length - 1 ? { marginRight: '0.5rem' } : {})
-                  }
-               })
-            )}
-         </div>
-      );
-   };
-
    // Note: No default cell editor is provided. Grids should provide per-column editor functions
    // (columns[].editor) that render their own editor components which read diagnostics locally.
    const cellEditor = undefined;
 
-   const filterTemplate = (
-      options: any,
-      filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean',
-      filterOptions?: any[]
-   ): React.JSX.Element => {
-      if (filterType === 'dropdown') {
-         return (
-            <Dropdown
-               value={options.value}
-               options={filterOptions}
-               onChange={e => options.filterCallback(e.value, options.index)}
-               itemTemplate={option => <span>{option}</span>}
-               placeholder='Select a value'
-               className='p-column-filter'
-               showClear
-            />
-         );
-      }
-      if (filterType === 'multiselect') {
-         return (
-            <MultiSelect
-               value={options.value}
-               options={filterOptions}
-               onChange={e => options.filterCallback(e.value)}
-               placeholder='Any'
-               className='p-column-filter'
-               maxSelectedLabels={1}
-               showClear
-            />
-         );
-      }
-      if (filterType === 'boolean') {
-         return (
-            <div className='flex align-items-center justify-content-center'>
-               <TriStateCheckbox value={options.value} onChange={e => options.filterCallback(e.value)} />
-            </div>
-         );
-      }
-      return (
-         <InputText
-            value={options.value || ''}
-            onChange={e => options.filterCallback(e.target.value)}
-            placeholder={`Search by ${options.field}`}
-            className='p-column-filter'
-         />
-      );
-   };
+   const allActionsTemplate = React.useCallback(
+      (rowData: T, props: any): React.JSX.Element =>
+         renderActionsColumn(rowData, props, editable, readonly, onRowDelete),
+      [editable, readonly, onRowDelete]
+   );
 
+   const DataTableComponent = DataTable as any;
    return (
       <div>
-         <DataTable
+         <DataTableComponent
             ref={tableRef}
             value={data}
             editMode={editable && !readonly ? 'row' : undefined}
@@ -580,6 +1114,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onRowDoubleClick={!readonly ? handleRowDoubleClick : undefined}
             editingRows={editingRows}
             onRowEditChange={!readonly ? onRowEditChange : undefined}
+            selectionMode={onSelectionChange !== undefined ? 'multiple' : undefined}
+            selection={selectedRows}
+            metaKeySelection={metaKeySelection}
+            onSelectionChange={onSelectionChange !== undefined ? (e: any) => onSelectionChange({ value: e.value as T[] }) : undefined}
             scrollable
             scrollHeight={height}
             className={`p-datatable-sm ${className || ''}`}
@@ -593,6 +1131,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             header={header}
             globalFilterFields={globalFilterFields as string[]}
          >
+            {onSelectionChange !== undefined && <Column selectionMode='multiple' style={{ width: '3rem' }} />}
             {columns.map(col => {
                const filter = col.filter ?? col.filterType !== undefined;
                const showFilterMatchModes = col.showFilterMatchModes === undefined ? col.filterType === 'text' : col.showFilterMatchModes;
@@ -620,10 +1159,10 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   />
                );
             })}
-            {(onRowDelete || onRowMoveUp || onRowMoveDown || editable) && (
+            {(onRowDelete || editable) && (
                <Column header='Actions' rowEditor={editable && !readonly} body={allActionsTemplate} style={{ width: '10rem' }} />
             )}
-         </DataTable>
+         </DataTableComponent>
       </div>
    );
 }

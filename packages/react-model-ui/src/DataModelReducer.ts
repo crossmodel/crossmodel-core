@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { CustomProperty, DataModelDependency, unreachable } from '@crossmodel/protocol';
-import { DispatchAction, ModelAction, ModelState, moveDown, moveUp, undefinedIfEmpty } from './ModelReducer';
+import { DispatchAction, ModelAction, ModelState, undefinedIfEmpty } from './ModelReducer';
 
 export interface DataModelChangeIdAction extends ModelAction {
    type: 'datamodel:change-id';
@@ -41,19 +41,14 @@ export interface DataModelDependencyAddAction extends ModelAction {
    dependency: DataModelDependency;
 }
 
-export interface DataModelDependencyMoveUpAction extends ModelAction {
-   type: 'datamodel:dependency:move-dependency-up';
-   dependencyIdx: number;
-}
-
-export interface DataModelDependencyMoveDownAction extends ModelAction {
-   type: 'datamodel:dependency:move-dependency-down';
-   dependencyIdx: number;
-}
-
 export interface DataModelDependencyDeleteAction extends ModelAction {
    type: 'datamodel:dependency:delete-dependency';
    dependencyIdx: number;
+}
+
+export interface DataModelDependencyReorderAction extends ModelAction {
+   type: 'datamodel:dependency:reorder-dependencies';
+   dependencies: DataModelDependency[];
 }
 
 export interface CustomPropertyUpdateAction extends ModelAction {
@@ -67,19 +62,14 @@ export interface CustomPropertyAddEmptyAction extends ModelAction {
    customProperty: CustomProperty;
 }
 
-export interface CustomPropertyMoveUpAction extends ModelAction {
-   type: 'datamodel:customProperty:move-customProperty-up';
-   customPropertyIdx: number;
-}
-
-export interface CustomPropertyMoveDownAction extends ModelAction {
-   type: 'datamodel:customProperty:move-customProperty-down';
-   customPropertyIdx: number;
-}
-
 export interface CustomPropertyDeleteAction extends ModelAction {
    type: 'datamodel:customProperty:delete-customProperty';
    customPropertyIdx: number;
+}
+
+export interface CustomPropertyReorderAction extends ModelAction {
+   type: 'datamodel:customProperty:reorder-customProperties';
+   customProperties: CustomProperty[];
 }
 
 export type DataModelDispatchAction =
@@ -90,14 +80,12 @@ export type DataModelDispatchAction =
    | DataModelChangeVersionAction
    | DataModelDependencyUpdateAction
    | DataModelDependencyAddAction
-   | DataModelDependencyMoveUpAction
-   | DataModelDependencyMoveDownAction
    | DataModelDependencyDeleteAction
+   | DataModelDependencyReorderAction
    | CustomPropertyUpdateAction
    | CustomPropertyAddEmptyAction
-   | CustomPropertyMoveUpAction
-   | CustomPropertyMoveDownAction
-   | CustomPropertyDeleteAction;
+   | CustomPropertyDeleteAction
+   | CustomPropertyReorderAction;
 
 export function isDataModelDispatchAction(action: DispatchAction): action is DataModelDispatchAction {
    return action.type.startsWith('datamodel:');
@@ -148,16 +136,8 @@ export function DataModelReducer(state: ModelState, action: DataModelDispatchAct
          }
          break;
 
-      case 'datamodel:dependency:move-dependency-up':
-         if (dataModel.dependencies) {
-            moveUp(dataModel.dependencies, action.dependencyIdx);
-         }
-         break;
-
-      case 'datamodel:dependency:move-dependency-down':
-         if (dataModel.dependencies) {
-            moveDown(dataModel.dependencies, action.dependencyIdx);
-         }
+      case 'datamodel:dependency:reorder-dependencies':
+         dataModel.dependencies = action.dependencies;
          break;
 
       case 'datamodel:customProperty:update':
@@ -176,12 +156,8 @@ export function DataModelReducer(state: ModelState, action: DataModelDispatchAct
          dataModel.customProperties!.splice(action.customPropertyIdx, 1);
          break;
 
-      case 'datamodel:customProperty:move-customProperty-up':
-         moveUp(dataModel.customProperties!, action.customPropertyIdx);
-         break;
-
-      case 'datamodel:customProperty:move-customProperty-down':
-         moveDown(dataModel.customProperties!, action.customPropertyIdx);
+      case 'datamodel:customProperty:reorder-customProperties':
+         dataModel.customProperties = action.customProperties;
          break;
 
       default:

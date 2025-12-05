@@ -48,6 +48,12 @@ export interface SourceObjectMoveDependencyDownAction extends ModelAction {
    dependencyIdx: number;
 }
 
+export interface SourceObjectReorderDependenciesAction extends ModelAction {
+   type: 'source-object:reorder-dependencies';
+   sourceObjectIdx: number;
+   dependencies: SourceObjectDependency[];
+}
+
 export interface SourceObjectDependencyUpdateConditionAction extends ModelAction {
    type: 'source-object:update-condition';
    sourceObjectIdx: number;
@@ -79,19 +85,27 @@ export interface SourceObjectDependencyMoveConditionDownAction extends ModelActi
    conditionIdx: number;
 }
 
+export interface SourceObjectReorderConditionsAction extends ModelAction {
+   type: 'source-object:reorder-conditions';
+   sourceObjectIdx: number;
+   conditions: SourceObjectCondition[];
+}
+
 export type SourceObjectDependencyAction =
    | SourceObjectUpdateDependencyAction
    | SourceObjectAddDependencyAction
    | SourceObjectMoveDependencyUpAction
    | SourceObjectMoveDependencyDownAction
-   | SourceObjectDeleteDependencyAction;
+   | SourceObjectDeleteDependencyAction
+   | SourceObjectReorderDependenciesAction;
 
 export type SourceObjectConditionAction =
    | SourceObjectDependencyUpdateConditionAction
    | SourceObjectDependencyAddConditionAction
    | SourceObjectDependencyDeleteConditionAction
    | SourceObjectDependencyMoveConditionUpAction
-   | SourceObjectDependencyMoveConditionDownAction;
+   | SourceObjectDependencyMoveConditionDownAction
+   | SourceObjectReorderConditionsAction;
 
 export type MappingSourcesDispatchAction = SourceObjectChangeJoinAction | SourceObjectDependencyAction | SourceObjectConditionAction;
 
@@ -142,6 +156,10 @@ export function MappingSourcesModelReducer(state: ModelState, action: MappingSou
          }
          break;
 
+      case 'source-object:reorder-dependencies':
+         sourceObject.dependencies = action.dependencies;
+         break;
+
       case 'source-object:update-condition':
          sourceObject.conditions[action.conditionIdx] = action.condition;
          break;
@@ -160,6 +178,10 @@ export function MappingSourcesModelReducer(state: ModelState, action: MappingSou
 
       case 'source-object:move-condition-down':
          moveDown(sourceObject.conditions, action.conditionIdx);
+         break;
+
+      case 'source-object:reorder-conditions':
+         sourceObject.conditions = action.conditions;
          break;
    }
    return state;
