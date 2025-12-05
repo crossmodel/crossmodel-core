@@ -27,12 +27,13 @@ import {
    SourceObjectRenderProps
 } from '@crossmodel/react-model-ui';
 import { Emitter, Event, ResourceProvider } from '@theia/core';
-import { LabelProvider, Message, OpenerService, ReactWidget, Saveable, open } from '@theia/core/lib/browser';
+import { ApplicationShell, LabelProvider, Message, OpenerService, ReactWidget, Saveable, open } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import debounce from '@theia/core/shared/lodash.debounce';
 import * as React from '@theia/core/shared/react';
+// MonacoEditorModel import removed; we use duck-typing to clear dirty state
 import deepEqual from 'fast-deep-equal';
 
 export const CrossModelWidgetOptions = Symbol('FormEditorWidgetOptions');
@@ -52,6 +53,7 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
    @inject(ThemeService) protected readonly themeService: ThemeService;
    @inject(OpenerService) protected readonly openerService: OpenerService;
    @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider;
+   @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
    protected readonly onDirtyChangedEmitter = new Emitter<void>();
    onDirtyChanged: Event<void> = this.onDirtyChangedEmitter.event;
@@ -167,8 +169,49 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          return;
       }
       console.debug(`[${this.options.clientId}] Save model`);
-      this.setDirty(false);
-      await this.modelService.save({ uri: doc.uri.toString(), model: doc.root, clientId: this.options.clientId });
+      try {
+         await this.modelService.save({ uri: doc.uri.toString(), model: doc.root, clientId: this.options.clientId });
+         // Mark this widget clean
+         this.setDirty(false);
+         // Also clear dirty state on diagram and editor saveables for the same URI
+         const uriStr = doc.uri.toString();
+         try {
+            // Try to find the composite editor for this URI (id prefix used by open handler)
+            const compositePrefix = 'cm-composite-editor-handler:' + uriStr;
+            for (const w of this.shell.widgets) {
+               const anyW: any = w as any;
+               try {
+                  if (
+                     anyW &&
+                     typeof anyW.id === 'string' &&
+                     anyW.id.startsWith(compositePrefix) &&
+                     anyW.tabPanel &&
+                     Array.isArray(anyW.tabPanel.widgets)
+                  ) {
+                     for (const child of anyW.tabPanel.widgets) {
+                        try {
+                           const saveable = Saveable.get(child as any);
+                           if (saveable && typeof (saveable as any).setDirty === 'function') {
+                              (saveable as any).setDirty(false);
+                           } else if (typeof (child as any).setDirty === 'function') {
+                              (child as any).setDirty(false);
+                           }
+                        } catch (e) {
+                           /* ignore child errors */
+                        }
+                     }
+                  }
+               } catch (e) {
+                  /* ignore */
+               }
+            }
+         } catch (e) {
+            console.error('[CrossModelWidget] clearing other saveables failed', e);
+         }
+      } catch (e) {
+         console.error(`[${this.options.clientId}] Save model failed for ${doc.uri}`, e);
+         throw e;
+      }
    }
 
    protected async openModelInEditor(): Promise<void> {

@@ -325,17 +325,15 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          return;
       }
 
-      const handleClickOutside = (event: MouseEvent): void => {
-         const tableElement = tableRef.current?.getElement();
-         if (!tableElement) {
-            return;
-         }
+      const tableElement = tableRef.current?.getElement();
+      if (!tableElement) {
+         return;
+      }
 
+      const handleClickOutside = (event: MouseEvent): void => {
          const target = event.target as HTMLElement;
 
-         const isInsideTable = tableElement.contains(target);
-
-         // allow clicks inside PrimeReact overlay panels
+         // Allow clicks inside PrimeReact overlay panels
          const isInsideOverlay = target.closest(
             '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
          );
@@ -363,6 +361,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             return;
          }
 
+         const isInsideTable = tableElement.contains(target);
          if (!isInsideTable) {
             // Outside table → save & exit
             const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
@@ -373,11 +372,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       };
 
       const handleFocusOut = (event: FocusEvent): void => {
-         const tableElement = tableRef.current?.getElement();
-         if (!tableElement) {
-            return;
-         }
-
          const relatedTarget = event.relatedTarget as HTMLElement;
          if (!relatedTarget) {
             return; // Exit if there's no related target
@@ -422,11 +416,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             }
          }
       };
+      // Attach event listeners for better scoping
+      // focusout bubbles up from the table when focus leaves
+      tableElement.addEventListener('focusout', handleFocusOut);
+      // mouseup attached to document to catch clicks both inside and outside the table
+      // The handler logic determines if the click should trigger a save
       document.addEventListener('mouseup', handleClickOutside);
-      document.addEventListener('focusout', handleFocusOut);
+
       return () => {
+         tableElement.removeEventListener('focusout', handleFocusOut);
          document.removeEventListener('mouseup', handleClickOutside);
-         document.removeEventListener('focusout', handleFocusOut);
       };
    }, [activeRowKey]);
 
