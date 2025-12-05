@@ -335,17 +335,8 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                condition.operator !== defaultEntry.operator ||
                condition.right.value !== defaultEntry.right.value;
 
-            // Check if required fields are valid
-            const isValid =
-               condition.left.value?.trim() &&
-               condition.right.value?.trim() &&
-               condition.left.value !== '_' &&
-               condition.left.value !== '-' &&
-               condition.right.value !== '_' &&
-               condition.right.value !== '-';
-
-            if (!hasChanges || !isValid) {
-               // Remove the row if no changes or invalid
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== condition.id));
                setEditingRows({});
                return;

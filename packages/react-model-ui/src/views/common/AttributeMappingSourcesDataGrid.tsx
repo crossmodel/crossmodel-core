@@ -253,12 +253,10 @@ export function AttributeMappingSourcesDataGrid({
             // For uncommitted rows, check if anything actually changed
             const hasChanges = sourceToUpdate.value !== defaultEntry.value;
 
-            // Check if the value is valid (not empty or default value)
-            const isValidValue =
-               sourceToUpdate.value && sourceToUpdate.value.trim() !== '' && sourceToUpdate.value !== '_' && sourceToUpdate.value !== '-';
+            
 
-            if (!hasChanges || !isValidValue) {
-               // Remove the row if no changes or invalid value
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== sourceToUpdate.id));
                setEditingRows({});
                return;

@@ -7,8 +7,8 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface DataModelDependencyRow extends DataModelDependency {
@@ -228,12 +228,9 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = dependency.datamodel !== defaultEntry.datamodel || dependency.version !== defaultEntry.version;
 
-            // Also check if the datamodel is valid
-            const isValidDatamodel =
-               dependency.datamodel && dependency.datamodel.trim() !== '' && dependency.datamodel !== '_' && dependency.datamodel !== '-';
 
-            if (!hasChanges || !isValidDatamodel) {
-               // Remove the row if no changes or invalid datamodel
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== dependency.id));
                setEditingRows({});
                return;
