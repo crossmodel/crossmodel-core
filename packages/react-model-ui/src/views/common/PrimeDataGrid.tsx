@@ -1136,7 +1136,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                              if (el.closest) return el.closest(selector);
                              if (el.parentElement && el.parentElement.closest) return el.parentElement.closest(selector);
                              if (el.correspondingUseElement) return findClosest(el.correspondingUseElement, selector);
-                             return null;
+                             return undefined;
                           };
                           
                           const isCheckbox =
