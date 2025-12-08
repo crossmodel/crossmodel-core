@@ -2,11 +2,11 @@ entity:
     id: CompleteCustomer
     name: "CompleteCustomer"
     attributes:
-      - id: Country
-        name: "Country"
-        datatype: "Text"
       - id: Name
         name: "Name"
+        datatype: "Text"
+      - id: Country
+        name: "Country"
         datatype: "Text"
       - id: Age
         name: "Age"

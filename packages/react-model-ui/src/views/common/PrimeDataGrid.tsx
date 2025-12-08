@@ -955,15 +955,24 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          return;
       }
 
-      if (!activeRowKey) {
-         return; // nothing is being edited
-      }
-
       const target = e.originalEvent.target as HTMLElement;
 
       // Ignore clicks inside editors/controls
       if (target.closest('button, a, input, select, textarea')) {
          return;
+      }
+
+      // Enforce single selection on simple row click
+      if (onSelectionChange && !readonly) {
+         const originalEvent = e.originalEvent;
+         const isCheckbox = target.closest('.p-checkbox') || target.closest('.p-selection-column');
+         if (!isCheckbox && !originalEvent.ctrlKey && !originalEvent.metaKey && !originalEvent.shiftKey) {
+            onSelectionChange({ value: [e.data as T] });
+         }
+      }
+
+      if (!activeRowKey) {
+         return; 
       }
 
       if (editable && !readonly) {
@@ -1116,8 +1125,46 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onRowEditChange={!readonly ? onRowEditChange : undefined}
             selectionMode={onSelectionChange !== undefined ? 'multiple' : undefined}
             selection={selectedRows}
-            metaKeySelection={metaKeySelection}
-            onSelectionChange={onSelectionChange !== undefined ? (e: any) => onSelectionChange({ value: e.value as T[] }) : undefined}
+            metaKeySelection={true} 
+            onSelectionChange={
+               onSelectionChange !== undefined
+                  ? (e: any) => {
+                       const originalEvent = e.originalEvent;
+                       if (originalEvent) {
+                          const target = originalEvent.target as any;
+                          const findClosest = (el: any, selector: string) => {
+                             if (el.closest) return el.closest(selector);
+                             if (el.parentElement && el.parentElement.closest) return el.parentElement.closest(selector);
+                             if (el.correspondingUseElement) return findClosest(el.correspondingUseElement, selector);
+                             return null;
+                          };
+                          
+                          const isCheckbox =
+                             findClosest(target, '.p-checkbox') ||
+                             findClosest(target, '.p-selection-column') ||
+                             findClosest(target, '.p-checkbox-icon');
+
+                          const isMouseEvent =
+                             originalEvent.type === 'click' || 
+                             originalEvent.type === 'mousedown' || 
+                             originalEvent.type === 'mouseup' ||
+                             originalEvent.type === 'pointerdown' ||
+                             originalEvent.type === 'pointerup';
+
+                          if (
+                             isMouseEvent &&
+                             !isCheckbox &&
+                             !originalEvent.ctrlKey &&
+                             !originalEvent.metaKey &&
+                             !originalEvent.shiftKey
+                          ) {
+                             return;
+                          }
+                       }
+                       onSelectionChange({ value: e.value as T[] });
+                    }
+                  : undefined
+            }
             scrollable
             scrollHeight={height}
             className={`p-datatable-sm ${className || ''}`}

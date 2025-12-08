@@ -296,25 +296,6 @@ export function EntityInheritsDataGrid(): React.ReactElement {
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   //    (row: EntityInheritRow) => {
-   //       dispatch({
-   //          type: 'entity:inherit:move-up',
-   //          inheritIdx: row.idx
-   //       });
-   //    },
-   //    [dispatch]
-   // );
-
-   // const onRowMoveDown = React.useCallback(
-   //    (row: EntityInheritRow) => {
-   //       dispatch({
-   //          type: 'entity:inherit:move-down',
-   //          inheritIdx: row.idx
-   //       });
-   //    },
-   //    [dispatch]
-   // );
-
    const columns = React.useMemo<GridColumn<EntityInheritRow>[]>(
       () => [
          {
