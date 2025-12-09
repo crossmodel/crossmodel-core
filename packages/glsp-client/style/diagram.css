@@ -300,7 +300,7 @@
 .tool-palette .tool-button,
 .tool-palette > div:not(.group-header):not(.clicked),
 .palette-body > div:not(.group-header):not(.clicked) {
-   background: #252526 !important;
+   background: var(--theia-editor-background) !important;
    border: none !important;
    outline: none !important;
 }
@@ -322,8 +322,8 @@
 .tool-palette > .clicked:active,
 .tool-palette .tool-button.clicked:active,
 .tool-palette .header-tools .clicked:active {
-   background: var(--theia-selection-background) !important;
-   color: #ffffff !important;
+   background: var(--theia-focusBorder) !important;
+   color: var(--theia-editor-background) !important;
    border: none !important;
    outline: none !important;
 }
@@ -338,8 +338,8 @@
 .tool-palette > .clicked:hover,
 .tool-palette .tool-button.clicked:hover,
 .tool-palette .header-tools .clicked:hover {
-   background: var(--theia-selection-background) !important;
-   color: #ffffff !important;
+   background: var(--theia-focusBorder) !important;
+   color: var(--theia-editor-background) !important;
    border: none !important;
    outline: none !important;
 }
