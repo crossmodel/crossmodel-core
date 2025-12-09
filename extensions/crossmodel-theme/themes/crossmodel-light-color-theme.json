@@ -89,11 +89,11 @@
     "input.placeholderForeground": "#666666",
 
     // List & Tree
-    "list.activeSelectionBackground": "#F0F0F0",
-    "list.activeSelectionForeground": "#333333",
-    "list.hoverBackground": "#F7F7F7",
-    "list.hoverForeground": "#333333",
-    "list.inactiveSelectionBackground": "#EDEDED",
+    "list.activeSelectionBackground": "#C69A2C",
+    "list.activeSelectionForeground": "#FFFFFF",
+    "list.hoverBackground": "#C69A2C33",
+    "list.hoverForeground": "#000000",
+    "list.inactiveSelectionBackground": "#F4F4F4",
     "list.inactiveSelectionForeground": "#666666",
 
     // Notifications

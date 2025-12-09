@@ -147,6 +147,7 @@
 }
 
 .minimize-palette-button {
+   color: var(--theia-editor-foreground) !important;
    top: 16px;
    right: 20px;
 }
@@ -297,49 +298,30 @@
    background-color: rgba(0, 0, 0, 0.05);
 }
 
-.tool-palette .tool-button,
-.tool-palette > div:not(.group-header):not(.clicked),
-.palette-body > div:not(.group-header):not(.clicked) {
-   background: var(--theia-editor-background) !important;
+.tool-palette .tool-button {
+   background: var(--theia-list-inactiveSelectionBackground) !important;
+   color: var(--theia-list-inactiveSelectionForeground) !important;
    border: none !important;
    outline: none !important;
 }
 
-.tool-palette .tool-button:focus,
-.tool-palette > div:focus,
-.palette-body > div:focus {
+.tool-palette .tool-button:focus {
    border: none !important;
    outline: none !important;
    box-shadow: none !important;
 }
 
-.tool-palette > .clicked,
 .tool-palette .tool-button.clicked,
-.tool-palette .header-tools .clicked,
-.tool-palette > .clicked:focus,
 .tool-palette .tool-button.clicked:focus,
-.tool-palette .header-tools .clicked:focus,
-.tool-palette > .clicked:active,
 .tool-palette .tool-button.clicked:active,
-.tool-palette .header-tools .clicked:active {
-   background: var(--theia-focusBorder) !important;
-   color: var(--theia-editor-background) !important;
-   border: none !important;
+.tool-palette .tool-button.clicked:hover {
+   background: var(--theia-list-activeSelectionBackground) !important;
+   color: var(--theia-list-activeSelectionForeground) !important;
    outline: none !important;
 }
 
-.tool-palette > div:not(.group-header):hover,
 .tool-palette .tool-button:hover {
    background: var(--theia-list-hoverBackground) !important;
-   border: none !important;
-   outline: none !important;
-}
-
-.tool-palette > .clicked:hover,
-.tool-palette .tool-button.clicked:hover,
-.tool-palette .header-tools .clicked:hover {
-   background: var(--theia-focusBorder) !important;
-   color: var(--theia-editor-background) !important;
-   border: none !important;
+   color: var(--theia-list-hoverForeground) !important;
    outline: none !important;
 }

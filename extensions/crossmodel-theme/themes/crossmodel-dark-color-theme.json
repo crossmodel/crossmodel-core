@@ -12,7 +12,7 @@
   },
   "colors": {
     // Global UI Colors
-    "foreground": "#AAAAAA",
+    "foreground": "#CCCCCC",
     "errorForeground": "#FF6F61",
 
     // Activity Bar
@@ -24,14 +24,14 @@
 
     // Sidebar
     "sideBar.background": "#252525",
-    "sideBar.foreground": "#AAAAAA",
+    "sideBar.foreground": "#CCCCCC",
     "sideBar.border": "#C69A2C",
     "sideBarSectionHeader.background": "#2A2A2A",
     "sideBarSectionHeader.foreground": "#FFFFFF",
 
     // Status Bar
     "statusBar.background": "#1E1E1E",
-    "statusBar.foreground": "#AAAAAA",
+    "statusBar.foreground": "#CCCCCC",
     "statusBar.border": "#C69A2C",
     "statusBarItem.hoverBackground": "#3A3A3A",
 
@@ -39,7 +39,7 @@
     "titleBar.activeBackground": "#2E2E2E",
     "titleBar.activeForeground": "#FFFFFF",
     "titleBar.inactiveBackground": "#1E1E1E",
-    "titleBar.inactiveForeground": "#AAAAAA",
+    "titleBar.inactiveForeground": "#CCCCCC",
 
     // Editor
     "editor.background": "#1E1E1E",
@@ -73,28 +73,28 @@
     "panel.background": "#252525",
     "panel.border": "#C69A2C",
     "panelTitle.activeForeground": "#C69A2C",
-    "panelTitle.inactiveForeground": "#AAAAAA",
+    "panelTitle.inactiveForeground": "#CCCCCC",
 
     // Tabs
     "tab.activeBackground": "#1E1E1E",
     "tab.activeForeground": "#FFFFFF",
     "tab.inactiveBackground": "#2A2A2A",
-    "tab.inactiveForeground": "#AAAAAA",
+    "tab.inactiveForeground": "#CCCCCC",
     "tab.border": "#C69A2C",
 
     // Input
     "input.background": "#2A2A2A",
     "input.foreground": "#FFFFFF",
     "input.border": "#C69A2C",
-    "input.placeholderForeground": "#AAAAAA",
+    "input.placeholderForeground": "#CCCCCC",
 
     // List & Tree
-    "list.activeSelectionBackground": "#2A2A2A",
+    "list.activeSelectionBackground": "#C69A2C",
     "list.activeSelectionForeground": "#FFFFFF",
-    "list.hoverBackground": "#2E2E2E",
+    "list.hoverBackground": "#634e1a",
     "list.hoverForeground": "#FFFFFF",
-    "list.inactiveSelectionBackground": "#252525",
-    "list.inactiveSelectionForeground": "#AAAAAA",
+    "list.inactiveSelectionBackground": "#2A2A2A",
+    "list.inactiveSelectionForeground": "#CCCCCC",
 
     // Notifications
     "notifications.background": "#2A2A2A",
