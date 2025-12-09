@@ -72,8 +72,8 @@ export function CustomPropertiesDataGrid({
                customProperty.value !== defaultEntry.value ||
                customProperty.description !== defaultEntry.description;
 
-            if (!hasChanges || !customProperty.name) {
-               // Remove the row if no changes or no name
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== customProperty.id));
                setEditingRows({});
                return;
