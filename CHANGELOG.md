@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.1](https://github.com/crossmodel/crossmodel-core/compare/v0.13.0...v0.13.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* Refactor data grids to preserve incomplete rows ([#223](https://github.com/crossmodel/crossmodel-core/issues/223)) ([74ab021](https://github.com/crossmodel/crossmodel-core/commit/74ab02171e15b91a2df0e57ca0f92fc9bf67cb10))
+
+
+
+
+
 # [0.13.0](https://github.com/crossmodel/crossmodel-core/compare/v0.12.3...v0.13.0) (2025-12-04)
 
 
