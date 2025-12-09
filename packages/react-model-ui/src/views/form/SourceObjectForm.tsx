@@ -3,13 +3,13 @@
  ********************************************************************************/
 
 import { SourceObjectJoinType } from '@crossmodel/protocol';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
-import { useDiagnosticsManager, useMapping, useModelDispatch, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useMapping, useModelDispatch } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
+import { GenericAutoCompleteEditor } from '../common/GenericEditors';
 import { SourceObjectConditionDataGrid } from '../common/SourceObjectConditionDataGrid';
 import { SourceObjectDependencyDataGrid } from '../common/SourceObjectDependencyDataGrid';
 import { ErrorInfo } from './ErrorInfo';
@@ -22,21 +22,12 @@ export interface SourceObjectRenderProps {
 export function SourceObjectForm(props: SourceObjectRenderProps): React.ReactElement {
    const mapping = useMapping();
    const dispatch = useModelDispatch();
-   const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
 
    const sourceObject = mapping.sources[props.sourceObjectIndex];
    if (!sourceObject) {
       return <></>;
    }
-
-   const changeJoinType = (event: { value: string }): void => {
-      dispatch({
-         type: 'source-object:change-join',
-         sourceObjectIdx: props.sourceObjectIndex,
-         join: event.value as SourceObjectJoinType
-      });
-   };
 
    const elementPath = ['mapping', 'sources@' + props.sourceObjectIndex];
    const idDiagnostics = diagnostics.info(elementPath, 'id');
@@ -74,19 +65,26 @@ export function SourceObjectForm(props: SourceObjectRenderProps): React.ReactEle
                <ErrorInfo diagnostic={entityDiagnostics} />
             </div>
             <div>
-               <Dropdown
-                  value={sourceObject.join}
-                  onChange={e => changeJoinType(e)}
-                  options={[
+               <GenericAutoCompleteEditor
+                  options={{
+                     value: sourceObject.join,
+                     editorCallback: (v: string) =>
+                        dispatch({
+                           type: 'source-object:change-join',
+                           sourceObjectIdx: props.sourceObjectIndex,
+                           join: v as SourceObjectJoinType
+                        }),
+                     rowData: { idx: -1 }
+                  }}
+                  basePath={['mapping', 'sources@' + props.sourceObjectIndex]}
+                  field={'join'}
+                  dropdownOptions={[
                      { label: 'From', value: 'from' },
                      { label: 'Inner Join', value: 'inner-join' },
                      { label: 'Cross Join', value: 'cross-join' },
                      { label: 'Left Join', value: 'left-join' },
                      { label: 'Apply', value: 'apply' }
                   ]}
-                  placeholder='Select Join Type'
-                  className={`w-full ${joinDiagnostics.inputClasses()}`}
-                  disabled={readonly}
                />
             </div>
             <ErrorInfo diagnostic={joinDiagnostics} />

@@ -48,8 +48,6 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
          } else if (renderData?.renderProps?.focusField) {
             this.focusField(renderData.renderProps.focusField as string);
          }
-
-
       } else {
          this.renderData = undefined;
          this.setModel();
