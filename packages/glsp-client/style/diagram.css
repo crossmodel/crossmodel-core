@@ -147,6 +147,7 @@
 }
 
 .minimize-palette-button {
+   color: var(--theia-editor-foreground) !important;
    top: 16px;
    right: 20px;
 }
@@ -295,4 +296,32 @@
 
 .sprotty-graph.input-mode {
    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.tool-palette .tool-button {
+   background: var(--theia-list-inactiveSelectionBackground) !important;
+   color: var(--theia-list-inactiveSelectionForeground) !important;
+   border: none !important;
+   outline: none !important;
+}
+
+.tool-palette .tool-button:focus {
+   border: none !important;
+   outline: none !important;
+   box-shadow: none !important;
+}
+
+.tool-palette .tool-button.clicked,
+.tool-palette .tool-button.clicked:focus,
+.tool-palette .tool-button.clicked:active,
+.tool-palette .tool-button.clicked:hover {
+   background: var(--theia-list-activeSelectionBackground) !important;
+   color: var(--theia-list-activeSelectionForeground) !important;
+   outline: none !important;
+}
+
+.tool-palette .tool-button:hover {
+   background: var(--theia-list-hoverBackground) !important;
+   color: var(--theia-list-hoverForeground) !important;
+   outline: none !important;
 }
