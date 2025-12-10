@@ -848,6 +848,40 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             const bIdx = (b as any).idx ?? -1;
             return bIdx - aIdx;
          });
+   const renderHeader = (): React.JSX.Element => (
+      <div className='datatable-global-filter'>
+         <div className='datatable-filter-section'>
+            <div className='keyword-search-container'>
+               <IconField iconPosition='left'>
+                  <InputIcon className='pi pi-search' />
+                  <InputText
+                     value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
+                     onChange={onGlobalFilterChange}
+                     placeholder='Keyword Search'
+                  />
+               </IconField>
+               {(filters['global'] as DataTableFilterMetaData)?.value && (
+                  <i
+                     className='pi pi-times'
+                     onClick={() => {
+                        const _filters = { ...filters };
+                        (_filters['global'] as DataTableFilterMetaData).value = '';
+                        setFilters(_filters);
+                     }}
+                  />
+               )}
+            </div>
+            <Button
+               type='button'
+               icon='pi pi-filter-slash'
+               label='Clear Filters'
+               outlined
+               onClick={clearFilters}
+               style={{ marginLeft: '0.5rem' }}
+            />
+         </div>
+      </div>
+   );
 
          // Dispatch all delete actions first (before any grid data filtering)
          sortedRows.forEach(row => {
