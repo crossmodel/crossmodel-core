@@ -35,13 +35,6 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
 
       // Add isExternal flag based on data model comparison
       const externalInfo = this.checkIfExternal(node, index, diagramUri);
-      // Write debug info to file including method check
-      try {
-         const fs = require('fs');
-         const dataModelMgr = index.services.shared.workspace.DataModelManager;
-         fs.appendFileSync('/tmp/isExternal-debug.log',
-            `[${new Date().toISOString()}] ${node.entity?.$refText}: isExternal=${externalInfo.isExternal}, diagModel=${externalInfo.diagramModelId}, entityModel=${externalInfo.entityModelId}, hasGetDataModelIdByUri=${typeof dataModelMgr?.getDataModelIdByUri}\n`);
-      } catch (e) { /* ignore */ }
       this.addArg('isExternal', externalInfo.isExternal);
 
       // Add the label/name of the node

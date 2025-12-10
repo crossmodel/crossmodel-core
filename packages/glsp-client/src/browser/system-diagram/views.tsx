@@ -4,7 +4,18 @@
 /** @jsx svg */
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable react/jsx-key */
-import { GGraph, GGraphView, GNode, hasArgs, Hoverable, RenderingContext, Selectable, TYPES, ViewerOptions, svg } from '@eclipse-glsp/client';
+import {
+   GGraph,
+   GGraphView,
+   GNode,
+   hasArgs,
+   Hoverable,
+   RenderingContext,
+   Selectable,
+   TYPES,
+   ViewerOptions,
+   svg
+} from '@eclipse-glsp/client';
 import { inject } from '@theia/core/shared/inversify';
 import { injectable } from 'inversify';
 import { ReactNode } from 'react';
