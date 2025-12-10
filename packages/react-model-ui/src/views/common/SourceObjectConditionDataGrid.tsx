@@ -22,12 +22,12 @@ import {
    AutoCompleteSelectEvent
 } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
-import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
 import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { GenericAutoCompleteEditor } from './GenericEditors';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 
 interface SourceObjectConditionEditorProps {
    options: any;
@@ -223,21 +223,19 @@ function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
 
-   const onChange = (e: DropdownChangeEvent): void => {
-      setCurrentValue(e.value);
-      if (editorCallback) {
-         editorCallback(e.value);
-      }
-   };
-
    return (
-      <Dropdown
-         value={currentValue}
-         options={operatorOptions}
-         onChange={onChange}
-         className='w-full'
-         autoFocus
-         onKeyDown={handleGridEditorKeyDown}
+      <GenericAutoCompleteEditor
+         options={{
+            value: currentValue,
+            editorCallback: (v: string) => {
+               setCurrentValue(v);
+               if (editorCallback) editorCallback(v);
+            },
+            rowData: options.rowData
+         }}
+         basePath={['mapping']}
+         field={'expression.op'}
+         dropdownOptions={operatorOptions}
       />
    );
 }
@@ -287,19 +285,13 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
 
    const handleRowReorder = React.useCallback(
       (e: { rows: SourceObjectConditionRow[] }): void => {
-         handleGenericRowReorder(
-            e,
-            pendingDeleteIdsRef.current,
-            conditionsRef.current || [],
-            deriveConditionRowId,
-            reorderedConditions => {
-               dispatch({
-                  type: 'source-object:reorder-conditions',
-                  sourceObjectIdx,
-                  conditions: reorderedConditions
-               });
-            }
-         );
+         handleGenericRowReorder(e, pendingDeleteIdsRef.current, conditionsRef.current || [], deriveConditionRowId, reorderedConditions => {
+            dispatch({
+               type: 'source-object:reorder-conditions',
+               sourceObjectIdx,
+               conditions: reorderedConditions
+            });
+         });
       },
       [dispatch, deriveConditionRowId, sourceObjectIdx]
    );
@@ -372,10 +364,9 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
             return;
          }
 
-         const conditionIdx =
-            (sourceObject?.conditions || []).findIndex(
-               (existing: SourceObjectCondition, idx: number) => deriveConditionRowId(existing, idx) === condition.id
-            );
+         const conditionIdx = (sourceObject?.conditions || []).findIndex(
+            (existing: SourceObjectCondition, idx: number) => deriveConditionRowId(existing, idx) === condition.id
+         );
          if (conditionIdx === -1) {
             if (condition.id) {
                pendingDeleteIdsRef.current.delete(condition.id);
