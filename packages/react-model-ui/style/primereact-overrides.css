@@ -319,14 +319,6 @@ body[class*="dark"] {
    border-bottom-right-radius: 6px;
 }
 
-.p-autocomplete-dropdown.p-button:hover,
-.p-autocomplete-dropdown.p-button:focus {
-   background: var(--surface-card);
-   border-color: var(--theia-focusBorder);
-   outline: 0;
-   box-shadow: none;
-}
-
 /* AutoComplete Dropdown Arrow Icon Rotation */
 .autocomplete-dropdown-open .p-autocomplete-dropdown svg {
    transform: rotate(180deg);
