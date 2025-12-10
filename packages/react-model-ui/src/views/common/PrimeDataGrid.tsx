@@ -5,13 +5,13 @@ import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column, ColumnBodyOptions } from 'primereact/column';
 import {
-   DataTable,
-   DataTableFilterEvent,
-   DataTableFilterMeta,
-   DataTableFilterMetaData,
-   DataTableRowClickEvent,
-   DataTableRowEditCompleteEvent,
-   DataTableRowEditEvent
+    DataTable,
+    DataTableFilterEvent,
+    DataTableFilterMeta,
+    DataTableFilterMetaData,
+    DataTableRowClickEvent,
+    DataTableRowEditCompleteEvent,
+    DataTableRowEditEvent
 } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { IconField } from 'primereact/iconfield';
@@ -158,17 +158,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
-         {onRowAdd && (
-            <Button
-               label={addButtonLabel}
-               icon='pi pi-plus'
-               severity='info'
-               onClick={handleAddRow}
-               className='p-datatable-add-button'
-               onMouseDown={e => e.preventDefault()}
-               disabled={readonly}
-            />
-         )}
          <div className='datatable-filter-section'>
             <div className='keyword-search-container'>
                <IconField iconPosition='left'>
@@ -408,7 +397,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          const isInsideOverlay = relatedTarget.closest(
             '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, ' +
                '.p-dialog, .p-overlaypanel, .p-datatable-add-button'
-         );
+            );
 
          if (isInsideOverlay) {
             return; // focusing into overlay shouldn't exit edit mode
@@ -624,6 +613,19 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                <Column header='Actions' rowEditor={editable && !readonly} body={allActionsTemplate} style={{ width: '10rem' }} />
             )}
          </DataTable>
+         {onRowAdd && (
+            <div className='datatable-footer-actions'>
+               <Button
+                  label={addButtonLabel}
+                  icon='pi pi-plus'
+                  severity='info'
+                  onClick={handleAddRow}
+                  className='p-datatable-add-button'
+                  onMouseDown={e => e.preventDefault()}
+                  disabled={readonly}
+               />
+            </div>
+         )}
       </div>
    );
 }

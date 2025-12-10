@@ -549,3 +549,44 @@ span.w-full.p-autocomplete {
    border: none;
    background: transparent;
 }
+
+.datatable-footer-actions {
+   display: flex;
+   justify-content: flex-start;
+   padding: 0.5rem 0;
+   margin-top: 0.5rem;
+}
+
+.p-datatable .datatable-global-filter {
+   display: flex;
+   justify-content: flex-end; 
+   align-items: center;
+   gap: 0.5rem;
+   padding-bottom: 0.5rem;
+}
+
+.p-datatable .datatable-global-filter .datatable-filter-section {
+   display: flex;
+   align-items: center;
+   margin-left: 0; 
+   flex-wrap: wrap; 
+   gap: 0.5rem;
+   justify-content: flex-end;
+}
+
+.p-datatable .datatable-global-filter .p-inputtext {
+   padding-left: 2rem;
+   padding-right: 2rem;
+   width: 100%; 
+   min-width: 150px;
+}
+
+.p-datatable .datatable-global-filter .keyword-search-container {
+   flex: 1 1 auto;
+   min-width: 150px;
+   max-width: 300px;
+}
+
+.p-datatable .p-datatable-tbody > tr > td:last-child {
+   white-space: nowrap;
+}
