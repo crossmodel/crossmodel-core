@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.14.0](https://github.com/crossmodel/crossmodel-core/compare/v0.13.1...v0.14.0) (2025-12-10)
+
+
+### Features
+
+* dark mode toolbox styling ([#224](https://github.com/crossmodel/crossmodel-core/issues/224)) ([76e330c](https://github.com/crossmodel/crossmodel-core/commit/76e330c242d80e813f9b1798b0de258a8571e0f3))
+
+
+
+
+
 ## [0.13.1](https://github.com/crossmodel/crossmodel-core/compare/v0.13.0...v0.13.1) (2025-12-09)
 
 **Note:** Version bump only for package crossmodel-theme
