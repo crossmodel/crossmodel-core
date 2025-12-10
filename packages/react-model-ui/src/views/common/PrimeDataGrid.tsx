@@ -21,13 +21,12 @@ import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
 
-
 export function handleGenericRowReorder<TRow extends { id: string; _uncommitted?: boolean }, TModel>(
    e: { rows: TRow[] },
    pendingDeleteIds: Set<string>,
    currentItems: TModel[],
    deriveId: (item: TModel, idx: number) => string,
-   onReorder: (reorderedItems: TModel[]) => void
+   onReorder: (items: TModel[]) => void
 ): void {
    const filteredRows = e.rows.filter(row => !pendingDeleteIds.has(row.id));
 
@@ -258,7 +257,9 @@ function useDragDrop<T extends Record<string, any>>(
    tableRef?: React.RefObject<any>,
    selectedRows?: T[],
    isDraggingRef?: React.MutableRefObject<boolean>,
-   onDragStart?: () => void
+   onDragStart?: () => void,
+   setDropIndicator?: (style: React.CSSProperties | undefined) => void,
+   wrapperRef?: React.RefObject<HTMLElement>
 ): void {
    const dragPreviewRef = React.useRef<HTMLElement | undefined>(undefined);
    const currentDragOverRowKeyRef = React.useRef<string | number | undefined>(undefined);
@@ -273,7 +274,7 @@ function useDragDrop<T extends Record<string, any>>(
    const dragStartRef = React.useRef<{ x: number; y: number; rowData: T; rowElement: HTMLElement } | undefined>(undefined);
 
    const startDrag = (e: MouseEvent, rowData: T, rowElement: HTMLElement): void => {
-      const data = dataRef.current;
+      const currentData = dataRef.current;
       const rowKey = rowData[keyField];
       if (rowKey === undefined) {
          return;
@@ -320,8 +321,8 @@ function useDragDrop<T extends Record<string, any>>(
          let hasGaps = false;
 
          const selectedIndices: number[] = [];
-         for (let i = 0; i < data.length; i++) {
-            if (selectedRowKeys.has(data[i][keyField])) {
+         for (let i = 0; i < currentData.length; i++) {
+            if (selectedRowKeys.has(currentData[i][keyField])) {
                selectedIndices.push(i);
             }
          }
@@ -339,8 +340,8 @@ function useDragDrop<T extends Record<string, any>>(
             }
 
             const rowIndex = allRows.indexOf(row);
-            if (rowIndex >= 0 && rowIndex < data.length) {
-               const rData = data[rowIndex];
+            if (rowIndex >= 0 && rowIndex < currentData.length) {
+               const rData = currentData[rowIndex];
                if (selectedRowKeys.has(rData[keyField])) {
                   const clonedRow = row.cloneNode(true) as HTMLElement;
 
@@ -442,8 +443,8 @@ function useDragDrop<T extends Record<string, any>>(
             if (closestRow) {
                let foundRowKey: string | number | undefined;
                const rowIndex = allRows.indexOf(closestRow);
-               if (rowIndex >= 0 && rowIndex < data.length) {
-                  foundRowKey = data[rowIndex][keyField];
+               if (rowIndex >= 0 && rowIndex < currentData.length) {
+                  foundRowKey = currentData[rowIndex][keyField];
                }
 
                if (foundRowKey !== undefined && foundRowKey !== rowKey) {
@@ -451,26 +452,33 @@ function useDragDrop<T extends Record<string, any>>(
                   const rowCenterY = rect.top + rect.height / 2;
                   const position = moveEvent.clientY < rowCenterY ? 'above' : 'below';
 
-                  if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
-                     currentDragOverRowKeyRef.current = foundRowKey;
-                     currentDropPositionRef.current = position;
+                     if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
+                        currentDragOverRowKeyRef.current = foundRowKey;
+                        currentDropPositionRef.current = position;
 
-                     allRows.forEach(r => {
-                        r.classList.remove('drag-over-above', 'drag-over-below');
-                     });
-
-                     closestRow.classList.add(`drag-over-${position}`);
+                        if (setDropIndicator && wrapperRef?.current) {
+                           const rowRect = closestRow.getBoundingClientRect();
+                           const wrapperRect = wrapperRef.current.getBoundingClientRect();
+                           const top = (position === 'above' ? rowRect.top : rowRect.bottom) - wrapperRect.top;
+                           
+                           setDropIndicator({
+                              top: top - 2,
+                              left: 0,
+                              width: '100%',
+                              display: 'block'
+                           });
+                        }
+                     }
                   }
-               }
-            } else {
-               if (currentDragOverRowKeyRef.current !== undefined) {
-                  currentDragOverRowKeyRef.current = undefined;
-                  currentDropPositionRef.current = undefined;
-                  allRows.forEach(r => {
-                     r.classList.remove('drag-over-above', 'drag-over-below');
-                  });
-               }
-            }
+               } else {
+                     if (currentDragOverRowKeyRef.current !== undefined) {
+                        currentDragOverRowKeyRef.current = undefined;
+                        currentDropPositionRef.current = undefined;
+                        if (setDropIndicator) {
+                           setDropIndicator(undefined);
+                        }
+                     }
+                  }
          });
       };
 
@@ -485,16 +493,12 @@ function useDragDrop<T extends Record<string, any>>(
             dragPreviewRef.current = undefined;
          }
 
-         const dragTableElement = tableRef?.current?.getElement();
-         if (dragTableElement) {
-            const allRows = Array.from(dragTableElement.querySelectorAll('tbody tr')) as HTMLElement[];
-            allRows.forEach(r => {
-               r.classList.remove('drag-over-above', 'drag-over-below');
-            });
+         if (setDropIndicator) {
+            setDropIndicator(undefined);
          }
 
          if (currentDragOverRowKeyRef.current !== undefined && currentDropPositionRef.current && onRowReorder !== undefined) {
-            const targetIndex = data.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
+            const targetIndex = currentData.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
 
             const currentSelectedRowsForDrop = selectedRowsRef.current;
             const isDraggingSelectedRowsForDrop = currentSelectedRowsForDrop && currentSelectedRowsForDrop.length > 1 &&
@@ -502,23 +506,23 @@ function useDragDrop<T extends Record<string, any>>(
 
             if (isDraggingSelectedRowsForDrop && currentSelectedRowsForDrop) {
                const selectedRowKeys = new Set(currentSelectedRowsForDrop.map(row => row[keyField]));
-               const targetRow = data[targetIndex];
+               const targetRow = currentData[targetIndex];
                const isTargetSelected = selectedRowKeys.has(targetRow[keyField]);
                const selectedRowsInOrder: T[] = [];
-               data.forEach(row => {
+               currentData.forEach(row => {
                   if (selectedRowKeys.has(row[keyField])) {
                      selectedRowsInOrder.push(row);
                   }
                });
 
-               const nonSelectedRows = data.filter(row => !selectedRowKeys.has(row[keyField]));
+               const nonSelectedRows = currentData.filter(row => !selectedRowKeys.has(row[keyField]));
 
                let insertIndex: number;
                if (isTargetSelected) {
                   let nextNonSelectedIndex = -1;
-                  for (let i = targetIndex + 1; i < data.length; i++) {
-                     if (!selectedRowKeys.has(data[i][keyField])) {
-                        nextNonSelectedIndex = nonSelectedRows.findIndex(row => row[keyField] === data[i][keyField]);
+                  for (let i = targetIndex + 1; i < currentData.length; i++) {
+                     if (!selectedRowKeys.has(currentData[i][keyField])) {
+                        nextNonSelectedIndex = nonSelectedRows.findIndex(row => row[keyField] === currentData[i][keyField]);
                         break;
                      }
                   }
@@ -541,9 +545,9 @@ function useDragDrop<T extends Record<string, any>>(
                newData.splice(insertIndex, 0, ...selectedRowsInOrder);
                onRowReorder({ rows: newData });
             } else {
-               const sourceIndex = data.findIndex(row => row[keyField] === rowKey);
+               const sourceIndex = currentData.findIndex(row => row[keyField] === rowKey);
                if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
-                  const newData = [...data];
+                  const newData = [...currentData];
                   const [removed] = newData.splice(sourceIndex, 1);
 
                   let insertIndex = targetIndex;
@@ -792,7 +796,12 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    }, [activeRowKey]);
 
-   useDragDrop(data, keyField, onRowReorder, tableRef, selectedRows, isDraggingRef, handleDragStart);
+   // eslint-disable-next-line no-null/no-null
+   const [dropIndicatorStyle, setDropIndicatorStyle] = React.useState<React.CSSProperties | undefined>(undefined);
+   // eslint-disable-next-line no-null/no-null
+   const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+   useDragDrop(data, keyField, onRowReorder, tableRef, selectedRows, isDraggingRef, handleDragStart, setDropIndicatorStyle, wrapperRef);
 
    const handleAddRow = React.useCallback(() => {
       if (onRowAdd) {
@@ -1112,7 +1121,21 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const DataTableComponent = DataTable as any;
    return (
-      <div>
+      <div ref={wrapperRef} style={{ position: 'relative' }}>
+         {dropIndicatorStyle && (
+            <div
+               style={{
+                  position: 'absolute',
+                  height: '4px',
+                  background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)',
+                  zIndex: 1000,
+                  pointerEvents: 'none',
+                  borderRadius: '2px',
+                  boxShadow: '0 1px 3px rgba(251, 191, 36, 0.5)',
+                  ...dropIndicatorStyle
+               }}
+            />
+         )}
          <DataTableComponent
             ref={tableRef}
             value={data}
