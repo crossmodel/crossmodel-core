@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/crossmodel/crossmodel-core/compare/v0.14.0...v0.15.0) (2025-12-10)
+
+
+### Features
+
+* datagrid multirow selection bulk delete ([#217](https://github.com/crossmodel/crossmodel-core/issues/217)) ([f760aa1](https://github.com/crossmodel/crossmodel-core/commit/f760aa143158ce9347141cef001fac36988e6a65))
+
+
+
+
+
 # [0.14.0](https://github.com/crossmodel/crossmodel-core/compare/v0.13.1...v0.14.0) (2025-12-10)
 
 
