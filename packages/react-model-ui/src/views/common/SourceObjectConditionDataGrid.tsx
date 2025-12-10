@@ -229,7 +229,9 @@ function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
             value: currentValue,
             editorCallback: (v: string) => {
                setCurrentValue(v);
-               if (editorCallback) editorCallback(v);
+               if (editorCallback) {
+                  editorCallback(v);
+               }
             },
             rowData: options.rowData
          }}
