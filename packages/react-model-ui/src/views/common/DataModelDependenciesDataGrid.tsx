@@ -9,7 +9,7 @@ import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi
 import { ErrorView } from '../ErrorView';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface DataModelDependencyRow extends DataModelDependency {
    idx: number;
@@ -179,23 +179,44 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<DataModelDependencyRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<DataModelDependencyRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+   const dependenciesRef = React.useRef(dataModel?.dependencies || []);
+
+   const deriveDependencyRowId = React.useCallback((dependency: Partial<DataModelDependency>, idx: number): string => {
+      const globalId = (dependency as { $globalId?: string })?.$globalId;
+      const datamodelName = dependency.datamodel || 'dependency';
+      const version = dependency.version || 'latest';
+      return globalId ?? `${datamodelName}-${version}-${idx}`;
+   }, []);
+
+   const handleSelectionChange = React.useCallback((e: { value: DataModelDependencyRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    // Update grid data when dependencies change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Map the committed dependencies
-         const committedData = (dataModel.dependencies || []).map((dep, idx) => ({
+         dependenciesRef.current = dataModel?.dependencies || [];
+         const committedData = (dataModel?.dependencies || []).map((dep, idx) => ({
             ...dep,
             idx,
-            id: `dep${idx}`
+            id: deriveDependencyRowId(dep, idx)
          })) as DataModelDependencyRow[];
 
-         // Preserve any uncommitted rows that are currently being edited
+         const committedIds = new Set(committedData.map(dep => dep.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         return [...visibleCommittedData, ...uncommittedRows];
       });
-   }, [dataModel.dependencies, editingRows]);
+   }, [dataModel?.dependencies, editingRows, deriveDependencyRowId]);
 
    const datamodelOptions = React.useMemo(() => {
       const uniqueDatamodels = [...new Set(gridData.map(item => item.datamodel).filter(Boolean))];
@@ -214,12 +235,35 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
 
    const onRowDelete = React.useCallback(
       (dependency: DataModelDependencyRow) => {
+         if (dependency.id && !dependency._uncommitted) {
+            pendingDeleteIdsRef.current.add(dependency.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== dependency.id));
+         setSelectedRows(current => current.filter(row => row.id !== dependency.id));
+
+         if (dependency._uncommitted) {
+            if (dependency.id) {
+               pendingDeleteIdsRef.current.delete(dependency.id);
+            }
+            return;
+         }
+
+         const dependencyIdx =
+            (dataModel?.dependencies || []).findIndex((dep, idx) => deriveDependencyRowId(dep, idx) === dependency.id);
+         if (dependencyIdx === -1) {
+            if (dependency.id) {
+               pendingDeleteIdsRef.current.delete(dependency.id);
+            }
+            return;
+         }
+
          dispatch({
             type: 'datamodel:dependency:delete-dependency',
-            dependencyIdx: dependency.idx
+            dependencyIdx
          });
       },
-      [dispatch]
+      [dispatch, dataModel?.dependencies, deriveDependencyRowId]
    );
 
    const onRowUpdate = React.useCallback(
@@ -302,24 +346,22 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onRowMoveUp = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         dispatch({
-            type: 'datamodel:dependency:move-dependency-up',
-            dependencyIdx: dependency.idx
-         });
+   const handleRowReorder = React.useCallback(
+      (e: { rows: DataModelDependencyRow[] }): void => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            dependenciesRef.current || [],
+            deriveDependencyRowId,
+            reorderedDependencies => {
+               dispatch({
+                  type: 'datamodel:dependency:reorder-dependencies',
+                  dependencies: reorderedDependencies
+               });
+            }
+         );
       },
-      [dispatch]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         dispatch({
-            type: 'datamodel:dependency:move-dependency-down',
-            dependencyIdx: dependency.idx
-         });
-      },
-      [dispatch]
+      [dispatch, deriveDependencyRowId]
    );
 
    const columns = React.useMemo<GridColumn<DataModelDependencyRow>[]>(
@@ -361,13 +403,15 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No dependencies'
          addButtonLabel='Add Dependency'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

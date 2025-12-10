@@ -79,9 +79,9 @@ export class LogicalEntityAttributesSection extends FormSection {
       // Click add button to start edit mode
       await this.addButtonLocator.click();
 
-      // Wait for the new editable row by looking for the input field
-      const editRow = this.locator.locator('tr:has(input)');
-      await editRow.locator('input').first().waitFor({ state: 'visible' });
+      // Wait for the new editable row by looking for a text input in data columns (not checkbox)
+      const editRow = this.locator.locator('tr:has(td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"]))');
+      await editRow.locator('td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"])').first().waitFor({ state: 'visible' });
 
       // Return the attribute in edit mode
       return new LogicalAttribute(editRow, this);
@@ -92,8 +92,10 @@ export class LogicalEntityAttributesSection extends FormSection {
          throw new Error('Attribute name is required to save the row');
       }
 
-      // Set the name in the new row
-      const nameInput = attribute.locator.locator('td').first().locator('input');
+      // Set the name in the new row (exclude selection and reorder columns)
+      // Wait a bit for the row to fully enter edit mode
+      await this.page.waitForTimeout(100);
+      const nameInput = attribute.nameLocator.locator('input:not([type="checkbox"])');
       await nameInput.waitFor({ state: 'visible' });
       await nameInput.fill(name);
 
@@ -195,20 +197,20 @@ export class LogicalAttribute extends TheiaPageObject {
       super(section.app);
    }
 
-   protected get nameLocator(): Locator {
-      return this.locator.locator('td').first();
+   public get nameLocator(): Locator {
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').first();
    }
 
    protected get dataType(): Locator {
-      return this.locator.locator('td').nth(1);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(1);
    }
 
    protected get identifierLocator(): Locator {
-      return this.locator.locator('td').nth(2);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(2);
    }
 
    protected get descriptionLocator(): Locator {
-      return this.locator.locator('td').nth(3);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(3);
    }
 
    protected get actionsLocator(): Locator {

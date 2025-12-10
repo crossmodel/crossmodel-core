@@ -2,20 +2,20 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import {
-   AttributeMapping,
-   AttributeMappingSource,
-   AttributeMappingSourceType,
-   AttributeMappingType,
-   CrossModelElement,
-   CrossReferenceContext,
-   ReferenceableElement,
-   TargetObjectType
+    AttributeMapping,
+    AttributeMappingSource,
+    AttributeMappingSourceType,
+    AttributeMappingType,
+    CrossModelElement,
+    CrossReferenceContext,
+    ReferenceableElement,
+    TargetObjectType
 } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface AttributeMappingSourceValueProps {
@@ -210,6 +210,19 @@ export function AttributeMappingSourcesDataGrid({
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
+   const [selectedRows, setSelectedRows] = React.useState<AttributeMappingSourceRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+   const sourcesRef = React.useRef<AttributeMappingSource[]>(attributeMapping.sources || []);
+
+   const deriveSourceRowId = React.useCallback((source: Partial<AttributeMappingSource>, idx: number): string => {
+      const globalId = (source as { $globalId?: string })?.$globalId;
+      const value = source.value || 'source';
+      return globalId ?? `${value}-${idx}`;
+   }, []);
+
+   const handleSelectionChange = React.useCallback((e: { value: AttributeMappingSourceRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    const defaultEntry = React.useMemo<Partial<AttributeMappingSourceRow>>(
       () => ({
@@ -222,29 +235,79 @@ export function AttributeMappingSourcesDataGrid({
 
    const [gridData, setGridData] = React.useState<AttributeMappingSourceRow[]>([]);
 
+   const handleRowReorder = React.useCallback(
+      (e: { rows: AttributeMappingSourceRow[] }): void => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            sourcesRef.current || [],
+            deriveSourceRowId,
+            reorderedSources => {
+               dispatch({
+                  type: 'attribute-mapping:source:reorder-sources',
+                  mappingIdx,
+                  sources: reorderedSources
+               });
+            }
+         );
+      },
+      [dispatch, mappingIdx, deriveSourceRowId]
+   );
+
    // Update grid data when sources change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Map the committed sources
-         const committedData = (attributeMapping.sources || []).map((source, idx) => ({
+         sourcesRef.current = attributeMapping.sources || [];
+         const committedData = (attributeMapping.sources || []).map((source: AttributeMappingSource, idx: number) => ({
             ...source,
             idx,
-            id: `source${idx}`,
+            id: deriveSourceRowId(source, idx),
             value: String(source.value || '')
          })) as AttributeMappingSourceRow[];
 
-         // Preserve any uncommitted rows that are currently being edited
+         const committedIds = new Set(committedData.map(row => row.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         return [...visibleCommittedData, ...uncommittedRows];
       });
-   }, [attributeMapping.sources, editingRows]);
+   }, [attributeMapping.sources, editingRows, deriveSourceRowId]);
 
    const onSourceDelete = React.useCallback(
       (sourceToDelete: AttributeMappingSourceRow) => {
-         dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx: sourceToDelete.idx });
+         if (sourceToDelete.id && !sourceToDelete._uncommitted) {
+            pendingDeleteIdsRef.current.add(sourceToDelete.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== sourceToDelete.id));
+         setSelectedRows(current => current.filter(row => row.id !== sourceToDelete.id));
+
+         if (sourceToDelete._uncommitted) {
+            if (sourceToDelete.id) {
+               pendingDeleteIdsRef.current.delete(sourceToDelete.id);
+            }
+            return;
+         }
+
+         const sourceIdx = (attributeMapping.sources || []).findIndex(
+            (source: AttributeMappingSource, idx: number) => deriveSourceRowId(source, idx) === sourceToDelete.id
+         );
+         if (sourceIdx === -1) {
+            if (sourceToDelete.id) {
+               pendingDeleteIdsRef.current.delete(sourceToDelete.id);
+            }
+            return;
+         }
+
+         dispatch({ type: 'attribute-mapping:delete-source', mappingIdx, sourceIdx });
       },
-      [dispatch, mappingIdx]
+      [dispatch, mappingIdx, attributeMapping.sources, deriveSourceRowId]
    );
 
    const onSourceUpdate = React.useCallback(
@@ -327,20 +390,6 @@ export function AttributeMappingSourcesDataGrid({
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onSourceMoveUp = React.useCallback(
-      (sourceToMove: AttributeMappingSourceRow) => {
-         dispatch({ type: 'attribute-mapping:move-source-up', mappingIdx, sourceIdx: sourceToMove.idx });
-      },
-      [dispatch, mappingIdx]
-   );
-
-   const onSourceMoveDown = React.useCallback(
-      (sourceToMove: AttributeMappingSourceRow) => {
-         dispatch({ type: 'attribute-mapping:move-source-down', mappingIdx, sourceIdx: sourceToMove.idx });
-      },
-      [dispatch, mappingIdx]
-   );
-
    const columns: GridColumn<AttributeMappingSourceRow>[] = React.useMemo(
       () => [
          {
@@ -367,13 +416,15 @@ export function AttributeMappingSourcesDataGrid({
          onRowAdd={onSourceAdd}
          onRowUpdate={onSourceUpdate}
          onRowDelete={onSourceDelete}
-         onRowMoveUp={onSourceMoveUp}
-         onRowMoveDown={onSourceMoveDown}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No source expressions'
          addButtonLabel='Add Source'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];
