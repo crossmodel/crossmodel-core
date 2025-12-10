@@ -102,7 +102,8 @@ function useFilters<T>(columns: GridColumn<T>[]): {
    clearFilters: () => void;
    onGlobalFilterChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
    filterTemplate: (options: any, filterType?: 'text' | 'dropdown' | 'multiselect' | 'boolean', filterOptions?: any[]) => React.JSX.Element;
-      renderHeader: (
+   renderHeader: () => React.JSX.Element;
+   renderFooter: (
       addButtonLabel: string,
       onRowAdd?: () => void,
       onRowDelete?: () => void,
@@ -193,27 +194,8 @@ function useFilters<T>(columns: GridColumn<T>[]): {
       );
    };
 
-   const renderHeader = (
-      addButtonLabel: string,
-      onRowAdd?: () => void,
-      onRowDelete?: () => void,
-      selectedRowsCount?: number,
-      readonly?: boolean
-   ): React.JSX.Element => (
+   const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
-         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {onRowAdd && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={onRowAdd} disabled={readonly} />}
-            {onRowDelete && (
-               <Button
-                  label={`Delete ${addButtonLabel.replace('Add ', '')}${selectedRowsCount && selectedRowsCount > 1 ? 's' : ''}`}
-                  icon='pi pi-trash'
-                  severity='danger'
-                  onClick={onRowDelete}
-                  disabled={readonly || !selectedRowsCount || selectedRowsCount === 0}
-                  style={{ backgroundColor: '#fbbf24', borderColor: '#fbbf24' }}
-               />
-            )}
-         </div>
          <div className='datatable-filter-section'>
             <div className='keyword-search-container'>
                <IconField iconPosition='left'>
@@ -247,7 +229,29 @@ function useFilters<T>(columns: GridColumn<T>[]): {
       </div>
    );
 
-   return { filters, setFilters, clearFilters, onGlobalFilterChange, filterTemplate, renderHeader };
+   const renderFooter = (
+      addButtonLabel: string,
+      onRowAdd?: () => void,
+      onRowDelete?: () => void,
+      selectedRowsCount?: number,
+      readonly?: boolean
+   ): React.JSX.Element => (
+      <div className='datatable-footer-actions'>
+         {onRowAdd && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={onRowAdd} disabled={readonly} />}
+         {onRowDelete && (
+            <Button
+               label={`Delete ${addButtonLabel.replace('Add ', '')}${selectedRowsCount && selectedRowsCount > 1 ? 's' : ''}`}
+               icon='pi pi-trash'
+               severity='danger'
+               onClick={onRowDelete}
+               disabled={readonly || !selectedRowsCount || selectedRowsCount === 0}
+               style={{ backgroundColor: '#fbbf24', borderColor: '#fbbf24' }}
+            />
+         )}
+      </div>
+   );
+
+   return { filters, setFilters, clearFilters, onGlobalFilterChange, filterTemplate, renderHeader, renderFooter };
 }
 
 function useDragDrop<T extends Record<string, any>>(
@@ -784,7 +788,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const isDraggingRef = React.useRef(false);
 
-   const { filters, setFilters, filterTemplate, renderHeader: renderFilterHeader } = useFilters(columns);
+   const { filters, setFilters, filterTemplate, renderHeader: renderFilterHeader, renderFooter: renderActionFooter } = useFilters(columns);
 
    const handleDragStart = React.useCallback(() => {
       const tableElement = tableRef.current?.getElement();
@@ -848,41 +852,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             const bIdx = (b as any).idx ?? -1;
             return bIdx - aIdx;
          });
-   const renderHeader = (): React.JSX.Element => (
-      <div className='datatable-global-filter'>
-         <div className='datatable-filter-section'>
-            <div className='keyword-search-container'>
-               <IconField iconPosition='left'>
-                  <InputIcon className='pi pi-search' />
-                  <InputText
-                     value={(filters['global'] as DataTableFilterMetaData)?.value || ''}
-                     onChange={onGlobalFilterChange}
-                     placeholder='Keyword Search'
-                  />
-               </IconField>
-               {(filters['global'] as DataTableFilterMetaData)?.value && (
-                  <i
-                     className='pi pi-times'
-                     onClick={() => {
-                        const _filters = { ...filters };
-                        (_filters['global'] as DataTableFilterMetaData).value = '';
-                        setFilters(_filters);
-                     }}
-                  />
-               )}
-            </div>
-            <Button
-               type='button'
-               icon='pi pi-filter-slash'
-               label='Clear Filters'
-               outlined
-               onClick={clearFilters}
-               style={{ marginLeft: '0.5rem' }}
-            />
-         </div>
-      </div>
-   );
-
+ 
          // Dispatch all delete actions first (before any grid data filtering)
          sortedRows.forEach(row => {
             onRowDelete(row);
@@ -895,7 +865,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
    }, [selectedRows, onRowDelete, onSelectionChange]);
 
-   const header = renderFilterHeader(
+   const header = renderFilterHeader();
+
+   const footer = renderActionFooter(
       addButtonLabel,
       handleAddRow,
       handleMultiDelete,
@@ -1233,6 +1205,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onFilter={(e: DataTableFilterEvent) => setFilters(e.filters as DataTableFilterMeta)}
             filterDisplay='menu'
             header={header}
+            footer={footer}
             globalFilterFields={globalFilterFields as string[]}
          >
             {onSelectionChange !== undefined && <Column selectionMode='multiple' style={{ width: '3rem' }} />}

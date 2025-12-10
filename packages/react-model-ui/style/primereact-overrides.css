@@ -658,8 +658,11 @@ table[style*="position: fixed"] * {
 .datatable-footer-actions {
    display: flex;
    justify-content: flex-start;
+   align-items: center;
    padding: 0.5rem 0;
-   margin-top: 0.5rem;
+   margin-top: 0;
+   gap: 0.5rem;
+   flex-wrap: wrap;
 }
 
 .p-datatable .datatable-global-filter {
@@ -677,6 +680,7 @@ table[style*="position: fixed"] * {
    flex-wrap: wrap; 
    gap: 0.5rem;
    justify-content: flex-end;
+   width: 100%;
 }
 
 .p-datatable .datatable-global-filter .p-inputtext {
@@ -694,4 +698,11 @@ table[style*="position: fixed"] * {
 
 .p-datatable .p-datatable-tbody > tr > td:last-child {
    white-space: nowrap;
+}
+
+.p-datatable .p-datatable-footer {
+   background: var(--surface-card);
+   border: 1px solid var(--surface-border);
+   border-width: 0 1px 1px 1px;
+   padding: 0.5rem 1rem;
 }
