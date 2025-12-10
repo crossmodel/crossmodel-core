@@ -1087,7 +1087,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          const isInsideOverlay = relatedTarget.closest(
             '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, ' +
                '.p-dialog, .p-overlaypanel, .p-datatable-add-button'
-         );
+            );
 
          if (isInsideOverlay) {
             return; // focusing into overlay shouldn't exit edit mode
