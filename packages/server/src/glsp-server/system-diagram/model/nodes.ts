@@ -35,9 +35,14 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
 
       // Add isExternal flag based on data model comparison
       const externalInfo = this.checkIfExternal(node, index, diagramUri);
+      // Write debug info to file including method check
+      try {
+         const fs = require('fs');
+         const dataModelMgr = index.services.shared.workspace.DataModelManager;
+         fs.appendFileSync('/tmp/isExternal-debug.log',
+            `[${new Date().toISOString()}] ${node.entity?.$refText}: isExternal=${externalInfo.isExternal}, diagModel=${externalInfo.diagramModelId}, entityModel=${externalInfo.entityModelId}, hasGetDataModelIdByUri=${typeof dataModelMgr?.getDataModelIdByUri}\n`);
+      } catch (e) { /* ignore */ }
       this.addArg('isExternal', externalInfo.isExternal);
-      this.addArg('_debug_diagramModelId', externalInfo.diagramModelId);
-      this.addArg('_debug_entityModelId', externalInfo.entityModelId);
 
       // Add the label/name of the node
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));
@@ -70,15 +75,20 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
     * An entity is considered external if its data model ID differs from the
     * current diagram's data model ID.
     */
-   protected checkIfExternal(node: LogicalEntityNode, index: SystemModelIndex, diagramUri: string): {
+   protected checkIfExternal(
+      node: LogicalEntityNode,
+      index: SystemModelIndex,
+      diagramUri: string
+   ): {
       isExternal: boolean;
       diagramModelId?: string;
       entityModelId?: string;
    } {
       // Get the referenced entity
       const entityRef = node.entity?.ref;
-      if (!entityRef || !entityRef.$document) {
-         console.log('[checkIfExternal] No entity reference or document');
+      const refText = node.entity?.$refText || '';
+
+      if (!entityRef) {
          return { isExternal: false }; // Unresolved reference
       }
 
@@ -86,17 +96,30 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       const dataModelManager = index.services.shared.workspace.DataModelManager;
 
       // Get the data model ID of the current diagram
-      const diagramDataModelId = dataModelManager.getDataModelInfoByURI(URI.parse(diagramUri))?.id;
+      const parsedDiagramUri = URI.parse(diagramUri);
+      const diagramDataModelInfo = dataModelManager.getDataModelInfoByURI(parsedDiagramUri);
+      const diagramDataModelId = diagramDataModelInfo?.id || 'unknown';
 
-      // Get the data model ID of the referenced entity's document
-      const entityDataModelId = dataModelManager.getDataModelInfoByDocument(entityRef.$document)?.id;
+      // Determine if entity is external based on qualified reference
+      // If refText contains a dot, it's a qualified reference (e.g., "ExampleOtherModel.SomeProduct")
+      // Extract the data model name from the qualified reference
+      let entityDataModelId: string;
+      if (refText.includes('.')) {
+         // Qualified reference - extract data model name (part before the dot)
+         const dataModelName = refText.split('.')[0];
+         // Try to find this data model
+         const allDataModels = dataModelManager.getDataModelInfos();
+         const matchingModel = allDataModels.find(dm =>
+            dm.referenceName === dataModelName || dm.dataModel.id === dataModelName || dm.dataModel.name === dataModelName
+         );
+         entityDataModelId = matchingModel?.id || 'unknown';
+      } else {
+         // Unqualified reference - same data model as diagram
+         entityDataModelId = diagramDataModelId;
+      }
 
       // External if the data models are different
       const isExternal = diagramDataModelId !== entityDataModelId;
-      console.log('[checkIfExternal] Entity:', entityRef.name || entityRef.id,
-                  '\n  Diagram Model ID:', diagramDataModelId,
-                  '\n  Entity Model ID:', entityDataModelId,
-                  '\n  Is External:', isExternal);
 
       return {
          isExternal,

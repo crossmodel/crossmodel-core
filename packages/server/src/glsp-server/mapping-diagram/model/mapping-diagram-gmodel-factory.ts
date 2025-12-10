@@ -44,7 +44,7 @@ export class MappingDiagramGModelFactory implements GModelFactory {
    }
 
    protected createSourceObjectNode(sourceObject: SourceObject): GNode {
-      return GSourceObjectNode.builder().set(sourceObject, this.modelState.index).build();
+      return GSourceObjectNode.builder().set(sourceObject, this.modelState.index, this.modelState.semanticUri).build();
    }
 
    protected createTargetNode(target: TargetObject): GNode {

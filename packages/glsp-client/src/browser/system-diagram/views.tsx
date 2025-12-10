@@ -20,13 +20,7 @@ export class EntityNodeView extends DiagramNodeView {
       const nodeHasArgs = hasArgs(node);
       const isExternal = nodeHasArgs && node.args.isExternal === true;
 
-      console.log('[EntityNodeView] Node:', node.id,
-                  '\n  hasArgs:', nodeHasArgs,
-                  '\n  args:', nodeHasArgs ? node.args : 'N/A',
-                  '\n  isExternal:', isExternal);
-
       if (view && isExternal) {
-         console.log('[EntityNodeView] Adding external icon to:', node.id);
          this.addExternalEntityIcon(view, node);
       }
 

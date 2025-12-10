@@ -18,7 +18,7 @@ export class GSourceObjectNode extends GNode {
 }
 
 export class GSourceObjectNodeBuilder extends GNodeBuilder<GSourceObjectNode> {
-   set(node: SourceObject, index: MappingModelIndex): this {
+   set(node: SourceObject, index: MappingModelIndex, diagramUri: string): this {
       if (!node) {
          return this;
       }
@@ -26,6 +26,10 @@ export class GSourceObjectNodeBuilder extends GNodeBuilder<GSourceObjectNode> {
       this.id(index.createId(node));
 
       this.addCssClasses('diagram-node', 'source-object', 'entity');
+
+      // Add isExternal flag based on data model comparison
+      const externalInfo = this.checkIfExternal(node, index, diagramUri);
+      this.addArg('isExternal', externalInfo.isExternal);
 
       this.add(createHeader(node.id || 'unresolved', this.proxy.id));
 
@@ -47,6 +51,64 @@ export class GSourceObjectNodeBuilder extends GNodeBuilder<GSourceObjectNode> {
          .position(100, 100);
 
       return this;
+   }
+
+   /**
+    * Determines if an entity is external (from another model or npm package).
+    * An entity is considered external if its data model ID differs from the
+    * current diagram's data model ID.
+    */
+   protected checkIfExternal(
+      node: SourceObject,
+      index: MappingModelIndex,
+      diagramUri: string
+   ): {
+      isExternal: boolean;
+      diagramModelId?: string;
+      entityModelId?: string;
+   } {
+      // Get the referenced entity
+      const entityRef = node.entity?.ref;
+      const refText = node.entity?.$refText || '';
+
+      if (!entityRef) {
+         return { isExternal: false }; // Unresolved reference
+      }
+
+      // Access the data model manager through the index services
+      const dataModelManager = index.services.shared.workspace.DataModelManager;
+
+      // Get the data model ID of the current diagram
+      const parsedDiagramUri = URI.parse(diagramUri);
+      const diagramDataModelInfo = dataModelManager.getDataModelInfoByURI(parsedDiagramUri);
+      const diagramDataModelId = diagramDataModelInfo?.id || 'unknown';
+
+      // Determine if entity is external based on qualified reference
+      // If refText contains a dot, it's a qualified reference (e.g., "ExampleCRM.Customer")
+      // Extract the data model name from the qualified reference
+      let entityDataModelId: string;
+      if (refText.includes('.')) {
+         // Qualified reference - extract data model name (part before the dot)
+         const dataModelName = refText.split('.')[0];
+         // Try to find this data model
+         const allDataModels = dataModelManager.getDataModelInfos();
+         const matchingModel = allDataModels.find(dm =>
+            dm.referenceName === dataModelName || dm.dataModel.id === dataModelName || dm.dataModel.name === dataModelName
+         );
+         entityDataModelId = matchingModel?.id || 'unknown';
+      } else {
+         // Unqualified reference - same data model as diagram
+         entityDataModelId = diagramDataModelId;
+      }
+
+      // External if the data models are different
+      const isExternal = diagramDataModelId !== entityDataModelId;
+
+      return {
+         isExternal,
+         diagramModelId: diagramDataModelId,
+         entityModelId: entityDataModelId
+      };
    }
 }
 
@@ -72,8 +134,6 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       // Add isExternal flag based on data model comparison
       const externalInfo = this.checkIfExternal(node, index, diagramUri);
       this.addArg('isExternal', externalInfo.isExternal);
-      this.addArg('_debug_diagramModelId', externalInfo.diagramModelId);
-      this.addArg('_debug_entityModelId', externalInfo.entityModelId);
 
       // Add the label/name of the node
       this.add(createHeader(node.entity?.ref?.name || node.entity?.ref?.id || 'unresolved', id));
@@ -109,15 +169,20 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
     * An entity is considered external if its data model ID differs from the
     * current diagram's data model ID.
     */
-   protected checkIfExternal(node: TargetObject, index: MappingModelIndex, diagramUri: string): {
+   protected checkIfExternal(
+      node: TargetObject,
+      index: MappingModelIndex,
+      diagramUri: string
+   ): {
       isExternal: boolean;
       diagramModelId?: string;
       entityModelId?: string;
    } {
       // Get the referenced entity
       const entityRef = node.entity?.ref;
-      if (!entityRef || !entityRef.$document) {
-         console.log('[checkIfExternal] No entity reference or document');
+      const refText = node.entity?.$refText || '';
+
+      if (!entityRef) {
          return { isExternal: false }; // Unresolved reference
       }
 
@@ -125,17 +190,30 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       const dataModelManager = index.services.shared.workspace.DataModelManager;
 
       // Get the data model ID of the current diagram
-      const diagramDataModelId = dataModelManager.getDataModelInfoByURI(URI.parse(diagramUri))?.id;
+      const parsedDiagramUri = URI.parse(diagramUri);
+      const diagramDataModelInfo = dataModelManager.getDataModelInfoByURI(parsedDiagramUri);
+      const diagramDataModelId = diagramDataModelInfo?.id || 'unknown';
 
-      // Get the data model ID of the referenced entity's document
-      const entityDataModelId = dataModelManager.getDataModelInfoByDocument(entityRef.$document)?.id;
+      // Determine if entity is external based on qualified reference
+      // If refText contains a dot, it's a qualified reference (e.g., "ExampleCRM.Customer")
+      // Extract the data model name from the qualified reference
+      let entityDataModelId: string;
+      if (refText.includes('.')) {
+         // Qualified reference - extract data model name (part before the dot)
+         const dataModelName = refText.split('.')[0];
+         // Try to find this data model
+         const allDataModels = dataModelManager.getDataModelInfos();
+         const matchingModel = allDataModels.find(dm =>
+            dm.referenceName === dataModelName || dm.dataModel.id === dataModelName || dm.dataModel.name === dataModelName
+         );
+         entityDataModelId = matchingModel?.id || 'unknown';
+      } else {
+         // Unqualified reference - same data model as diagram
+         entityDataModelId = diagramDataModelId;
+      }
 
       // External if the data models are different
       const isExternal = diagramDataModelId !== entityDataModelId;
-      console.log('[checkIfExternal] Entity:', entityRef.name || entityRef.id,
-                  '\n  Diagram Model ID:', diagramDataModelId,
-                  '\n  Entity Model ID:', entityDataModelId,
-                  '\n  Is External:', isExternal);
 
       return {
          isExternal,
