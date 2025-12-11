@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.17.0](https://github.com/crossmodel/crossmodel-core/compare/v0.16.0...v0.17.0) (2025-12-11)
+
+
+### Features
+
+* add Online Help sub-menu to main Help menu; add Knowledge Base and link removing Documentation ([#228](https://github.com/crossmodel/crossmodel-core/issues/228)) ([f491470](https://github.com/crossmodel/crossmodel-core/commit/f491470f084bcaf1abe15b91f00c0e0a0176aefd))
+
+
+
+
+
 # [0.16.0](https://github.com/crossmodel/crossmodel-core/compare/v0.15.1...v0.16.0) (2025-12-11)
 
 **Note:** Version bump only for package @crossmodel/product
