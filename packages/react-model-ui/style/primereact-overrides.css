@@ -323,12 +323,15 @@ body[class*='dark'] {
    border-bottom-right-radius: 6px;
 }
 
-.p-autocomplete-dropdown.p-button:hover,
 .p-autocomplete-dropdown.p-button:focus {
    background: var(--surface-card);
-   border-color: var(--theia-focusBorder);
-   outline: 0;
-   box-shadow: none;
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0.2rem 0.1rem var(--theia-button-hoverBackground);
+}
+
+.p-checkbox-input:focus {
+   box-shadow: 0 0 0.1rem 0.1rem var(--theia-button-hoverBackground);
 }
 
 /* AutoComplete Dropdown Arrow Icon Rotation */

@@ -171,5 +171,14 @@
             />
          </div>
       </div>
+      <script>
+         if (document.head) {
+            let faviconLinkTag = document.createElement('link');
+            faviconLinkTag.rel = 'icon';
+            faviconLinkTag.type = 'image/svg+xml';
+            faviconLinkTag.href = '/favicon.svg';
+            document.head.appendChild(faviconLinkTag);
+         }
+      </script>
    </body>
 </html>
