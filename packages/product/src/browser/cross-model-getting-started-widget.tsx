@@ -100,10 +100,10 @@ export class CrossModelGettingStartedWidget extends GettingStartedWidget {
                <a
                   role={'button'}
                   tabIndex={0}
-                  onClick={() => this.doOpenExternalLink('https://crossmodel.io/')}
-                  onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.documentationUrl)}
+                  onClick={() => this.doOpenExternalLink('https://help.crossmodel.io/')}
+                  onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, 'https://help.crossmodel.io/')}
                >
-                  {nls.localizeByDefault('Documentation')}
+                  {nls.localizeByDefault('Knowledge Base')}
                </a>
             </div>
          </div>
