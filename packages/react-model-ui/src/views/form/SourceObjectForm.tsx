@@ -85,6 +85,7 @@ export function SourceObjectForm(props: SourceObjectRenderProps): React.ReactEle
                      { label: 'Left Join', value: 'left-join' },
                      { label: 'Apply', value: 'apply' }
                   ]}
+                  placeholder='Select Join Type'
                />
             </div>
             <ErrorInfo diagnostic={joinDiagnostics} />

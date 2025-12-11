@@ -142,12 +142,14 @@ export function GenericAutoCompleteEditor({
    options,
    basePath,
    field,
-   dropdownOptions
+   dropdownOptions,
+   placeholder
 }: {
    options: any;
    basePath: string[];
    field: string;
    dropdownOptions: Array<{ label: string; value: string }>;
+   placeholder?: string;
 }): React.ReactElement {
    const rowIdx = options.rowData?.idx ?? -1;
    const readonly = useReadonly();
@@ -197,6 +199,7 @@ export function GenericAutoCompleteEditor({
                   suggestions={suggestions}
                   completeMethod={search}
                   field='label'
+                  placeholder={placeholder}
                   onChange={onChange}
                   onKeyDown={handleGridEditorKeyDown}
                   disabled={readonly}
