@@ -12,6 +12,7 @@ import '../../style/index.css';
 import { CrossModelLabelProvider } from './cm-file-label-provider';
 import { createCrossModelFileNavigatorWidget } from './cm-file-navigator-tree-widget';
 import { createCrossModelSaveFileDialogContainer } from './cm-save-file-dialog';
+import { HelpMenuContribution } from './help-contribution';
 import { ImportExportContribution } from './import-export-contribution';
 import { CrossModelFileNavigatorContribution, CrossModelWorkspaceContribution } from './new-element-contribution';
 
@@ -31,6 +32,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
    bind(ImportExportContribution).toSelf().inSingletonScope();
    bind(CommandContribution).toService(ImportExportContribution);
    bind(MenuContribution).toService(ImportExportContribution);
+
+   bind(HelpMenuContribution).toSelf().inSingletonScope();
+   bind(CommandContribution).toService(HelpMenuContribution);
+   bind(MenuContribution).toService(HelpMenuContribution);
 
    rebind(SaveFileDialogFactory).toFactory(
       ctx => (props: SaveFileDialogProps) => createCrossModelSaveFileDialogContainer(ctx.container, props).get(SaveFileDialog)
