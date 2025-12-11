@@ -1,6 +1,6 @@
 {
   "name": "crossmodel-core-browser",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "private": true,
   "description": "CrossModel Core Edition",
   "homepage": "https://github.com/crossmodel/crossmodel-core",
@@ -25,13 +25,13 @@
     "watch": "theia build --watch --mode development"
   },
   "dependencies": {
-    "@crossmodel/composite-editor": "0.15.0",
-    "@crossmodel/core": "0.15.0",
-    "@crossmodel/form-client": "0.15.0",
-    "@crossmodel/glsp-client": "0.15.0",
-    "@crossmodel/model-service": "0.15.0",
-    "@crossmodel/product": "0.15.0",
-    "@crossmodel/property-view": "0.15.0",
+    "@crossmodel/composite-editor": "0.15.1",
+    "@crossmodel/core": "0.15.1",
+    "@crossmodel/form-client": "0.15.1",
+    "@crossmodel/glsp-client": "0.15.1",
+    "@crossmodel/model-service": "0.15.1",
+    "@crossmodel/product": "0.15.1",
+    "@crossmodel/property-view": "0.15.1",
     "@theia/core": "1.64.1",
     "@theia/editor": "1.64.1",
     "@theia/filesystem": "1.64.1",
