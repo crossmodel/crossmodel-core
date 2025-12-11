@@ -3,7 +3,7 @@ mapping:
     sources:
       - id: Customer
         entity: ExampleCRM.Customer
-        join: from
+        join: left-join
         conditions:
           - Customer.Customer_ID > 0
       - id: AddressSourceObject

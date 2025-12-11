@@ -213,6 +213,10 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                            value={options.value}
                            options={attributeOptions}
                            onChange={(e: MultiSelectChangeEvent) => options.editorCallback(e.value)}
+                           filter
+                           filterBy='label'
+                           filterPlaceholder='Search...'
+                           filterMatchMode='contains'
                            onKeyDown={handleGridEditorKeyDown}
                            disabled={readonly}
                            className={`w-full ${className}`}

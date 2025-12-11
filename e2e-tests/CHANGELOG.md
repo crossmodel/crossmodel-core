@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.16.0](https://github.com/crossmodel/crossmodel-core/compare/v0.15.1...v0.16.0) (2025-12-11)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.15.1](https://github.com/crossmodel/crossmodel-core/compare/v0.15.0...v0.15.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* primary checkbox visibility ([#227](https://github.com/crossmodel/crossmodel-core/issues/227)) ([c328e8e](https://github.com/crossmodel/crossmodel-core/commit/c328e8ee39f55f4b36fbfc12007c14ce3396b3f5))
+
+
+
+
+
 # [0.15.0](https://github.com/crossmodel/crossmodel-core/compare/v0.14.0...v0.15.0) (2025-12-10)
 
 

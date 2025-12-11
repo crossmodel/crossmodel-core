@@ -80,8 +80,13 @@ export class LogicalEntityAttributesSection extends FormSection {
       await this.addButtonLocator.click();
 
       // Wait for the new editable row by looking for a text input in data columns (not checkbox)
-      const editRow = this.locator.locator('tr:has(td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"]))');
-      await editRow.locator('td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"])').first().waitFor({ state: 'visible' });
+      const editRow = this.locator.locator(
+         'tr:has(td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"]))'
+      );
+      await editRow
+         .locator('td:not(.p-selection-column):not(.p-reorder-column) input:not([type="checkbox"])')
+         .first()
+         .waitFor({ state: 'visible' });
 
       // Return the attribute in edit mode
       return new LogicalAttribute(editRow, this);

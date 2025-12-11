@@ -215,6 +215,11 @@
 
 .p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox {
    margin-left: 0.3rem;
+   opacity: 1 !important;
+}
+
+.p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox .p-checkbox-box {
+   border-color: var(--theia-focusBorder);
 }
 
 /* Checkbox styling for both light and dark modes */
@@ -232,7 +237,6 @@
    background: var(--theia-input-background);
    border: 1px solid var(--surface-border);
 }
-
 
 .crossmodel-light .p-checkbox .p-checkbox-box,
 body.theia-light .p-checkbox .p-checkbox-box {
@@ -255,7 +259,7 @@ body.theia-dark .p-checkbox .p-checkbox-box {
 }
 
 .p-checkbox .p-checkbox-box.p-highlight svg,
-.p-checkbox .p-checkbox-box[data-p-highlight="true"] svg {
+.p-checkbox .p-checkbox-box[data-p-highlight='true'] svg {
    display: block !important;
    visibility: visible !important;
    opacity: 1 !important;
@@ -274,13 +278,13 @@ body.theia-dark .p-checkbox .p-checkbox-box {
 .dark-theme,
 .crossmodel-dark,
 body.theia-dark,
-html[data-theme="dark"],
-body[class*="dark"] {
+html[data-theme='dark'],
+body[class*='dark'] {
    --checkbox-tick-color: #ffffff;
 }
 
 .p-checkbox .p-checkbox-box.p-highlight svg *,
-.p-checkbox .p-checkbox-box[data-p-highlight="true"] svg *,
+.p-checkbox .p-checkbox-box[data-p-highlight='true'] svg *,
 .p-checkbox .p-checkbox-box.p-highlight svg path,
 .p-checkbox .p-checkbox-box.p-highlight svg g,
 .p-checkbox .p-checkbox-box.p-highlight svg g path {
@@ -319,12 +323,15 @@ body[class*="dark"] {
    border-bottom-right-radius: 6px;
 }
 
-.p-autocomplete-dropdown.p-button:hover,
 .p-autocomplete-dropdown.p-button:focus {
    background: var(--surface-card);
-   border-color: var(--theia-focusBorder);
-   outline: 0;
-   box-shadow: none;
+   outline: 0 none;
+   outline-offset: 0;
+   box-shadow: 0 0 0.2rem 0.1rem var(--theia-button-hoverBackground);
+}
+
+.p-checkbox-input:focus {
+   box-shadow: 0 0 0.1rem 0.1rem var(--theia-button-hoverBackground);
 }
 
 /* AutoComplete Dropdown Arrow Icon Rotation */
@@ -626,7 +633,6 @@ span.w-full.p-autocomplete {
    background: transparent;
 }
 
-
 .p-datatable .p-datatable-tbody > tr .drag-handle {
    cursor: grab;
    user-select: none;
@@ -642,7 +648,7 @@ span.w-full.p-autocomplete {
    cursor: grabbing;
 }
 
-table[style*="position: fixed"] * {
+table[style*='position: fixed'] * {
    pointer-events: none !important;
 }
 
@@ -655,6 +661,7 @@ table[style*="position: fixed"] * {
    text-align: center;
    padding: 0;
 }
+
 .datatable-footer-actions {
    display: flex;
    justify-content: flex-start;
@@ -667,7 +674,7 @@ table[style*="position: fixed"] * {
 
 .p-datatable .datatable-global-filter {
    display: flex;
-   justify-content: flex-end; 
+   justify-content: flex-end;
    align-items: center;
    gap: 0.5rem;
    padding-bottom: 0.5rem;
@@ -676,8 +683,8 @@ table[style*="position: fixed"] * {
 .p-datatable .datatable-global-filter .datatable-filter-section {
    display: flex;
    align-items: center;
-   margin-left: 0; 
-   flex-wrap: wrap; 
+   margin-left: 0;
+   flex-wrap: wrap;
    gap: 0.5rem;
    justify-content: flex-end;
    width: 100%;
@@ -686,7 +693,7 @@ table[style*="position: fixed"] * {
 .p-datatable .datatable-global-filter .p-inputtext {
    padding-left: 2rem;
    padding-right: 2rem;
-   width: 100%; 
+   width: 100%;
    min-width: 150px;
 }
 

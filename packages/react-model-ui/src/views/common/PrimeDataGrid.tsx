@@ -461,10 +461,10 @@ function useDragDrop<T extends Record<string, any>>(
                         currentDropPositionRef.current = position;
 
                         if (setDropIndicator && wrapperRef?.current) {
-                           const rowRect = closestRow.getBoundingClientRect();
+                     const rowRect = closestRow.getBoundingClientRect();
                            const wrapperRect = wrapperRef.current.getBoundingClientRect();
                            const top = (position === 'above' ? rowRect.top : rowRect.bottom) - wrapperRect.top;
-                           
+
                            setDropIndicator({
                               top: top - 2,
                               left: 0,
@@ -987,7 +987,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       }
 
       if (!activeRowKey) {
-         return; 
+         return;
       }
 
       if (editable && !readonly) {
@@ -1154,29 +1154,34 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             onRowEditChange={!readonly ? onRowEditChange : undefined}
             selectionMode={onSelectionChange !== undefined ? 'multiple' : undefined}
             selection={selectedRows}
-            metaKeySelection={true} 
+            metaKeySelection={true}
             onSelectionChange={
                onSelectionChange !== undefined
                   ? (e: any) => {
                        const originalEvent = e.originalEvent;
                        if (originalEvent) {
                           const target = originalEvent.target as any;
-                          const findClosest = (el: any, selector: string) => {
-                             if (el.closest) return el.closest(selector);
-                             if (el.parentElement && el.parentElement.closest) return el.parentElement.closest(selector);
-                             if (el.correspondingUseElement) return findClosest(el.correspondingUseElement, selector);
-                             return undefined;
-                          };
-                          
+                           const findClosest = (el: any, selector: string): Element | null | undefined => {
+                              if (el.closest) {
+                                 return el.closest(selector);
+                              }
+                              if (el.parentElement && el.parentElement.closest) {
+                                 return el.parentElement.closest(selector);
+                              }
+                              if (el.correspondingUseElement) {
+                                 return findClosest(el.correspondingUseElement, selector);
+                              }
+                              return undefined;
+                           };
                           const isCheckbox =
                              findClosest(target, '.p-checkbox') ||
                              findClosest(target, '.p-selection-column') ||
                              findClosest(target, '.p-checkbox-icon');
 
                           const isMouseEvent =
-                             originalEvent.type === 'click' || 
-                             originalEvent.type === 'mousedown' || 
-                             originalEvent.type === 'mouseup' ||
+                              originalEvent.type === 'click' ||
+                              originalEvent.type === 'mousedown' ||
+                              originalEvent.type === 'mouseup' ||
                              originalEvent.type === 'pointerdown' ||
                              originalEvent.type === 'pointerup';
 
@@ -1243,3 +1248,4 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       </div>
    );
 }
+

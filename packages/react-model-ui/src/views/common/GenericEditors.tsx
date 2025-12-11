@@ -142,17 +142,32 @@ export function GenericAutoCompleteEditor({
    options,
    basePath,
    field,
-   dropdownOptions
+   dropdownOptions,
+   placeholder
 }: {
    options: any;
    basePath: string[];
    field: string;
    dropdownOptions: Array<{ label: string; value: string }>;
+   placeholder?: string;
 }): React.ReactElement {
    const rowIdx = options.rowData?.idx ?? -1;
    const readonly = useReadonly();
    const [suggestions, setSuggestions] = React.useState<Array<{ label: string; value: string }>>(dropdownOptions);
+   const [inputValue, setInputValue] = React.useState<string>(() => {
+      const initialOption = dropdownOptions.find(opt => opt.value === options.value);
+      return (initialOption ? initialOption.label : typeof options.value === 'string' ? options.value : '') || '';
+   });
 
+   // Keep inputValue in sync with external value when it represents a selected option
+   React.useEffect(() => {
+      const selectedOption = dropdownOptions.find(opt => opt.value === options.value);
+      if (selectedOption) {
+         setInputValue(selectedOption.label);
+      } else if (typeof options.value === 'string') {
+         setInputValue(options.value);
+      }
+   }, [options.value, dropdownOptions]);
    const search = (event: AutoCompleteCompleteEvent): void => {
       const query = event.query.toLowerCase();
       const filtered = dropdownOptions.filter(
@@ -162,29 +177,29 @@ export function GenericAutoCompleteEditor({
    };
 
    const onChange = (e: { value: { label: string; value: string } | string }): void => {
-      let finalValue = '';
       if (typeof e.value === 'object' && e.value !== undefined && 'value' in e.value) {
-         finalValue = e.value.value;
+         // user selected a suggestion
+         setInputValue(e.value.label);
+         options.editorCallback(e.value.value);
       } else if (typeof e.value === 'string') {
-         finalValue = e.value;
+         // user is typing
+         setInputValue(e.value);
+         if (options.commitOnInput === true) {
+            options.editorCallback(e.value);
+         }
       }
-      options.editorCallback(finalValue);
    };
-
-   const currentValue = React.useMemo(() => {
-      const option = dropdownOptions.find(opt => opt.value === options.value);
-      return option || options.value;
-   }, [options.value, dropdownOptions]);
 
    return (
       <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
          {({ invalid, error, className }) => (
             <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
                <AutoComplete
-                  value={currentValue}
+                  value={inputValue}
                   suggestions={suggestions}
                   completeMethod={search}
                   field='label'
+                  placeholder={placeholder}
                   onChange={onChange}
                   onKeyDown={handleGridEditorKeyDown}
                   disabled={readonly}

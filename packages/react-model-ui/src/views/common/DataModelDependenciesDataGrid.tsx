@@ -271,8 +271,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          if (dependency._uncommitted) {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = dependency.datamodel !== defaultEntry.datamodel || dependency.version !== defaultEntry.version;
-
-
             if (!hasChanges) {
                // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== dependency.id));
