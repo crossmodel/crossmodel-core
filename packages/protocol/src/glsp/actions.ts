@@ -124,6 +124,29 @@ export namespace SetUIExtensionVisibilityAction {
    }
 }
 
+/**
+ * Action to show the properties panel for a specific element.
+ */
+export interface ShowPropertiesAction extends Action {
+   kind: typeof ShowPropertiesAction.KIND;
+   elementId?: string;
+}
+
+export namespace ShowPropertiesAction {
+   export const KIND = 'showProperties';
+
+   export function is(object: unknown): object is ShowPropertiesAction {
+      return Action.hasKind(object, KIND);
+   }
+
+   export function create(options: { elementId?: string }): ShowPropertiesAction {
+      return {
+         kind: KIND,
+         elementId: options.elementId
+      };
+   }
+}
+
 export function activateDefaultToolsAction(): Action {
    return EnableDefaultToolsAction.create();
 }

@@ -3,6 +3,52 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/crossmodel/crossmodel-core/compare/v0.14.0...v0.15.0) (2025-12-10)
+
+
+### Features
+
+* datagrid multirow selection bulk delete ([#217](https://github.com/crossmodel/crossmodel-core/issues/217)) ([f760aa1](https://github.com/crossmodel/crossmodel-core/commit/f760aa143158ce9347141cef001fac36988e6a65))
+
+
+
+
+
+# [0.14.0](https://github.com/crossmodel/crossmodel-core/compare/v0.13.1...v0.14.0) (2025-12-10)
+
+**Note:** Version bump only for package @crossmodel/react-model-ui
+
+
+
+
+
+## [0.13.1](https://github.com/crossmodel/crossmodel-core/compare/v0.13.0...v0.13.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* Refactor data grids to preserve incomplete rows ([#223](https://github.com/crossmodel/crossmodel-core/issues/223)) ([74ab021](https://github.com/crossmodel/crossmodel-core/commit/74ab02171e15b91a2df0e57ca0f92fc9bf67cb10))
+
+
+
+
+
+# [0.13.0](https://github.com/crossmodel/crossmodel-core/compare/v0.12.3...v0.13.0) (2025-12-04)
+
+**Note:** Version bump only for package @crossmodel/react-model-ui
+
+
+
+
+
+## [0.12.3](https://github.com/crossmodel/crossmodel-core/compare/v0.12.2...v0.12.3) (2025-11-20)
+
+**Note:** Version bump only for package @crossmodel/react-model-ui
+
+
+
+
+
 ## [0.12.2](https://github.com/crossmodel/crossmodel-core/compare/v0.12.1...v0.12.2) (2025-11-19)
 
 **Note:** Version bump only for package @crossmodel/react-model-ui

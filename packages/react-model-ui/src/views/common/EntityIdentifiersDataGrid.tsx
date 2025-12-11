@@ -7,7 +7,7 @@ import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorContainer, EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityIdentifierRow {
@@ -22,13 +22,20 @@ export interface EntityIdentifierRow {
    _uncommitted?: boolean;
 }
 
+const deriveIdentifierRowId = (identifier: Partial<LogicalIdentifier>, idx: number): string => {
+   const persistedId = identifier.id as string | undefined;
+   const globalId = identifier.$globalId as string | undefined;
+   return persistedId ?? globalId ?? `identifier-${idx}`;
+};
+
 function convertIdentifierToRow(identifier: LogicalIdentifier, idx: number): EntityIdentifierRow {
    const attributeIds = (identifier.attributes || []).map(attr =>
       typeof attr === 'object' ? attr.id : String(attr).replace(/^[-_]+/, '')
    );
+   const id = deriveIdentifierRowId(identifier, idx);
    return {
       idx,
-      id: identifier.id || '',
+      id,
       name: identifier.name || '',
       primary: Boolean(identifier.primary),
       attributeIds,
@@ -53,13 +60,60 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<EntityIdentifierRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<EntityIdentifierRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+    const identifiersRef = React.useRef(entity?.identifiers || []);
+
+   const handleSelectionChange = React.useCallback((e: { value: EntityIdentifierRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    const handleIdentifierDelete = React.useCallback(
       (identifier: EntityIdentifierRow): void => {
+         if (identifier.id && !identifier._uncommitted) {
+            pendingDeleteIdsRef.current.add(identifier.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== identifier.id));
+         setSelectedRows(current => current.filter(row => row.id !== identifier.id));
+
+         if (identifier._uncommitted) {
+            if (identifier.id) {
+               pendingDeleteIdsRef.current.delete(identifier.id);
+            }
+            return;
+         }
+
+         const identifierIdx = (entity.identifiers || []).findIndex((item, idx) => deriveIdentifierRowId(item, idx) === identifier.id);
+         if (identifierIdx === -1) {
+            if (identifier.id) {
+               pendingDeleteIdsRef.current.delete(identifier.id);
+            }
+            return;
+         }
+
          dispatch({
             type: 'entity:identifier:delete-identifier',
-            identifierIdx: identifier.idx
+            identifierIdx
          });
+      },
+      [dispatch, entity.identifiers]
+   );
+
+   const handleRowReorder = React.useCallback(
+      (e: { rows: EntityIdentifierRow[] }): void => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            identifiersRef.current || [],
+            deriveIdentifierRowId,
+            reorderedIdentifiers => {
+               dispatch({
+                  type: 'entity:identifier:reorder-identifiers',
+                  identifiers: reorderedIdentifiers
+               });
+            }
+         );
       },
       [dispatch]
    );
@@ -79,26 +133,33 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    );
 
    // Map entity data to grid data with proper updates
-   const mapToGridData = React.useCallback(() => {
-      const committedData = (entity.identifiers || []).map((identifier, idx) => {
-         const row = convertIdentifierToRow(identifier, idx);
-         // Ensure primary status is current
-         row.primary = identifier.primary || false;
-         return row;
-      });
-
-      return committedData;
-   }, [entity.identifiers]);
+   const mapToGridData = React.useCallback(
+      () =>
+         (entity.identifiers || []).map((identifier, idx) => {
+            const row = convertIdentifierToRow(identifier, idx);
+            row.primary = identifier.primary || false;
+            return row;
+         }),
+      [entity.identifiers]
+   );
 
    // Update grid data whenever identifiers change
    React.useEffect(() => {
       // Immediate update of grid data
       const updateGridData = async (): Promise<void> => {
-         const newData = mapToGridData();
+         const committedData = mapToGridData();
          setGridData(current => {
-            // Preserve any uncommitted rows that are currently being edited
+            identifiersRef.current = entity.identifiers || [];
+            const committedIds = new Set(committedData.map(row => row.id));
+            pendingDeleteIdsRef.current.forEach(id => {
+               if (!committedIds.has(id)) {
+                  pendingDeleteIdsRef.current.delete(id);
+               }
+            });
+
+            const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
             const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
-            return [...newData, ...uncommittedRows];
+            return [...visibleCommittedData, ...uncommittedRows];
          });
       };
       updateGridData();
@@ -203,10 +264,11 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             const hasChanges =
                identifier.name !== defaultEntry.name ||
                identifier.description !== defaultEntry.description ||
-               identifier.attributeIds.length > 0;
+               identifier.attributeIds.length > 0 ||
+               identifier.primary !== defaultEntry.primary;
 
-            if (!hasChanges || !identifier.name) {
-               // Remove the row if no changes or no name
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== identifier.id));
                setEditingRows({});
                return;
@@ -338,11 +400,15 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          onRowAdd={handleRowAdd}
          onRowUpdate={handleRowUpdate}
          onRowDelete={handleIdentifierDelete}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          readonly={readonly}
          defaultNewRow={defaultEntry}
          noDataMessage='No identifiers defined'
          addButtonLabel='Add Identifier'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;

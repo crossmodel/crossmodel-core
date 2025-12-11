@@ -13,6 +13,7 @@ import { FormSection } from '../FormSection';
 import { EntityAttributesDataGrid } from '../common';
 import { EntityCustomPropertiesDataGrid } from '../common/EntityCustomPropertiesDataGrid';
 import { EntityIdentifiersDataGrid } from '../common/EntityIdentifiersDataGrid';
+import { EntityInheritsDataGrid } from '../common/EntityInheritsDataGrid';
 import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
@@ -75,6 +76,9 @@ export function EntityForm(): React.ReactElement {
                </div>
                <ErrorInfo diagnostic={descriptionDiagnostics} />
             </div>
+         </FormSection>
+         <FormSection label='Inheritance' defaultCollapsed={true}>
+            <EntityInheritsDataGrid />
          </FormSection>
          <FormSection label='Attributes'>
             <EntityAttributesDataGrid />

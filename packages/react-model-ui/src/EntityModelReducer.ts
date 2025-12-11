@@ -33,19 +33,14 @@ export interface LogicalAttributeAddEmptyAction extends ModelAction {
    attribute: LogicalAttribute;
 }
 
-export interface LogicalAttributeMoveUpAction extends ModelAction {
-   type: 'entity:attribute:move-attribute-up';
-   attributeIdx: number;
-}
-
-export interface LogicalAttributeMoveDownAction extends ModelAction {
-   type: 'entity:attribute:move-attribute-down';
-   attributeIdx: number;
-}
-
 export interface LogicalAttributeDeleteAction extends ModelAction {
    type: 'entity:attribute:delete-attribute';
    attributeIdx: number;
+}
+
+export interface LogicalAttributeReorderAction extends ModelAction {
+   type: 'entity:attribute:reorder-attributes';
+   attributes: LogicalAttribute[];
 }
 
 export interface CustomPropertyUpdateAction extends ModelAction {
@@ -59,19 +54,14 @@ export interface CustomPropertyAddEmptyAction extends ModelAction {
    customProperty: CustomProperty;
 }
 
-export interface CustomPropertyMoveUpAction extends ModelAction {
-   type: 'entity:customProperty:move-customProperty-up';
-   customPropertyIdx: number;
-}
-
-export interface CustomPropertyMoveDownAction extends ModelAction {
-   type: 'entity:customProperty:move-customProperty-down';
-   customPropertyIdx: number;
-}
-
 export interface CustomPropertyDeleteAction extends ModelAction {
    type: 'entity:customProperty:delete-customProperty';
    customPropertyIdx: number;
+}
+
+export interface CustomPropertyReorderAction extends ModelAction {
+   type: 'entity:customProperty:reorder-customProperties';
+   customProperties: CustomProperty[];
 }
 
 export interface EntityIdentifierUpdateAction extends ModelAction {
@@ -90,23 +80,58 @@ export interface EntityIdentifierDeleteAction extends ModelAction {
    identifierIdx: number;
 }
 
+export interface EntityInheritAddAction extends ModelAction {
+   type: 'entity:inherit:add';
+   inherit: any;
+}
+
+export interface EntityInheritUpdateAction extends ModelAction {
+   type: 'entity:inherit:update';
+   inheritIdx: number;
+   inherit: any;
+}
+
+export interface EntityInheritDeleteAction extends ModelAction {
+   type: 'entity:inherit:delete';
+   inheritIdx: number;
+}
+
+export interface EntityInheritMoveUpAction extends ModelAction {
+   type: 'entity:inherit:move-up';
+   inheritIdx: number;
+}
+
+export interface EntityInheritMoveDownAction extends ModelAction {
+   type: 'entity:inherit:move-down';
+   inheritIdx: number;
+}
+
+export interface EntityIdentifierReorderAction extends ModelAction {
+   type: 'entity:identifier:reorder-identifiers';
+   identifiers: LogicalIdentifier[];
+}
+
 export type EntityDispatchAction =
    | EntityChangeNameAction
    | EntityChangeIdAction
    | EntityChangeDescriptionAction
    | LogicalAttributeUpdateAction
    | LogicalAttributeAddEmptyAction
-   | LogicalAttributeMoveUpAction
-   | LogicalAttributeMoveDownAction
    | LogicalAttributeDeleteAction
+   | LogicalAttributeReorderAction
    | EntityIdentifierUpdateAction
    | EntityIdentifierAddAction
    | EntityIdentifierDeleteAction
+   | EntityIdentifierReorderAction
    | CustomPropertyUpdateAction
    | CustomPropertyAddEmptyAction
-   | CustomPropertyMoveUpAction
-   | CustomPropertyMoveDownAction
-   | CustomPropertyDeleteAction;
+   | CustomPropertyDeleteAction
+   | EntityInheritAddAction
+   | EntityInheritUpdateAction
+   | EntityInheritDeleteAction
+   | EntityInheritMoveUpAction
+   | EntityInheritMoveDownAction
+   | CustomPropertyReorderAction;
 
 export function isEntityDispatchAction(action: DispatchAction): action is EntityDispatchAction {
    return action.type.startsWith('entity:');
@@ -157,12 +182,8 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          entity.attributes.splice(action.attributeIdx, 1);
          break;
 
-      case 'entity:attribute:move-attribute-up':
-         moveUp(entity.attributes, action.attributeIdx);
-         break;
-
-      case 'entity:attribute:move-attribute-down':
-         moveDown(entity.attributes, action.attributeIdx);
+      case 'entity:attribute:reorder-attributes':
+         entity.attributes = action.attributes;
          break;
 
       case 'entity:customProperty:update':
@@ -181,12 +202,8 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          entity.customProperties!.splice(action.customPropertyIdx, 1);
          break;
 
-      case 'entity:customProperty:move-customProperty-up':
-         moveUp(entity.customProperties!, action.customPropertyIdx);
-         break;
-
-      case 'entity:customProperty:move-customProperty-down':
-         moveDown(entity.customProperties!, action.customPropertyIdx);
+      case 'entity:customProperty:reorder-customProperties':
+         entity.customProperties = action.customProperties;
          break;
 
       case 'entity:identifier:update':
@@ -208,6 +225,35 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
       case 'entity:identifier:delete-identifier':
          entity.identifiers = entity.identifiers || [];
          entity.identifiers.splice(action.identifierIdx, 1);
+         break;
+
+      case 'entity:inherit:add':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         (entity as any).superEntities.push(typeof action.inherit === 'string' ? action.inherit : action.inherit);
+         break;
+
+      case 'entity:inherit:update':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         (entity as any).superEntities[action.inheritIdx] = typeof action.inherit === 'string' ? action.inherit : action.inherit;
+         break;
+
+      case 'entity:inherit:delete':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         (entity as any).superEntities.splice(action.inheritIdx, 1);
+         break;
+
+      case 'entity:inherit:move-up':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         moveUp((entity as any).superEntities, action.inheritIdx);
+         break;
+
+      case 'entity:inherit:move-down':
+         (entity as any).superEntities = (entity as any).superEntities || [];
+         moveDown((entity as any).superEntities, action.inheritIdx);
+         break;
+
+      case 'entity:identifier:reorder-identifiers':
+         entity.identifiers = action.identifiers;
          break;
 
       default:

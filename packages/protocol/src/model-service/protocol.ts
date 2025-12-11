@@ -93,12 +93,19 @@ export interface LogicalEntity extends CrossModelElement, NamedObject, WithCusto
    readonly $type: typeof LogicalEntityType;
    attributes: Array<LogicalAttribute>;
    identifiers: Array<LogicalIdentifier>;
+   superEntities: Array<EntityInherit>;
 }
 
 export const LogicalIdentifierType = 'LogicalIdentifier';
 export interface LogicalIdentifier extends CrossModelElement, NamedObject, WithCustomProperties {
    primary?: boolean;
    attributes: Array<LogicalAttribute>;
+}
+
+export const EntityInheritType = 'EntityInherit';
+export interface EntityInherit extends CrossModelElement {
+   readonly $type: typeof EntityInheritType;
+   parentId: Reference<LogicalEntity>;
 }
 
 export interface AbstractLogicalAttribute extends CrossModelElement, NamedObject {

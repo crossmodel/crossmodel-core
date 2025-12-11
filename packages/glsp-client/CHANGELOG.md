@@ -3,6 +3,52 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/crossmodel/crossmodel-core/compare/v0.14.0...v0.15.0) (2025-12-10)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
+# [0.14.0](https://github.com/crossmodel/crossmodel-core/compare/v0.13.1...v0.14.0) (2025-12-10)
+
+
+### Features
+
+* dark mode toolbox styling ([#224](https://github.com/crossmodel/crossmodel-core/issues/224)) ([76e330c](https://github.com/crossmodel/crossmodel-core/commit/76e330c242d80e813f9b1798b0de258a8571e0f3))
+
+
+
+
+
+## [0.13.1](https://github.com/crossmodel/crossmodel-core/compare/v0.13.0...v0.13.1) (2025-12-09)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
+# [0.13.0](https://github.com/crossmodel/crossmodel-core/compare/v0.12.3...v0.13.0) (2025-12-04)
+
+
+### Features
+
+* Add context-menu "Show Properties" action and simplify property panel handling ([#220](https://github.com/crossmodel/crossmodel-core/issues/220)) ([bc313f1](https://github.com/crossmodel/crossmodel-core/commit/bc313f1c412c46772b8835319ef0d4a3c7cca7a4))
+
+
+
+
+
+## [0.12.3](https://github.com/crossmodel/crossmodel-core/compare/v0.12.2...v0.12.3) (2025-11-20)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
 ## [0.12.2](https://github.com/crossmodel/crossmodel-core/compare/v0.12.1...v0.12.2) (2025-11-19)
 
 **Note:** Version bump only for package @crossmodel/glsp-client

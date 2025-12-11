@@ -6,7 +6,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalAttribute {
@@ -40,13 +40,22 @@ const dataTypeOptions = [
    { label: 'Location', value: 'Location' }
 ];
 
+const deriveAttributeRowId = (attr: Partial<LogicalAttribute>, idx: number): string => {
+   const persistedId = attr.id as string | undefined;
+   const globalId = attr.$globalId as string | undefined;
+   return persistedId ?? globalId ?? `attr-${idx}`;
+};
+
 export function EntityAttributesDataGrid(): React.ReactElement {
    const entity = useEntity();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<EntityAttributeRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<EntityAttributeRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
    const identifiersRef = React.useRef(entity?.identifiers);
+   const attributesRef = React.useRef(entity?.attributes || []);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
@@ -77,28 +86,37 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const handleAttributeUpward = React.useCallback(
-      (attribute: EntityAttributeRow): void => {
-         dispatch({
-            type: 'entity:attribute:move-attribute-up',
-            attributeIdx: attribute.idx
-         });
+   const handleRowReorder = React.useCallback(
+      (e: { rows: EntityAttributeRow[] }): void => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            attributesRef.current || [],
+            deriveAttributeRowId,
+            reorderedAttributes => {
+               dispatch({
+                  type: 'entity:attribute:reorder-attributes',
+                  attributes: reorderedAttributes
+               });
+            }
+         );
       },
       [dispatch]
    );
 
-   const handleAttributeDownward = React.useCallback(
-      (attribute: EntityAttributeRow): void => {
-         dispatch({
-            type: 'entity:attribute:move-attribute-down',
-            attributeIdx: attribute.idx
-         });
-      },
-      [dispatch]
-   );
+   const handleSelectionChange = React.useCallback((e: { value: EntityAttributeRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    const handleAttributeDelete = React.useCallback(
       (attribute: EntityAttributeRow): void => {
+         if (attribute.id && !attribute._uncommitted) {
+            pendingDeleteIdsRef.current.add(attribute.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== attribute.id));
+         setSelectedRows(current => current.filter(row => row.id !== attribute.id));
+
          // Get the current state of identifiers
          const currentIdentifiers = identifiersRef.current;
          // Update all identifiers that reference this attribute first
@@ -123,13 +141,26 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             });
          }
 
+         if (attribute._uncommitted) {
+            if (attribute.id) {
+               pendingDeleteIdsRef.current.delete(attribute.id);
+            }
+            return;
+         }
+
+         const attributeIdx = (entity.attributes || []).findIndex((attr, idx) => deriveAttributeRowId(attr, idx) === attribute.id);
+         if (attributeIdx === -1) {
+            pendingDeleteIdsRef.current.delete(attribute.id);
+            return;
+         }
+
          // Then delete the attribute
          dispatch({
             type: 'entity:attribute:delete-attribute',
-            attributeIdx: attribute.idx
+            attributeIdx
          });
       },
-      [dispatch, identifiersRef]
+      [dispatch, identifiersRef, entity.attributes]
    );
 
    // Keep identifiersRef updated with the latest identifiers
@@ -139,34 +170,40 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
    // Update grid data when attributes change, preserving any uncommitted rows
    React.useEffect(() => {
+      attributesRef.current = entity.attributes || [];
       setGridData(current => {
-         // Map the committed attributes
          const committedData = (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => {
-            // Find if this attribute is part of any primary identifier
             const isPrimaryIdentifier =
                entity.identifiers?.some(
                   identifier =>
                      identifier.primary && identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
                ) || false;
 
-            // Use the primary identifier status for the identifier checkbox
-            // This ensures the grid reflects the actual primary identifier state
+            const id = deriveAttributeRowId(attr, idx);
             return {
                idx,
                name: attr.name || '',
                datatype: attr.datatype || '',
                description: attr.description || '',
-               identifier: isPrimaryIdentifier, // Only true if part of a primary identifier
-               id: attr.id || '',
+               identifier: isPrimaryIdentifier,
+               id,
                $type: 'LogicalAttribute',
-               $globalId: attr.$globalId || ''
+               $globalId: attr.$globalId || id
             };
          }) as EntityAttributeRow[];
 
-         // Preserve any uncommitted rows that are currently being edited
+         const committedIds = new Set(committedData.map(row => row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
+
+         return [...visibleCommittedData, ...uncommittedRows];
       });
    }, [entity.attributes, entity.identifiers, editingRows]);
 
@@ -298,10 +335,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             const hasChanges =
                attribute.name !== defaultEntry.name ||
                attribute.datatype !== defaultEntry.datatype ||
-               attribute.description !== defaultEntry.description;
+               attribute.description !== defaultEntry.description ||
+               !!attribute.identifier;
 
-            if (!hasChanges || !attribute.name) {
-               // Remove the row if no changes or no name
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== attribute.id));
                setEditingRows({});
                return;
@@ -433,13 +471,15 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          onRowAdd={handleAddAttribute}
          onRowUpdate={handleRowUpdate}
          onRowDelete={handleAttributeDelete}
-         onRowMoveUp={handleAttributeUpward}
-         onRowMoveDown={handleAttributeDownward}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No attributes defined'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

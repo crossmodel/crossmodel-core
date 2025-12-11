@@ -1,46 +1,45 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CrossReferenceContext, DataModelDependency, DataModelDependencyType } from '@crossmodel/protocol';
+import { CrossReferenceContext, EntityInherit, EntityInheritType, LogicalEntityType, toIdReference } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useEntity, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { EditorProperty, GenericTextEditor } from './GenericEditors';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
-import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
 
-export interface DataModelDependencyRow extends DataModelDependency {
+export interface EntityInheritRow extends EntityInherit {
    idx: number;
    id: string;
+   parentId: string;
    _uncommitted?: boolean;
 }
 
-interface DataModelDependencyEditorProps {
+interface EntityInheritEditorProps {
    options: {
       value: string;
       field: string;
-      rowData: DataModelDependencyRow;
+      rowData: EntityInheritRow;
       editorCallback: (value: string) => void;
    };
 }
 
-function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React.ReactElement {
+function EntityInheritEditor(props: EntityInheritEditorProps): React.ReactElement {
    const { options } = props;
-   const { editorCallback, rowData, field } = options;
+   const { editorCallback, rowData } = options;
 
-   // Initialize with the actual value based on the field type
-   const initialValue = field === 'datamodel' ? rowData.datamodel : field === 'version' ? rowData.version : '';
+   const initialValue = rowData?.parentId;
    const [currentValue, setCurrentValue] = React.useState(initialValue || '');
    const [suggestions, setSuggestions] = React.useState<string[]>([]);
    const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
    const queryApi = useModelQueryApi();
-   const dataModel = useDataModel();
+   const entity = useEntity();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
-   const basePath = ['datamodel', 'dependencies'];
-   const fieldInfo = diagnostics.info(basePath, field, rowData.idx);
+   const basePath = ['entity', 'superEntities'];
+   const fieldInfo = diagnostics.info(basePath, 'superEntities', rowData.idx);
    const error = fieldInfo.empty ? undefined : fieldInfo.text();
    const isDropdownClicked = React.useRef(false);
    // eslint-disable-next-line no-null/no-null
@@ -48,11 +47,11 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: dataModel?.id || '' },
-         syntheticElements: [{ property: 'dependencies', type: DataModelDependencyType }],
-         property: 'datamodel'
+         container: { globalId: entity?.$globalId || '' },
+         syntheticElements: [{ property: 'superEntities', type: LogicalEntityType }],
+         property: 'superEntities'
       }),
-      [dataModel]
+      [entity.$globalId]
    );
 
    const search = React.useCallback(
@@ -151,175 +150,127 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
    );
 }
 
-function DataModelDependencyProperty({
+function EntityInheritProperty({
    rowData,
    editingRows
 }: {
-   rowData: DataModelDependencyRow;
+   rowData: EntityInheritRow;
    editingRows: Record<string, boolean>;
 }): React.ReactNode {
    const diagnostics = useDiagnosticsManager();
-   const basePath = ['datamodel', 'dependencies'];
-   const info = diagnostics.info(basePath, 'datamodel', rowData.idx);
+   const basePath = ['entity', 'superEntities'];
+   const info = diagnostics.info(basePath, 'superEntities', rowData.idx);
    const error = info.empty ? undefined : info.text();
 
    const showInvalid = Boolean(error && !editingRows[rowData.id]);
 
    return (
       <div className={`grid-cell-container ${showInvalid ? 'p-invalid' : ''}`} title={error || undefined}>
-         <span>{rowData.datamodel || ''}</span>
+         <span>{rowData.parentId || ''}</span>
          {error && !editingRows[rowData.id] && <p className='p-error m-0'>{error}</p>}
       </div>
    );
 }
 
-export function DataModelDependenciesDataGrid(): React.ReactElement {
-   const dataModel = useDataModel();
+export function EntityInheritsDataGrid(): React.ReactElement {
+   const entity = useEntity();
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
-   const [gridData, setGridData] = React.useState<DataModelDependencyRow[]>([]);
-   const [selectedRows, setSelectedRows] = React.useState<DataModelDependencyRow[]>([]);
-   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
-   const dependenciesRef = React.useRef(dataModel?.dependencies || []);
-
-   const deriveDependencyRowId = React.useCallback((dependency: Partial<DataModelDependency>, idx: number): string => {
-      const globalId = (dependency as { $globalId?: string })?.$globalId;
-      const datamodelName = dependency.datamodel || 'dependency';
-      const version = dependency.version || 'latest';
-      return globalId ?? `${datamodelName}-${version}-${idx}`;
-   }, []);
-
-   const handleSelectionChange = React.useCallback((e: { value: DataModelDependencyRow[] }): void => {
-      setSelectedRows(e.value);
-   }, []);
+   const [gridData, setGridData] = React.useState<EntityInheritRow[]>([]);
 
    // Update grid data when dependencies change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         dependenciesRef.current = dataModel?.dependencies || [];
-         const committedData = (dataModel?.dependencies || []).map((dep, idx) => ({
-            ...dep,
-            idx,
-            id: deriveDependencyRowId(dep, idx)
-         })) as DataModelDependencyRow[];
+         const committedData = (entity?.superEntities || []).map((dep: any, idx: number) => {
+            // dep can be either a string Reference or an object with different shapes
+            const parentId =
+               typeof dep === 'string' ? dep : (dep?.parentId ?? dep?.$refText ?? (dep?.ref && (dep.ref.id || dep.ref.$globalId)) ?? '');
+            return {
+               $type: EntityInheritType,
+               parentId,
+               idx,
+               id: `dep${idx}`
+            } as EntityInheritRow;
+         }) as EntityInheritRow[];
 
-         const committedIds = new Set(committedData.map(dep => dep.id));
-         pendingDeleteIdsRef.current.forEach(id => {
-            if (!committedIds.has(id)) {
-               pendingDeleteIdsRef.current.delete(id);
-            }
-         });
-
-         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
+         // Preserve any uncommitted rows that are currently being edited
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...visibleCommittedData, ...uncommittedRows];
+         return [...committedData, ...uncommittedRows];
       });
-   }, [dataModel?.dependencies, editingRows, deriveDependencyRowId]);
+   }, [entity?.superEntities, editingRows]);
 
-   const datamodelOptions = React.useMemo(() => {
-      const uniqueDatamodels = [...new Set(gridData.map(item => item.datamodel).filter(Boolean))];
-      return uniqueDatamodels.map(dm => ({ label: dm, value: dm }));
+   const filterOptions = React.useMemo(() => {
+      const uniqueInheritances = [...new Set(gridData.map(item => item.parentId).filter(Boolean))];
+      return uniqueInheritances.map(lbl => ({ label: lbl, value: lbl }));
    }, [gridData]);
 
-   const defaultEntry = React.useMemo<Partial<DataModelDependencyRow>>(
+   const defaultEntry = React.useMemo<Partial<EntityInheritRow>>(
       () => ({
-         $type: DataModelDependencyType,
-         datamodel: '',
-         version: '',
+         $type: EntityInheritType,
+         parentId: '',
          id: '' // Default id for new entries
       }),
       []
    );
 
    const onRowDelete = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         if (dependency.id && !dependency._uncommitted) {
-            pendingDeleteIdsRef.current.add(dependency.id);
-         }
-
-         setGridData(current => current.filter(row => row.id !== dependency.id));
-         setSelectedRows(current => current.filter(row => row.id !== dependency.id));
-
-         if (dependency._uncommitted) {
-            if (dependency.id) {
-               pendingDeleteIdsRef.current.delete(dependency.id);
-            }
-            return;
-         }
-
-         const dependencyIdx =
-            (dataModel?.dependencies || []).findIndex((dep, idx) => deriveDependencyRowId(dep, idx) === dependency.id);
-         if (dependencyIdx === -1) {
-            if (dependency.id) {
-               pendingDeleteIdsRef.current.delete(dependency.id);
-            }
-            return;
-         }
-
-         dispatch({
-            type: 'datamodel:dependency:delete-dependency',
-            dependencyIdx
-         });
+      (row: EntityInheritRow) => {
+         dispatch({ type: 'entity:inherit:delete', inheritIdx: row.idx });
       },
-      [dispatch, dataModel?.dependencies, deriveDependencyRowId]
+      [dispatch]
    );
 
    const onRowUpdate = React.useCallback(
-      (dependency: DataModelDependencyRow) => {
-         if (dependency._uncommitted) {
+      (row: EntityInheritRow) => {
+         if (row._uncommitted) {
             // For uncommitted rows, check if anything actually changed
-            const hasChanges = dependency.datamodel !== defaultEntry.datamodel || dependency.version !== defaultEntry.version;
-
+            const hasChanges = row.parentId && row.parentId.trim() !== '';
 
             if (!hasChanges) {
                // Remove the row if no changes
-               setGridData(current => current.filter(row => row.id !== dependency.id));
+               setGridData(current => current.filter(r => r.id !== row.id));
                setEditingRows({});
                return;
             }
 
-            // Create the final dependency without temporary fields
+            // Create the final inheritance without temporary fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, idx, ...dependencyData } = dependency;
+            const { _uncommitted, id: tempId, idx, ...inheritanceData } = row;
 
-            // Add the new dependency through dispatch
+            // Add the new inheritance through dispatch as a reference object for proper serialization
             dispatch({
-               type: 'datamodel:dependency:add-dependency',
-               dependency: dependencyData
+               type: 'entity:inherit:add',
+               inherit: { $refText: toIdReference(inheritanceData.parentId) }
             });
 
             if (wasSaveTriggeredByEnter()) {
-               const newTempRow: DataModelDependencyRow = {
+               // Create a new uncommitted row with a unique temporary ID
+               const tempRow: EntityInheritRow = {
                   ...defaultEntry,
-                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
-                  _uncommitted: true,
-                  idx: -1
-               } as DataModelDependencyRow;
+                  id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`, // Ensure uniqueness
+                  _uncommitted: true
+               } as EntityInheritRow;
 
                setTimeout(() => {
-                  setGridData(current => [...current, newTempRow]);
-                  setEditingRows({ [newTempRow.id]: true });
+                  // Add to grid data and set it to editing mode
+                  setGridData(current => [...current, tempRow]);
+                  setEditingRows({ [tempRow.id]: true });
                }, 50);
             }
          } else {
             // This is an existing row being updated
-            if (
-               !dependency.datamodel ||
-               dependency.datamodel.trim() === '' ||
-               dependency.datamodel === '_' ||
-               dependency.datamodel === '-'
-            ) {
-               // Invalid datamodel, delete the row
-               onRowDelete(dependency);
+            if (!row.parentId || row.parentId.trim() === '') {
+               // Invalid inheritance, delete the row
+               onRowDelete(row);
                return;
             }
 
             dispatch({
-               type: 'datamodel:dependency:update',
-               dependencyIdx: dependency.idx,
-               dependency: dependency
+               type: 'entity:inherit:update',
+               inheritIdx: row.idx,
+               inherit: { $refText: toIdReference(row.parentId) }
             });
          }
 
@@ -329,89 +280,56 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
       [dispatch, onRowDelete, defaultEntry]
    );
 
-   const onRowAdd = React.useCallback((): void => {
+   const onRowAdd = React.useCallback(() => {
       // Clear any existing edit states first
       setEditingRows({});
 
       // Create a new uncommitted row with a unique temporary ID
-      const tempRow: DataModelDependencyRow = {
+      const tempRow: EntityInheritRow = {
          ...defaultEntry,
-         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
-         _uncommitted: true,
-         idx: -1
-      } as DataModelDependencyRow;
+         id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`, // Ensure uniqueness
+         _uncommitted: true
+      } as EntityInheritRow;
 
       // Add to grid data and set it to editing mode
       setGridData(current => [...current, tempRow]);
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const handleRowReorder = React.useCallback(
-      (e: { rows: DataModelDependencyRow[] }): void => {
-         handleGenericRowReorder(
-            e,
-            pendingDeleteIdsRef.current,
-            dependenciesRef.current || [],
-            deriveDependencyRowId,
-            reorderedDependencies => {
-               dispatch({
-                  type: 'datamodel:dependency:reorder-dependencies',
-                  dependencies: reorderedDependencies
-               });
-            }
-         );
-      },
-      [dispatch, deriveDependencyRowId]
-   );
-
-   const columns = React.useMemo<GridColumn<DataModelDependencyRow>[]>(
+   const columns = React.useMemo<GridColumn<EntityInheritRow>[]>(
       () => [
          {
-            field: 'datamodel',
-            header: 'Data Model',
-            editor: (options: any) => <DataModelDependencyEditor options={options} />,
-            body: (rowData: DataModelDependencyRow) => <DataModelDependencyProperty rowData={rowData} editingRows={editingRows} />,
+            field: 'parentId',
+            header: 'Parent Entity',
+            editor: (options: any) => <EntityInheritEditor options={options} />,
+            body: (rowData: EntityInheritRow) => <EntityInheritProperty rowData={rowData} editingRows={editingRows} />,
             filterType: 'multiselect',
-            filterOptions: datamodelOptions,
+            filterOptions: filterOptions,
             showFilterMatchModes: false
-         },
-         {
-            field: 'version',
-            header: 'Version',
-            editor: (options: any) => <GenericTextEditor options={options} basePath={['datamodel', 'dependencies']} field='version' />,
-            body: (rowData: DataModelDependencyRow) => (
-               <EditorProperty basePath={['datamodel', 'dependencies']} field='version' row={rowData} value={rowData.version || ''} />
-            ),
-            headerStyle: { width: '150px' },
-            filterType: 'text'
          }
       ],
-      [datamodelOptions, editingRows]
+      [editingRows, filterOptions]
    );
 
-   if (!dataModel) {
-      return <ErrorView errorMessage='No data model available' />;
+   if (!entity) {
+      return <ErrorView errorMessage='No entity available' />;
    }
 
    return (
       <PrimeDataGrid
-         className='data-model-dependencies-datatable'
+         className='entity-inherits-datatable'
          columns={columns}
          data={gridData}
-         keyField='id' // Changed keyField to id
+         keyField='id'
          height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowReorder={handleRowReorder}
-         selectedRows={selectedRows}
-         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
-         noDataMessage='No dependencies'
-         addButtonLabel='Add Dependency'
+         noDataMessage='No parent entities'
+         addButtonLabel='Add Parent Entity'
          editingRows={editingRows}
-         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];
@@ -441,7 +359,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
                return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
             });
          }}
-         globalFilterFields={['datamodel', 'version']}
+         globalFilterFields={['parentId']}
       />
    );
 }

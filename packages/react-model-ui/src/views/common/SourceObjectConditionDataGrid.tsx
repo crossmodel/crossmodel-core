@@ -8,11 +8,11 @@ import {
    JoinConditionType,
    Mapping,
    NumberLiteralType,
+   quote,
    ReferenceableElement,
    SourceObjectAttributeReferenceType,
    SourceObjectCondition,
-   StringLiteralType,
-   quote
+   StringLiteralType
 } from '@crossmodel/protocol';
 import {
    AutoComplete,
@@ -26,7 +26,7 @@ import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import * as React from 'react';
 import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectConditionEditorProps {
@@ -268,12 +268,46 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<SourceObjectConditionRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<SourceObjectConditionRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+   const conditionsRef = React.useRef<SourceObjectCondition[]>(mapping.sources[sourceObjectIdx]?.conditions || []);
+
+   const handleSelectionChange = React.useCallback((e: { value: SourceObjectConditionRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    const sourceObject = mapping.sources[sourceObjectIdx];
+   const deriveConditionRowId = React.useCallback(
+      (condition: SourceObjectCondition, idx: number): string => {
+         const globalId = (condition as { $globalId?: string })?.$globalId;
+         return globalId ?? `condition-${sourceObjectIdx}-${idx}`;
+      },
+      [sourceObjectIdx]
+   );
+
+   const handleRowReorder = React.useCallback(
+      (e: { rows: SourceObjectConditionRow[] }): void => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            conditionsRef.current || [],
+            deriveConditionRowId,
+            reorderedConditions => {
+               dispatch({
+                  type: 'source-object:reorder-conditions',
+                  sourceObjectIdx,
+                  conditions: reorderedConditions
+               });
+            }
+         );
+      },
+      [dispatch, deriveConditionRowId, sourceObjectIdx]
+   );
 
    // Update grid data when conditions change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
+         conditionsRef.current = sourceObject?.conditions || [];
          // Map the committed conditions
          const committedData = (sourceObject?.conditions || []).map((condition: SourceObjectCondition, idx: number) => ({
             $type: condition.expression.$type,
@@ -293,15 +327,22 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                value: condition.expression.right.value?.toString() || ''
             },
             idx,
-            id: idx.toString()
+            id: deriveConditionRowId(condition, idx)
          })) as SourceObjectConditionRow[];
 
-         // Preserve any uncommitted rows that are currently being edited
+         const committedIds = new Set(committedData.map(row => row.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         return [...visibleCommittedData, ...uncommittedRows];
       });
-   }, [sourceObject?.conditions, editingRows]);
+   }, [sourceObject?.conditions, editingRows, deriveConditionRowId]);
 
    const defaultEntry = React.useMemo<SourceObjectConditionRow>(
       () => ({
@@ -317,13 +358,38 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
 
    const onRowDelete = React.useCallback(
       (condition: SourceObjectConditionRow) => {
+         if (condition.id && !condition._uncommitted) {
+            pendingDeleteIdsRef.current.add(condition.id);
+         }
+
+         setGridData(current => current.filter(row => row.id !== condition.id));
+         setSelectedRows(current => current.filter(row => row.id !== condition.id));
+
+         if (condition._uncommitted) {
+            if (condition.id) {
+               pendingDeleteIdsRef.current.delete(condition.id);
+            }
+            return;
+         }
+
+         const conditionIdx =
+            (sourceObject?.conditions || []).findIndex(
+               (existing: SourceObjectCondition, idx: number) => deriveConditionRowId(existing, idx) === condition.id
+            );
+         if (conditionIdx === -1) {
+            if (condition.id) {
+               pendingDeleteIdsRef.current.delete(condition.id);
+            }
+            return;
+         }
+
          dispatch({
             type: 'source-object:delete-condition',
             sourceObjectIdx,
-            conditionIdx: condition.idx
+            conditionIdx
          });
       },
-      [dispatch, sourceObjectIdx]
+      [dispatch, sourceObjectIdx, sourceObject?.conditions, deriveConditionRowId]
    );
 
    const onRowUpdate = React.useCallback(
@@ -335,17 +401,8 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
                condition.operator !== defaultEntry.operator ||
                condition.right.value !== defaultEntry.right.value;
 
-            // Check if required fields are valid
-            const isValid =
-               condition.left.value?.trim() &&
-               condition.right.value?.trim() &&
-               condition.left.value !== '_' &&
-               condition.left.value !== '-' &&
-               condition.right.value !== '_' &&
-               condition.right.value !== '-';
-
-            if (!hasChanges || !isValid) {
-               // Remove the row if no changes or invalid
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== condition.id));
                setEditingRows({});
                return;
@@ -432,28 +489,6 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
       setGridData(current => [...current, tempRow]);
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
-
-   const onRowMoveUp = React.useCallback(
-      (condition: SourceObjectConditionRow) => {
-         dispatch({
-            type: 'source-object:move-condition-up',
-            sourceObjectIdx,
-            conditionIdx: condition.idx
-         });
-      },
-      [dispatch, sourceObjectIdx]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (condition: SourceObjectConditionRow) => {
-         dispatch({
-            type: 'source-object:move-condition-down',
-            sourceObjectIdx,
-            conditionIdx: condition.idx
-         });
-      },
-      [dispatch, sourceObjectIdx]
-   );
 
    const columns = React.useMemo<GridColumn<SourceObjectConditionRow>[]>(
       () => [
@@ -601,13 +636,15 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No conditions'
          addButtonLabel='Add Condition'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { GRID } from '@crossmodel/protocol';
+import { GRID, ShowPropertiesAction } from '@crossmodel/protocol';
 import {
    ConsoleLogger,
    GLSPHiddenBoundsUpdater,
@@ -17,6 +17,7 @@ import {
    ToolPalette,
    bindAsService,
    bindOrRebind,
+   configureActionHandler,
    isRoutable,
    toElementAndRoutingPoints
 } from '@eclipse-glsp/client';
@@ -35,6 +36,7 @@ import { CrossModelDiagramStartup } from './cross-model-diagram-startup';
 import { CrossModelErrorExtension } from './cross-model-error-extension';
 import { CrossModelToolPalette } from './cross-model-tool-palette';
 import { CrossModelGLSPSelectionDataService } from './crossmodel-selection-data-service';
+import { ShowPropertiesActionHandler } from './show-properties-action-handler';
 
 export function createCrossModelDiagramModule(registry: interfaces.ContainerModuleCallBack): ContainerModule {
    return new ContainerModule((bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation) => {
@@ -65,6 +67,8 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
 
       bind(CrossModelHiddenBoundsUpdater).toSelf().inSingletonScope();
       rebind(GLSPHiddenBoundsUpdater).to(CrossModelHiddenBoundsUpdater).inSingletonScope();
+
+      configureActionHandler(context, ShowPropertiesAction.KIND, ShowPropertiesActionHandler);
    });
 }
 

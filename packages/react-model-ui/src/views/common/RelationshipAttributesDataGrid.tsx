@@ -7,7 +7,7 @@ import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly, useRelationship } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid, handleGenericRowReorder } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface AttributePropertyProps {
@@ -186,18 +186,34 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    // Diagnostics are read directly in cell components; no centralized validationErrors map required.
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<RelationshipAttributeRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<RelationshipAttributeRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+
+   const handleSelectionChange = React.useCallback((e: { value: RelationshipAttributeRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    // Update grid data when attributes change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Map the committed attributes
-         const committedData = (relationship.attributes || []).map((attr, idx) => ({
-            ...attr,
-            idx,
-            id: (attr as any).id || idx.toString()
-         })) as RelationshipAttributeRow[];
+         const committedData = (relationship.attributes || []).map((attr, idx) => {
+            const persistedId = (attr as any).id as string | undefined;
+            const globalId = (attr as any).$globalId as string | undefined;
+            const id = persistedId ?? globalId ?? `attr-${idx}`;
+            return {
+               ...attr,
+               idx,
+               id
+            };
+         }) as RelationshipAttributeRow[];
 
-         // Preserve any uncommitted rows that are currently being edited
+         const committedIds = new Set(committedData.map(row => row.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
          return [...committedData, ...uncommittedRows];
@@ -220,7 +236,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          parent: '',
          child: '',
          idx: -1,
-         id: '' // Default id for new entries
+         id: ''
       }),
       []
    );
@@ -231,8 +247,8 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             // For uncommitted rows, check if anything actually changed
             const hasChanges = attribute.parent !== defaultEntry.parent || attribute.child !== defaultEntry.child;
 
-            if (!hasChanges || !attribute.parent || !attribute.child) {
-               // Remove the row if no changes or incomplete data
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== attribute.id));
                setEditingRows({});
                return;
@@ -240,7 +256,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, ...attributeData } = attribute;
+            const { _uncommitted, id: _id, ...attributeData } = attribute;
 
             // Add the new attribute through dispatch
             dispatch({
@@ -249,15 +265,16 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             });
 
             if (wasSaveTriggeredByEnter()) {
+               const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`;
                const newTempRow: RelationshipAttributeRow = {
                   ...defaultEntry,
-                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  id: tempId,
                   _uncommitted: true
                };
 
                setTimeout(() => {
                   setGridData(current => [...current, newTempRow]);
-                  setEditingRows({ [newTempRow.id]: true });
+                  setEditingRows({ [tempId]: true });
                }, 50);
             }
          } else {
@@ -282,7 +299,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
       // Create a new uncommitted row with a unique temporary ID
       const tempRow: RelationshipAttributeRow = {
          ...defaultEntry,
-         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`, // Ensure uniqueness
+         id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
          _uncommitted: true
       };
 
@@ -293,32 +310,44 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
    const onRowDelete = React.useCallback(
       (attribute: RelationshipAttributeRow) => {
-         dispatch({
-            type: 'relationship:attribute:delete-attribute',
-            attributeIdx: attribute.idx
-         });
+         if (!attribute._uncommitted) {
+            pendingDeleteIdsRef.current.add(attribute.id);
+
+            setGridData(current => current.filter(row => row.id !== attribute.id));
+            setSelectedRows(current => current.filter(row => row.id !== attribute.id));
+
+            dispatch({
+               type: 'relationship:attribute:delete-attribute',
+               attributeIdx: attribute.idx
+            });
+         } else {
+            setGridData(current => current.filter(row => row.id !== attribute.id));
+            setSelectedRows(current => current.filter(row => row.id !== attribute.id));
+         }
       },
       [dispatch]
    );
 
-   const onRowMoveUp = React.useCallback(
-      (attribute: RelationshipAttributeRow) => {
-         dispatch({
-            type: 'relationship:attribute:move-attribute-up',
-            attributeIdx: attribute.idx
-         });
+   const handleRowReorder = React.useCallback(
+      (e: { rows: RelationshipAttributeRow[] }): void => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            relationship.attributes || [],
+            (attr, idx) => {
+               const persistedId = (attr as any).id as string | undefined;
+               const globalId = (attr as any).$globalId as string | undefined;
+               return persistedId ?? globalId ?? `attr-${idx}`;
+            },
+            reorderedAttributes => {
+               dispatch({
+                  type: 'relationship:attribute:reorder-attributes',
+                  attributes: reorderedAttributes
+               });
+            }
+         );
       },
-      [dispatch]
-   );
-
-   const onRowMoveDown = React.useCallback(
-      (attribute: RelationshipAttributeRow) => {
-         dispatch({
-            type: 'relationship:attribute:move-attribute-down',
-            attributeIdx: attribute.idx
-         });
-      },
-      [dispatch]
+      [dispatch, relationship.attributes]
    );
 
    const columns = React.useMemo<GridColumn<RelationshipAttributeRow>[]>(
@@ -371,18 +400,20 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
          className='relationship-attributes-datatable'
          columns={columns}
          data={gridData}
-         keyField='id' // Changed keyField to id
+         keyField='id'
          height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
          onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No attributes'
          addButtonLabel='Add Attribute'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

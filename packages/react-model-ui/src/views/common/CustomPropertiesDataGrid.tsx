@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
-import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface CustomPropertyRow extends CustomProperty {
@@ -24,6 +24,12 @@ export interface CustomPropertiesDataGridProps {
    errorMessage: string;
 }
 
+const deriveCustomPropertyRowId = (prop: Partial<CustomProperty>, idx: number): string => {
+   const persistedId = prop.id as string | undefined;
+   const globalId = prop.$globalId as string | undefined;
+   return persistedId ?? globalId ?? `customProperty-${idx}`;
+};
+
 export function CustomPropertiesDataGrid({
    contextType,
    customProperties,
@@ -33,20 +39,35 @@ export function CustomPropertiesDataGrid({
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);
+   const [selectedRows, setSelectedRows] = React.useState<CustomPropertyRow[]>([]);
+   const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
+   const propertiesRef = React.useRef(customProperties || []);
+
+   const handleSelectionChange = React.useCallback((e: { value: CustomPropertyRow[] }): void => {
+      setSelectedRows(e.value);
+   }, []);
 
    // Update grid data when properties change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         // Map the committed properties
+         propertiesRef.current = customProperties || [];
          const committedData = (customProperties || []).map((prop, idx) => ({
             ...prop,
-            idx
+            idx,
+            id: deriveCustomPropertyRowId(prop, idx)
          }));
 
-         // Preserve any uncommitted rows that are currently being edited
+         const committedIds = new Set(committedData.map(prop => prop.id));
+         pendingDeleteIdsRef.current.forEach(id => {
+            if (!committedIds.has(id)) {
+               pendingDeleteIdsRef.current.delete(id);
+            }
+         });
+
+         const visibleCommittedData = committedData.filter(row => !pendingDeleteIdsRef.current.has(row.id));
          const uncommittedRows = current.filter(row => row._uncommitted && editingRows[row.id]);
 
-         return [...committedData, ...uncommittedRows];
+         return [...visibleCommittedData, ...uncommittedRows];
       });
    }, [customProperties, editingRows]);
 
@@ -72,8 +93,8 @@ export function CustomPropertiesDataGrid({
                customProperty.value !== defaultEntry.value ||
                customProperty.description !== defaultEntry.description;
 
-            if (!hasChanges || !customProperty.name) {
-               // Remove the row if no changes or no name
+            if (!hasChanges) {
+               // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== customProperty.id));
                setEditingRows({});
                return;
@@ -150,34 +171,55 @@ export function CustomPropertiesDataGrid({
       setEditingRows({ [tempRow.id]: true });
    }, [defaultEntry]);
 
-   const onRowMoveUp = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
-         dispatch({
-            type: `${contextType}:customProperty:move-customProperty-up`,
-            customPropertyIdx: customProperty.idx
-         });
+   const handleRowReorder = React.useCallback(
+      (e: { rows: CustomPropertyRow[] }): void => {
+         handleGenericRowReorder(
+            e,
+            pendingDeleteIdsRef.current,
+            propertiesRef.current || [],
+            deriveCustomPropertyRowId,
+            reorderedProperties => {
+               dispatch({
+                  type: `${contextType}:customProperty:reorder-customProperties`,
+                  customProperties: reorderedProperties
+               });
+            }
+         );
       },
       [dispatch, contextType]
    );
 
-   const onRowMoveDown = React.useCallback(
+   const handleRowDelete = React.useCallback(
       (customProperty: CustomPropertyRow): void => {
-         dispatch({
-            type: `${contextType}:customProperty:move-customProperty-down`,
-            customPropertyIdx: customProperty.idx
-         });
-      },
-      [dispatch, contextType]
-   );
+         if (customProperty.id && !customProperty._uncommitted) {
+            pendingDeleteIdsRef.current.add(customProperty.id);
+         }
 
-   const onRowDelete = React.useCallback(
-      (customProperty: CustomPropertyRow): void => {
+         setGridData(current => current.filter(row => row.id !== customProperty.id));
+         setSelectedRows(current => current.filter(row => row.id !== customProperty.id));
+
+         if (customProperty._uncommitted) {
+            if (customProperty.id) {
+               pendingDeleteIdsRef.current.delete(customProperty.id);
+            }
+            return;
+         }
+
+         const customPropertyIdx =
+            (customProperties || []).findIndex((prop, idx) => deriveCustomPropertyRowId(prop, idx) === customProperty.id);
+         if (customPropertyIdx === -1) {
+            if (customProperty.id) {
+               pendingDeleteIdsRef.current.delete(customProperty.id);
+            }
+            return;
+         }
+
          dispatch({
             type: `${contextType}:customProperty:delete-customProperty`,
-            customPropertyIdx: customProperty.idx
+            customPropertyIdx
          });
       },
-      [dispatch, contextType]
+      [dispatch, contextType, customProperties]
    );
 
    const basePath = React.useMemo(() => [contextType, 'customProperties'], [contextType]);
@@ -230,14 +272,16 @@ export function CustomPropertiesDataGrid({
          height='auto'
          onRowAdd={onRowAdd}
          onRowUpdate={onRowUpdate}
-         onRowDelete={onRowDelete}
-         onRowMoveUp={onRowMoveUp}
-         onRowMoveDown={onRowMoveDown}
+         onRowDelete={handleRowDelete}
+         onRowReorder={handleRowReorder}
+         selectedRows={selectedRows}
+         onSelectionChange={handleSelectionChange}
          defaultNewRow={defaultEntry}
          readonly={readonly}
          noDataMessage='No custom properties'
          addButtonLabel='Add Property'
          editingRows={editingRows}
+         metaKeySelection={false}
          onRowEditChange={(e: DataTableRowEditEvent) => {
             const newEditingRows = e.data as Record<string, boolean>;
             const newEditingId = Object.keys(newEditingRows)[0];

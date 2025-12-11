@@ -15,19 +15,19 @@ export class LogicalIdentifier extends TheiaPageObject {
    }
 
    protected get nameLocator(): Locator {
-      return this.locator.locator('td').first();
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').first();
    }
 
    protected get primaryLocator(): Locator {
-      return this.locator.locator('td').nth(1);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(1);
    }
 
    protected get attributeIdsLocator(): Locator {
-      return this.locator.locator('td:nth-child(3)'); // More reliable than nth(2)
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(2);
    }
 
    protected get descriptionLocator(): Locator {
-      return this.locator.locator('td').nth(3);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(3);
    }
 
    protected get actionsLocator(): Locator {
@@ -48,6 +48,9 @@ export class LogicalIdentifier extends TheiaPageObject {
 
    async setName(name: string): Promise<void> {
       const inputLocator = this.nameLocator.locator('input');
+
+      // Wait a bit for the row to be fully in edit mode if it was just created
+      await this.page.waitForTimeout(100);
 
       // If input is not immediately visible, enter edit mode
       if (!(await inputLocator.isVisible())) {
