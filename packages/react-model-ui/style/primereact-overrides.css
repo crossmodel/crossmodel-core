@@ -215,7 +215,12 @@
 
 .p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox {
    margin-left: 0.3rem;
+   opacity: 1 !important;
 }
+
+.p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox .p-checkbox-box {
+   border-color: #fbbf24;
+}  
 
 /* Checkbox styling for both light and dark modes */
 .p-checkbox .p-checkbox-box {
