@@ -65,19 +65,25 @@ export class EntityDiagramNodeView extends DiagramNodeView {
    }
 
    protected addExternalEntityIcon(view: VNode, node: Readonly<GNode>): void {
-      // Calculate icon position (bottom-left corner)
-      const iconX = 5;
-      const iconY = node.bounds.height - 20;
+      // Calculate icon position (top-right corner)
+      const iconX = node.bounds.width - 10;
+      const iconY = 0;
 
       // Create the external entity icon (Windows-style shortcut arrow)
       const icon: any = (
-         <g class-external-entity-icon={true} transform={`translate(${iconX}, ${iconY})`}>
-            {/* White background box for visibility */}
-            <rect x='0' y='5' width='10' height='10' fill='white' stroke='black' stroke-width='0.5' rx='1' />
+         <g class-external-entity-icon={true} transform={`translate(${iconX}, ${iconY})`} viewBox='0 0 10 10' width='10' height='10'>
+            <rect x='0.5' y='0.5' width='9' height='9' rx='1.5' ry='1.5' fill='#a8a1c5' stroke='#a8a1c5' stroke-width='1.2' />
 
-            {/* Arrow pointing up-right */}
-            <path d='M 2 13 L 2 7 L 8 7' fill='none' stroke='black' stroke-width='1' />
-            <polyline points='6,5 8,7 10,5' fill='none' stroke='black' stroke-width='1' />
+            <path
+               d='M 3.5 2.5 L 7.5 2.5 L 7.5 6.5'
+               fill='none'
+               stroke='#ffffff'
+               stroke-width='1.4'
+               stroke-linecap='round'
+               stroke-linejoin='round'
+            />
+
+            <line x1='7.5' y1='2.5' x2='2.5' y2='7.5' stroke='#ffffff' stroke-width='1.4' stroke-linecap='round' />
          </g>
       );
 
