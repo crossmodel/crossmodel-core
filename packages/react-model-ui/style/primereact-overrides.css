@@ -219,8 +219,8 @@
 }
 
 .p-datatable .p-datatable-tbody > tr > td.p-cell-editing .p-checkbox .p-checkbox-box {
-   border-color: #fbbf24;
-}  
+   border-color: var(--theia-focusBorder);
+}
 
 /* Checkbox styling for both light and dark modes */
 .p-checkbox .p-checkbox-box {
@@ -237,7 +237,6 @@
    background: var(--theia-input-background);
    border: 1px solid var(--surface-border);
 }
-
 
 .crossmodel-light .p-checkbox .p-checkbox-box,
 body.theia-light .p-checkbox .p-checkbox-box {
@@ -260,7 +259,7 @@ body.theia-dark .p-checkbox .p-checkbox-box {
 }
 
 .p-checkbox .p-checkbox-box.p-highlight svg,
-.p-checkbox .p-checkbox-box[data-p-highlight="true"] svg {
+.p-checkbox .p-checkbox-box[data-p-highlight='true'] svg {
    display: block !important;
    visibility: visible !important;
    opacity: 1 !important;
@@ -279,13 +278,13 @@ body.theia-dark .p-checkbox .p-checkbox-box {
 .dark-theme,
 .crossmodel-dark,
 body.theia-dark,
-html[data-theme="dark"],
-body[class*="dark"] {
+html[data-theme='dark'],
+body[class*='dark'] {
    --checkbox-tick-color: #ffffff;
 }
 
 .p-checkbox .p-checkbox-box.p-highlight svg *,
-.p-checkbox .p-checkbox-box[data-p-highlight="true"] svg *,
+.p-checkbox .p-checkbox-box[data-p-highlight='true'] svg *,
 .p-checkbox .p-checkbox-box.p-highlight svg path,
 .p-checkbox .p-checkbox-box.p-highlight svg g,
 .p-checkbox .p-checkbox-box.p-highlight svg g path {
@@ -631,7 +630,6 @@ span.w-full.p-autocomplete {
    background: transparent;
 }
 
-
 .p-datatable .p-datatable-tbody > tr .drag-handle {
    cursor: grab;
    user-select: none;
@@ -647,7 +645,7 @@ span.w-full.p-autocomplete {
    cursor: grabbing;
 }
 
-table[style*="position: fixed"] * {
+table[style*='position: fixed'] * {
    pointer-events: none !important;
 }
 
