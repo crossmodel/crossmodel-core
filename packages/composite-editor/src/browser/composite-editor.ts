@@ -65,16 +65,36 @@ export class ReverseCompositeSaveable
          this.fileResourceResolver.autoOverwrite = true;
          const activeEditor = this.editor.activeWidget();
          const activeSaveable = Saveable.get(activeEditor);
-         if (activeSaveable) {
-            await activeSaveable.save(options);
-            // manually reset the dirty flag on the other editors (saveables) without triggering an actual save
-            this.resetDirtyState(activeSaveable);
-         } else {
-            // could not determine active editor, so execute save sequentially on all editors
-            for (const saveable of this.saveables) {
-               await saveable.save(options);
+         // If the active saveable is a GLSP diagram saveable, prefer a targeted
+         // server-side save: request the current semantic model for the URI and
+         // call modelService.save with clientId='save'. That ensures a single
+         // server write persists the canonical model to disk even when the
+         // diagram is active. If this path fails, fall back to saving all
+         // individual saveables.
+         if (activeSaveable instanceof GLSPSaveable) {
+            try {
+               const ok = await this.editor.saveSemanticModel('save');
+               if (ok) {
+                  // Clear dirty state for all saveables (including the active GLSPSaveable)
+                  this.resetDirtyState();
+                  return;
+               }
+            } catch (e) {
+               console.error('[ReverseCompositeSaveable] server-side save failed, falling back to per-saveable saves', e);
+               // fall through to per-saveable saving below
             }
          }
+
+         // Fallback / default: save all saveables in reverse order (text editor first)
+         for (const saveable of this.saveables) {
+            try {
+               await saveable.save(options);
+            } catch (e) {
+               console.error('[ReverseCompositeSaveable] save failed for', saveable, e);
+            }
+         }
+         // After saving all saveables, ensure they are marked as not dirty.
+         this.resetDirtyState(activeSaveable);
       } finally {
          this.fileResourceResolver.autoOverwrite = autoOverwrite;
       }
@@ -237,6 +257,24 @@ export class CompositeEditor
 
    getResourceUri(): URI {
       return new URI(this.options.uri);
+   }
+
+   /**
+    * Helper to request the current semantic model for this composite resource
+    * and persist it via the ModelService. Returns true on success.
+    */
+   async saveSemanticModel(clientId = 'save'): Promise<boolean> {
+      try {
+         const doc = await this.modelService.request(this.uri);
+         if (!doc) {
+            return false;
+         }
+         await this.modelService.save({ uri: this.uri, model: doc.root, clientId });
+         return true;
+      } catch (e) {
+         console.error('[CompositeEditor] saveSemanticModel failed for', this.uri, e);
+         return false;
+      }
    }
 
    /** Updates ID of untitled editor to match user's name input. */

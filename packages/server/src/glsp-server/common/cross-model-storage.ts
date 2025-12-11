@@ -8,6 +8,8 @@ import {
    ClientSession,
    ClientSessionListener,
    ClientSessionManager,
+   CommandStack,
+   DefaultCommandStack,
    DisposableCollection,
    EditMode,
    GLSPServerError,
@@ -41,6 +43,7 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
    @inject(ClientSessionManager) protected sessionManager: ClientSessionManager;
    @inject(ModelSubmissionHandler) protected submissionHandler: ModelSubmissionHandler;
    @inject(ActionDispatcher) protected actionDispatcher: ActionDispatcher;
+   @inject(CommandStack) protected commandStack: DefaultCommandStack;
 
    protected toDispose = new DisposableCollection();
 
@@ -63,6 +66,11 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
             if (this.state.clientId !== event.sourceClientId || event.reason !== 'changed') {
                const result = await this.updateAndSubmit(rootUri, event.document);
                this.actionDispatcher.dispatchAll(result);
+            }
+         }),
+         this.state.modelService.onModelSaved(rootUri, async event => {
+            if (this.state.clientId !== event.sourceClientId) {
+               this.commandStack.saveIsDone();
             }
          })
       );
