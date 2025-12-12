@@ -5,7 +5,7 @@ import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/p
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
-import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
+import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericNumberEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -185,7 +185,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                name: attr.name || '',
                datatype: attr.datatype || '',
                description: attr.description || '',
+               mandatory: attr.mandatory || false,
                identifier: isPrimaryIdentifier,
+               ...(attr.length !== undefined && attr.length !== null ? { length: attr.length } : {}),
+               ...(attr.precision !== undefined && attr.precision !== null ? { precision: attr.precision } : {}),
+               ...(attr.scale !== undefined && attr.scale !== null ? { scale: attr.scale } : {}),
                id,
                $type: 'LogicalAttribute',
                $globalId: attr.$globalId || id
@@ -236,6 +240,87 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             showFilterMatchModes: false
          },
          {
+            field: 'length',
+            header: 'Length',
+            dataType: 'numeric',
+            headerStyle: { width: '10%' },
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'text' || datatype === 'binary';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty basePath={['entity', 'attributes']} field='length' row={rowData} value={rowData.length?.toString() || ''} />
+                  </div>
+               );
+            },
+            editor: (options: any) => {
+               const datatype = options.rowData?.datatype?.toLowerCase();
+               const isApplicable = datatype === 'text' || datatype === 'binary';
+               return (
+                  <GenericNumberEditor
+                     options={options}
+                     basePath={['entity', 'attributes']}
+                     field='length'
+                     placeholder={isApplicable ? '' : 'Only for Text/Binary'}
+                  />
+               );
+            }
+         },
+         {
+            field: 'precision',
+            header: 'Precision',
+            dataType: 'numeric',
+            headerStyle: { width: '10%' },
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'integer';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty basePath={['entity', 'attributes']} field='precision' row={rowData} value={rowData.precision?.toString() || ''} />
+                  </div>
+               );
+            },
+            editor: (options: any) => {
+               const datatype = options.rowData?.datatype?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'integer';
+               return (
+                  <GenericNumberEditor
+                     options={options}
+                     basePath={['entity', 'attributes']}
+                     field='precision'
+                     placeholder={isApplicable ? 'Enter precision' : 'Only for Decimal/Integer'}
+                  />
+               );
+            }
+         },
+         {
+            field: 'scale',
+            header: 'Scale',
+            dataType: 'numeric',
+            headerStyle: { width: '10%' },
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'datetime' || datatype === 'time';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty basePath={['entity', 'attributes']} field='scale' row={rowData} value={rowData.scale?.toString() || ''} />
+                  </div>
+               );
+            },
+            editor: (options: any) => {
+               const datatype = options.rowData?.datatype?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'datetime' || datatype === 'time';
+               return (
+                  <GenericNumberEditor
+                     options={options}
+                     basePath={['entity', 'attributes']}
+                     field='scale'
+                     placeholder={isApplicable ? '' : 'Only for Decimal/DateTime/Time'}
+                  />
+               );
+            }
+         },
+         {
             field: 'identifier',
             header: 'Primary',
             dataType: 'boolean',
@@ -244,6 +329,18 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
             ),
             editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='identifier' />,
+            filterType: 'boolean',
+            showFilterMatchModes: false
+         },
+         {
+            field: 'mandatory',
+            header: 'Mandatory',
+            dataType: 'boolean',
+            headerStyle: { width: '10%' },
+            body: (rowData: EntityAttributeRow) => (
+               <div className='flex align-items-center justify-content-center'>{rowData.mandatory && <i className='pi pi-check' />}</div>
+            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='mandatory' />,
             filterType: 'boolean',
             showFilterMatchModes: false
          },
@@ -336,6 +433,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                attribute.name !== defaultEntry.name ||
                attribute.datatype !== defaultEntry.datatype ||
                attribute.description !== defaultEntry.description ||
+               !!attribute.mandatory ||
                !!attribute.identifier;
 
             if (!hasChanges) {
@@ -350,12 +448,16 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted: _, id: __, description, identifier, ...attributeData } = attribute;
+            const { _uncommitted: _, id: __, description, identifier, mandatory, length, precision, scale, ...attributeData } = attribute;
             const finalAttribute = {
                ...attributeData,
                id: newId,
                $globalId: newId,
-               ...(description ? { description } : {})
+               ...(description ? { description } : {}),
+               ...(mandatory ? { mandatory } : {}),
+               ...(length !== undefined && length !== null ? { length } : {}),
+               ...(precision !== undefined && precision !== null ? { precision } : {}),
+               ...(scale !== undefined && scale !== null ? { scale } : {})
             };
 
             // Add the new attribute through dispatch
@@ -384,10 +486,14 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             // This is an existing row being updated
             // Remove empty and non-model fields before updating
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { description, identifier: _ignored, ...rest } = attribute;
+            const { description, identifier: _ignored, mandatory, length, precision, scale, ...rest } = attribute;
             const updatedAttribute = {
                ...rest,
-               ...(description ? { description } : {})
+               ...(description ? { description } : {}),
+               ...(mandatory ? { mandatory } : {}),
+               ...(length !== undefined && length !== null ? { length } : {}),
+               ...(precision !== undefined && precision !== null ? { precision } : {}),
+               ...(scale !== undefined && scale !== null ? { scale } : {})
             };
 
             dispatch({

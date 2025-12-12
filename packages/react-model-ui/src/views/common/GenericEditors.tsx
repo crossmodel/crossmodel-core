@@ -4,6 +4,7 @@
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
+import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
@@ -236,6 +237,43 @@ export function GenericCheckboxEditor({
                   onKeyDown={handleGridEditorKeyDown}
                   disabled={readonly}
                />
+            </div>
+         )}
+      </EditorContainer>
+   );
+}
+
+export function GenericNumberEditor({
+   options,
+   basePath,
+   field,
+   placeholder
+}: {
+   options: any;
+   basePath: string[];
+   field: string;
+   placeholder?: string;
+}): React.ReactElement {
+   const rowIdx = options.rowData?.idx ?? -1;
+   const readonly = useReadonly();
+   const isDisabled = options.disabled || readonly;
+
+   return (
+      <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
+         {({ invalid, error, className }) => (
+            <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
+               <InputNumber
+                  value={options.value ?? null}
+                  onValueChange={(e: any) => options.editorCallback(e.value)}
+                  className={`w-full ${className}`}
+                  onKeyDown={handleGridEditorKeyDown}
+                  disabled={isDisabled}
+                  autoFocus={!isDisabled}
+                  useGrouping={false}
+                  min={0}
+                  placeholder={placeholder}
+               />
+               {error && <small className='p-error m-0'>{error}</small>}
             </div>
          )}
       </EditorContainer>

@@ -110,6 +110,10 @@ export interface EntityInherit extends CrossModelElement {
 
 export interface AbstractLogicalAttribute extends CrossModelElement, NamedObject {
    datatype?: string;
+   mandatory?: boolean;
+   length?: number;
+   precision?: number;
+   scale?: number;
    identifier?: boolean;
 }
 

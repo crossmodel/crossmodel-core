@@ -64,6 +64,7 @@ export type CrossModelKeywordNames =
     | "left-join"
     | "length"
     | "logical"
+    | "mandatory"
     | "mapping"
     | "mappings"
     | "name"
@@ -394,6 +395,7 @@ export function isDataModel(item: unknown): item is DataModel {
 export interface LogicalAttribute extends DataElement, WithCustomProperties {
     readonly $type: 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
     length?: number;
+    mandatory: boolean;
     precision?: number;
     scale?: number;
 }
@@ -964,6 +966,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'description' },
                         { name: 'id' },
                         { name: 'length' },
+                        { name: 'mandatory', defaultValue: false },
                         { name: 'name' },
                         { name: 'precision' },
                         { name: 'scale' }
@@ -1131,6 +1134,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'description' },
                         { name: 'id' },
                         { name: 'length' },
+                        { name: 'mandatory', defaultValue: false },
                         { name: 'name' },
                         { name: 'precision' },
                         { name: 'scale' }
@@ -1146,6 +1150,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'description' },
                         { name: 'id' },
                         { name: 'length' },
+                        { name: 'mandatory', defaultValue: false },
                         { name: 'name' },
                         { name: 'precision' },
                         { name: 'scale' }
@@ -1161,6 +1166,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                         { name: 'description' },
                         { name: 'id' },
                         { name: 'length' },
+                        { name: 'mandatory', defaultValue: false },
                         { name: 'name' },
                         { name: 'precision' },
                         { name: 'scale' }
