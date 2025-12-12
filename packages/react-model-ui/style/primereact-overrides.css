@@ -110,7 +110,7 @@
    border-width: 1px 1px 0 1px;
    padding: 0.5rem 1rem;
    font-weight: 600;
-   background: var(--theia-titleBar-activeBackground);
+   background: var(--surface-section);
    color: var(--theia-titleBar-activeForeground);
 }
 
@@ -708,7 +708,7 @@ table[style*='position: fixed'] * {
 }
 
 .p-datatable .p-datatable-footer {
-   background: var(--surface-card);
+   background: var(--surface-section);
    border: 1px solid var(--surface-border);
    border-width: 0 1px 1px 1px;
    padding: 0.5rem 1rem;
