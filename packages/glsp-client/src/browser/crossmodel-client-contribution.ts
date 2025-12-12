@@ -8,6 +8,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable, MessageConnection } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import '../../style/diagram.css';
 import { CrossModelLanguageContributionId } from '../common/crossmodel-diagram-language';
 
@@ -21,6 +22,7 @@ export const CLIENT_CONNECTION_READY_MSG = 'Starting GLSP server connection';
 @injectable()
 export class CrossModelClientContribution extends BaseGLSPClientContribution {
    @inject(OutputChannelManager) protected outputChannelManager: OutputChannelManager;
+   @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
    readonly id = CrossModelLanguageContributionId;
 
@@ -46,9 +48,22 @@ export class CrossModelClientContribution extends BaseGLSPClientContribution {
    }
 
    protected override async start(glspClient: GLSPClient): Promise<void> {
-      // While a socket connection to the server can be established earlier, the server might still do some internal initialization
-      // So we wait for it to report that client connections can be accepted
-      // Only then we actually start and initialize our client connection with the server
+      // Defer starting the GLSP client until a workspace is opened. If the editor starts without
+      // a workspace, this prevents creating the frontend-backend connection (and showing the
+      // "connecting" progress) prematurely.
+      const roots = this.workspaceService.tryGetRoots();
+      if (!roots || roots.length === 0) {
+         await new Promise<void>(resolve => {
+            const disposable = this.workspaceService.onWorkspaceChanged(changedRoots => {
+               if (changedRoots && changedRoots.length > 0) {
+                  disposable.dispose();
+                  resolve();
+               }
+            });
+         });
+      }
+
+      // Now wait for the backend GLSP server to report readiness, then start the client.
       await this.waitForBackendConnected();
       return super.start(glspClient);
    }
