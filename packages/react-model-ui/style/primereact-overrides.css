@@ -105,12 +105,10 @@
 }
 
 .p-datatable .p-datatable-header {
-   background: var(--surface-card);
-   border: 1px solid var(--surface-border);
-   border-width: 1px 1px 0 1px;
+   background: var(--surface-section);
+   border: none;
    padding: 0.5rem 1rem;
    font-weight: 600;
-   background: var(--surface-section);
    color: var(--theia-titleBar-activeForeground);
 }
 
@@ -709,7 +707,10 @@ table[style*='position: fixed'] * {
 
 .p-datatable .p-datatable-footer {
    background: var(--surface-section);
-   border: 1px solid var(--surface-border);
-   border-width: 0 1px 1px 1px;
+   border: none;
    padding: 0.5rem 1rem;
+}
+
+.p-datatable .p-datatable-wrapper {
+   border: 1px solid var(--surface-border);
 }
