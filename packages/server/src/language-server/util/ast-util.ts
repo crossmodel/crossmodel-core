@@ -7,29 +7,29 @@ import { AstNode, AstNodeDescription, AstUtils, LangiumDocument, Reference, isAs
 import { ID_PROPERTY, IdProvider } from '../cross-model-naming.js';
 import { getLocalName } from '../cross-model-scope.js';
 import {
-   AttributeMapping,
-   AttributeMappingSource,
-   AttributeMappingTarget,
-   CrossModelRoot,
-   DataModel,
-   LogicalAttribute,
-   LogicalEntity,
-   LogicalEntityNode,
-   LogicalEntityNodeAttribute,
-   Mapping,
-   Relationship,
-   RelationshipEdge,
-   SourceObject,
-   SourceObjectAttribute,
-   SystemDiagram,
-   TargetObject,
-   TargetObjectAttribute,
-   isCrossModelRoot,
-   isDataModel,
-   isLogicalEntity,
-   isMapping,
-   isRelationship,
-   isSystemDiagram
+    AttributeMapping,
+    AttributeMappingSource,
+    AttributeMappingTarget,
+    CrossModelRoot,
+    DataModel,
+    LogicalAttribute,
+    LogicalEntity,
+    LogicalEntityNode,
+    LogicalEntityNodeAttribute,
+    Mapping,
+    Relationship,
+    RelationshipEdge,
+    SourceObject,
+    SourceObjectAttribute,
+    SystemDiagram,
+    TargetObject,
+    TargetObjectAttribute,
+    isCrossModelRoot,
+    isDataModel,
+    isLogicalEntity,
+    isMapping,
+    isRelationship,
+    isSystemDiagram
 } from '../generated/ast.js';
 
 export type RootContainer = {
@@ -130,6 +130,7 @@ export function createLogicalAttribute(
       id,
       name,
       customProperties: [],
+      mandatory: false,
       ...opts
    };
 }

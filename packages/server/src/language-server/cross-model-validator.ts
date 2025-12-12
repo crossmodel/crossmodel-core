@@ -64,6 +64,7 @@ export function registerValidationChecks(services: CrossModelServices): void {
       AstNode: validator.checkNode,
       IdentifiedObject: validator.checkIdentifiedObject,
       AttributeMapping: validator.checkAttributeMapping,
+      LogicalAttribute: validator.checkLogicalAttribute,
       LogicalEntity: validator.checkLogicalEntity,
       Mapping: validator.checkMapping,
       Relationship: validator.checkRelationship,
@@ -177,6 +178,43 @@ export class CrossModelValidator {
 
    checkUniqueCustomerPropertyId(node: WithCustomProperties, accept: ValidationAcceptor): void {
       this.markDuplicateIds(node.customProperties, accept);
+   }
+
+   checkLogicalAttribute(attribute: LogicalAttribute, accept: ValidationAcceptor): void {
+      const datatype = attribute.datatype?.toLowerCase();
+      
+      // Validate length: only for Text & Binary
+      if (attribute.length !== undefined && attribute.length !== null) {
+         if (datatype !== 'text' && datatype !== 'binary') {
+            accept('error', `Length can only be set for Text and Binary data types, not for '${attribute.datatype}'.`, {
+               node: attribute,
+               property: 'length',
+               data: { code: CrossModelValidationErrors.toMalformed('length') }
+            });
+         }
+      }
+      
+      // Validate precision: only for Decimal & Integer
+      if (attribute.precision !== undefined && attribute.precision !== null) {
+         if (datatype !== 'decimal' && datatype !== 'integer') {
+            accept('error', `Precision can only be set for Decimal and Integer data types, not for '${attribute.datatype}'.`, {
+               node: attribute,
+               property: 'precision',
+               data: { code: CrossModelValidationErrors.toMalformed('precision') }
+            });
+         }
+      }
+      
+      // Validate scale: only for Decimal, DateTime & Time
+      if (attribute.scale !== undefined && attribute.scale !== null) {
+         if (datatype !== 'decimal' && datatype !== 'datetime' && datatype !== 'time') {
+            accept('error', `Scale can only be set for Decimal, DateTime, and Time data types, not for '${attribute.datatype}'.`, {
+               node: attribute,
+               property: 'scale',
+               data: { code: CrossModelValidationErrors.toMalformed('scale') }
+            });
+         }
+      }
    }
 
    protected markDuplicateIds(nodes: IdentifiableAstNode[] = [], accept: ValidationAcceptor): void {
