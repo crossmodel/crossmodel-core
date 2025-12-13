@@ -682,9 +682,9 @@ table[style*='position: fixed'] * {
    display: flex;
    align-items: center;
    margin-left: 0;
-   flex-wrap: wrap;
+   flex-wrap: nowrap;
    gap: 0.5rem;
-   justify-content: flex-end;
+   justify-content: space-between;
    width: 100%;
 }
 
@@ -692,12 +692,12 @@ table[style*='position: fixed'] * {
    padding-left: 2rem;
    padding-right: 2rem;
    width: 100%;
-   min-width: 150px;
+   min-width: 50px;
 }
 
 .p-datatable .datatable-global-filter .keyword-search-container {
    flex: 1 1 auto;
-   min-width: 150px;
+   min-width: 50px;
    max-width: 300px;
 }
 

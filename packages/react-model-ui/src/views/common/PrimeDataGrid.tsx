@@ -5,13 +5,13 @@ import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import {
-   DataTable,
-   DataTableFilterEvent,
-   DataTableFilterMeta,
-   DataTableFilterMetaData,
-   DataTableRowClickEvent,
-   DataTableRowEditCompleteEvent,
-   DataTableRowEditEvent
+    DataTable,
+    DataTableFilterEvent,
+    DataTableFilterMeta,
+    DataTableFilterMetaData,
+    DataTableRowClickEvent,
+    DataTableRowEditCompleteEvent,
+    DataTableRowEditEvent
 } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { IconField } from 'primereact/iconfield';
@@ -197,6 +197,13 @@ function useFilters<T>(columns: GridColumn<T>[]): {
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
          <div className='datatable-filter-section'>
+            <Button
+               type='button'
+               icon='pi pi-filter-slash'
+               label='Clear Filters'
+               outlined
+               onClick={clearFilters}
+            />
             <div className='keyword-search-container'>
                <IconField iconPosition='left'>
                   <InputIcon className='pi pi-search' />
@@ -217,14 +224,6 @@ function useFilters<T>(columns: GridColumn<T>[]): {
                   />
                )}
             </div>
-            <Button
-               type='button'
-               icon='pi pi-filter-slash'
-               label='Clear Filters'
-               outlined
-               onClick={clearFilters}
-               style={{ marginLeft: '0.5rem' }}
-            />
          </div>
       </div>
    );
