@@ -511,7 +511,7 @@ export const AllDataModelTypeInfos = Object.values(DataModelTypeInfos) as DataMo
 export const ModelMemberPermissions = {
    logical: ['LogicalEntity', 'Mapping', 'Relationship', 'SystemDiagram', 'DataModel'],
    relational: ['DataModel'],
-   conceptual: ['DataModel']
+   conceptual: ['DataModel', 'LogicalEntity', 'Relationship', 'SystemDiagram']
 } as const satisfies Record<DataModelType, readonly RootObjectTypeName[]>;
 
 export function isMemberPermittedInModel(packageType: string, memberType: string): boolean {

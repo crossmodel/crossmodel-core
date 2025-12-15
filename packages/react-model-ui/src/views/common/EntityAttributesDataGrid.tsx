@@ -187,9 +187,9 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                description: attr.description || '',
                mandatory: attr.mandatory || false,
                identifier: isPrimaryIdentifier,
-               ...(attr.length !== undefined && attr.length !== null ? { length: attr.length } : {}),
-               ...(attr.precision !== undefined && attr.precision !== null ? { precision: attr.precision } : {}),
-               ...(attr.scale !== undefined && attr.scale !== null ? { scale: attr.scale } : {}),
+               ...(attr.length !== undefined ? { length: attr.length } : {}),
+               ...(attr.precision !== undefined ? { precision: attr.precision } : {}),
+               ...(attr.scale !== undefined ? { scale: attr.scale } : {}),
                id,
                $type: 'LogicalAttribute',
                $globalId: attr.$globalId || id
@@ -229,7 +229,31 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             headerStyle: { width: '15%' },
             editor: (options: any) => (
                <GenericAutoCompleteEditor
-                  options={options}
+                  options={{
+                     ...options,
+                     editorCallback: (value: any) => {
+                        options.editorCallback(value);
+                        setGridData(current =>
+                           current.map(row => {
+                              if (row.id === options.rowData.id) {
+                                 const datatype = value?.toLowerCase();
+                                 const isLengthApplicable = datatype === 'text' || datatype === 'binary';
+                                 const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
+                                 const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+
+                                 return {
+                                    ...row,
+                                    datatype: value,
+                                    length: isLengthApplicable ? row.length : undefined,
+                                    precision: isPrecisionApplicable ? row.precision : undefined,
+                                    scale: isScaleApplicable ? row.scale : undefined
+                                 };
+                              }
+                              return row;
+                           })
+                        );
+                     }
+                  }}
                   basePath={['entity', 'attributes']}
                   field='datatype'
                   dropdownOptions={dataTypeOptions}
@@ -238,87 +262,6 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             filterType: 'multiselect',
             filterOptions: dataTypeOptions,
             showFilterMatchModes: false
-         },
-         {
-            field: 'length',
-            header: 'Length',
-            dataType: 'numeric',
-            headerStyle: { width: '10%' },
-            body: (rowData: EntityAttributeRow) => {
-               const datatype = rowData.datatype?.toLowerCase();
-               const isApplicable = datatype === 'text' || datatype === 'binary';
-               return (
-                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
-                     <EditorProperty basePath={['entity', 'attributes']} field='length' row={rowData} value={rowData.length?.toString() || ''} />
-                  </div>
-               );
-            },
-            editor: (options: any) => {
-               const datatype = options.rowData?.datatype?.toLowerCase();
-               const isApplicable = datatype === 'text' || datatype === 'binary';
-               return (
-                  <GenericNumberEditor
-                     options={options}
-                     basePath={['entity', 'attributes']}
-                     field='length'
-                     placeholder={isApplicable ? '' : 'Only for Text/Binary'}
-                  />
-               );
-            }
-         },
-         {
-            field: 'precision',
-            header: 'Precision',
-            dataType: 'numeric',
-            headerStyle: { width: '10%' },
-            body: (rowData: EntityAttributeRow) => {
-               const datatype = rowData.datatype?.toLowerCase();
-               const isApplicable = datatype === 'decimal' || datatype === 'integer';
-               return (
-                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
-                     <EditorProperty basePath={['entity', 'attributes']} field='precision' row={rowData} value={rowData.precision?.toString() || ''} />
-                  </div>
-               );
-            },
-            editor: (options: any) => {
-               const datatype = options.rowData?.datatype?.toLowerCase();
-               const isApplicable = datatype === 'decimal' || datatype === 'integer';
-               return (
-                  <GenericNumberEditor
-                     options={options}
-                     basePath={['entity', 'attributes']}
-                     field='precision'
-                     placeholder={isApplicable ? 'Enter precision' : 'Only for Decimal/Integer'}
-                  />
-               );
-            }
-         },
-         {
-            field: 'scale',
-            header: 'Scale',
-            dataType: 'numeric',
-            headerStyle: { width: '10%' },
-            body: (rowData: EntityAttributeRow) => {
-               const datatype = rowData.datatype?.toLowerCase();
-               const isApplicable = datatype === 'decimal' || datatype === 'datetime' || datatype === 'time';
-               return (
-                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
-                     <EditorProperty basePath={['entity', 'attributes']} field='scale' row={rowData} value={rowData.scale?.toString() || ''} />
-                  </div>
-               );
-            },
-            editor: (options: any) => {
-               const datatype = options.rowData?.datatype?.toLowerCase();
-               const isApplicable = datatype === 'decimal' || datatype === 'datetime' || datatype === 'time';
-               return (
-                  <GenericNumberEditor
-                     options={options}
-                     basePath={['entity', 'attributes']}
-                     field='scale'
-                     placeholder={isApplicable ? '' : 'Only for Decimal/DateTime/Time'}
-                  />
-               );
-            }
          },
          {
             field: 'identifier',
@@ -345,6 +288,120 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             showFilterMatchModes: false
          },
          {
+            field: 'length',
+            header: 'Length',
+            dataType: 'numeric',
+            headerStyle: { width: '10%' },
+            headerTooltip: 'Length is applicable only for Text and Binary datatypes',
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'text' || datatype === 'binary';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty
+                        basePath={['entity', 'attributes']}
+                        field='length'
+                        row={rowData}
+                        value={rowData.length?.toString() || ''}
+                     />
+                  </div>
+               );
+            },
+             editor: (options: any) => {
+                const currentRow = gridData.find(r => r.id === options.rowData.id);
+                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+                const isApplicable = datatype === 'text' || datatype === 'binary';
+                return (
+                   <GenericNumberEditor
+                      options={options}
+                      basePath={['entity', 'attributes']}
+                      field='length'
+                      disabled={!isApplicable}
+                      value={isApplicable ? options.value : undefined}
+                      showButtons={isApplicable}
+                      tooltip='Length is applicable only for Text and Binary datatypes'
+                      forceClear={!isApplicable}
+                   />
+                );
+             }
+         },
+         {
+            field: 'precision',
+            header: 'Precision',
+            dataType: 'numeric',
+            headerStyle: { width: '10%' },
+            headerTooltip: 'Precision is applicable only for Decimal and Integer datatypes',
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'integer';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty
+                        basePath={['entity', 'attributes']}
+                        field='precision'
+                        row={rowData}
+                        value={rowData.precision?.toString() || ''}
+                     />
+                  </div>
+               );
+            },
+             editor: (options: any) => {
+                const currentRow = gridData.find(r => r.id === options.rowData.id);
+                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+                const isApplicable = datatype === 'decimal' || datatype === 'integer';
+                return (
+                   <GenericNumberEditor
+                      options={options}
+                      basePath={['entity', 'attributes']}
+                      field='precision'
+                      disabled={!isApplicable}
+                      value={isApplicable ? options.value : undefined}
+                      showButtons={isApplicable}
+                      tooltip='Precision is applicable only for Decimal and Integer datatypes'
+                      forceClear={!isApplicable}
+                   />
+                );
+             }
+         },
+         {
+            field: 'scale',
+            header: 'Scale',
+            dataType: 'numeric',
+            headerStyle: { width: '10%' },
+            headerTooltip: 'Scale is applicable only for Decimal, Date, Time and DateTime datatypes',
+             body: (rowData: EntityAttributeRow) => {
+                const datatype = rowData.datatype?.toLowerCase();
+                const isApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+                return (
+                   <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                      <EditorProperty
+                         basePath={['entity', 'attributes']}
+                         field='scale'
+                         row={rowData}
+                         value={rowData.scale?.toString() || ''}
+                      />
+                   </div>
+                );
+             },
+             editor: (options: any) => {
+                const currentRow = gridData.find(r => r.id === options.rowData.id);
+                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+                const isApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+                return (
+                   <GenericNumberEditor
+                      options={options}
+                      basePath={['entity', 'attributes']}
+                      field='scale'
+                      disabled={!isApplicable}
+                      value={isApplicable ? options.value : undefined}
+                      showButtons={isApplicable}
+                      tooltip='Scale is applicable only for Decimal, Date, Time and DateTime datatypes'
+                      forceClear={!isApplicable}
+                   />
+                );
+             }
+         },
+         {
             field: 'description',
             header: 'Description',
             body: (rowData: EntityAttributeRow) => (
@@ -354,7 +411,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             filterType: 'text'
          }
       ],
-      []
+      [gridData]
    );
 
    const handleIdentifierUpdate = React.useCallback(
@@ -449,15 +506,20 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { _uncommitted: _, id: __, description, identifier, mandatory, length, precision, scale, ...attributeData } = attribute;
+            const datatype = attribute.datatype?.toLowerCase();
+            const isLengthApplicable = datatype === 'text' || datatype === 'binary';
+            const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
+            const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+
             const finalAttribute = {
                ...attributeData,
                id: newId,
                $globalId: newId,
                ...(description ? { description } : {}),
                ...(mandatory ? { mandatory } : {}),
-               ...(length !== undefined && length !== null ? { length } : {}),
-               ...(precision !== undefined && precision !== null ? { precision } : {}),
-               ...(scale !== undefined && scale !== null ? { scale } : {})
+               ...(isLengthApplicable && length !== undefined ? { length } : {}),
+               ...(isPrecisionApplicable && precision !== undefined ? { precision } : {}),
+               ...(isScaleApplicable && scale !== undefined ? { scale } : {})
             };
 
             // Add the new attribute through dispatch
@@ -487,13 +549,18 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             // Remove empty and non-model fields before updating
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { description, identifier: _ignored, mandatory, length, precision, scale, ...rest } = attribute;
+            const datatype = attribute.datatype?.toLowerCase();
+            const isLengthApplicable = datatype === 'text' || datatype === 'binary';
+            const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
+            const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+
             const updatedAttribute = {
                ...rest,
                ...(description ? { description } : {}),
                ...(mandatory ? { mandatory } : {}),
-               ...(length !== undefined && length !== null ? { length } : {}),
-               ...(precision !== undefined && precision !== null ? { precision } : {}),
-               ...(scale !== undefined && scale !== null ? { scale } : {})
+               ...(isLengthApplicable && length !== undefined ? { length } : {}),
+               ...(isPrecisionApplicable && precision !== undefined ? { precision } : {}),
+               ...(isScaleApplicable && scale !== undefined ? { scale } : {})
             };
 
             dispatch({

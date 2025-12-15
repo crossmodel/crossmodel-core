@@ -247,23 +247,40 @@ export function GenericNumberEditor({
    options,
    basePath,
    field,
-   placeholder
+   placeholder,
+   disabled,
+   value,
+   showButtons,
+   tooltip,
+   forceClear
 }: {
    options: any;
    basePath: string[];
    field: string;
    placeholder?: string;
+   disabled?: boolean;
+   value?: number | null;
+   showButtons?: boolean;
+   tooltip?: string;
+   forceClear?: boolean;
 }): React.ReactElement {
    const rowIdx = options.rowData?.idx ?? -1;
    const readonly = useReadonly();
-   const isDisabled = options.disabled || readonly;
+   const isDisabled = options.disabled || readonly || disabled;
+   
+   let effectiveValue = value;
+   if (forceClear) {
+      effectiveValue = undefined;
+   } else if (effectiveValue === undefined) {
+      effectiveValue = options.value ?? undefined;
+   }
 
    return (
       <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
          {({ invalid, error, className }) => (
-            <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
+            <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || tooltip || undefined}>
                <InputNumber
-                  value={options.value ?? null}
+                  value={effectiveValue}
                   onValueChange={(e: any) => options.editorCallback(e.value)}
                   className={`w-full ${className}`}
                   onKeyDown={handleGridEditorKeyDown}
@@ -272,6 +289,7 @@ export function GenericNumberEditor({
                   useGrouping={false}
                   min={0}
                   placeholder={placeholder}
+                  showButtons={showButtons}
                />
                {error && <small className='p-error m-0'>{error}</small>}
             </div>

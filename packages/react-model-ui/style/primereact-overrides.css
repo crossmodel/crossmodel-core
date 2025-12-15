@@ -713,4 +713,26 @@ table[style*='position: fixed'] * {
 
 .p-datatable .p-datatable-wrapper {
    border: 1px solid var(--surface-border);
+
+.p-inputnumber-button {
+   width: 1.25rem !important;
+   padding: 0 !important;
+   background: var(--theia-button-background);
+   color: var(--theia-button-foreground);
+   border-color: var(--theia-button-border);
+}
+
+.p-inputnumber-button:hover {
+   background: var(--theia-button-hoverBackground) !important;
+}
+
+.p-inputnumber-button .p-icon {
+   font-size: 0.6rem;
+   width: 0.6rem;
+   height: 0.6rem;
+}
+
+.p-inputnumber-input {
+   padding-right: 1.5rem !important; 
+}
 }

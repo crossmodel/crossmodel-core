@@ -793,8 +793,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       const tableElement = tableRef.current?.getElement();
       if (tableElement && activeRowKey) {
          const saveButton = tableElement.querySelector('.p-row-editor-save');
-         if (saveButton instanceof HTMLElement) {
-            saveButton.click();
+         if (saveButton) {
+            (saveButton as HTMLElement).click();
          }
       }
    }, [activeRowKey]);
