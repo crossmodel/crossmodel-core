@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/crossmodel/crossmodel-core/compare/v0.17.0...v0.18.0) (2025-12-15)
+
+
+### Features
+
+* Property panel layout update ([#226](https://github.com/crossmodel/crossmodel-core/issues/226)) ([6a26c58](https://github.com/crossmodel/crossmodel-core/commit/6a26c58809175109061e3f4aaa91e3d6120562e2))
+
+
+
+
+
 # [0.17.0](https://github.com/crossmodel/crossmodel-core/compare/v0.16.0...v0.17.0) (2025-12-11)
 
 **Note:** Version bump only for package @crossmodel/react-model-ui
