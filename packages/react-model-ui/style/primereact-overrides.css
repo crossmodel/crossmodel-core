@@ -105,12 +105,10 @@
 }
 
 .p-datatable .p-datatable-header {
-   background: var(--surface-card);
-   border: 1px solid var(--surface-border);
-   border-width: 1px 1px 0 1px;
+   background: var(--surface-section);
+   border: none;
    padding: 0.5rem 1rem;
    font-weight: 600;
-   background: var(--theia-titleBar-activeBackground);
    color: var(--theia-titleBar-activeForeground);
 }
 
@@ -660,4 +658,59 @@ table[style*='position: fixed'] * {
    width: 2rem;
    text-align: center;
    padding: 0;
+}
+
+.datatable-footer-actions {
+   display: flex;
+   justify-content: flex-start;
+   align-items: center;
+   padding: 0.5rem 0;
+   margin-top: 0;
+   gap: 0.5rem;
+   flex-wrap: wrap;
+}
+
+.p-datatable .datatable-global-filter {
+   display: flex;
+   justify-content: flex-end;
+   align-items: center;
+   gap: 0.5rem;
+   padding-bottom: 0.5rem;
+}
+
+.p-datatable .datatable-global-filter .datatable-filter-section {
+   display: flex;
+   align-items: center;
+   margin-left: 0;
+   flex-wrap: nowrap;
+   gap: 0.5rem;
+   justify-content: space-between;
+   width: 100%;
+}
+
+.p-datatable .datatable-global-filter .p-inputtext {
+   padding-left: 2rem;
+   padding-right: 2rem;
+   width: 100%;
+   min-width: 50px;
+}
+
+.p-datatable .datatable-global-filter .keyword-search-container {
+   flex: 1 1 auto;
+   min-width: 50px;
+   max-width: 300px;
+}
+
+.p-datatable .p-datatable-tbody > tr > td:last-child {
+   white-space: nowrap;
+}
+
+.p-datatable .p-datatable-footer {
+   background: var(--surface-section);
+   border: none;
+   padding: 0.5rem 1rem;
+}
+
+.p-datatable .p-datatable-wrapper {
+   border: 1px solid var(--surface-border);
 }
