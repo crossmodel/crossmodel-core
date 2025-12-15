@@ -3,9 +3,9 @@
  ********************************************************************************/
 import { ENTITY_NODE_TYPE, LABEL_ENTITY, REFERENCE_CONTAINER_TYPE, REFERENCE_PROPERTY, REFERENCE_VALUE } from '@crossmodel/protocol';
 import { ArgsUtil, GNode, GNodeBuilder } from '@eclipse-glsp/server';
-import { URI } from 'vscode-uri';
 import { LogicalEntityNode } from '../../../language-server/generated/ast.js';
 import { getAttributes } from '../../../language-server/util/ast-util.js';
+import { ModelService } from '../../../model-server/model-service.js';
 import { AttributeCompartment, AttributesCompartmentBuilder, createHeader } from '../../common/nodes.js';
 import { SystemModelIndex } from './system-model-index.js';
 
@@ -18,7 +18,7 @@ export class GEntityNode extends GNode {
 }
 
 export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
-   set(node: LogicalEntityNode, index: SystemModelIndex, diagramUri: string): this {
+   set(node: LogicalEntityNode, index: SystemModelIndex, diagramUri: string, modelService: ModelService): this {
       if (!node) {
          return this;
       }
@@ -33,9 +33,8 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       this.addArg(REFERENCE_PROPERTY, 'entity');
       this.addArg(REFERENCE_VALUE, node.entity?.$refText);
 
-      // Add isExternal flag based on data model comparison
-      const externalInfo = this.checkIfExternal(node, index, diagramUri);
-      this.addArg('isExternal', externalInfo.isExternal);
+      // Add isExternal flag derived via ModelService facade
+      this.addArg('isExternal', modelService.isExternalEntityReferenceText(node.entity?.$refText));
 
       // Add the label/name of the node
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));
@@ -61,63 +60,5 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
          .addLayoutOption('prefHeight', node.height || 100);
 
       return this;
-   }
-
-   /**
-    * Determines if an entity is external (from another model or npm package).
-    * An entity is considered external if its data model ID differs from the
-    * current diagram's data model ID.
-    */
-   protected checkIfExternal(
-      node: LogicalEntityNode,
-      index: SystemModelIndex,
-      diagramUri: string
-   ): {
-      isExternal: boolean;
-      diagramModelId?: string;
-      entityModelId?: string;
-   } {
-      // Get the referenced entity
-      const entityRef = node.entity?.ref;
-      const refText = node.entity?.$refText || '';
-
-      if (!entityRef) {
-         return { isExternal: false }; // Unresolved reference
-      }
-
-      // Access the data model manager through the index services
-      const dataModelManager = index.services.shared.workspace.DataModelManager;
-
-      // Get the data model ID of the current diagram
-      const parsedDiagramUri = URI.parse(diagramUri);
-      const diagramDataModelInfo = dataModelManager.getDataModelInfoByURI(parsedDiagramUri);
-      const diagramDataModelId = diagramDataModelInfo?.id || 'unknown';
-
-      // Determine if entity is external based on qualified reference
-      // If refText contains a dot, it's a qualified reference (e.g., "ExampleOtherModel.SomeProduct")
-      // Extract the data model name from the qualified reference
-      let entityDataModelId: string;
-      if (refText.includes('.')) {
-         // Qualified reference - extract data model name (part before the dot)
-         const dataModelName = refText.split('.')[0];
-         // Try to find this data model
-         const allDataModels = dataModelManager.getDataModelInfos();
-         const matchingModel = allDataModels.find(dm =>
-            dm.referenceName === dataModelName || dm.dataModel.id === dataModelName || dm.dataModel.name === dataModelName
-         );
-         entityDataModelId = matchingModel?.id || 'unknown';
-      } else {
-         // Unqualified reference - same data model as diagram
-         entityDataModelId = diagramDataModelId;
-      }
-
-      // External if the data models are different
-      const isExternal = diagramDataModelId !== entityDataModelId;
-
-      return {
-         isExternal,
-         diagramModelId: diagramDataModelId,
-         entityModelId: entityDataModelId
-      };
    }
 }

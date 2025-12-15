@@ -46,7 +46,7 @@ export class SystemDiagramGModelFactory implements GModelFactory {
    }
 
    protected createEntityNode(node: LogicalEntityNode): GNode {
-      return GEntityNode.builder().set(node, this.modelState.index, this.modelState.semanticUri).build();
+      return GEntityNode.builder().set(node, this.modelState.index, this.modelState.semanticUri, this.modelState.modelService).build();
    }
 
    protected createRelationshipEdge(edge: RelationshipEdge): GEdge {
