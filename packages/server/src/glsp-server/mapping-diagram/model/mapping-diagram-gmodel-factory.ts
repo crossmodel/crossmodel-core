@@ -44,10 +44,14 @@ export class MappingDiagramGModelFactory implements GModelFactory {
    }
 
    protected createSourceObjectNode(sourceObject: SourceObject): GNode {
-      return GSourceObjectNode.builder().set(sourceObject, this.modelState.index, this.modelState.semanticUri).build();
+      return GSourceObjectNode.builder()
+         .set(sourceObject, this.modelState.index, this.modelState.semanticUri, this.modelState.modelService)
+         .build();
    }
 
    protected createTargetNode(target: TargetObject): GNode {
-      return GTargetObjectNode.builder().set(target, this.modelState.index, this.modelState.semanticUri).build();
+      return GTargetObjectNode.builder()
+         .set(target, this.modelState.index, this.modelState.semanticUri, this.modelState.modelService)
+         .build();
    }
 }

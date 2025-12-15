@@ -23,6 +23,7 @@ import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumen
 import { URI } from 'vscode-uri';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
+import { QUALIFIED_ID_SEPARATOR } from '../language-server/cross-model-naming.js';
 import { CrossModelRoot, isCrossModelRoot } from '../language-server/generated/ast.js';
 import { findDocument } from '../language-server/util/ast-util.js';
 import { AstCrossModelDocument } from './open-text-document-manager.js';
@@ -76,6 +77,18 @@ export class ModelService {
     */
    async open(args: OpenModelArgs): Promise<Disposable> {
       return this.documentManager.open(args);
+   }
+
+   /**
+    * Temporary heuristic for diagrams:
+    * Treat an entity reference as external if it is a qualified reference (contains a dot),
+    * e.g. `OtherModel.Customer`.
+    *
+    * This is intentionally located in ModelService so we can later refactor it to a
+    * URI-based check without changing callers.
+    */
+   isExternalEntityReferenceText(refText: string | undefined): boolean {
+      return typeof refText === 'string' && refText.includes(QUALIFIED_ID_SEPARATOR);
    }
 
    isOpen(uri: string): boolean {
