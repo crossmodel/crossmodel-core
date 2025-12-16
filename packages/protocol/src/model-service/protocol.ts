@@ -110,10 +110,10 @@ export interface EntityInherit extends CrossModelElement {
 
 export interface AbstractLogicalAttribute extends CrossModelElement, NamedObject {
    datatype?: string;
-   mandatory?: boolean;
    length?: number;
    precision?: number;
    scale?: number;
+   mandatory?: boolean;
    identifier?: boolean;
 }
 
@@ -511,7 +511,7 @@ export const AllDataModelTypeInfos = Object.values(DataModelTypeInfos) as DataMo
 export const ModelMemberPermissions = {
    logical: ['LogicalEntity', 'Mapping', 'Relationship', 'SystemDiagram', 'DataModel'],
    relational: ['DataModel'],
-   conceptual: ['DataModel', 'LogicalEntity', 'Relationship', 'SystemDiagram']
+   conceptual: ['DataModel']
 } as const satisfies Record<DataModelType, readonly RootObjectTypeName[]>;
 
 export function isMemberPermittedInModel(packageType: string, memberType: string): boolean {
