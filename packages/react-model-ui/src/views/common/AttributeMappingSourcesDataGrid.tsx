@@ -316,8 +316,6 @@ export function AttributeMappingSourcesDataGrid({
             // For uncommitted rows, check if anything actually changed
             const hasChanges = sourceToUpdate.value !== defaultEntry.value;
 
-            
-
             if (!hasChanges) {
                // Remove the row if no changes
                setGridData(current => current.filter(row => row.id !== sourceToUpdate.id));

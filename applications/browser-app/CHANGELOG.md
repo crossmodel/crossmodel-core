@@ -3,6 +3,41 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/crossmodel/crossmodel-core/compare/v0.17.0...v0.18.0) (2025-12-15)
+
+**Note:** Version bump only for package crossmodel-core-browser
+
+
+
+
+
+# [0.17.0](https://github.com/crossmodel/crossmodel-core/compare/v0.16.0...v0.17.0) (2025-12-11)
+
+**Note:** Version bump only for package crossmodel-core-browser
+
+
+
+
+
+# [0.16.0](https://github.com/crossmodel/crossmodel-core/compare/v0.15.1...v0.16.0) (2025-12-11)
+
+
+### Features
+
+* Replace dropdown with autocomplete; add focus outline to arrow button ([#225](https://github.com/crossmodel/crossmodel-core/issues/225)) ([cfc5322](https://github.com/crossmodel/crossmodel-core/commit/cfc53223459a6e1f06ef95fdf788dba553dd0ff5))
+
+
+
+
+
+## [0.15.1](https://github.com/crossmodel/crossmodel-core/compare/v0.15.0...v0.15.1) (2025-12-11)
+
+**Note:** Version bump only for package crossmodel-core-browser
+
+
+
+
+
 # [0.15.0](https://github.com/crossmodel/crossmodel-core/compare/v0.14.0...v0.15.0) (2025-12-10)
 
 **Note:** Version bump only for package crossmodel-core-browser

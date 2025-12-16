@@ -3,7 +3,6 @@
  ********************************************************************************/
 
 import { ModelFileType, ModelStructure, ReferenceableElement, computeRelationshipName, toId } from '@crossmodel/protocol';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
@@ -20,6 +19,7 @@ import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
 import AsyncAutoComplete from '../common/AsyncAutoComplete';
+import { GenericAutoCompleteEditor } from '../common/GenericEditors';
 import { RelationshipAttributesDataGrid } from '../common/RelationshipAttributesDataGrid';
 import { RelationshipCustomPropertiesDataGrid } from '../common/RelationshipCustomPropertiesDataGrid';
 import { ErrorInfo } from './ErrorInfo';
@@ -150,17 +150,16 @@ export function RelationshipForm(): React.ReactElement {
             <div className='p-field p-fluid'>
                <div>
                   <label htmlFor='parentCardinality'>Parent Cardinality</label>
-                  <Dropdown
-                     id='parentCardinality'
-                     options={cardinalities}
-                     value={relationship.parentCardinality ?? ''}
-                     onChange={e =>
-                        dispatch({
-                           type: 'relationship:change-parent-cardinality',
-                           parentCardinality: e.value ?? ''
-                        })
-                     }
-                     disabled={readonly}
+                  <GenericAutoCompleteEditor
+                     options={{
+                        value: relationship.parentCardinality ?? '',
+                        editorCallback: (v: string) =>
+                           dispatch({ type: 'relationship:change-parent-cardinality', parentCardinality: v ?? '' }),
+                        rowData: { idx: -1 }
+                     }}
+                     basePath={['relationship']}
+                     field={'parentCardinality'}
+                     dropdownOptions={cardinalities.map(c => ({ label: c, value: c }))}
                   />
                </div>
                <ErrorInfo diagnostic={parentCardinalityDiagnostics} />
@@ -198,17 +197,16 @@ export function RelationshipForm(): React.ReactElement {
             <div className='p-field p-fluid'>
                <div>
                   <label htmlFor='childCardinality'>Child Cardinality</label>
-                  <Dropdown
-                     id='childCardinality'
-                     options={cardinalities}
-                     value={relationship.childCardinality ?? ''}
-                     onChange={e =>
-                        dispatch({
-                           type: 'relationship:change-child-cardinality',
-                           childCardinality: e.value ?? ''
-                        })
-                     }
-                     disabled={readonly}
+                  <GenericAutoCompleteEditor
+                     options={{
+                        value: relationship.childCardinality ?? '',
+                        editorCallback: (v: string) =>
+                           dispatch({ type: 'relationship:change-child-cardinality', childCardinality: v ?? '' }),
+                        rowData: { idx: -1 }
+                     }}
+                     basePath={['relationship']}
+                     field={'childCardinality'}
+                     dropdownOptions={cardinalities.map(c => ({ label: c, value: c }))}
                   />
                </div>
                <ErrorInfo diagnostic={childCardinalityDiagnostics} />
