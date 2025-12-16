@@ -55,7 +55,7 @@ const CUSTOM_PROPERTIES = ['customProperties'];
  */
 const PROPERTY_ORDER = new Map<string, string[]>([
    [LogicalEntity, [...NAMED_OBJECT_PROPERTIES, 'superEntities', 'attributes', 'identifiers', ...CUSTOM_PROPERTIES]],
-   [LogicalAttribute, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'mandatory', 'length', 'precision', 'scale', ...CUSTOM_PROPERTIES]],
+   [LogicalAttribute, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', 'mandatory', ...CUSTOM_PROPERTIES]],
    [
       Relationship,
       [

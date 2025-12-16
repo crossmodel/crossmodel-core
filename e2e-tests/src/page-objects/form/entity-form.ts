@@ -211,7 +211,7 @@ export class LogicalAttribute extends TheiaPageObject {
    }
 
    protected get identifierLocator(): Locator {
-      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(2);
+      return this.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(5);
    }
 
    protected get descriptionLocator(): Locator {

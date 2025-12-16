@@ -56,6 +56,22 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
    const identifiersRef = React.useRef(entity?.identifiers);
    const attributesRef = React.useRef(entity?.attributes || []);
+   // eslint-disable-next-line no-null/no-null
+   const containerRef = React.useRef<HTMLDivElement>(null);
+   const [isNarrow, setIsNarrow] = React.useState(false);
+
+   React.useEffect(() => {
+      if (!containerRef.current) {
+         return;
+      }
+      const observer = new ResizeObserver(entries => {
+         for (const entry of entries) {
+            setIsNarrow(entry.contentRect.width < 1000);
+         }
+      });
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+   }, []);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
@@ -239,7 +255,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                                  const datatype = value?.toLowerCase();
                                  const isLengthApplicable = datatype === 'text' || datatype === 'binary';
                                  const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
-                                 const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+                                 const isScaleApplicable =
+                                    datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
 
                                  return {
                                     ...row,
@@ -264,34 +281,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             showFilterMatchModes: false
          },
          {
-            field: 'identifier',
-            header: 'Primary',
-            dataType: 'boolean',
-            headerStyle: { width: '10%' },
-            body: (rowData: EntityAttributeRow) => (
-               <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
-            ),
-            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='identifier' />,
-            filterType: 'boolean',
-            showFilterMatchModes: false
-         },
-         {
-            field: 'mandatory',
-            header: 'Mandatory',
-            dataType: 'boolean',
-            headerStyle: { width: '10%' },
-            body: (rowData: EntityAttributeRow) => (
-               <div className='flex align-items-center justify-content-center'>{rowData.mandatory && <i className='pi pi-check' />}</div>
-            ),
-            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='mandatory' />,
-            filterType: 'boolean',
-            showFilterMatchModes: false
-         },
-         {
             field: 'length',
             header: 'Length',
             dataType: 'numeric',
-            headerStyle: { width: '10%' },
+            headerStyle: { width: '70px' },
+            style: { width: '70px' },
             headerTooltip: 'Length is applicable only for Text and Binary datatypes',
             body: (rowData: EntityAttributeRow) => {
                const datatype = rowData.datatype?.toLowerCase();
@@ -329,7 +323,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             field: 'precision',
             header: 'Precision',
             dataType: 'numeric',
-            headerStyle: { width: '10%' },
+            headerStyle: { width: '70px' },
+            style: { width: '70px' },
             headerTooltip: 'Precision is applicable only for Decimal and Integer datatypes',
             body: (rowData: EntityAttributeRow) => {
                const datatype = rowData.datatype?.toLowerCase();
@@ -367,7 +362,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             field: 'scale',
             header: 'Scale',
             dataType: 'numeric',
-            headerStyle: { width: '10%' },
+            headerStyle: { width: '70px' },
+            style: { width: '70px' },
             headerTooltip: 'Scale is applicable only for Decimal, Date, Time and DateTime datatypes',
              body: (rowData: EntityAttributeRow) => {
                 const datatype = rowData.datatype?.toLowerCase();
@@ -402,6 +398,32 @@ export function EntityAttributesDataGrid(): React.ReactElement {
              }
          },
          {
+            field: 'identifier',
+            header: isNarrow ? 'P' : 'Primary',
+            dataType: 'boolean',
+            headerStyle: { width: '50px', textAlign: 'center' },
+            style: { width: '50px', textAlign: 'center' },
+            body: (rowData: EntityAttributeRow) => (
+               <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
+            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='identifier' />,
+            filterType: 'boolean',
+            showFilterMatchModes: false
+         },
+         {
+            field: 'mandatory',
+            header: isNarrow ? 'M' : 'Mandatory',
+            dataType: 'boolean',
+            headerStyle: { width: '50px', textAlign: 'center' },
+            style: { width: '50px', textAlign: 'center' },
+            body: (rowData: EntityAttributeRow) => (
+               <div className='flex align-items-center justify-content-center'>{rowData.mandatory && <i className='pi pi-check' />}</div>
+            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='mandatory' />,
+            filterType: 'boolean',
+            showFilterMatchModes: false
+         },
+         {
             field: 'description',
             header: 'Description',
             body: (rowData: EntityAttributeRow) => (
@@ -411,7 +433,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             filterType: 'text'
          }
       ],
-      [gridData]
+      [gridData, isNarrow]
    );
 
    const handleIdentifierUpdate = React.useCallback(
@@ -635,53 +657,57 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    }
 
    return (
-      <PrimeDataGrid
-         className='entity-attributes-datatable'
-         columns={columns}
-         data={gridData}
-         keyField='id'
-         height='auto'
-         onRowAdd={handleAddAttribute}
-         onRowUpdate={handleRowUpdate}
-         onRowDelete={handleAttributeDelete}
-         onRowReorder={handleRowReorder}
-         selectedRows={selectedRows}
-         onSelectionChange={handleSelectionChange}
-         defaultNewRow={defaultEntry}
-         readonly={readonly}
-         noDataMessage='No attributes defined'
-         addButtonLabel='Add Attribute'
-         editingRows={editingRows}
-         metaKeySelection={false}
-         onRowEditChange={(e: DataTableRowEditEvent) => {
-            const newEditingRows = e.data as Record<string, boolean>;
-            const newEditingId = Object.keys(newEditingRows)[0];
-            const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+      <div ref={containerRef} style={{ width: '100%' }}>
+         <PrimeDataGrid
+            className='entity-attributes-datatable'
+            columns={columns}
+            data={gridData}
+            keyField='id'
+            height='auto'
+            onRowAdd={handleAddAttribute}
+            onRowUpdate={handleRowUpdate}
+            onRowDelete={handleAttributeDelete}
+            onRowReorder={handleRowReorder}
+            selectedRows={selectedRows}
+            onSelectionChange={handleSelectionChange}
+            defaultNewRow={defaultEntry}
+            readonly={readonly}
+            noDataMessage='No attributes defined'
+            addButtonLabel='Add Attribute'
+            editingRows={editingRows}
+            metaKeySelection={false}
+            onRowEditChange={(e: DataTableRowEditEvent) => {
+               const newEditingRows = e.data as Record<string, boolean>;
+               const newEditingId = Object.keys(newEditingRows)[0];
+               const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
 
-            // If we're stopping editing a row (either by cancelling or completing)
-            if (currentEditingId && !newEditingRows[currentEditingId]) {
-               const currentRow = gridData.find(row => row.id === currentEditingId);
+               // If we're stopping editing a row (either by cancelling or completing)
+               if (currentEditingId && !newEditingRows[currentEditingId]) {
+                  const currentRow = gridData.find(row => row.id === currentEditingId);
 
-               // Always remove uncommitted rows when editing stops
-               if (currentRow?._uncommitted) {
-                  setGridData(current => current.filter(row => row.id !== currentEditingId));
+                  // Always remove uncommitted rows when editing stops
+                  if (currentRow?._uncommitted) {
+                     setGridData(current => current.filter(row => row.id !== currentEditingId));
+                  }
                }
-            }
 
-            // Update editing state
-            setEditingRows(newEditingRows);
+               // Update editing state
+               setEditingRows(newEditingRows);
 
-            // Clean up any stale uncommitted rows
-            if (newEditingId) {
-               setGridData(current => {
-                  // Keep all committed rows
-                  const committedRows = current.filter(row => !row._uncommitted);
-                  const activeUncommittedRow = current.find(row => row._uncommitted && row.id === newEditingId);
-                  return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
-               });
-            }
-         }}
-         globalFilterFields={['name', 'datatype', 'description']}
-      />
+               // Clean up any stale uncommitted rows
+               if (newEditingId) {
+                  setGridData(current => {
+                     // Keep all committed rows
+                     const committedRows = current.filter(row => !row._uncommitted);
+                     const activeUncommittedRow = current.find(row => row._uncommitted && row.id === newEditingId);
+                     return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+                  });
+               }
+            }}
+            globalFilterFields={['name', 'datatype', 'description']}
+            resizableColumns
+            columnResizeMode='fit'
+         />
+      </div>
    );
 }

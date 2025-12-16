@@ -1107,38 +1107,6 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
             "$type": "Group",
             "elements": [
               {
-                "$type": "Assignment",
-                "feature": "mandatory",
-                "operator": "?=",
-                "terminal": {
-                  "$type": "Keyword",
-                  "value": "mandatory"
-                }
-              },
-              {
-                "$type": "Keyword",
-                "value": ":"
-              },
-              {
-                "$type": "Alternatives",
-                "elements": [
-                  {
-                    "$type": "Keyword",
-                    "value": "TRUE"
-                  },
-                  {
-                    "$type": "Keyword",
-                    "value": "true"
-                  }
-                ]
-              }
-            ],
-            "cardinality": "?"
-          },
-          {
-            "$type": "Group",
-            "elements": [
-              {
                 "$type": "Keyword",
                 "value": "length"
               },
@@ -1209,6 +1177,38 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
                   },
                   "arguments": []
                 }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "mandatory",
+                "operator": "?=",
+                "terminal": {
+                  "$type": "Keyword",
+                  "value": "mandatory"
+                }
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Alternatives",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": "TRUE"
+                  },
+                  {
+                    "$type": "Keyword",
+                    "value": "true"
+                  }
+                ]
               }
             ],
             "cardinality": "?"

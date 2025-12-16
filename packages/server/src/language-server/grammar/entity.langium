@@ -41,10 +41,10 @@ interface LogicalAttribute extends DataElement, WithCustomProperties {
 LogicalAttribute returns LogicalAttribute:
     NamedObjectFragment
     ('datatype' ':' datatype=STRING)?
-    (mandatory?='mandatory' ':' ('TRUE' | 'true'))?
     ('length' ':' length=NUMBER)?
     ('precision' ':' precision=NUMBER)?
     ('scale' ':' scale=NUMBER)?
+    (mandatory?='mandatory' ':' ('TRUE' | 'true'))?
     CustomPropertiesFragment?
 ;
 

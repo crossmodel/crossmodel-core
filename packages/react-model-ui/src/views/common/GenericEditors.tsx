@@ -267,7 +267,7 @@ export function GenericNumberEditor({
    const rowIdx = options.rowData?.idx ?? -1;
    const readonly = useReadonly();
    const isDisabled = options.disabled || readonly || disabled;
-   
+
    let effectiveValue = value;
    if (forceClear) {
       effectiveValue = undefined;
@@ -282,7 +282,8 @@ export function GenericNumberEditor({
                <InputNumber
                   value={effectiveValue}
                   onValueChange={(e: any) => options.editorCallback(e.value)}
-                  className={`w-full ${className}`}
+                  className={`w-full ${className} p-inputtext-sm`}
+                  inputStyle={{ padding: '0.25rem' }}
                   onKeyDown={handleGridEditorKeyDown}
                   disabled={isDisabled}
                   autoFocus={!isDisabled}
