@@ -35,10 +35,7 @@ export function handleGenericRowReorder<TRow extends { id: string; _uncommitted?
       return { key, item };
    });
    const itemMap = new Map(itemEntries.map(entry => [entry.key, entry.item]));
-   const committedItemCount = itemEntries.reduce(
-      (count, entry) => (pendingDeleteIds.has(entry.key) ? count : count + 1),
-      0
-   );
+   const committedItemCount = itemEntries.reduce((count, entry) => (pendingDeleteIds.has(entry.key) ? count : count + 1), 0);
 
    const reorderedItems: TModel[] = [];
    filteredRows.forEach(row => {
@@ -199,13 +196,7 @@ function useFilters<T>(columns: GridColumn<T>[]): {
    const renderHeader = (): React.JSX.Element => (
       <div className='datatable-global-filter'>
          <div className='datatable-filter-section'>
-            <Button
-               type='button'
-               icon='pi pi-filter-slash'
-               label='Clear Filters'
-               outlined
-               onClick={clearFilters}
-            />
+            <Button type='button' icon='pi pi-filter-slash' label='Clear Filters' outlined onClick={clearFilters} />
             <div className='keyword-search-container'>
                <IconField iconPosition='left'>
                   <InputIcon className='pi pi-search' />
@@ -294,8 +285,8 @@ function useDragDrop<T extends Record<string, any>>(
       currentDropPositionRef.current = undefined;
 
       const currentSelectedRows = selectedRowsRef.current;
-      const isDraggingSelectedRows = currentSelectedRows && currentSelectedRows.length > 1 &&
-         currentSelectedRows.some(row => row[keyField] === rowKey);
+      const isDraggingSelectedRows =
+         currentSelectedRows && currentSelectedRows.length > 1 && currentSelectedRows.some(row => row[keyField] === rowKey);
 
       document.body.style.userSelect = 'none';
       window.getSelection()?.removeAllRanges();
@@ -333,7 +324,7 @@ function useDragDrop<T extends Record<string, any>>(
          }
 
          for (let i = 1; i < selectedIndices.length; i++) {
-            if (selectedIndices[i] - selectedIndices[i-1] > 1) {
+            if (selectedIndices[i] - selectedIndices[i - 1] > 1) {
                hasGaps = true;
                break;
             }
@@ -391,10 +382,9 @@ function useDragDrop<T extends Record<string, any>>(
          if (currentSelectedRows.length > maxPreviewRows) {
             const moreRowsIndicator = document.createElement('tr');
             const gapText = hasGaps ? ' (with gaps)' : '';
-            moreRowsIndicator.innerHTML =
-               `<td colspan="100%" style="text-align: center; font-style: italic; padding: 8px; background: rgba(0,0,0,0.05);">... and ${
-                  currentSelectedRows.length - maxPreviewRows
-               } more rows${gapText}</td>`;
+            moreRowsIndicator.innerHTML = `<td colspan="100%" style="text-align: center; font-style: italic; padding: 8px; background: rgba(0,0,0,0.05);">... and ${
+               currentSelectedRows.length - maxPreviewRows
+            } more rows${gapText}</td>`;
             dragPreviewBody.appendChild(moreRowsIndicator);
          }
       } else {
@@ -435,11 +425,7 @@ function useDragDrop<T extends Record<string, any>>(
                const rowCenterY = rect.top + rect.height / 2;
                const distance = Math.abs(moveEvent.clientY - rowCenterY);
 
-               if (
-                  moveEvent.clientY >= rect.top - buffer &&
-                  moveEvent.clientY <= rect.bottom + buffer &&
-                  distance < minDistance
-               ) {
+               if (moveEvent.clientY >= rect.top - buffer && moveEvent.clientY <= rect.bottom + buffer && distance < minDistance) {
                   minDistance = distance;
                   closestRow = row;
                }
@@ -457,33 +443,33 @@ function useDragDrop<T extends Record<string, any>>(
                   const rowCenterY = rect.top + rect.height / 2;
                   const position = moveEvent.clientY < rowCenterY ? 'above' : 'below';
 
-                     if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
-                        currentDragOverRowKeyRef.current = foundRowKey;
-                        currentDropPositionRef.current = position;
+                  if (currentDragOverRowKeyRef.current !== foundRowKey || currentDropPositionRef.current !== position) {
+                     currentDragOverRowKeyRef.current = foundRowKey;
+                     currentDropPositionRef.current = position;
 
-                        if (setDropIndicator && wrapperRef?.current) {
-                     const rowRect = closestRow.getBoundingClientRect();
-                           const wrapperRect = wrapperRef.current.getBoundingClientRect();
-                           const top = (position === 'above' ? rowRect.top : rowRect.bottom) - wrapperRect.top;
+                     if (setDropIndicator && wrapperRef?.current) {
+                        const rowRect = closestRow.getBoundingClientRect();
+                        const wrapperRect = wrapperRef.current.getBoundingClientRect();
+                        const top = (position === 'above' ? rowRect.top : rowRect.bottom) - wrapperRect.top;
 
-                           setDropIndicator({
-                              top: top - 2,
-                              left: 0,
-                              width: '100%',
-                              display: 'block'
-                           });
-                        }
+                        setDropIndicator({
+                           top: top - 2,
+                           left: 0,
+                           width: '100%',
+                           display: 'block'
+                        });
                      }
                   }
-               } else {
-                     if (currentDragOverRowKeyRef.current !== undefined) {
-                        currentDragOverRowKeyRef.current = undefined;
-                        currentDropPositionRef.current = undefined;
-                        if (setDropIndicator) {
-                           setDropIndicator(undefined);
-                        }
-                     }
+               }
+            } else {
+               if (currentDragOverRowKeyRef.current !== undefined) {
+                  currentDragOverRowKeyRef.current = undefined;
+                  currentDropPositionRef.current = undefined;
+                  if (setDropIndicator) {
+                     setDropIndicator(undefined);
                   }
+               }
+            }
          });
       };
 
@@ -506,7 +492,9 @@ function useDragDrop<T extends Record<string, any>>(
             const targetIndex = currentData.findIndex(row => row[keyField] === currentDragOverRowKeyRef.current);
 
             const currentSelectedRowsForDrop = selectedRowsRef.current;
-            const isDraggingSelectedRowsForDrop = currentSelectedRowsForDrop && currentSelectedRowsForDrop.length > 1 &&
+            const isDraggingSelectedRowsForDrop =
+               currentSelectedRowsForDrop &&
+               currentSelectedRowsForDrop.length > 1 &&
                currentSelectedRowsForDrop.some(row => row[keyField] === rowKey);
 
             if (isDraggingSelectedRowsForDrop && currentSelectedRowsForDrop) {
@@ -595,10 +583,12 @@ function useDragDrop<T extends Record<string, any>>(
 
       const handleMouseDown = (e: MouseEvent): void => {
          const target = e.target as HTMLElement;
-         if (target.closest(
-            'button, a, input, select, textarea, .p-checkbox, .p-radiobutton, .p-row-toggler, ' +
-            '.p-row-editor-init, .p-row-editor-save, .p-row-editor-cancel'
-         )) {
+         if (
+            target.closest(
+               'button, a, input, select, textarea, .p-checkbox, .p-radiobutton, .p-row-toggler, ' +
+                  '.p-row-editor-init, .p-row-editor-save, .p-row-editor-cancel'
+            )
+         ) {
             return;
          }
 
@@ -855,7 +845,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             const bIdx = (b as any).idx ?? -1;
             return bIdx - aIdx;
          });
- 
+
          // Dispatch all delete actions first (before any grid data filtering)
          sortedRows.forEach(row => {
             onRowDelete(row);
@@ -870,13 +860,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
    const header = renderFilterHeader();
 
-   const footer = renderActionFooter(
-      addButtonLabel,
-      handleAddRow,
-      handleMultiDelete,
-      selectedRows?.length,
-      readonly
-   );
+   const footer = renderActionFooter(addButtonLabel, handleAddRow, handleMultiDelete, selectedRows?.length, readonly);
 
    React.useEffect(() => {
       if (!tableRef.current || !editingRows || Object.keys(editingRows).length === 0) {
@@ -1013,17 +997,15 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          return;
       }
 
-      const handleClickOutside = (event: MouseEvent): void => {
-         const tableElement = tableRef.current?.getElement();
-         if (!tableElement) {
-            return;
-         }
+      const tableElement = tableRef.current?.getElement();
+      if (!tableElement) {
+         return;
+      }
 
+      const handleClickOutside = (event: MouseEvent): void => {
          const target = event.target as HTMLElement;
 
-         const isInsideTable = tableElement.contains(target);
-
-         // allow clicks inside PrimeReact overlay panels
+         // Allow clicks inside PrimeReact overlay panels
          const isInsideOverlay = target.closest(
             '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
          );
@@ -1051,6 +1033,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             return;
          }
 
+         const isInsideTable = tableElement.contains(target);
          if (!isInsideTable) {
             // Outside table → save & exit
             const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
@@ -1061,11 +1044,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       };
 
       const handleFocusOut = (event: FocusEvent): void => {
-         const tableElement = tableRef.current?.getElement();
-         if (!tableElement) {
-            return;
-         }
-
          const relatedTarget = event.relatedTarget as HTMLElement;
          if (!relatedTarget) {
             return; // Exit if there's no related target
@@ -1096,7 +1074,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          const isInsideOverlay = relatedTarget.closest(
             '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, ' +
                '.p-dialog, .p-overlaypanel, .p-datatable-add-button'
-            );
+         );
 
          if (isInsideOverlay) {
             return; // focusing into overlay shouldn't exit edit mode
@@ -1110,11 +1088,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             }
          }
       };
+      // Attach event listeners for better scoping
+      // focusout bubbles up from the table when focus leaves
+      tableElement.addEventListener('focusout', handleFocusOut);
+      // mouseup attached to document to catch clicks both inside and outside the table
+      // The handler logic determines if the click should trigger a save
       document.addEventListener('mouseup', handleClickOutside);
-      document.addEventListener('focusout', handleFocusOut);
+
       return () => {
+         tableElement.removeEventListener('focusout', handleFocusOut);
          document.removeEventListener('mouseup', handleClickOutside);
-         document.removeEventListener('focusout', handleFocusOut);
       };
    }, [activeRowKey]);
 
@@ -1123,8 +1106,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const cellEditor = undefined;
 
    const allActionsTemplate = React.useCallback(
-      (rowData: T, props: any): React.JSX.Element =>
-         renderActionsColumn(rowData, props, editable, readonly, onRowDelete),
+      (rowData: T, props: any): React.JSX.Element => renderActionsColumn(rowData, props, editable, readonly, onRowDelete),
       [editable, readonly, onRowDelete]
    );
 
@@ -1164,37 +1146,31 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                        const originalEvent = e.originalEvent;
                        if (originalEvent) {
                           const target = originalEvent.target as any;
-                           const findClosest = (el: any, selector: string): Element | null | undefined => {
-                              if (el.closest) {
-                                 return el.closest(selector);
-                              }
-                              if (el.parentElement && el.parentElement.closest) {
-                                 return el.parentElement.closest(selector);
-                              }
-                              if (el.correspondingUseElement) {
-                                 return findClosest(el.correspondingUseElement, selector);
-                              }
-                              return undefined;
-                           };
+                          const findClosest = (el: any, selector: string): Element | null | undefined => {
+                             if (el.closest) {
+                                return el.closest(selector);
+                             }
+                             if (el.parentElement && el.parentElement.closest) {
+                                return el.parentElement.closest(selector);
+                             }
+                             if (el.correspondingUseElement) {
+                                return findClosest(el.correspondingUseElement, selector);
+                             }
+                             return undefined;
+                          };
                           const isCheckbox =
                              findClosest(target, '.p-checkbox') ||
                              findClosest(target, '.p-selection-column') ||
                              findClosest(target, '.p-checkbox-icon');
 
                           const isMouseEvent =
-                              originalEvent.type === 'click' ||
-                              originalEvent.type === 'mousedown' ||
-                              originalEvent.type === 'mouseup' ||
+                             originalEvent.type === 'click' ||
+                             originalEvent.type === 'mousedown' ||
+                             originalEvent.type === 'mouseup' ||
                              originalEvent.type === 'pointerdown' ||
                              originalEvent.type === 'pointerup';
 
-                          if (
-                             isMouseEvent &&
-                             !isCheckbox &&
-                             !originalEvent.ctrlKey &&
-                             !originalEvent.metaKey &&
-                             !originalEvent.shiftKey
-                          ) {
+                          if (isMouseEvent && !isCheckbox && !originalEvent.ctrlKey && !originalEvent.metaKey && !originalEvent.shiftKey) {
                              return;
                           }
                        }
@@ -1253,4 +1229,3 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       </div>
    );
 }
-
