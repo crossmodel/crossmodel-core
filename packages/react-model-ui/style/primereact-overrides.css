@@ -713,6 +713,7 @@ table[style*='position: fixed'] * {
 
 .p-datatable .p-datatable-wrapper {
    border: 1px solid var(--surface-border);
+}
 
 .p-inputnumber-button {
    width: 1.25rem !important;
@@ -735,4 +736,21 @@ table[style*='position: fixed'] * {
 .p-inputnumber-input {
    padding-right: 1.5rem !important; 
 }
+
+.grid-cell-container {
+   display: flex;
+   flex-direction: column;
+   justify-content: flex-start;
+}
+
+.grid-cell-container .validation-error-message {
+   width: 100%;
+   margin-top: 0.25rem;
+   color: var(--theia-errorForeground);
+   font-size: 0.75rem;
+   white-space: normal;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+   vertical-align: top !important;
 }

@@ -46,7 +46,7 @@ export function EditorProperty({
    return (
       <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage}>
          {value}
-         {errorMessage && <p className='p-error block'>{errorMessage}</p>}
+         {errorMessage && <p className='p-error block validation-error-message'>{errorMessage}</p>}
       </div>
    );
 }
@@ -67,7 +67,7 @@ export function GenericTextEditor({ options, basePath, field }: { options: any; 
                   disabled={readonly}
                   autoFocus
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -99,7 +99,7 @@ export function GenericTextareaEditor({
                   autoFocus
                   rows={3}
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -132,7 +132,7 @@ export function GenericDropdownEditor({
                   disabled={readonly}
                   className='w-full'
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -208,7 +208,7 @@ export function GenericAutoCompleteEditor({
                   autoFocus
                   dropdown
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -292,7 +292,7 @@ export function GenericNumberEditor({
                   placeholder={placeholder}
                   showButtons={showButtons}
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
