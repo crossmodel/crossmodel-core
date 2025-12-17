@@ -32,6 +32,7 @@ LogicalEntity returns LogicalEntity:
 ;
 
 interface LogicalAttribute extends DataElement, WithCustomProperties {
+    mandatory?: boolean;
     length?: number;
     precision?: number;
     scale?: number;
@@ -43,6 +44,7 @@ LogicalAttribute returns LogicalAttribute:
     ('length' ':' length=NUMBER)?
     ('precision' ':' precision=NUMBER)?
     ('scale' ':' scale=NUMBER)?
+    (mandatory?='mandatory' ':' ('TRUE' | 'true'))?
     CustomPropertiesFragment?
 ;
 

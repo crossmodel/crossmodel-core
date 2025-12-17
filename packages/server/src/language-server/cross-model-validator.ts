@@ -64,6 +64,7 @@ export function registerValidationChecks(services: CrossModelServices): void {
       AstNode: validator.checkNode,
       IdentifiedObject: validator.checkIdentifiedObject,
       AttributeMapping: validator.checkAttributeMapping,
+      LogicalAttribute: validator.checkLogicalAttribute,
       LogicalEntity: validator.checkLogicalEntity,
       Mapping: validator.checkMapping,
       Relationship: validator.checkRelationship,
@@ -177,6 +178,48 @@ export class CrossModelValidator {
 
    checkUniqueCustomerPropertyId(node: WithCustomProperties, accept: ValidationAcceptor): void {
       this.markDuplicateIds(node.customProperties, accept);
+   }
+
+   checkLogicalAttribute(attribute: LogicalAttribute, accept: ValidationAcceptor): void {
+      const datatype = attribute.datatype?.toLowerCase();
+
+      // length can only be set for text & binary data type
+      if (attribute.length !== undefined && datatype !== 'text' && datatype !== 'binary') {
+         accept('error', 'Length is only applicable to Text or Binary datatypes.', {
+            node: attribute,
+            property: 'length',
+            data: { code: CrossModelValidationErrors.toMalformed('length') }
+         });
+      }
+
+      // precision can be set for Decimal & Integer data type
+      if (attribute.precision !== undefined && datatype !== 'decimal' && datatype !== 'integer') {
+         accept('error', 'Precision is only applicable to Decimal or Integer datatypes.', {
+            node: attribute,
+            property: 'precision',
+            data: { code: CrossModelValidationErrors.toMalformed('precision') }
+         });
+      }
+
+      // scale can only be set for datatype Decimal, DateTime & Time
+      if (attribute.scale !== undefined && datatype !== 'decimal' && datatype !== 'datetime' && datatype !== 'time') {
+         accept('error', 'Scale is only applicable to Decimal, DateTime, or Time datatypes.', {
+            node: attribute,
+            property: 'scale',
+            data: { code: CrossModelValidationErrors.toMalformed('scale') }
+         });
+      }
+
+      // scale cannot be larger than precision
+      if (attribute.scale !== undefined && attribute.precision !== undefined) {
+         if (attribute.scale > attribute.precision) {
+            accept('error', 'Scale cannot be larger than Precision.', {
+               node: attribute,
+               property: 'scale',
+               data: { code: CrossModelValidationErrors.toMalformed('scale') }
+            });
+         }
+      }
    }
 
    protected markDuplicateIds(nodes: IdentifiableAstNode[] = [], accept: ValidationAcceptor): void {

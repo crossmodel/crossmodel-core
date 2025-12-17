@@ -4,6 +4,7 @@
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primereact/autocomplete';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
+import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
@@ -45,7 +46,7 @@ export function EditorProperty({
    return (
       <div className={`grid-cell-container ${errorMessage ? 'p-invalid' : ''}`} title={errorMessage}>
          {value}
-         {errorMessage && <p className='p-error block'>{errorMessage}</p>}
+         {errorMessage && <p className='p-error block validation-error-message'>{errorMessage}</p>}
       </div>
    );
 }
@@ -66,7 +67,7 @@ export function GenericTextEditor({ options, basePath, field }: { options: any; 
                   disabled={readonly}
                   autoFocus
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -98,7 +99,7 @@ export function GenericTextareaEditor({
                   autoFocus
                   rows={3}
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -131,7 +132,7 @@ export function GenericDropdownEditor({
                   disabled={readonly}
                   className='w-full'
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -207,7 +208,7 @@ export function GenericAutoCompleteEditor({
                   autoFocus
                   dropdown
                />
-               {error && <small className='p-error m-0'>{error}</small>}
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>
@@ -236,6 +237,62 @@ export function GenericCheckboxEditor({
                   onKeyDown={handleGridEditorKeyDown}
                   disabled={readonly}
                />
+            </div>
+         )}
+      </EditorContainer>
+   );
+}
+
+export function GenericNumberEditor({
+   options,
+   basePath,
+   field,
+   placeholder,
+   disabled,
+   value,
+   showButtons,
+   tooltip,
+   forceClear
+}: {
+   options: any;
+   basePath: string[];
+   field: string;
+   placeholder?: string;
+   disabled?: boolean;
+   value?: number | null;
+   showButtons?: boolean;
+   tooltip?: string;
+   forceClear?: boolean;
+}): React.ReactElement {
+   const rowIdx = options.rowData?.idx ?? -1;
+   const readonly = useReadonly();
+   const isDisabled = options.disabled || readonly || disabled;
+
+   let effectiveValue = value;
+   if (forceClear) {
+      effectiveValue = undefined;
+   } else if (effectiveValue === undefined) {
+      effectiveValue = options.value ?? undefined;
+   }
+
+   return (
+      <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
+         {({ invalid, error, className }) => (
+            <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || tooltip || undefined}>
+               <InputNumber
+                  value={effectiveValue}
+                  onValueChange={(e: any) => options.editorCallback(e.value)}
+                  className={`w-full ${className} p-inputtext-sm`}
+                  inputStyle={{ padding: '0.25rem' }}
+                  onKeyDown={handleGridEditorKeyDown}
+                  disabled={isDisabled}
+                  autoFocus={!isDisabled}
+                  useGrouping={false}
+                  min={0}
+                  placeholder={placeholder}
+                  showButtons={showButtons}
+               />
+               {error && <small className='p-error m-0 validation-error-message'>{error}</small>}
             </div>
          )}
       </EditorContainer>

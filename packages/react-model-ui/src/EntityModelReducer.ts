@@ -164,7 +164,10 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
             ...action.attribute,
             name: undefinedIfEmpty(action.attribute.name),
             description: undefinedIfEmpty(action.attribute.description),
-            datatype: undefinedIfEmpty(action.attribute.datatype)
+            datatype: undefinedIfEmpty(action.attribute.datatype),
+            ...(action.attribute.length !== undefined ? { length: action.attribute.length } : {}),
+            ...(action.attribute.precision !== undefined ? { precision: action.attribute.precision } : {}),
+            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {})
          };
          break;
       }
@@ -174,7 +177,10 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
             ...action.attribute,
             name: undefinedIfEmpty(action.attribute.name),
             description: undefinedIfEmpty(action.attribute.description),
-            datatype: undefinedIfEmpty(action.attribute.datatype)
+            datatype: undefinedIfEmpty(action.attribute.datatype),
+            ...(action.attribute.length !== undefined ? { length: action.attribute.length } : {}),
+            ...(action.attribute.precision !== undefined ? { precision: action.attribute.precision } : {}),
+            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {})
          });
          break;
 

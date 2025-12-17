@@ -67,7 +67,7 @@ export class GridInputDialog extends WorkspaceInputDialog {
                }
             } : undefined);
             this.grid.appendChild(input);
-            if (inputProps.id === 'name' && input instanceof HTMLInputElement) {
+            if (inputProps.id === 'name' && typeof HTMLInputElement !== 'undefined' && input instanceof HTMLInputElement) {
                this.nameInputField = input;
                input.addEventListener('input', () => { this.nameFieldEdited = true; });
             }
@@ -88,7 +88,7 @@ export class GridInputDialog extends WorkspaceInputDialog {
       const data: Record<string, string> = {};
       for (let i = 0; i < this.grid.children.length; i++) {
          const child = this.grid.children[i];
-         if (child instanceof HTMLLabelElement) {
+         if (typeof HTMLLabelElement !== 'undefined' && child instanceof HTMLLabelElement) {
             continue;
          }
          const value = (child as HTMLInputElement | HTMLSelectElement).value;
@@ -119,7 +119,7 @@ function createInput<T extends InputOptions, U = T extends { options: Record<str
    inputField.className = isSelect ? 'theia-select' : 'theia-input';
    inputField.spellcheck = false;
    // inputField.setAttribute('style', 'flex: 0;');
-   if (inputField instanceof HTMLInputElement) {
+   if (typeof HTMLInputElement !== 'undefined' && inputField instanceof HTMLInputElement) {
       inputField.placeholder = options.placeholder || '';
       inputField.type = 'text';
    }
@@ -137,7 +137,7 @@ function createInput<T extends InputOptions, U = T extends { options: Record<str
    if (options.id) {
       inputField.id = options.id;
    }
-   if (onValueChange && inputField instanceof HTMLSelectElement) {
+   if (onValueChange && typeof HTMLSelectElement !== 'undefined' && inputField instanceof HTMLSelectElement) {
       inputField.addEventListener('change', () => {
          onValueChange(inputField.value);
       });

@@ -5,13 +5,13 @@ import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import {
-    DataTable,
-    DataTableFilterEvent,
-    DataTableFilterMeta,
-    DataTableFilterMetaData,
-    DataTableRowClickEvent,
-    DataTableRowEditCompleteEvent,
-    DataTableRowEditEvent
+   DataTable,
+   DataTableFilterEvent,
+   DataTableFilterMeta,
+   DataTableFilterMetaData,
+   DataTableRowClickEvent,
+   DataTableRowEditCompleteEvent,
+   DataTableRowEditEvent
 } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { IconField } from 'primereact/iconfield';
@@ -94,6 +94,8 @@ export interface PrimeDataGridProps<T> {
    onRowEditChange?: (e: DataTableRowEditEvent) => void;
    globalFilterFields?: string[];
    metaKeySelection?: boolean;
+   resizableColumns?: boolean;
+   columnResizeMode?: 'fit' | 'expand';
 }
 
 function useFilters<T>(columns: GridColumn<T>[]): {
@@ -776,7 +778,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    editingRows,
    onRowEditChange,
    globalFilterFields,
-   metaKeySelection = true
+   metaKeySelection = true,
+   resizableColumns,
+   columnResizeMode
 }: PrimeDataGridProps<T>): React.ReactElement {
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
@@ -793,8 +797,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       const tableElement = tableRef.current?.getElement();
       if (tableElement && activeRowKey) {
          const saveButton = tableElement.querySelector('.p-row-editor-save');
-         if (saveButton instanceof HTMLElement) {
-            saveButton.click();
+         if (saveButton) {
+            (saveButton as HTMLElement).click();
          }
       }
    }, [activeRowKey]);
@@ -1211,6 +1215,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             header={header}
             footer={footer}
             globalFilterFields={globalFilterFields as string[]}
+            resizableColumns={resizableColumns}
+            columnResizeMode={columnResizeMode}
          >
             {onSelectionChange !== undefined && <Column selectionMode='multiple' style={{ width: '3rem' }} />}
             {columns.map(col => {

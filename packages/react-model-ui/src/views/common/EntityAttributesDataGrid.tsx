@@ -5,7 +5,7 @@ import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/p
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
-import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
+import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericNumberEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -56,6 +56,22 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
    const identifiersRef = React.useRef(entity?.identifiers);
    const attributesRef = React.useRef(entity?.attributes || []);
+   // eslint-disable-next-line no-null/no-null
+   const containerRef = React.useRef<HTMLDivElement>(null);
+   const [isNarrow, setIsNarrow] = React.useState(false);
+
+   React.useEffect(() => {
+      if (!containerRef.current) {
+         return;
+      }
+      const observer = new ResizeObserver(entries => {
+         for (const entry of entries) {
+            setIsNarrow(entry.contentRect.width < 1000);
+         }
+      });
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+   }, []);
 
    const defaultEntry = React.useMemo<EntityAttributeRow>(
       () => ({
@@ -185,7 +201,11 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                name: attr.name || '',
                datatype: attr.datatype || '',
                description: attr.description || '',
+               mandatory: attr.mandatory || false,
                identifier: isPrimaryIdentifier,
+               ...(attr.length !== undefined ? { length: attr.length } : {}),
+               ...(attr.precision !== undefined ? { precision: attr.precision } : {}),
+               ...(attr.scale !== undefined ? { scale: attr.scale } : {}),
                id,
                $type: 'LogicalAttribute',
                $globalId: attr.$globalId || id
@@ -225,7 +245,32 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             headerStyle: { width: '15%' },
             editor: (options: any) => (
                <GenericAutoCompleteEditor
-                  options={options}
+                  options={{
+                     ...options,
+                     editorCallback: (value: any) => {
+                        options.editorCallback(value);
+                        setGridData(current =>
+                           current.map(row => {
+                              if (row.id === options.rowData.id) {
+                                 const datatype = value?.toLowerCase();
+                                 const isLengthApplicable = datatype === 'text' || datatype === 'binary';
+                                 const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
+                                 const isScaleApplicable =
+                                    datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+
+                                 return {
+                                    ...row,
+                                    datatype: value,
+                                    length: isLengthApplicable ? row.length : undefined,
+                                    precision: isPrecisionApplicable ? row.precision : undefined,
+                                    scale: isScaleApplicable ? row.scale : undefined
+                                 };
+                              }
+                              return row;
+                           })
+                        );
+                     }
+                  }}
                   basePath={['entity', 'attributes']}
                   field='datatype'
                   dropdownOptions={dataTypeOptions}
@@ -236,14 +281,145 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             showFilterMatchModes: false
          },
          {
+            field: 'length',
+            header: 'Length',
+            dataType: 'numeric',
+            headerStyle: { width: '70px' },
+            style: { width: '70px' },
+            headerTooltip: 'Length is applicable only for Text and Binary datatypes',
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'text' || datatype === 'binary';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty
+                        basePath={['entity', 'attributes']}
+                        field='length'
+                        row={rowData}
+                        value={rowData.length?.toString() || ''}
+                     />
+                  </div>
+               );
+            },
+             editor: (options: any) => {
+                const currentRow = gridData.find(r => r.id === options.rowData.id);
+                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+                const isApplicable = datatype === 'text' || datatype === 'binary';
+                return (
+                   <GenericNumberEditor
+                      options={options}
+                      basePath={['entity', 'attributes']}
+                      field='length'
+                      disabled={!isApplicable}
+                      value={isApplicable ? options.value : undefined}
+                      showButtons={isApplicable}
+                      tooltip='Length is applicable only for Text and Binary datatypes'
+                      forceClear={!isApplicable}
+                   />
+                );
+             }
+         },
+         {
+            field: 'precision',
+            header: 'Precision',
+            dataType: 'numeric',
+            headerStyle: { width: '70px' },
+            style: { width: '70px' },
+            headerTooltip: 'Precision is applicable only for Decimal and Integer datatypes',
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'integer';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty
+                        basePath={['entity', 'attributes']}
+                        field='precision'
+                        row={rowData}
+                        value={rowData.precision?.toString() || ''}
+                     />
+                  </div>
+               );
+            },
+             editor: (options: any) => {
+                const currentRow = gridData.find(r => r.id === options.rowData.id);
+                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+                const isApplicable = datatype === 'decimal' || datatype === 'integer';
+                return (
+                   <GenericNumberEditor
+                      options={options}
+                      basePath={['entity', 'attributes']}
+                      field='precision'
+                      disabled={!isApplicable}
+                      value={isApplicable ? options.value : undefined}
+                      showButtons={isApplicable}
+                      tooltip='Precision is applicable only for Decimal and Integer datatypes'
+                      forceClear={!isApplicable}
+                   />
+                );
+             }
+         },
+         {
+            field: 'scale',
+            header: 'Scale',
+            dataType: 'numeric',
+            headerStyle: { width: '70px' },
+            style: { width: '70px' },
+            headerTooltip: 'Scale is applicable only for Decimal, Date, Time and DateTime datatypes',
+             body: (rowData: EntityAttributeRow) => {
+                const datatype = rowData.datatype?.toLowerCase();
+                const isApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+                return (
+                   <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                      <EditorProperty
+                         basePath={['entity', 'attributes']}
+                         field='scale'
+                         row={rowData}
+                         value={rowData.scale?.toString() || ''}
+                      />
+                   </div>
+                );
+             },
+             editor: (options: any) => {
+                const currentRow = gridData.find(r => r.id === options.rowData.id);
+                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+                const isApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+                return (
+                   <GenericNumberEditor
+                      options={options}
+                      basePath={['entity', 'attributes']}
+                      field='scale'
+                      disabled={!isApplicable}
+                      value={isApplicable ? options.value : undefined}
+                      showButtons={isApplicable}
+                      tooltip='Scale is applicable only for Decimal, Date, Time and DateTime datatypes'
+                      forceClear={!isApplicable}
+                   />
+                );
+             }
+         },
+         {
             field: 'identifier',
-            header: 'Primary',
+            header: isNarrow ? 'P' : 'Primary',
             dataType: 'boolean',
-            headerStyle: { width: '10%' },
+            headerStyle: { width: '50px', textAlign: 'center' },
+            style: { width: '50px', textAlign: 'center' },
             body: (rowData: EntityAttributeRow) => (
                <div className='flex align-items-center justify-content-center'>{rowData.identifier && <i className='pi pi-check' />}</div>
             ),
             editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='identifier' />,
+            filterType: 'boolean',
+            showFilterMatchModes: false
+         },
+         {
+            field: 'mandatory',
+            header: isNarrow ? 'M' : 'Mandatory',
+            dataType: 'boolean',
+            headerStyle: { width: '50px', textAlign: 'center' },
+            style: { width: '50px', textAlign: 'center' },
+            body: (rowData: EntityAttributeRow) => (
+               <div className='flex align-items-center justify-content-center'>{rowData.mandatory && <i className='pi pi-check' />}</div>
+            ),
+            editor: (options: any) => <GenericCheckboxEditor options={options} basePath={['entity', 'attributes']} field='mandatory' />,
             filterType: 'boolean',
             showFilterMatchModes: false
          },
@@ -257,7 +433,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             filterType: 'text'
          }
       ],
-      []
+      [gridData, isNarrow]
    );
 
    const handleIdentifierUpdate = React.useCallback(
@@ -336,6 +512,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                attribute.name !== defaultEntry.name ||
                attribute.datatype !== defaultEntry.datatype ||
                attribute.description !== defaultEntry.description ||
+               !!attribute.mandatory ||
                !!attribute.identifier;
 
             if (!hasChanges) {
@@ -350,12 +527,21 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted: _, id: __, description, identifier, ...attributeData } = attribute;
+            const { _uncommitted: _, id: __, description, identifier, mandatory, length, precision, scale, ...attributeData } = attribute;
+            const datatype = attribute.datatype?.toLowerCase();
+            const isLengthApplicable = datatype === 'text' || datatype === 'binary';
+            const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
+            const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+
             const finalAttribute = {
                ...attributeData,
                id: newId,
                $globalId: newId,
-               ...(description ? { description } : {})
+               ...(description ? { description } : {}),
+               ...(mandatory ? { mandatory } : {}),
+               ...(isLengthApplicable && length !== undefined ? { length } : {}),
+               ...(isPrecisionApplicable && precision !== undefined ? { precision } : {}),
+               ...(isScaleApplicable && scale !== undefined ? { scale } : {})
             };
 
             // Add the new attribute through dispatch
@@ -384,10 +570,19 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             // This is an existing row being updated
             // Remove empty and non-model fields before updating
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { description, identifier: _ignored, ...rest } = attribute;
+            const { description, identifier: _ignored, mandatory, length, precision, scale, ...rest } = attribute;
+            const datatype = attribute.datatype?.toLowerCase();
+            const isLengthApplicable = datatype === 'text' || datatype === 'binary';
+            const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
+            const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+
             const updatedAttribute = {
                ...rest,
-               ...(description ? { description } : {})
+               ...(description ? { description } : {}),
+               ...(mandatory ? { mandatory } : {}),
+               ...(isLengthApplicable && length !== undefined ? { length } : {}),
+               ...(isPrecisionApplicable && precision !== undefined ? { precision } : {}),
+               ...(isScaleApplicable && scale !== undefined ? { scale } : {})
             };
 
             dispatch({
@@ -462,53 +657,57 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    }
 
    return (
-      <PrimeDataGrid
-         className='entity-attributes-datatable'
-         columns={columns}
-         data={gridData}
-         keyField='id'
-         height='auto'
-         onRowAdd={handleAddAttribute}
-         onRowUpdate={handleRowUpdate}
-         onRowDelete={handleAttributeDelete}
-         onRowReorder={handleRowReorder}
-         selectedRows={selectedRows}
-         onSelectionChange={handleSelectionChange}
-         defaultNewRow={defaultEntry}
-         readonly={readonly}
-         noDataMessage='No attributes defined'
-         addButtonLabel='Add Attribute'
-         editingRows={editingRows}
-         metaKeySelection={false}
-         onRowEditChange={(e: DataTableRowEditEvent) => {
-            const newEditingRows = e.data as Record<string, boolean>;
-            const newEditingId = Object.keys(newEditingRows)[0];
-            const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
+      <div ref={containerRef} style={{ width: '100%' }}>
+         <PrimeDataGrid
+            className='entity-attributes-datatable'
+            columns={columns}
+            data={gridData}
+            keyField='id'
+            height='auto'
+            onRowAdd={handleAddAttribute}
+            onRowUpdate={handleRowUpdate}
+            onRowDelete={handleAttributeDelete}
+            onRowReorder={handleRowReorder}
+            selectedRows={selectedRows}
+            onSelectionChange={handleSelectionChange}
+            defaultNewRow={defaultEntry}
+            readonly={readonly}
+            noDataMessage='No attributes defined'
+            addButtonLabel='Add Attribute'
+            editingRows={editingRows}
+            metaKeySelection={false}
+            onRowEditChange={(e: DataTableRowEditEvent) => {
+               const newEditingRows = e.data as Record<string, boolean>;
+               const newEditingId = Object.keys(newEditingRows)[0];
+               const currentEditingId = editingRows ? Object.keys(editingRows)[0] : undefined;
 
-            // If we're stopping editing a row (either by cancelling or completing)
-            if (currentEditingId && !newEditingRows[currentEditingId]) {
-               const currentRow = gridData.find(row => row.id === currentEditingId);
+               // If we're stopping editing a row (either by cancelling or completing)
+               if (currentEditingId && !newEditingRows[currentEditingId]) {
+                  const currentRow = gridData.find(row => row.id === currentEditingId);
 
-               // Always remove uncommitted rows when editing stops
-               if (currentRow?._uncommitted) {
-                  setGridData(current => current.filter(row => row.id !== currentEditingId));
+                  // Always remove uncommitted rows when editing stops
+                  if (currentRow?._uncommitted) {
+                     setGridData(current => current.filter(row => row.id !== currentEditingId));
+                  }
                }
-            }
 
-            // Update editing state
-            setEditingRows(newEditingRows);
+               // Update editing state
+               setEditingRows(newEditingRows);
 
-            // Clean up any stale uncommitted rows
-            if (newEditingId) {
-               setGridData(current => {
-                  // Keep all committed rows
-                  const committedRows = current.filter(row => !row._uncommitted);
-                  const activeUncommittedRow = current.find(row => row._uncommitted && row.id === newEditingId);
-                  return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
-               });
-            }
-         }}
-         globalFilterFields={['name', 'datatype', 'description']}
-      />
+               // Clean up any stale uncommitted rows
+               if (newEditingId) {
+                  setGridData(current => {
+                     // Keep all committed rows
+                     const committedRows = current.filter(row => !row._uncommitted);
+                     const activeUncommittedRow = current.find(row => row._uncommitted && row.id === newEditingId);
+                     return activeUncommittedRow ? [...committedRows, activeUncommittedRow] : committedRows;
+                  });
+               }
+            }}
+            globalFilterFields={['name', 'datatype', 'description']}
+            resizableColumns
+            columnResizeMode='fit'
+         />
+      </div>
    );
 }
