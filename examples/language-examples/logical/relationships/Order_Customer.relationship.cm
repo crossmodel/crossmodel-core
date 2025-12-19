@@ -2,7 +2,7 @@ relationship:
     id: Order_Customer
     name: "Order - Customer"
     parent: Customer
-    parentCardinality: 1
+    parentCardinality: 1..1
     child: Order
     childCardinality: 0..N
     attributes:

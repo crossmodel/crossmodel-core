@@ -1368,7 +1368,7 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
           },
           {
             "$type": "Keyword",
-            "value": "1"
+            "value": "1..1"
           },
           {
             "$type": "Keyword",
