@@ -41,13 +41,17 @@ export default new ContainerModule(bind => {
          }
 
          // Otherwise, return a lazy proxy that will create the real proxy once a workspace is opened.
-         // Use a JavaScript Proxy to forward calls after ensure creation. Cast to any to satisfy DI typing.
          workspaceService.onWorkspaceChanged(roots => {
             if (roots && roots.length > 0) {
                createProxy();
             }
          });
 
+         // Use a JavaScript `Proxy` to forward property access and method calls to the real
+         // proxy once `createProxy()` has been invoked. The `get` handler returns a function
+         // wrapper for methods (so callers can invoke them) and returns direct property values
+         // for non-function members. The returned Proxy is cast to `ModelServiceServer` to
+         // satisfy Theia's DI typing.
          const handler: ProxyHandler<object> = {
             get: (_t, prop: PropertyKey) => {
                if (prop === 'then') {
