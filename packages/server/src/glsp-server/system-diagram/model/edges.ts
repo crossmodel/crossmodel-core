@@ -11,7 +11,7 @@ import {
 } from '@crossmodel/protocol';
 import { ArgsUtil, GEdge, GEdgeBuilder } from '@eclipse-glsp/server';
 import { combineIds } from '../../../language-server/cross-model-naming.js';
-import { InheritanceEdge, RelationshipEdge } from '../../../language-server/generated/ast.js';
+import { InheritanceEdge, LogicalEntity, Relationship, RelationshipEdge } from '../../../language-server/generated/ast.js';
 import { SystemModelIndex } from './system-model-index.js';
 
 export class GRelationshipEdge extends GEdge {
@@ -34,6 +34,17 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
       this.addArg(REFERENCE_CONTAINER_TYPE, RelationshipEdge);
       this.addArg(REFERENCE_PROPERTY, 'relationship');
       this.addArg(REFERENCE_VALUE, edge.relationship.$refText);
+
+      if (edge.relationship?.ref?.$document?.uri) {
+         this.addArg('semanticUri', edge.relationship.ref.$document.uri.toString());
+      } else if (edge.relationship?.$refText) {
+
+         const description = index.services.shared.workspace.IndexManager.allElements(Relationship)
+            .find(e => e.name === edge.relationship.$refText);
+         if (description) {
+            this.addArg('semanticUri', description.documentUri.toString());
+         }
+      }
 
       // Add cardinality css classes
       if (edge.relationship.ref?.parentCardinality) {
@@ -66,6 +77,45 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
       this.id(index.createId(edge));
       this.addCssClasses('diagram-edge', 'inheritance');
       this.addArg('edgePadding', 5);
+     
+      const baseNode = edge.baseNode?.ref;
+      const baseEntity = baseNode?.entity?.ref;
+      
+      let semanticUri: string | undefined;
+      
+      if (baseEntity?.$document?.uri) {
+         semanticUri = baseEntity.$document.uri.toString();
+      } else {
+         if (baseNode?.entity?.$refText) {
+            const entityDescription = index.services.shared.workspace.IndexManager.allElements(LogicalEntity)
+               .find(e => e.name === baseNode.entity.$refText);
+            if (entityDescription) {
+               semanticUri = entityDescription.documentUri.toString();
+            }
+         }
+         
+         if (!semanticUri && edge.baseNode?.$refText) {
+            const diagramId = index.findId(edge.$container);
+            const fullId = diagramId ? combineIds(diagramId, edge.baseNode.$refText) : edge.baseNode.$refText;
+            const diagramNode = index.findLogicalEntityNode(fullId) || index.findLogicalEntityNode(edge.baseNode.$refText);
+            
+            if (diagramNode) {
+               if (diagramNode.entity?.ref?.$document?.uri) {
+                  semanticUri = diagramNode.entity.ref.$document.uri.toString();
+               } else if (diagramNode.entity?.$refText) {
+                  const entityDescription = index.services.shared.workspace.IndexManager.allElements(LogicalEntity)
+                     .find(e => e.name === diagramNode.entity.$refText);
+                  if (entityDescription) {
+                     semanticUri = entityDescription.documentUri.toString();
+                  }
+               }
+            }
+         }
+      }
+
+      if (semanticUri) {
+         this.addArg('semanticUri', semanticUri);
+      }
       this.routerKind('libavoid');
 
       const sourceId = index.findId(edge.baseNode?.ref, () => combineIds(index.assertId(edge.$container), edge.baseNode.$refText));
