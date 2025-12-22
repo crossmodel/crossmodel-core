@@ -215,11 +215,11 @@
    marker-end: var(--svg-def-marker-relation-child-one-sel);
 }
 
-.diagram-edge.relationship-child-1 {
+.diagram-edge.relationship-child-1_1 {
    marker-end: var(--svg-def-marker-relation-child-one-m);
 }
-.diagram-edge.relationship-child-1.selected,
-.diagram-edge.relationship-child-1.mouseover {
+.diagram-edge.relationship-child-1_1.selected,
+.diagram-edge.relationship-child-1_1.mouseover {
    marker-end: var(--svg-def-marker-relation-child-one-m-sel);
 }
 
@@ -247,11 +247,11 @@
    marker-start: var(--svg-def-marker-relation-parent-one-sel);
 }
 
-.diagram-edge.relationship-parent-1 {
+.diagram-edge.relationship-parent-1_1 {
    marker-start: var(--svg-def-marker-relation-parent-one-m);
 }
-.diagram-edge.relationship-parent-1.selected,
-.diagram-edge.relationship-parent-1.mouseover {
+.diagram-edge.relationship-parent-1_1.selected,
+.diagram-edge.relationship-parent-1_1.mouseover {
    marker-start: var(--svg-def-marker-relation-parent-one-m-sel);
 }
 
