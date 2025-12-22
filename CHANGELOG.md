@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.19.0](https://github.com/crossmodel/crossmodel-core/compare/v0.18.2...v0.19.0) (2025-12-22)
+
+
+### Features
+
+* Make direct “New <Type>…” actions and guard “New Element” submenu ([#232](https://github.com/crossmodel/crossmodel-core/issues/232)) ([194f928](https://github.com/crossmodel/crossmodel-core/commit/194f928597bfe952daf6190b8eb29b7b9142c5f1))
+
+
+
+
+
 ## [0.18.2](https://github.com/crossmodel/crossmodel-core/compare/v0.18.1...v0.18.2) (2025-12-17)
 
 **Note:** Version bump only for package crossmodel-core
