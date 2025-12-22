@@ -47,7 +47,7 @@ export function RelationshipForm(): React.ReactElement {
    );
    const referenceLabelProvider = (element: ReferenceableElement): string => element.label;
 
-   const cardinalities = ['0..1', '1', '0..N', '1..N'];
+   const cardinalities = ['0..1', '1..1', '0..N', '1..N'];
 
    const updateNameAndId = React.useCallback(
       (parent?: string, child?: string) => {

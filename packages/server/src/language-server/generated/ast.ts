@@ -26,7 +26,7 @@ export type CrossModelKeywordNames =
     | "."
     | "0..1"
     | "0..N"
-    | "1"
+    | "1..1"
     | "1..N"
     | ":"
     | "<"
@@ -101,10 +101,10 @@ export function isBooleanExpression(item: unknown): item is BooleanExpression {
     return reflection.isInstance(item, BooleanExpression);
 }
 
-export type Cardinality = '0..1' | '0..N' | '1' | '1..N';
+export type Cardinality = '0..1' | '0..N' | '1..1' | '1..N';
 
 export function isCardinality(item: unknown): item is Cardinality {
-    return item === '0..1' || item === '1' || item === '0..N' || item === '1..N';
+    return item === '0..1' || item === '1..1' || item === '0..N' || item === '1..N';
 }
 
 export type DataModelType = 'conceptual' | 'logical' | 'relational';
