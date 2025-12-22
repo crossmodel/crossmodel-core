@@ -9,7 +9,6 @@ import { UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model
 import { CrossModelServices } from './cross-model-module.js';
 import { isDataModel } from './generated/ast.js';
 import { findDocument, getOwner } from './util/ast-util.js';
-import { Utils } from './util/uri-util.js';
 
 export const ID_PROPERTY = 'id';
 
@@ -37,7 +36,7 @@ export interface IdProvider extends NameProvider {
 
    findNextId(type: string, proposal: string | undefined, container?: AstNode): string;
    findNextLocalId(type: string, proposal: string | undefined, container: AstNode): string;
-   findNextGlobalId(type: string, proposal: string | undefined): string;
+   findNextGlobalId(type: string, proposal: string | undefined, uri?: URI): string;
 }
 
 export const QUALIFIED_ID_SEPARATOR = '.';
@@ -166,10 +165,18 @@ export class DefaultIdProvider implements IdProvider {
    }
 
    findNextGlobalId(type: string, proposal: string | undefined = 'Element', uri?: URI): string {
-      const knownIds = this.services.shared.workspace.IndexManager.allElements(type)
-         .filter(candidate => !uri || !Utils.areEqual(uri, candidate.documentUri))
+      let dataModelId: string | undefined;
+      if (uri) {
+         dataModelId = this.dataModelManager.getDataModelIdByUri(uri);
+      }
+
+      const knownIds = (uri && dataModelId
+         ? this.services.shared.workspace.IndexManager.allElementsInDataModel(type, dataModelId)
+         : this.services.shared.workspace.IndexManager.allElements(type)
+      )
          .map(element => element.name)
          .toArray();
+      
       return findNextUnique(proposal, knownIds, identity);
    }
 }

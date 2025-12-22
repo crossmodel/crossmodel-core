@@ -2,8 +2,9 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import { describe, expect, test } from '@jest/globals';
-import { LogicalEntityNode } from '../../src/language-server/generated/ast';
-import { createCrossModelTestServices, parseSystemDiagram } from './test-utils/utils';
+import { URI } from 'vscode-uri';
+import { LogicalEntity, LogicalEntityNode } from '../../src/language-server/generated/ast';
+import { MockFileSystem, createCrossModelTestServices, parseDocuments, parseSystemDiagram, testUri } from './test-utils/utils';
 
 const services = createCrossModelTestServices();
 
@@ -131,6 +132,60 @@ describe('NameUtil', () => {
             // Restore original method
             idProvider.getDataModelReferenceName = originalGetPackageName;
          }
+      });
+   });
+
+   describe('findNextGlobalId', () => {
+      test('should return given name if unique within data model', async () => {
+         const services = createCrossModelTestServices(MockFileSystem);
+         const idProvider = services.references.IdProvider;
+
+         const dmA = testUri('dmA', 'datamodel.cm');
+         const dmB = testUri('dmB', 'datamodel.cm');
+         const entityA1 = testUri('dmA', 'entities', 'EntityA.entity.cm');
+         const entityA2 = testUri('dmB', 'entities', 'EntityA.entity.cm');
+
+         await parseDocuments(
+            { services, text: `datamodel:
+    id: DataModelA
+    name: "DataModel A"
+    type: logical
+    version: 1.0.0`, documentUri: dmA },
+            { services, text: `datamodel:
+    id: DataModelB
+    name: "DataModel B"
+    type: logical
+    version: 1.0.0`, documentUri: dmB },
+            { services, text: `entity:
+    id: EntityA`, documentUri: entityA1 }
+         );
+
+         await services.shared.workspace.DataModelManager.initialize([{ uri: testUri(), name: 'test' }]);
+
+         expect(idProvider.findNextGlobalId(LogicalEntity, 'EntityA', URI.parse(entityA2))).toBe('EntityA');
+      });
+
+      test('should return unique name if given is taken within same data model', async () => {
+         const services = createCrossModelTestServices(MockFileSystem);
+         const idProvider = services.references.IdProvider;
+
+         const dmA = testUri('dmA', 'datamodel.cm');
+         const entityA1 = testUri('dmA', 'entities', 'EntityA.entity.cm');
+         const entityA2 = testUri('dmA', 'entities', 'EntityA_new.entity.cm');
+
+         await parseDocuments(
+            { services, text: `datamodel:
+    id: DataModelA
+    name: "DataModel A"
+    type: logical
+    version: 1.0.0`, documentUri: dmA },
+            { services, text: `entity:
+    id: EntityA`, documentUri: entityA1 }
+         );
+
+         await services.shared.workspace.DataModelManager.initialize([{ uri: testUri(), name: 'test' }]);
+
+         expect(idProvider.findNextGlobalId(LogicalEntity, 'EntityA', URI.parse(entityA2))).toBe('EntityA1');
       });
    });
 });
