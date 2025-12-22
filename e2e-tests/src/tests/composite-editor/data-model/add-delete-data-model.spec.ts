@@ -87,7 +87,18 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
       // Create node
       const folderNode = await explorer.getFileStatNodeByLabel('data-model');
       const contextMenu = await folderNode.openContextMenu();
-      const menuItem = await contextMenu.menuItemByNamePath('New Element', 'Data Model...');
+      // Menu structure changed: Data Model may be a direct action or under "New Element".
+      // Try the direct action first, then fall back to the the old submenu path for robustness.
+      let menuItem;
+      try {
+         menuItem = await contextMenu.menuItemByNamePath('New Data Model...');
+      } catch (e) {
+         try {
+            menuItem = await contextMenu.menuItemByNamePath('New Element', 'Data Model...');
+         } catch (e2) {
+            menuItem = undefined;
+         }
+      }
       expect(menuItem).toBeDefined();
       await menuItem?.click();
 

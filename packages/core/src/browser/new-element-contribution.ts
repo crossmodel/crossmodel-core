@@ -179,6 +179,21 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
          );
       }
 
+      for (const template of NEW_ELEMENT_TEMPLATES) {
+         commands.registerCommand(
+            { ...template, id: template.id + '.direct', label: template.label + '...' },
+            this.newWorkspaceRootUriAwareCommandHandler({
+               isVisible: uri =>
+                  isSelectedModelFolder(uri, this.modelService, template) ||
+                  (template.memberType === DataModelType && doesTemplateFitPackage(uri, this.modelService, template)),
+               isEnabled: uri =>
+                  isSelectedModelFolder(uri, this.modelService, template) ||
+                  (template.memberType === DataModelType && doesTemplateFitPackage(uri, this.modelService, template)),
+               execute: uri => this.createNewElementFile(uri, template)
+            })
+         );
+      }
+
       commands.registerCommand(
          DERIVE_MAPPING_FROM_ENTITY,
          this.newWorkspaceRootUriAwareCommandHandler({
@@ -190,9 +205,19 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
    }
 
    registerMenus(registry: MenuModelRegistry): void {
-      // explorer context menu
-      registry.registerSubmenu(NEW_ELEMENT_NAV_MENU, TEMPLATE_CATEGORY);
       for (const [id, template] of NEW_ELEMENT_TEMPLATES.entries()) {
+         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
+            commandId: template.id + '.direct',
+            label: 'New ' + template.label + '...',
+            order: '0.' + id.toString()
+         });
+      }
+
+      registry.registerSubmenu(NEW_ELEMENT_NAV_MENU, TEMPLATE_CATEGORY, { sortString: '1' });
+      for (const [id, template] of NEW_ELEMENT_TEMPLATES.entries()) {
+         if (template.memberType === DataModelType) {
+            continue;
+         }
          registry.registerMenuAction(NEW_ELEMENT_NAV_MENU, {
             commandId: template.id,
             label: template.label + '...',
@@ -206,7 +231,7 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       });
 
       // main menu bar
-      registry.registerSubmenu(NEW_ELEMENT_MAIN_MENU, TEMPLATE_CATEGORY);
+      registry.registerSubmenu(NEW_ELEMENT_MAIN_MENU, TEMPLATE_CATEGORY, { sortString: '1' });
       for (const [id, template] of NEW_ELEMENT_TEMPLATES.entries()) {
          registry.registerMenuAction(NEW_ELEMENT_MAIN_MENU, {
             commandId: template.id,
@@ -541,4 +566,54 @@ function validateDataModelName(input: string): string | undefined {
       return `Data Model ID '${input}' does not match '${ID_REGEX}'.`;
    }
    return undefined;
+}
+
+function folderNameForMemberType(memberType: ModelFileType | string): string {
+   try {
+      const folder = ModelFileType.getFolder(memberType as any);
+      if (folder) {
+         return folder;
+      }
+   } catch {
+      // fall through to explicit mapping below
+   }
+   if (memberType === LogicalEntityType) {
+      return 'entities';
+   }
+   if (memberType === RelationshipType) {
+      return 'relationships';
+   }
+   if (memberType === MappingType) {
+      return 'mappings';
+   }
+   if (memberType === 'SystemDiagram') {
+      return 'diagrams';
+   }
+   return '';
+}
+
+function isSelectedModelFolder(target: URI | undefined, modelService: ModelService, template: NewElementTemplate): boolean {
+   if (!target) {
+      return false;
+   }
+   const expectedFolder = folderNameForMemberType(template.memberType).toLowerCase();
+   if (!expectedFolder) {
+      return false;
+   }
+
+   const surroundingDataModel = modelService.dataModels.find(candidate => URI.fromFilePath(candidate.directory).isEqualOrParent(target));
+   if (surroundingDataModel) {
+      const folderUri = URI.fromFilePath(surroundingDataModel.directory).resolve(expectedFolder);
+      if (target.isEqual(folderUri)) {
+         return true;
+      }
+   }
+
+   // Fallback: check the selected folder's base name
+   const base = target.path.base.toLowerCase();
+   if (base === expectedFolder) {
+      return true;
+   }
+
+   return false;
 }
