@@ -5,13 +5,13 @@ import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import {
-   DataTable,
-   DataTableFilterEvent,
-   DataTableFilterMeta,
-   DataTableFilterMetaData,
-   DataTableRowClickEvent,
-   DataTableRowEditCompleteEvent,
-   DataTableRowEditEvent
+    DataTable,
+    DataTableFilterEvent,
+    DataTableFilterMeta,
+    DataTableFilterMetaData,
+    DataTableRowClickEvent,
+    DataTableRowEditCompleteEvent,
+    DataTableRowEditEvent
 } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { IconField } from 'primereact/iconfield';
@@ -382,7 +382,8 @@ function useDragDrop<T extends Record<string, any>>(
          if (currentSelectedRows.length > maxPreviewRows) {
             const moreRowsIndicator = document.createElement('tr');
             const gapText = hasGaps ? ' (with gaps)' : '';
-            moreRowsIndicator.innerHTML = `<td colspan="100%" style="text-align: center; font-style: italic; padding: 8px; background: rgba(0,0,0,0.05);">... and ${
+            moreRowsIndicator.innerHTML = '<td colspan="100%" style="text-align: center; font-style: italic; ' +
+               `padding: 8px; background: rgba(0,0,0,0.05);">... and ${
                currentSelectedRows.length - maxPreviewRows
             } more rows${gapText}</td>`;
             dragPreviewBody.appendChild(moreRowsIndicator);

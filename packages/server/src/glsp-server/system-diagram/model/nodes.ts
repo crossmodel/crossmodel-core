@@ -31,7 +31,7 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       this.addArg(REFERENCE_CONTAINER_TYPE, LogicalEntityNode);
       this.addArg(REFERENCE_PROPERTY, 'entity');
       this.addArg(REFERENCE_VALUE, node.entity?.$refText);
-    
+
       if (node.entity?.ref?.$document?.uri) {
          this.addArg('semanticUri', node.entity.ref.$document.uri.toString());
       } else if (node.entity?.$refText) {

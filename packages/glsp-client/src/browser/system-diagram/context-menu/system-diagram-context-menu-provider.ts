@@ -5,7 +5,7 @@
 import { ENTITY_NODE_TYPE, INHERITANCE_EDGE_TYPE, RELATIONSHIP_EDGE_TYPE } from '@crossmodel/protocol';
 import {
    DeleteElementOperation,
-   GModelElement,
+   EditorContextService,
    GModelRoot,
    IContextMenuItemProvider,
    LabeledAction,
@@ -19,7 +19,6 @@ import {
    CreateEntityAction,
    CreateInheritanceAction,
    CreateRelationshipAction,
-   HideElementAction,
    OpenInCodeEditorAction,
    OpenInFormEditorAction,
    ShowEntityAction,
@@ -35,13 +34,14 @@ import { CrossModelMousePositionTracker } from '../../cross-model-command-palett
 @injectable()
 export class SystemDiagramContextMenuProvider implements IContextMenuItemProvider {
    @inject(CrossModelMousePositionTracker) protected readonly mousePositionTracker: CrossModelMousePositionTracker;
+   @inject(EditorContextService) protected readonly editorContext: EditorContextService;
 
    async getItems(root: Readonly<GModelRoot>, lastMousePosition?: Point): Promise<LabeledAction[]> {
       if (!lastMousePosition) {
          return [];
       }
 
-      const target = this.findTargetElement(root, lastMousePosition);
+      const target = this.editorContext.selectedElements[0];
 
       if (!target || target.id === root.id) {
          return this.getCanvasMenuItems(root);
@@ -51,7 +51,8 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
       if (entityNode) {
          return this.getEntityMenuItems(entityNode, root);
       }
-      const relationshipEdge = findParentByFeature(target, (element): element is RelationshipEdge => element.type === RELATIONSHIP_EDGE_TYPE);
+      const relationshipEdge = findParentByFeature(target,
+         (element): element is RelationshipEdge => element.type === RELATIONSHIP_EDGE_TYPE);
       if (relationshipEdge) {
          return this.getRelationshipMenuItems(relationshipEdge, root);
       }
@@ -86,15 +87,15 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
          sortString: '1'
       } as any);
 
-      items.push({
-         id: 'hideElement',
-         label: 'Hide Relationship',
-         actions: [HideElementAction.create(edge.id)],
-         icon: 'codicon codicon-eye-closed',
-         sortString: '2'
-      } as any);
-
       if (isDeletable(edge)) {
+         items.push({
+            id: 'hideElement',
+            label: 'Hide Relationship',
+            actions: [DeleteElementOperation.create([edge.id])],
+            icon: 'codicon codicon-eye-closed',
+            sortString: '2'
+         } as any);
+
          items.push({
             id: 'deleteElement',
             label: 'Delete Relationship',
@@ -129,15 +130,15 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
          sortString: '1'
       } as any);
 
-      items.push({
-         id: 'hideElement',
-         label: 'Hide inheritance',
-         actions: [HideElementAction.create(edge.id)],
-         icon: 'codicon codicon-eye-closed',
-         sortString: '2'
-      } as any);
-
       if (isDeletable(edge)) {
+         items.push({
+            id: 'hideElement',
+            label: 'Hide inheritance',
+            actions: [DeleteElementOperation.create([edge.id])],
+            icon: 'codicon codicon-eye-closed',
+            sortString: '2'
+         } as any);
+
          items.push({
             id: 'deleteElement',
             label: 'Delete inheritance',
@@ -172,15 +173,15 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
          sortString: '1'
       } as any);
 
-      items.push({
-         id: 'hideElement',
-         label: 'Hide Entity',
-         actions: [HideElementAction.create(entityNode.id)],
-         icon: 'codicon codicon-eye-closed',
-         sortString: '2'
-      } as any);
-
       if (isDeletable(entityNode)) {
+         items.push({
+            id: 'hideElement',
+            label: 'Hide Entity',
+            actions: [DeleteElementOperation.create([entityNode.id])],
+            icon: 'codicon codicon-eye-closed',
+            sortString: '2'
+         } as any);
+
          items.push({
             id: 'deleteElement',
             label: 'Delete Entity',
@@ -242,54 +243,5 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
       } as any);
 
       return items;
-   }
-
-   /**
-    * Find the target element at the given mouse position.
-    * Uses DOM-based hit-testing to avoid issues with model coordinate transformations.
-    */
-   protected findTargetElement(root: GModelRoot, position: Point): GModelElement | undefined {
-      const target = document.elementFromPoint(position.x, position.y);
-      if (!target) {
-         return undefined;
-      }
-
-      let current: Element | null = target;
-      while (current) {
-         const domId = current.id;
-         const dataId = current.getAttribute('data-id');
-         
-         if (domId) {
-            let element = root.index.getById(domId);
-            
-            if (!element) {
-               for (const el of root.index.all()) {
-                  if (domId.endsWith(el.id) && (domId === el.id || domId.endsWith('_' + el.id))) {
-                     element = el;
-                     break;
-                  }
-               }
-            }
-
-            if (element) {
-               return element;
-            }
-         }
-         
-         if (dataId) {
-            const element = root.index.getById(dataId);
-            if (element) {
-               return element;
-            }
-         }
-
-         if (current.tagName === 'svg' || current.classList.contains('sprotty-graph')) {
-            return root;
-         }
-
-         current = current.parentElement;
-      }
-
-      return undefined;
    }
 }
