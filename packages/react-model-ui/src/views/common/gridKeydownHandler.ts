@@ -40,7 +40,6 @@ export const handleGridEditorKeyDown = (e: React.KeyboardEvent): void => {
    }
 
    if (e.key === 'Enter') {
-      e.preventDefault();
       saveTriggeredByEnter = true;
       const saveButton = editingRow.querySelector('.p-row-editor-save') as HTMLButtonElement;
       if (saveButton) {
