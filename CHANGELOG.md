@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.2](https://github.com/crossmodel/crossmodel-core/compare/v0.19.1...v0.19.2) (2025-12-23)
+
+
+### Bug Fixes
+
+* number input Enter key flush internal state ([#234](https://github.com/crossmodel/crossmodel-core/issues/234)) ([9ecf2bb](https://github.com/crossmodel/crossmodel-core/commit/9ecf2bbef04a06706506a6c8a62143b9ec0363ca))
+
+
+
+
+
 ## [0.19.1](https://github.com/crossmodel/crossmodel-core/compare/v0.19.0...v0.19.1) (2025-12-23)
 
 **Note:** Version bump only for package crossmodel-core
