@@ -23,20 +23,31 @@ export class CrossModelDiagramGLSPConnectionHandler implements ConnectionHandler
    }
 
    protected async initializeServerConnection(channel: Channel): Promise<void> {
-      const progress = await this.messageService.showProgress({
-         text: 'Connecting to Graphical Server',
-         options: { cancelable: false }
-      });
       try {
-         progress.report({ message: 'Waiting for port information...' });
+         // First try to obtain the port. If no port is available (likely because no workspace
+         // / server has been started), avoid showing the progress UI which would be confusing
+         // on an empty editor start.
          const port = await this.findPort();
-         progress.report({ message: 'Waiting for connection on port ' + port + '...' });
-         await this.connectToServer(channel, port);
-         progress.cancel();
-         this.messageService.info('Connected to Graphical Server on port ' + port, { timeout: 3000 });
+
+         // Only show progress once we actually have a port and are about to connect.
+         const progress = await this.messageService.showProgress({
+            text: 'Connecting to Graphical Server',
+            options: { cancelable: false }
+         });
+         try {
+            progress.report({ message: 'Waiting for connection on port ' + port + '...' });
+            await this.connectToServer(channel, port);
+            progress.cancel();
+            this.messageService.info('Connected to Graphical Server on port ' + port, { timeout: 3000 });
+         } catch (error) {
+            progress.cancel();
+            this.messageService.error('Could not connect to Graphical Server: ' + error);
+         }
       } catch (error) {
-         progress.cancel();
-         this.messageService.error('Could not connect to Graphical Server: ' + error);
+         // Could not determine a port — likely no GLSP server is available yet. Don't show progress.
+         // Log/notify minimally so we can debug if needed.
+         const msg = error && (error as any).message ? (error as any).message : String(error);
+         this.messageService.info('Graphical Server not available: ' + msg);
       }
    }
 

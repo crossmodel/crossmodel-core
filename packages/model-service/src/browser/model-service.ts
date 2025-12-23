@@ -20,12 +20,14 @@ import {
 } from '@crossmodel/protocol';
 import { Event } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ModelService, ModelServiceClient, ModelServiceServer } from '../common';
 
 @injectable()
 export class ModelServiceImpl implements ModelService {
    @inject(ModelServiceServer) protected readonly server: ModelServiceServer;
    @inject(ModelServiceClient) protected readonly client: ModelServiceClient;
+   @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
    dataModels: DataModelInfo[] = [];
 
@@ -35,15 +37,31 @@ export class ModelServiceImpl implements ModelService {
    }
 
    protected async initDataModelInfos(): Promise<void> {
-      this.dataModels = await this.server.getDataModelInfos();
-      this.client.onDataModelUpdate(event => {
-         this.dataModels = this.dataModels.filter(
-            dataModel => dataModel.id !== event.dataModel.id || dataModel.dataModelFilePath !== event.dataModel.dataModelFilePath
-         );
-         if (event.reason === 'added') {
-            this.dataModels.push(event.dataModel);
-         }
-      });
+      // Only load data model infos when a workspace is opened. If no workspace is present yet,
+      // register a listener to load once roots become available. This prevents triggering
+      // backend connection attempts at startup when the editor is empty.
+      const load = async (): Promise<void> => {
+         this.dataModels = await this.server.getDataModelInfos();
+         this.client.onDataModelUpdate(event => {
+            this.dataModels = this.dataModels.filter(
+               dataModel => dataModel.id !== event.dataModel.id || dataModel.dataModelFilePath !== event.dataModel.dataModelFilePath
+            );
+            if (event.reason === 'added') {
+               this.dataModels.push(event.dataModel);
+            }
+         });
+      };
+
+      const roots = this.workspaceService.tryGetRoots();
+      if (roots && roots.length > 0) {
+         await load();
+      } else {
+         this.workspaceService.onWorkspaceChanged(async changedRoots => {
+            if (changedRoots && changedRoots.length > 0) {
+               await load();
+            }
+         });
+      }
    }
 
    open(args: OpenModelArgs): Promise<CrossModelDocument | undefined> {
