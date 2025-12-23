@@ -4,27 +4,25 @@
 
 import { ModelService } from '@crossmodel/model-service/lib/common';
 import {
-   ENTITY_NODE_TYPE,
-   INHERITANCE_EDGE_TYPE,
-   RELATIONSHIP_EDGE_TYPE,
-   RelationshipType,
-   findNextUnique,
-   identity
+    ENTITY_NODE_TYPE,
+    INHERITANCE_EDGE_TYPE,
+    RELATIONSHIP_EDGE_TYPE,
+    RelationshipType,
+    findNextUnique,
+    identity
 } from '@crossmodel/protocol';
 import {
-   Action,
-   CommandExecutionContext,
-   CommandReturn,
-   CreateNodeOperation,
-   GModelElement,
-   IActionDispatcher,
-   IActionHandler,
-   ICommand,
-   IDiagramOptions,
-   Point,
-   SetUIExtensionVisibilityAction,
-   TYPES,
-   TriggerEdgeCreationAction
+    Action,
+    CreateNodeOperation,
+    GModelElement,
+    IActionDispatcher,
+    IActionHandler,
+    ICommand,
+    IDiagramOptions,
+    Point,
+    SetUIExtensionVisibilityAction,
+    TYPES,
+    TriggerEdgeCreationAction
 } from '@eclipse-glsp/client';
 import { GLSPDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { URI } from '@theia/core';
@@ -33,15 +31,13 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { EntityCommandPalette, RelationshipCommandPalette } from '../../cross-model-command-palette';
 import {
-   CreateEntityAction,
-   CreateInheritanceAction,
-   CreateRelationshipAction,
-   HideElementAction,
-   OpenInCodeEditorAction,
-   OpenInFormEditorAction,
-   ShowAllElementsAction,
-   ShowEntityAction,
-   ShowRelationshipAction
+    CreateEntityAction,
+    CreateInheritanceAction,
+    CreateRelationshipAction,
+    OpenInCodeEditorAction,
+    OpenInFormEditorAction,
+    ShowEntityAction,
+    ShowRelationshipAction
 } from './context-menu-actions';
 
 /**
@@ -114,7 +110,7 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
 
          const widgetUri = glspWidget ? (glspWidget as any).options?.uri?.toString() : undefined;
          const modelId = glspWidget?.modelSource?.model?.id || 'N/A';
-         
+
          if (glspWidget && (widgetUri === action.rootId || modelId === action.rootId)) {
             diagramWidget = glspWidget;
             break;
@@ -125,8 +121,11 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
          return;
       }
 
-      const rootElement = (diagramWidget as any).model || (diagramWidget as any).modelSource?.model || (diagramWidget as any).modelSource?.modelRoot || (diagramWidget as any).editorContext?.modelRoot;
-      
+      const rootElement = (diagramWidget as any).model
+         || (diagramWidget as any).modelSource?.model
+         || (diagramWidget as any).modelSource?.modelRoot
+         || (diagramWidget as any).editorContext?.modelRoot;
+
       if (!rootElement) {
          return;
       }
@@ -136,7 +135,7 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
       if (!semanticUri) {
          return;
       }
-      
+
       (async () => {
          try {
             const opener = await this.openerService.getOpener(new URI(semanticUri));
@@ -146,7 +145,8 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
                 let compositeEditor: any = widget;
                 if (!(typeof compositeEditor.getPrimaryWidget === 'function' && typeof compositeEditor.revealCodeTab === 'function')) {
                     const widgetAny = widget as any;
-                    if (widgetAny.parent && typeof widgetAny.parent.getPrimaryWidget === 'function' && typeof widgetAny.parent.revealCodeTab === 'function') {
+                    if (widgetAny.parent && typeof widgetAny.parent.getPrimaryWidget === 'function'
+                    && typeof widgetAny.parent.revealCodeTab === 'function') {
                         compositeEditor = widgetAny.parent;
                     } else {
                         compositeEditor = undefined;
@@ -200,7 +200,7 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
 
          const widgetUri = glspWidget ? (glspWidget as any).options?.uri?.toString() : undefined;
          const modelId = glspWidget?.modelSource?.model?.id || 'N/A';
-         
+
          if (glspWidget && (widgetUri === action.rootId || modelId === action.rootId)) {
             diagramWidget = glspWidget;
             break;
@@ -211,8 +211,11 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
          return;
       }
 
-      const rootElement = (diagramWidget as any).model || (diagramWidget as any).modelSource?.model || (diagramWidget as any).modelSource?.modelRoot || (diagramWidget as any).editorContext?.modelRoot;
-      
+      const rootElement = (diagramWidget as any).model
+         || (diagramWidget as any).modelSource?.model
+         || (diagramWidget as any).modelSource?.modelRoot
+         || (diagramWidget as any).editorContext?.modelRoot;
+
       if (!rootElement) {
          return;
       }
@@ -222,7 +225,7 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
       if (!semanticUri) {
          return;
       }
-      
+
       (async () => {
          try {
             const opener = await this.openerService.getOpener(new URI(semanticUri));
@@ -232,7 +235,8 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
                 let compositeEditor: any = widget;
                 if (!(typeof compositeEditor.getPrimaryWidget === 'function' && typeof compositeEditor.revealCodeTab === 'function')) {
                     const widgetAny = widget as any;
-                    if (widgetAny.parent && typeof widgetAny.parent.getPrimaryWidget === 'function' && typeof widgetAny.parent.revealCodeTab === 'function') {
+                    if (widgetAny.parent && typeof widgetAny.parent.getPrimaryWidget === 'function'
+                    && typeof widgetAny.parent.revealCodeTab === 'function') {
                         compositeEditor = widgetAny.parent;
                     } else {
                         compositeEditor = undefined;
@@ -247,66 +251,6 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
             console.error('[OpenInCodeEditorActionHandler] Error opening URI:', err);
          }
       })();
-   }
-}
-
-/**
- * Action handler for hiding elements from the diagram (visual-only, temporary).
- */
-@injectable()
-export class HideElementActionHandler implements IActionHandler {
-   @inject(TYPES.IActionDispatcher) protected readonly actionDispatcher: IActionDispatcher;
-
-   handle(action: Action): void | Action | ICommand {
-      if (!HideElementAction.is(action)) {
-         return;
-      }
-
-      return new HideElementCommand(action.elementId);
-   }
-}
-
-/**
- * Command to hide an element from the diagram.
- */
-export class HideElementCommand implements ICommand {
-   static readonly KIND = 'hideElementCommand';
-
-   constructor(protected readonly elementId: string) {}
-
-   execute(context: CommandExecutionContext): CommandReturn {
-      const element = context.root.index.getById(this.elementId);
-      if (!element) {
-         console.warn('[HideElementCommand] Element not found:', this.elementId);
-         return context.root;
-      }
-
-      if (!element.cssClasses) {
-         element.cssClasses = [];
-      }
-      if (!element.cssClasses.includes('hidden')) {
-         element.cssClasses.push('hidden');
-      }
-
-      console.log('[HideElementCommand] Hidden element:', this.elementId);
-      return context.root;
-   }
-
-   undo(context: CommandExecutionContext): CommandReturn {
-      const element = context.root.index.getById(this.elementId);
-      if (!element) {
-         return context.root;
-      }
-
-      if (element.cssClasses) {
-         element.cssClasses = element.cssClasses.filter(cls => cls !== 'hidden');
-      }
-
-      return context.root;
-   }
-
-   redo(context: CommandExecutionContext): CommandReturn {
-      return this.execute(context);
    }
 }
 
@@ -458,61 +402,5 @@ class EntityNameInputDialog extends SingleTextInputDialog {
             block.style.top = `${this.props.position.y}px`;
          }
       }
-   }
-}
-
-/**
- * Action handler for showing all hidden elements in the diagram.
- */
-@injectable()
-export class ShowAllElementsActionHandler implements IActionHandler {
-   @inject(TYPES.IActionDispatcher) protected readonly actionDispatcher: IActionDispatcher;
-
-   handle(action: Action): void | Action | ICommand {
-      if (!ShowAllElementsAction.is(action)) {
-         return;
-      }
-
-      return new ShowAllElementsCommand();
-   }
-}
-
-/**
- * Command to show all hidden elements in the diagram.
- */
-export class ShowAllElementsCommand implements ICommand {
-   static readonly KIND = 'showAllElementsCommand';
-
-   protected hiddenElementIds: string[] = [];
-
-   execute(context: CommandExecutionContext): CommandReturn {
-      this.hiddenElementIds = [];
-      for (const element of context.root.index.all()) {
-         if (element.cssClasses && element.cssClasses.includes('hidden')) {
-            element.cssClasses = element.cssClasses.filter(cls => cls !== 'hidden');
-            this.hiddenElementIds.push(element.id);
-         }
-      }
-
-      return context.root;
-   }
-
-   undo(context: CommandExecutionContext): CommandReturn {
-      for (const id of this.hiddenElementIds) {
-         const element = context.root.index.getById(id);
-         if (element) {
-            if (!element.cssClasses) {
-               element.cssClasses = [];
-            }
-            if (!element.cssClasses.includes('hidden')) {
-               element.cssClasses.push('hidden');
-            }
-         }
-      }
-      return context.root;
-   }
-
-   redo(context: CommandExecutionContext): CommandReturn {
-      return this.execute(context);
    }
 }

@@ -77,12 +77,12 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
       this.id(index.createId(edge));
       this.addCssClasses('diagram-edge', 'inheritance');
       this.addArg('edgePadding', 5);
-     
+
       const baseNode = edge.baseNode?.ref;
       const baseEntity = baseNode?.entity?.ref;
-      
+
       let semanticUri: string | undefined;
-      
+
       if (baseEntity?.$document?.uri) {
          semanticUri = baseEntity.$document.uri.toString();
       } else {
@@ -93,12 +93,12 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
                semanticUri = entityDescription.documentUri.toString();
             }
          }
-         
+
          if (!semanticUri && edge.baseNode?.$refText) {
             const diagramId = index.findId(edge.$container);
             const fullId = diagramId ? combineIds(diagramId, edge.baseNode.$refText) : edge.baseNode.$refText;
             const diagramNode = index.findLogicalEntityNode(fullId) || index.findLogicalEntityNode(edge.baseNode.$refText);
-            
+
             if (diagramNode) {
                if (diagramNode.entity?.ref?.$document?.uri) {
                   semanticUri = diagramNode.entity.ref.$document.uri.toString();

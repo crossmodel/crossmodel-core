@@ -4,32 +4,32 @@
 
 import { GRID, ShowPropertiesAction } from '@crossmodel/protocol';
 import {
-   ConsoleLogger,
-   GLSPHiddenBoundsUpdater,
-   GLSPMousePositionTracker,
-   GModelElement,
-   GlspCommandPalette,
-   LogLevel,
-   MetadataPlacer,
-   MouseDeleteTool,
-   TYPES,
-   ToolManager,
-   ToolPalette,
-   bindAsService,
-   bindOrRebind,
-   configureActionHandler,
-   isRoutable,
-   toElementAndRoutingPoints
+    ConsoleLogger,
+    GLSPHiddenBoundsUpdater,
+    GLSPMousePositionTracker,
+    GModelElement,
+    GlspCommandPalette,
+    LogLevel,
+    MetadataPlacer,
+    MouseDeleteTool,
+    TYPES,
+    ToolManager,
+    ToolPalette,
+    bindAsService,
+    bindOrRebind,
+    configureActionHandler,
+    isRoutable,
+    toElementAndRoutingPoints
 } from '@eclipse-glsp/client';
 import { GlspSelectionDataService } from '@eclipse-glsp/theia-integration';
 import { ContainerModule, injectable, interfaces } from '@theia/core/shared/inversify';
 import { VNode } from 'snabbdom';
 import { CmMetadataPlacer } from './cm-metadata-placer';
 import {
-   CrossModelCommandPalette,
-   CrossModelMousePositionTracker,
-   EntityCommandPalette,
-   RelationshipCommandPalette
+    CrossModelCommandPalette,
+    CrossModelMousePositionTracker,
+    EntityCommandPalette,
+    RelationshipCommandPalette
 } from './cross-model-command-palette';
 import { CrossModelMouseDeleteTool } from './cross-model-delete-tool';
 import { CrossModelDiagramStartup } from './cross-model-diagram-startup';
@@ -53,8 +53,8 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       registry(bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation);
       bind(CrossModelCommandPalette).toSelf().inSingletonScope();
       rebind(GlspCommandPalette).toService(CrossModelCommandPalette);
-      bindAsService(bind, TYPES.IUIExtension, EntityCommandPalette);
-      bindAsService(bind, TYPES.IUIExtension, RelationshipCommandPalette);
+      bindAsService(context, TYPES.IUIExtension, EntityCommandPalette);
+      bindAsService(context, TYPES.IUIExtension, RelationshipCommandPalette);
 
       bind(CrossModelMousePositionTracker).toSelf().inSingletonScope();
       bindOrRebind(context, GLSPMousePositionTracker).toService(CrossModelMousePositionTracker);
@@ -62,10 +62,11 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       bind(CrossModelToolManager).toSelf().inSingletonScope();
       bindOrRebind(context, TYPES.IToolManager).toService(CrossModelToolManager);
 
-      bindAsService(bind, TYPES.IUIExtension, CrossModelErrorExtension);
+      bindAsService(context, TYPES.IUIExtension, CrossModelErrorExtension);
       rebind(MetadataPlacer).to(CmMetadataPlacer).inSingletonScope();
 
       bind(CrossModelHiddenBoundsUpdater).toSelf().inSingletonScope();
+      rebind(GLSPHiddenBoundsUpdater).to(CrossModelHiddenBoundsUpdater).inSingletonScope();
       rebind(GLSPHiddenBoundsUpdater).to(CrossModelHiddenBoundsUpdater).inSingletonScope();
 
       configureActionHandler(context, ShowPropertiesAction.KIND, ShowPropertiesActionHandler);

@@ -48,7 +48,7 @@ export class SystemGraphView extends GGraphView {
       return `${this.viewerOptions.baseDiv}__svg__def__${id}`;
    }
 
-   protected onContextMenu = (event: MouseEvent) => {
+   protected onContextMenu = (event: MouseEvent): void => {
       event.preventDefault();
       event.stopPropagation();
    };

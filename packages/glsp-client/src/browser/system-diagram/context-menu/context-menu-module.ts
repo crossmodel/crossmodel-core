@@ -7,10 +7,8 @@ import {
     CreateEntityActionHandler,
     CreateInheritanceActionHandler,
     CreateRelationshipActionHandler,
-    HideElementActionHandler,
     OpenInCodeEditorActionHandler,
     OpenInFormEditorActionHandler,
-    ShowAllElementsActionHandler,
     ShowEntityActionHandler,
     ShowRelationshipActionHandler
 } from './context-menu-action-handlers';
@@ -18,10 +16,8 @@ import {
     CreateEntityAction,
     CreateInheritanceAction,
     CreateRelationshipAction,
-    HideElementAction,
     OpenInCodeEditorAction,
     OpenInFormEditorAction,
-    ShowAllElementsAction,
     ShowEntityAction,
     ShowRelationshipAction
 } from './context-menu-actions';
@@ -39,8 +35,6 @@ export const systemContextMenuModule = new FeatureModule(
 
       configureActionHandler(context, OpenInFormEditorAction.KIND, OpenInFormEditorActionHandler);
       configureActionHandler(context, OpenInCodeEditorAction.KIND, OpenInCodeEditorActionHandler);
-      configureActionHandler(context, HideElementAction.KIND, HideElementActionHandler);
-      configureActionHandler(context, ShowAllElementsAction.KIND, ShowAllElementsActionHandler);
       configureActionHandler(context, CreateEntityAction.KIND, CreateEntityActionHandler);
       configureActionHandler(context, ShowEntityAction.KIND, ShowEntityActionHandler);
       configureActionHandler(context, CreateRelationshipAction.KIND, CreateRelationshipActionHandler);

@@ -56,50 +56,6 @@ export namespace OpenInCodeEditorAction {
 }
 
 /**
- * Action to hide an element from the diagram.
- */
-export interface HideElementAction extends Action {
-   kind: typeof HideElementAction.KIND;
-   elementId: string;
-}
-
-export namespace HideElementAction {
-   export const KIND = 'hideElement';
-
-   export function is(object: any): object is HideElementAction {
-      return Action.hasKind(object, KIND) && hasStringProp(object, 'elementId');
-   }
-
-   export function create(elementId: string): HideElementAction {
-      return {
-         kind: KIND,
-         elementId
-      };
-   }
-}
-
-/**
- * Action to show all hidden elements in the diagram.
- */
-export interface ShowAllElementsAction extends Action {
-   kind: typeof ShowAllElementsAction.KIND;
-}
-
-export namespace ShowAllElementsAction {
-   export const KIND = 'showAllElements';
-
-   export function is(object: any): object is ShowAllElementsAction {
-      return Action.hasKind(object, KIND);
-   }
-
-   export function create(): ShowAllElementsAction {
-      return {
-         kind: KIND
-      };
-   }
-}
-
-/**
  * Action to create a new entity at a specific location.
  */
 export interface CreateEntityAction extends Action {
