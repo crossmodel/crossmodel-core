@@ -66,22 +66,22 @@ describe('NameUtil', () => {
    describe('findAvailableNodeName', () => {
       test('should return given name if unique', async () => {
          const diagram = await parseSystemDiagram({ services, text: ex1 });
-         expect(services.references.IdProvider.findNextId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA');
+         expect(services.references.IdProvider.findNextInternalId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA');
       });
 
       test('should return unique name if given is taken', async () => {
          const diagram = await parseSystemDiagram({ services, text: ex2 });
-         expect(services.references.IdProvider.findNextId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA1');
+         expect(services.references.IdProvider.findNextInternalId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA1');
       });
 
       test('should properly count up if name is taken', async () => {
          const diagram = await parseSystemDiagram({ services, text: ex3 });
-         expect(services.references.IdProvider.findNextId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA2');
+         expect(services.references.IdProvider.findNextInternalId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA2');
       });
 
       test('should find lowest count if multiple are taken', async () => {
          const diagram = await parseSystemDiagram({ services, text: ex4 });
-         expect(services.references.IdProvider.findNextId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA3');
+         expect(services.references.IdProvider.findNextInternalId(LogicalEntityNode, 'nodeA', diagram)).toBe('nodeA3');
       });
    });
 
@@ -160,9 +160,9 @@ describe('NameUtil', () => {
     id: EntityA`, documentUri: entityA1 }
          );
 
-         await services.shared.workspace.DataModelManager.initialize([{ uri: testUri(), name: 'test' }]);
+         await services.shared.workspace.DataModelManager.initialize([{ uri: dmA, name: 'DataModelA' }, { uri: dmB, name: 'DataModelB' }]);
 
-         expect(idProvider.findNextGlobalId(LogicalEntity, 'EntityA', URI.parse(entityA2))).toBe('EntityA');
+         expect(idProvider.findNextLocalId(LogicalEntity, 'EntityA', URI.parse(entityA2))).toBe('EntityA');
       });
 
       test('should return unique name if given is taken within same data model', async () => {
@@ -183,9 +183,9 @@ describe('NameUtil', () => {
     id: EntityA`, documentUri: entityA1 }
          );
 
-         await services.shared.workspace.DataModelManager.initialize([{ uri: testUri(), name: 'test' }]);
+         await services.shared.workspace.DataModelManager.initialize([{ uri: dmA, name: 'DataModelA' }]);
 
-         expect(idProvider.findNextGlobalId(LogicalEntity, 'EntityA', URI.parse(entityA2))).toBe('EntityA1');
+         expect(idProvider.findNextLocalId(LogicalEntity, 'EntityA', URI.parse(entityA2))).toBe('EntityA1');
       });
    });
 });
