@@ -69,9 +69,9 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       // create entity, serialize and re-read to ensure everything is up to date and linked properly
       const entityRoot: CrossModelRoot = { $type: 'CrossModelRoot' };
       const name = operation.args?.name?.toString() ?? 'NewEntity';
-      
+
       const id = this.modelState.idProvider.findNextLocalId('LogicalEntity', name, dataModel.uri);
-      
+
       const entity: LogicalEntity = {
          $type: 'LogicalEntity',
          $container: entityRoot,

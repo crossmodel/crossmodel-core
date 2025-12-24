@@ -143,7 +143,6 @@ export class DefaultIdProvider implements IdProvider {
       return GrammarUtils.findNodeForProperty(node.$cstNode, ID_PROPERTY);
    }
 
-
    protected getParent(node: AstNode): AstNode | undefined {
       return getOwner(node) ?? node.$container;
    }
@@ -161,12 +160,12 @@ export class DefaultIdProvider implements IdProvider {
    findNextLocalId(type: string, proposal: string, uri: URI): string {
       const idProposal = proposal.replaceAll('.', '_');
       const dataModelId = this.dataModelManager.getDataModelIdByUri(uri);
-      
+
       const knownIds = this.services.shared.workspace.IndexManager
          .allElementsInDataModelOfType(type, dataModelId)
          .map(element => element.name)
          .toArray();
-      
+
       return findNextUnique(idProposal, knownIds, identity);
    }
 
@@ -176,7 +175,7 @@ export class DefaultIdProvider implements IdProvider {
          .allElements(type)
          .map(element => element.name)
          .toArray();
-      
+
       return findNextUnique(idProposal, knownIds, identity);
    }
 }
