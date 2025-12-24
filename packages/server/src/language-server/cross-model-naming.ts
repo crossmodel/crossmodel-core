@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { findNextUnique, identity, toIdReference } from '@crossmodel/protocol';
-import { AstNode, AstUtils, CstNode, GrammarUtils, NameProvider, isAstNode } from 'langium';
+import { AstNode, AstUtils, CstNode, GrammarUtils, NameProvider } from 'langium';
 import { URI } from 'vscode-uri';
 import { UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
@@ -34,9 +34,9 @@ export interface IdProvider extends NameProvider {
    getGlobalId(node?: AstNode): string | undefined;
    getReferenceId(target?: AstNode, source?: AstNode): string | undefined;
 
-   findNextId(type: string, proposal: string | undefined, container?: AstNode): string;
-   findNextLocalId(type: string, proposal: string | undefined, container: AstNode): string;
-   findNextGlobalId(type: string, proposal: string | undefined, uri?: URI): string;
+   findNextInternalId(type: string, proposal: string, container: AstNode): string;
+   findNextLocalId(type: string, proposal: string, uri: URI): string;
+   findNextGlobalId(type: string, proposal: string): string;
 }
 
 export const QUALIFIED_ID_SEPARATOR = '.';
@@ -143,40 +143,41 @@ export class DefaultIdProvider implements IdProvider {
       return GrammarUtils.findNodeForProperty(node.$cstNode, ID_PROPERTY);
    }
 
-   findNextId(type: string, proposal: string | undefined): string;
-   findNextId(type: string, proposal: string | undefined, uri: URI): string;
-   findNextId(type: string, proposal: string | undefined, container: AstNode): string;
-   findNextId(type: string, proposal: string | undefined, container?: AstNode | URI): string {
-      const idProposal = proposal?.replaceAll('.', '_');
-      return isAstNode(container) ? this.findNextLocalId(type, idProposal, container) : this.findNextGlobalId(type, idProposal, container);
-   }
 
    protected getParent(node: AstNode): AstNode | undefined {
       return getOwner(node) ?? node.$container;
    }
 
-   findNextLocalId(type: string, proposal: string | undefined = 'Element', container: AstNode): string {
+   findNextInternalId(type: string, proposal: string, container: AstNode): string {
+      const idProposal = proposal.replaceAll('.', '_');
       const knownIds = AstUtils.streamAst(container)
          .filter(node => node.$type === type)
          .map(this.getNodeId)
          .nonNullable()
          .toArray();
-      return findNextUnique(proposal, knownIds, identity);
+      return findNextUnique(idProposal, knownIds, identity);
    }
 
-   findNextGlobalId(type: string, proposal: string | undefined = 'Element', uri?: URI): string {
-      let dataModelId: string | undefined;
-      if (uri) {
-         dataModelId = this.dataModelManager.getDataModelIdByUri(uri);
-      }
-
-      const knownIds = (uri && dataModelId
-         ? this.services.shared.workspace.IndexManager.allElementsInDataModel(type, dataModelId)
-         : this.services.shared.workspace.IndexManager.allElements(type)
-      )
+   findNextLocalId(type: string, proposal: string, uri: URI): string {
+      const idProposal = proposal.replaceAll('.', '_');
+      const dataModelId = this.dataModelManager.getDataModelIdByUri(uri);
+      
+      const knownIds = this.services.shared.workspace.IndexManager
+         .allElementsInDataModelOfType(type, dataModelId)
          .map(element => element.name)
          .toArray();
       
-      return findNextUnique(proposal, knownIds, identity);
+      return findNextUnique(idProposal, knownIds, identity);
+   }
+
+   findNextGlobalId(type: string, proposal: string): string {
+      const idProposal = proposal.replaceAll('.', '_');
+      const knownIds = this.services.shared.workspace.IndexManager
+         .allElements(type)
+         .map(element => element.name)
+         .toArray();
+      
+      return findNextUnique(idProposal, knownIds, identity);
    }
 }
+

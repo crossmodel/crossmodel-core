@@ -332,7 +332,7 @@ export class CrossModelDataModelManager {
          type: dataModelInfo.dataModel?.type ?? 'unknown',
          directory: directory.fsPath,
          dataModelFilePath: dataModelInfo.uri.fsPath,
-         modelFilePaths: this.shared.workspace.IndexManager.allElementsInDataModel('', dataModelId)
+         modelFilePaths: this.shared.workspace.IndexManager.allElementsInDataModel(dataModelId)
             .map(desc => desc.documentUri.fsPath)
             .distinct()
             .toArray()
