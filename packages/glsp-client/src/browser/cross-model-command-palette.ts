@@ -5,13 +5,16 @@
 import { DropFilesOperation, ModelStructure } from '@crossmodel/protocol';
 import {
    Action,
+   EnableDefaultToolsAction,
    GLSPMousePositionTracker,
    GModelElement,
    GModelRoot,
    GlspCommandPalette,
+   IActionDispatcher,
    InsertIndicator,
    LabeledAction,
    Point,
+   TYPES,
    getAbsoluteClientBounds
 } from '@eclipse-glsp/client';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -34,6 +37,7 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
    protected creationPosition?: Point;
 
    @inject(CrossModelMousePositionTracker) protected positionTracker: CrossModelMousePositionTracker;
+   @inject(TYPES.IActionDispatcher) protected actionDispatcher: IActionDispatcher;
 
    protected override onBeforeShow(containerElement: HTMLElement, root: Readonly<GModelRoot>, ...contextElementIds: string[]): void {
       if (contextElementIds.length === 1) {
@@ -62,9 +66,11 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
       if (this.creationPosition && LabeledAction.is(input) && DropFilesOperation.is(input.actions[0])) {
          const action = input.actions[0];
          action.position = this.creationPosition;
-         return super.executeAction(action);
+         super.executeAction(action);
+      } else {
+         super.executeAction(input);
       }
-      super.executeAction(input);
+      this.actionDispatcher.dispatch(EnableDefaultToolsAction.create());
    }
 
    override hide(): void {

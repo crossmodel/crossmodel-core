@@ -29,6 +29,7 @@ import { libAvoidModule } from '../libavoid-module';
 import { DEFAULT_LIBAVOID_EDGE_ROUTER_CONFIG, LibavoidEdgeRouterConfiguration, LibavoidEdgeRouterOptions } from '../libavoid-options';
 import { AttributeCompartment } from '../model';
 import { AttributeCompartmentView } from '../views';
+import { systemContextMenuModule } from './context-menu/context-menu-module';
 import { systemEdgeCreationToolModule } from './edge-creation-tool/edge-creation-tool-module';
 import { systemHoverModule } from './hover/hover-module';
 import { EntityNode, GEditableLabel, InheritanceEdge, RelationshipEdge } from './model';
@@ -51,7 +52,8 @@ export class SystemDiagramConfiguration extends GLSPDiagramConfiguration {
          gridModule,
          systemDiagramModule,
          systemNodeCreationModule,
-         systemEdgeCreationToolModule
+         systemEdgeCreationToolModule,
+         systemContextMenuModule
       );
    }
 }
