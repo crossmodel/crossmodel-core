@@ -34,7 +34,7 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
             const edge: RelationshipEdge = {
                $type: RelationshipEdge,
                $container: this.modelState.systemDiagram,
-               id: this.modelState.idProvider.findNextId(RelationshipEdge, relationship.id + 'Edge', this.modelState.systemDiagram),
+               id: this.modelState.idProvider.findNextInternalId(RelationshipEdge, relationship.id + 'Edge', this.modelState.systemDiagram),
                relationship: {
                   ref: relationship,
                   $refText: toIdReference(this.modelState.idProvider.getGlobalId(relationship) || relationship.id || '')
@@ -73,7 +73,7 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
       // create relationship, serialize and re-read to ensure everything is up to date and linked properly
       const relationshipRoot: CrossModelRoot = { $type: 'CrossModelRoot' };
       const name = computeRelationshipName(source, target);
-      const id = this.modelState.idProvider.findNextId(Relationship, toId(name));
+      const id = this.modelState.idProvider.findNextLocalId(Relationship, toId(name), dataModel.uri);
       const relationship: Relationship = {
          $type: Relationship,
          $container: relationshipRoot,

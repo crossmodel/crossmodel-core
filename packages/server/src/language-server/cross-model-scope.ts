@@ -74,7 +74,7 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
    protected idProvider: DefaultIdProvider;
    protected dataModelManager: CrossModelDataModelManager;
 
-   constructor(services: CrossModelServices) {
+   constructor(protected services: CrossModelServices) {
       super(services);
       this.idProvider = services.references.IdProvider;
       this.dataModelManager = services.shared.workspace.DataModelManager;
@@ -148,7 +148,10 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
          .map(attribute => this.descriptions.createDescription(attribute, combineIds(nodeId, attribute.id!), document));
    }
 
-   protected getLogicalEntity(node: AstNode & { entity?: Reference<LogicalEntity> }, document: LangiumDocument): LogicalEntity | undefined {
+   protected getLogicalEntity(
+   node: AstNode & { entity?: Reference<LogicalEntity> },
+   document: LangiumDocument
+   ): LogicalEntity | undefined {
       try {
          return fixDocument(node, document).entity?.ref;
       } catch (error) {

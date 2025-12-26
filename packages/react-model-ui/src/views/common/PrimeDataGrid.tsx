@@ -382,9 +382,10 @@ function useDragDrop<T extends Record<string, any>>(
          if (currentSelectedRows.length > maxPreviewRows) {
             const moreRowsIndicator = document.createElement('tr');
             const gapText = hasGaps ? ' (with gaps)' : '';
-            moreRowsIndicator.innerHTML = `<td colspan="100%" style="text-align: center; font-style: italic; padding: 8px; background: rgba(0,0,0,0.05);">... and ${
-               currentSelectedRows.length - maxPreviewRows
-            } more rows${gapText}</td>`;
+            const remainingCount = currentSelectedRows.length - maxPreviewRows;
+            moreRowsIndicator.innerHTML =
+               '<td colspan="100%" style="text-align: center; font-style: italic; padding: 8px; ' +
+               `background: rgba(0,0,0,0.05);">... and ${remainingCount} more rows${gapText}</td>`;
             dragPreviewBody.appendChild(moreRowsIndicator);
          }
       } else {

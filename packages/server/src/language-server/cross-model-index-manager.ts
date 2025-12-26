@@ -14,6 +14,18 @@ export class CrossModelIndexManager extends DefaultIndexManager {
       return this.allElements().find(desc => desc.name === globalId && (!type || desc.type === type));
    }
 
+   allElementsInDataModel(dataModelId: string): ReturnType<typeof this.allElements> {
+      const dataModelManager = this.services.workspace.DataModelManager;
+      return this.allElements().filter(desc => {
+         const candidateDataModelId = dataModelManager.getDataModelIdByUri(desc.documentUri);
+         return candidateDataModelId === dataModelId;
+      });
+   }
+
+   allElementsInDataModelOfType(dataModelId: string, type: string): ReturnType<typeof this.allElements> {
+      return this.allElementsInDataModel(dataModelId).filter(desc => desc.type === type);
+   }
+
    resolveElement(description?: AstNodeDescription): AstNode | undefined {
       if (!description) {
          return undefined;

@@ -221,7 +221,7 @@ export function createSourceObject(entity: LogicalEntity | AstNodeDescription, c
    return {
       $type: SourceObject,
       $container: container,
-      id: idProvider.findNextId(SourceObject, entityId + 'SourceObject', container),
+      id: idProvider.findNextInternalId(SourceObject, entityId + 'SourceObject', container),
       entity: { $refText, ref },
       join: joinType,
       dependencies: [],

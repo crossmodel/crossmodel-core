@@ -69,7 +69,11 @@ export class SystemDiagramCreateInheritanceOperationHandler extends JsonCreateEd
       const edge: InheritanceEdge = {
          $type: InheritanceEdge,
          $container: this.modelState.systemDiagram,
-         id: this.modelState.idProvider.findNextId(InheritanceEdge, baseEntityNode.id + 'InheritanceEdge', this.modelState.systemDiagram),
+         id: this.modelState.idProvider.findNextInternalId(
+            InheritanceEdge,
+            baseEntityNode.id + 'InheritanceEdge',
+            this.modelState.systemDiagram
+         ),
          baseNode: {
             ref: baseEntityNode,
             $refText: toIdReference(this.modelState.idProvider.getNodeId(baseEntityNode) || baseEntityNode.id || '')
