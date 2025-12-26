@@ -5,6 +5,7 @@
 import { ModelService } from '@crossmodel/model-service/lib/common';
 import {
     ENTITY_NODE_TYPE,
+    EnableDefaultToolsAction,
     INHERITANCE_EDGE_TYPE,
     RELATIONSHIP_EDGE_TYPE,
     RelationshipType,
@@ -20,16 +21,15 @@ import {
     ICommand,
     IDiagramOptions,
     Point,
-    SetUIExtensionVisibilityAction,
     TYPES,
-    TriggerEdgeCreationAction
+    TriggerEdgeCreationAction,
+    TriggerNodeCreationAction
 } from '@eclipse-glsp/client';
 import { GLSPDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { URI } from '@theia/core';
 import { Message, OpenerService, SingleTextInputDialog, SingleTextInputDialogProps } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { EntityCommandPalette, RelationshipCommandPalette } from '../../cross-model-command-palette';
 import {
     CreateEntityAction,
     CreateInheritanceAction,
@@ -279,6 +279,7 @@ export class CreateEntityActionHandler implements IActionHandler {
                args: { name }
             } as CreateNodeOperation);
          }
+         this.actionDispatcher.dispatch(EnableDefaultToolsAction.create());
       });
    }
 
@@ -320,9 +321,8 @@ export class ShowEntityActionHandler implements IActionHandler {
          return;
       }
 
-      return SetUIExtensionVisibilityAction.create({
-         extensionId: EntityCommandPalette.PALETTE_ID,
-         visible: true
+      return TriggerNodeCreationAction.create(ENTITY_NODE_TYPE, {
+         args: { type: 'show' }
       });
    }
 }
@@ -340,7 +340,7 @@ export class CreateRelationshipActionHandler implements IActionHandler {
       }
 
       return TriggerEdgeCreationAction.create(RELATIONSHIP_EDGE_TYPE, {
-         args: { type: 'create' }
+         args: { type: 'create', singleUse: true }
       });
    }
 }
@@ -357,9 +357,8 @@ export class ShowRelationshipActionHandler implements IActionHandler {
          return;
       }
 
-      return SetUIExtensionVisibilityAction.create({
-         extensionId: RelationshipCommandPalette.PALETTE_ID,
-         visible: true
+      return TriggerEdgeCreationAction.create(RELATIONSHIP_EDGE_TYPE, {
+         args: { type: 'show' }
       });
    }
 }
@@ -377,7 +376,7 @@ export class CreateInheritanceActionHandler implements IActionHandler {
       }
 
       return TriggerEdgeCreationAction.create(INHERITANCE_EDGE_TYPE, {
-         args: { type: 'create' }
+         args: { type: 'create', singleUse: true }
       });
    }
 }

@@ -13,6 +13,7 @@ import {
    DragAwareMouseListener,
    DrawFeedbackEdgeAction,
    EdgeCreationTool,
+   EnableDefaultToolsAction,
    FeedbackEdgeEnd,
    FeedbackEdgeEndMovingMouseListener,
    FeedbackEmitter,
@@ -220,6 +221,9 @@ export class SystemEdgeCreationToolMouseListener extends DragAwareMouseListener 
                   args: this.triggerAction.args
                })
             );
+            if (this.triggerAction.args?.singleUse) {
+               result.push(EnableDefaultToolsAction.create());
+            }
          }
       }
       this.dispose();
@@ -230,15 +234,16 @@ export class SystemEdgeCreationToolMouseListener extends DragAwareMouseListener 
    override nonDraggingMouseUp(element: GModelElement, event: MouseEvent): Action[] {
       this.dispose();
       this.updateFeedback(element);
+      const result: Action[] = [];
       if (this.triggerAction.args?.type === 'show') {
-         return [
+         result.push(
             SetUIExtensionVisibilityAction.create({
                extensionId: RelationshipCommandPalette.PALETTE_ID,
                visible: true
             })
-         ];
+         );
       }
-      return [];
+      return result;
    }
 
    protected canConnect(element: GModelElement | undefined, role: 'source' | 'target'): boolean {
