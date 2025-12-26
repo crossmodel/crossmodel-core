@@ -162,7 +162,7 @@ export class DefaultIdProvider implements IdProvider {
       const dataModelId = this.dataModelManager.getDataModelIdByUri(uri);
 
       const knownIds = this.services.shared.workspace.IndexManager
-         .allElementsInDataModelOfType(type, dataModelId)
+         .allElementsInDataModelOfType(dataModelId, type)
          .map(element => element.name)
          .toArray();
 

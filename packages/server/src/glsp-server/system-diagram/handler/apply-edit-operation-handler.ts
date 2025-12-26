@@ -18,6 +18,7 @@ export class SystemDiagramApplyLabelEditOperationHandler extends JsonOperationHa
    createCommand(operation: ApplyLabelEditOperation): Command {
       const entityNode = getOrThrow(this.modelState.index.findLogicalEntityNode(operation.labelId), 'Entity node not found');
       const entity = getOrThrow(entityNode.entity.ref, 'Entity not found');
+      const document = findDocument<CrossModelRoot>(entity)!;
       const oldName = entity.name;
       return new CrossModelCommand(
          this.modelState,
@@ -26,7 +27,7 @@ export class SystemDiagramApplyLabelEditOperationHandler extends JsonOperationHa
             this.renameEntity(
                getOrThrow(this.modelState.index.findLogicalEntityNode(operation.labelId), 'Entity node not found'),
                getOrThrow(entityNode.entity.ref, 'Entity not found'),
-               oldName ?? this.modelState.idProvider.findNextGlobalId(LogicalEntity, 'NewEntity')
+               oldName ?? this.modelState.idProvider.findNextLocalId(LogicalEntity, 'NewEntity', document.uri)
             ),
          () =>
             this.renameEntity(

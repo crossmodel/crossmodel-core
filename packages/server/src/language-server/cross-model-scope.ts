@@ -19,7 +19,7 @@ import {
    isSourceObject,
    isTargetObject
 } from './generated/ast.js';
-import { setAttributes, setImplicitId, setOwner } from './util/ast-util.js';
+import { fixDocument, setAttributes, setImplicitId, setOwner } from './util/ast-util.js';
 
 /**
  * Custom node description that wraps a given description under a potentially new name and also stores the datamodel id for faster access.
@@ -148,22 +148,16 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
          .map(attribute => this.descriptions.createDescription(attribute, combineIds(nodeId, attribute.id!), document));
    }
 
-   protected getLogicalEntity(node: AstNode & { entity?: Reference<LogicalEntity> }, document: LangiumDocument): LogicalEntity | undefined {
-      const reference = node.entity;
-      if (!reference) {
+   protected getLogicalEntity(
+   node: AstNode & { entity?: Reference<LogicalEntity> },
+   document: LangiumDocument
+   ): LogicalEntity | undefined {
+      try {
+         return fixDocument(node, document).entity?.ref;
+      } catch (error) {
+         console.error(error);
          return undefined;
       }
-      if (reference.ref) {
-         return reference.ref;
-      }
-    
-      const scope = this.services.references.ScopeProvider.getScope({
-         container: node,
-         property: 'entity',
-         reference: reference
-      });
-      const description = scope.getElement(reference.$refText);
-      return this.services.shared.workspace.IndexManager.resolveElement(description) as LogicalEntity;
    }
 
    protected processSourceObject(node: SourceObject, nodeId: string, document: LangiumDocument): AstNodeDescription[] {

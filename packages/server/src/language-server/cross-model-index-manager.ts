@@ -22,7 +22,7 @@ export class CrossModelIndexManager extends DefaultIndexManager {
       });
    }
 
-   allElementsInDataModelOfType(type: string, dataModelId: string): ReturnType<typeof this.allElements> {
+   allElementsInDataModelOfType(dataModelId: string, type: string): ReturnType<typeof this.allElements> {
       return this.allElementsInDataModel(dataModelId).filter(desc => desc.type === type);
    }
 

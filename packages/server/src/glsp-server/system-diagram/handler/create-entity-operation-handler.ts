@@ -70,7 +70,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       const entityRoot: CrossModelRoot = { $type: 'CrossModelRoot' };
       const name = operation.args?.name?.toString() ?? 'NewEntity';
 
-      const id = this.modelState.idProvider.findNextLocalId('LogicalEntity', name, dataModel.uri);
+      const id = this.modelState.idProvider.findNextLocalId(LogicalEntity, name, dataModel.uri);
 
       const entity: LogicalEntity = {
          $type: 'LogicalEntity',
