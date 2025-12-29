@@ -9,7 +9,7 @@ entity:
       - id: OrderDate
         name: "OrderDate"
         datatype: "DateTime"
-        precision: 2
+        scale: 2
       - id: OrderNumber
         name: "OrderNumber"
         datatype: "Text"
