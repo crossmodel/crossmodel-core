@@ -233,7 +233,7 @@ export class ModelService {
    findNextId(uri: string, type: string, proposal: string): string {
       const itemUri = URI.parse(uri);
       const services = this.shared.ServiceRegistry.getServices(itemUri) as CrossModelServices;
-      return services.references.IdProvider.findNextId(type, proposal, itemUri);
+      return services.references.IdProvider.findNextLocalId(type, proposal, itemUri);
    }
 
    async findReferenceableElements(args: CrossReferenceContext): Promise<ReferenceableElement[]> {

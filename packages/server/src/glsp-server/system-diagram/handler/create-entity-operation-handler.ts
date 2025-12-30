@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
-import { ENTITY_NODE_TYPE, ModelFileType, ModelStructure, findNextUnique, toIdReference } from '@crossmodel/protocol';
+import { ENTITY_NODE_TYPE, ModelFileType, ModelStructure, toIdReference } from '@crossmodel/protocol';
 import {
    Action,
    ActionDispatcher,
@@ -40,7 +40,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       const node: LogicalEntityNode = {
          $type: LogicalEntityNode,
          $container: container,
-         id: this.modelState.idProvider.findNextId(LogicalEntityNode, entity.name + 'Node', container),
+         id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode, entity.name + 'Node', container),
          entity: {
             $refText: toIdReference(this.modelState.idProvider.getNodeId(entity) || entity.id || ''),
             ref: entity
@@ -69,11 +69,9 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       // create entity, serialize and re-read to ensure everything is up to date and linked properly
       const entityRoot: CrossModelRoot = { $type: 'CrossModelRoot' };
       const name = operation.args?.name?.toString() ?? 'NewEntity';
-      const existingEntities = await this.modelState.modelService.findReferenceableElements({
-         container: { uri: this.modelState.semanticUri, type: LogicalEntityNode },
-         property: 'entity'
-      });
-      const id = findNextUnique(name, existingEntities, existingEntity => existingEntity.label);
+
+      const id = this.modelState.idProvider.findNextLocalId(LogicalEntity, name, dataModel.uri);
+
       const entity: LogicalEntity = {
          $type: 'LogicalEntity',
          $container: entityRoot,

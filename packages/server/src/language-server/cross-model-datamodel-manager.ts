@@ -10,7 +10,6 @@ import { URI } from 'vscode-uri';
 import { CrossModelLangiumDocuments } from './cross-model-langium-documents.js';
 import { CrossModelSharedServices } from './cross-model-module.js';
 import { QUALIFIED_ID_SEPARATOR } from './cross-model-naming.js';
-import { DataModelScopedAstNodeDescription } from './cross-model-scope.js';
 import { DataModel, DataModelDependency } from './generated/ast.js';
 import { findDataModel } from './util/ast-util.js';
 import { Utils } from './util/uri-util.js';
@@ -333,8 +332,7 @@ export class CrossModelDataModelManager {
          type: dataModelInfo.dataModel?.type ?? 'unknown',
          directory: directory.fsPath,
          dataModelFilePath: dataModelInfo.uri.fsPath,
-         modelFilePaths: this.shared.workspace.IndexManager.allElements()
-            .filter(desc => desc instanceof DataModelScopedAstNodeDescription && desc.dataModelId === dataModelId)
+         modelFilePaths: this.shared.workspace.IndexManager.allElementsInDataModel(dataModelId)
             .map(desc => desc.documentUri.fsPath)
             .distinct()
             .toArray()

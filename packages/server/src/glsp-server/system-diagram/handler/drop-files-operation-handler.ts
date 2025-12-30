@@ -73,7 +73,7 @@ export class SystemDiagramDropFilesOperationHandler extends JsonOperationHandler
       const node: LogicalEntityNode = {
          $type: LogicalEntityNode,
          $container: container,
-         id: this.modelState.idProvider.findNextId(LogicalEntityNode, entity.id + 'Node', this.modelState.systemDiagram),
+         id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode, entity.id + 'Node', this.modelState.systemDiagram),
          entity: {
             $refText: referenceText,
             ref: entity
@@ -114,7 +114,7 @@ export class SystemDiagramDropFilesOperationHandler extends JsonOperationHandler
                const edge: RelationshipEdge = {
                   $type: RelationshipEdge,
                   $container: container,
-                  id: this.modelState.idProvider.findNextId(
+                  id: this.modelState.idProvider.findNextInternalId(
                      RelationshipEdge,
                      relationship.id + 'Edge_' + parentNode.id + '_' + childNode.id,
                      this.modelState.systemDiagram
