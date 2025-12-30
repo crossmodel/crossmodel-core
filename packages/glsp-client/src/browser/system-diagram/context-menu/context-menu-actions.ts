@@ -89,6 +89,7 @@ export interface ShowEntityAction extends Action {
    kind: typeof ShowEntityAction.KIND;
    location: Point;
    screenLocation: Point;
+   diagramOffset: Point;
 }
 
 export namespace ShowEntityAction {
@@ -98,11 +99,12 @@ export namespace ShowEntityAction {
       return action.kind === KIND;
    }
 
-   export function create(location: Point, screenLocation: Point): ShowEntityAction {
+   export function create(location: Point, screenLocation: Point, diagramOffset: Point): ShowEntityAction {
       return {
          kind: KIND,
          location,
-         screenLocation
+         screenLocation,
+         diagramOffset
       };
    }
 }
@@ -133,6 +135,9 @@ export namespace CreateRelationshipAction {
  */
 export interface ShowRelationshipAction extends Action {
    kind: typeof ShowRelationshipAction.KIND;
+   location: Point;
+   screenLocation: Point;
+   diagramOffset: Point;
 }
 
 export namespace ShowRelationshipAction {
@@ -142,9 +147,12 @@ export namespace ShowRelationshipAction {
       return Action.hasKind(object, KIND);
    }
 
-   export function create(): ShowRelationshipAction {
+   export function create(location: Point, screenLocation: Point, diagramOffset: Point): ShowRelationshipAction {
       return {
-         kind: KIND
+         kind: KIND,
+         location,
+         screenLocation,
+         diagramOffset
       };
    }
 }
