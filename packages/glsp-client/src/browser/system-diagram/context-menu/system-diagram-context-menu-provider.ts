@@ -213,7 +213,7 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
       items.push({
          id: 'showEntity',
          label: 'Show Entity',
-         actions: [ShowEntityAction.create(position, screenPosition)],
+         actions: [ShowEntityAction.create(position, screenPosition, this.mousePositionTracker.diagramOffset || { x: 0, y: 0 })],
          icon: 'codicon codicon-eye',
          sortString: '1'
       } as any);
@@ -229,7 +229,7 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
       items.push({
          id: 'showRelationship',
          label: 'Show Relationship',
-         actions: [ShowRelationshipAction.create()],
+         actions: [ShowRelationshipAction.create(position, screenPosition, this.mousePositionTracker.diagramOffset || { x: 0, y: 0 })],
          icon: 'codicon codicon-eye',
          sortString: '3'
       } as any);

@@ -13,23 +13,24 @@ import {
     identity
 } from '@crossmodel/protocol';
 import {
-    Action,
-    CreateNodeOperation,
-    GModelElement,
-    IActionDispatcher,
-    IActionHandler,
-    ICommand,
-    IDiagramOptions,
-    Point,
-    TYPES,
-    TriggerEdgeCreationAction,
-    TriggerNodeCreationAction
+   Action,
+   CreateNodeOperation,
+   GModelElement,
+   IActionDispatcher,
+   IActionHandler,
+   ICommand,
+   IDiagramOptions,
+   Point,
+   SetUIExtensionVisibilityAction,
+   TYPES,
+   TriggerEdgeCreationAction
 } from '@eclipse-glsp/client';
 import { GLSPDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { URI } from '@theia/core';
 import { Message, OpenerService, SingleTextInputDialog, SingleTextInputDialogProps } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { CrossModelMousePositionTracker, EntityCommandPalette, RelationshipCommandPalette } from '../../cross-model-command-palette';
 import {
     CreateEntityAction,
     CreateInheritanceAction,
@@ -315,14 +316,21 @@ export class CreateEntityActionHandler implements IActionHandler {
 @injectable()
 export class ShowEntityActionHandler implements IActionHandler {
    @inject(TYPES.IActionDispatcher) protected readonly actionDispatcher: IActionDispatcher;
+   @inject(CrossModelMousePositionTracker) protected readonly mousePositionTracker: CrossModelMousePositionTracker;
 
    handle(action: Action): void | Action | ICommand {
       if (!ShowEntityAction.is(action)) {
          return;
       }
 
-      return TriggerNodeCreationAction.create(ENTITY_NODE_TYPE, {
-         args: { type: 'show' }
+      if (action.diagramOffset) {
+         this.mousePositionTracker.diagramOffset = action.diagramOffset;
+         this.mousePositionTracker.setLastPosition(action.location);
+      }
+
+      return SetUIExtensionVisibilityAction.create({
+         extensionId: EntityCommandPalette.PALETTE_ID,
+         visible: true
       });
    }
 }
@@ -351,14 +359,21 @@ export class CreateRelationshipActionHandler implements IActionHandler {
 @injectable()
 export class ShowRelationshipActionHandler implements IActionHandler {
    @inject(TYPES.IActionDispatcher) protected readonly actionDispatcher: IActionDispatcher;
+   @inject(CrossModelMousePositionTracker) protected readonly mousePositionTracker: CrossModelMousePositionTracker;
 
    handle(action: Action): void | Action | ICommand {
       if (!ShowRelationshipAction.is(action)) {
          return;
       }
 
-      return TriggerEdgeCreationAction.create(RELATIONSHIP_EDGE_TYPE, {
-         args: { type: 'show' }
+      if (action.diagramOffset) {
+         this.mousePositionTracker.diagramOffset = action.diagramOffset;
+         this.mousePositionTracker.setLastPosition(action.location);
+      }
+
+      return SetUIExtensionVisibilityAction.create({
+         extensionId: RelationshipCommandPalette.PALETTE_ID,
+         visible: true
       });
    }
 }
