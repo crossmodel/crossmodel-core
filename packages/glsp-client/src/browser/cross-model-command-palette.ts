@@ -5,13 +5,16 @@
 import { DropFilesOperation, ModelStructure } from '@crossmodel/protocol';
 import {
    Action,
+   EnableDefaultToolsAction,
    GLSPMousePositionTracker,
    GModelElement,
    GModelRoot,
    GlspCommandPalette,
+   IActionDispatcher,
    InsertIndicator,
    LabeledAction,
    Point,
+   TYPES,
    getAbsoluteClientBounds
 } from '@eclipse-glsp/client';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -20,11 +23,27 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 export class CrossModelMousePositionTracker extends GLSPMousePositionTracker {
    clientPosition: Point | undefined;
    diagramOffset: Point | undefined;
+   private _overrideLastPosition: Point | undefined;
+
+   override get lastPositionOnDiagram(): Point | undefined {
+      return this._overrideLastPosition || super.lastPositionOnDiagram;
+   }
 
    override mouseMove(target: GModelElement, event: MouseEvent): (Action | Promise<Action>)[] {
       this.clientPosition = { x: event.clientX, y: event.clientY };
-      this.diagramOffset = { x: event.offsetX, y: event.offsetY };
+      const currentTarget = event.currentTarget as HTMLElement;
+      if (currentTarget) {
+         const rect = currentTarget.getBoundingClientRect();
+         this.diagramOffset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      } else {
+         this.diagramOffset = { x: event.offsetX, y: event.offsetY };
+      }
+      this._overrideLastPosition = undefined;
       return super.mouseMove(target, event);
+   }
+
+   setLastPosition(position: Point): void {
+      this._overrideLastPosition = position;
    }
 }
 
@@ -34,6 +53,7 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
    protected creationPosition?: Point;
 
    @inject(CrossModelMousePositionTracker) protected positionTracker: CrossModelMousePositionTracker;
+   @inject(TYPES.IActionDispatcher) protected actionDispatcher: IActionDispatcher;
 
    protected override onBeforeShow(containerElement: HTMLElement, root: Readonly<GModelRoot>, ...contextElementIds: string[]): void {
       if (contextElementIds.length === 1) {
@@ -62,9 +82,11 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
       if (this.creationPosition && LabeledAction.is(input) && DropFilesOperation.is(input.actions[0])) {
          const action = input.actions[0];
          action.position = this.creationPosition;
-         return super.executeAction(action);
+         super.executeAction(action);
+      } else {
+         super.executeAction(input);
       }
-      super.executeAction(input);
+      this.actionDispatcher.dispatch(EnableDefaultToolsAction.create());
    }
 
    override hide(): void {
