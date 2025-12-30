@@ -61,6 +61,7 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
 
    protected avoidRouter: LibavoidRouter = new Libavoid.Router(Libavoid.OrthogonalRouting);
    protected connectors: { [key: string]: LibavoidConnRef } = {};
+   protected connectorSourceTargets: { [key: string]: { sourceId: string; targetId: string } } = {};
    protected shapes: { [key: string]: ShapeInfo } = {};
    protected edgeRouting: EdgeRouting = new EdgeRouting();
    protected changedEdgeIds: string[] = [];
@@ -275,9 +276,19 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
 
    protected updateConnector(edge: GEdge, parent: GParentElement): LibavoidConnRef | undefined {
       const connectionRef = this.connectors[edge.id];
-      if (connectionRef) {
-         // no need to update the connection since we are using pins and moved shapes update the connection automatically
+      const trackedSourceTarget = this.connectorSourceTargets[edge.id];
+
+      const sourceTargetChanged = trackedSourceTarget &&
+         (trackedSourceTarget.sourceId !== edge.sourceId ||
+          trackedSourceTarget.targetId !== edge.targetId);
+      if (connectionRef && !sourceTargetChanged) {
          return connectionRef;
+      }
+
+      if (connectionRef && sourceTargetChanged) {
+         this.avoidRouter.deleteConnector(connectionRef);
+         delete this.connectors[edge.id];
+         delete this.connectorSourceTargets[edge.id];
       }
 
       const sourceShape = this.shapes[edge.sourceId];
@@ -300,6 +311,12 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       if (options.hateCrossings) {
          connRef.setHateCrossings(options.hateCrossings);
       }
+
+      this.connectorSourceTargets[edge.id] = {
+         sourceId: edge.sourceId,
+         targetId: edge.targetId
+      };
+
       return connRef;
    }
 
@@ -319,6 +336,7 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
          if (!newEdgeIds.includes(previousEdgeId)) {
             this.avoidRouter.deleteConnector(this.connectors[previousEdgeId]);
             delete this.connectors[previousEdgeId];
+            delete this.connectorSourceTargets[previousEdgeId];
          }
       }
       return edgeById;

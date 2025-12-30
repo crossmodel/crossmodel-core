@@ -43,11 +43,58 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
          this.addCssClasses('relationship-child-'.concat(edge.relationship.ref?.childCardinality.replace('..', '_')));
       }
 
-      const sourceId = index.createId(edge.sourceNode?.ref);
-      const targetId = index.createId(edge.targetNode?.ref);
+      const relationship = edge.relationship.ref;
+      let sourceId: string | undefined;
+      let targetId: string | undefined;
+      let sourceTargetChanged = false;
+
+      if (relationship) {
+         const parentRef = relationship.parent;
+         const childRef = relationship.child;
+
+         const parentEntityId = parentRef?.$refText || parentRef?.ref?.id || parentRef?.ref?.name;
+         const childEntityId = childRef?.$refText || childRef?.ref?.id || childRef?.ref?.name;
+
+         if (parentEntityId && childEntityId) {
+            const diagram = edge.$container as import('../../../language-server/generated/ast.js').SystemDiagram;
+
+            const parentNode = diagram.nodes?.find((node: import('../../../language-server/generated/ast.js').LogicalEntityNode) => {
+               const nodeEntityRef = node.entity.$refText || node.entity.ref?.id || node.entity.ref?.name;
+               return nodeEntityRef === parentEntityId;
+            });
+
+            const childNode = diagram.nodes?.find((node: import('../../../language-server/generated/ast.js').LogicalEntityNode) => {
+               const nodeEntityRef = node.entity.$refText || node.entity.ref?.id || node.entity.ref?.name;
+               return nodeEntityRef === childEntityId;
+            });
+
+            if (parentNode && childNode) {
+               sourceId = index.createId(parentNode);
+               targetId = index.createId(childNode);
+
+               const originalSourceId = index.createId(edge.sourceNode?.ref);
+               const originalTargetId = index.createId(edge.targetNode?.ref);
+               sourceTargetChanged = (sourceId !== originalSourceId) || (targetId !== originalTargetId);
+            }
+         }
+      }
+
+      if (!sourceId || !targetId) {
+         sourceId = index.createId(edge.sourceNode?.ref);
+         targetId = index.createId(edge.targetNode?.ref);
+         sourceTargetChanged = false;
+      }
 
       this.sourceId(sourceId || '');
       this.targetId(targetId || '');
+
+      if (sourceTargetChanged) {
+         this.addArgs({
+            'needsClientLayout': true,
+            'needsServerLayout': false,
+            'edgeSourceTargetChanged': true
+         });
+      }
 
       return this;
    }
