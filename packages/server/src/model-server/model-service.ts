@@ -15,9 +15,10 @@ import {
    OpenModelArgs,
    ReferenceableElement,
    SaveModelArgs,
+   toIdReference,
    UpdateModelArgs
 } from '@crossmodel/protocol';
-import { AstNode, Deferred, DocumentState, UriUtils, isAstNode } from 'langium';
+import { AstNode, Deferred, DocumentState, isAstNode, UriUtils } from 'langium';
 import { basename } from 'path';
 import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumentEdit, TextEdit, uinteger } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
@@ -175,7 +176,25 @@ export class ModelService {
          }, 5000)
       );
       await this.documentManager.update(args.uri, newVersion, text, args.clientId);
-      return Promise.race([pendingUpdate.promise, timeout]);
+      const result = await Promise.race([pendingUpdate.promise, timeout]);
+
+      try {
+         const relationship = (result?.root as CrossModelRoot)?.relationship as any | undefined;
+         if (relationship) {
+            // Save the relationship file to persist changes
+            await this.documentManager.save(args.uri, text, args.clientId);
+
+            // best-effort: update diagrams that reference this relationship
+            this.updateDiagramsReferencingRelationship(relationship, args.clientId).catch(err =>
+               // eslint-disable-next-line no-console
+               console.warn('Failed to update diagrams for relationship:', err)
+            );
+         }
+      } catch (e) {
+         // ignore
+      }
+
+      return result;
    }
 
    onModelUpdated(uri: string, listener: (model: ModelUpdatedEvent<AstCrossModelDocument>) => void): Disposable {
@@ -233,7 +252,7 @@ export class ModelService {
    findNextId(uri: string, type: string, proposal: string): string {
       const itemUri = URI.parse(uri);
       const services = this.shared.ServiceRegistry.getServices(itemUri) as CrossModelServices;
-      return services.references.IdProvider.findNextLocalId(type, proposal, itemUri);
+      return services.references.IdProvider.findNextGlobalId(type, proposal);
    }
 
    async findReferenceableElements(args: CrossReferenceContext): Promise<ReferenceableElement[]> {
@@ -263,5 +282,153 @@ export class ModelService {
 
    onDataModelUpdated(listener: (event: DataModelUpdatedEvent) => void): Disposable {
       return this.shared.workspace.DataModelManager.onUpdate(listener);
+   }
+
+   protected async updateDiagramsReferencingRelationship(relationship: any, sourceClientId?: string): Promise<void> {
+      const indexManager = this.shared.workspace.IndexManager as any;
+      const descriptions = indexManager.allElements('RelationshipEdge')?.toArray?.() ?? [];
+      const processed = new Set<string>();
+
+      for (const desc of descriptions) {
+         try {
+            const edgeNode = indexManager.resolveElement(desc) as any;
+            if (!edgeNode) {
+               continue;
+            }
+            const relRef = edgeNode.relationship?.ref;
+            const relId = relRef?.id ?? edgeNode.relationship?.$refText ?? '';
+            if (!relId) {
+               continue;
+            }
+
+            const relationshipGlobalId = this.getGlobalId(relationship) ?? relationship.id;
+            const expectedRelRef = toIdReference(relationshipGlobalId ?? relationship.id ?? '');
+            if (relId !== relationship.id && relId !== relationshipGlobalId && relId !== expectedRelRef) {
+               continue;
+            }
+
+            const diagramRoot = edgeNode.$container as any;
+            const diagramUri = edgeNode.$document?.uri?.toString?.();
+            if (!diagramRoot || !diagramUri) {
+               continue;
+            }
+            if (processed.has(diagramUri)) {
+               continue;
+            }
+
+            const parentRef = relationship.parent;
+            const childRef = relationship.child;
+            if (!parentRef || !childRef) {
+               continue;
+            }
+
+            const nodes = diagramRoot.nodes ?? [];
+            const services = this.shared.ServiceRegistry.getServices(URI.parse(diagramUri)) as CrossModelServices;
+            const idp = services.references.IdProvider;
+
+            // Ensure parent/child nodes exist in diagram (create simple nodes if missing)
+            const parentG = idp.getGlobalId(parentRef.ref);
+            const childG = idp.getGlobalId(childRef.ref);
+            const pRefText = parentRef.$refText;
+            const cRefText = childRef.$refText;
+            let parentNode = nodes.find((n: any) => idp.getGlobalId(n.entity?.ref) === parentG || n.entity?.$refText === pRefText);
+            let childNode = nodes.find((n: any) => idp.getGlobalId(n.entity?.ref) === childG || n.entity?.$refText === cRefText);
+
+            const createNodeIfMissing = (ref: any, globalId: string | undefined, existingNode: any, x: number, y: number): any => {
+               if (existingNode) {
+                  return existingNode;
+               }
+               const referenceText = idp.getReferenceId(ref.ref, diagramRoot) ?? toIdReference(globalId ?? ref.$refText ?? '');
+               const node: any = {
+                  $type: 'LogicalEntityNode',
+                  $container: diagramRoot,
+                  id: idp.findNextLocalId('LogicalEntityNode', (ref.ref?.id ?? 'Node') + 'Node', URI.parse(diagramUri)),
+                  entity: { $refText: referenceText, ref: ref.ref },
+                  x,
+                  y,
+                  width: 100,
+                  height: 50
+               };
+               diagramRoot.nodes.push(node);
+               return node;
+            };
+
+            parentNode = createNodeIfMissing(parentRef, parentG, parentNode, 100, 100);
+            childNode = createNodeIfMissing(childRef, childG, childNode, 300, 100);
+
+            // Remove existing relationship edges referencing the relationship
+            const before = (diagramRoot.edges ?? []).length;
+            diagramRoot.edges = (diagramRoot.edges ?? []).filter((e: any) => {
+               const eRel = e.relationship?.ref?.id ?? e.relationship?.$refText;
+               return !(eRel === relationship.id || eRel === relationshipGlobalId || eRel === expectedRelRef);
+            });
+
+            // Recreate edges between parentNode(s) and childNode(s)
+            const newEdges: any[] = [];
+            const parents = Array.isArray(parentNode) ? parentNode : [parentNode];
+            const childs = Array.isArray(childNode) ? childNode : [childNode];
+            for (const p of parents) {
+               for (const c of childs) {
+                  const edgeKey = relationship.id + 'Edge_' + p.id + '_' + c.id;
+                  const edgeId = idp.findNextLocalId('RelationshipEdge', edgeKey, URI.parse(diagramUri));
+                  const relRefText = toIdReference(idp.getGlobalId(relationship) ?? relationship.id ?? '');
+                  const srcRefText = idp.getReferenceId(p.entity?.ref, diagramRoot) ?? toIdReference(idp.getNodeId(p) ?? p.id ?? '');
+                  const tgtRefText = idp.getReferenceId(c.entity?.ref, diagramRoot) ?? toIdReference(idp.getNodeId(c) ?? c.id ?? '');
+                  const srcX = (p.x ?? 0) + (p.width ?? 100) / 2;
+                  const srcY = (p.y ?? 0) + (p.height ?? 50) / 2;
+                  const tgtX = (c.x ?? 0) + (c.width ?? 100) / 2;
+                  const tgtY = (c.y ?? 0) + (c.height ?? 50) / 2;
+                  const newEdge = {
+                     $type: 'RelationshipEdge',
+                     $container: diagramRoot,
+                     id: edgeId,
+                     relationship: { ref: relationship, $refText: relRefText },
+                     sourceNode: { ref: p, $refText: srcRefText },
+                     targetNode: { ref: c, $refText: tgtRefText },
+                     args: {
+                        edgePadding: 5,
+                        'reference-container-type': 'RelationshipEdge',
+                        'reference-property': 'relationship',
+                        'reference-value': relRefText,
+                        edgeSourcePointX: srcX,
+                        edgeSourcePointY: srcY,
+                        edgeTargetPointX: tgtX,
+                        edgeTargetPointY: tgtY
+                     }
+                  };
+                  newEdges.push(newEdge);
+               }
+            }
+
+            if (newEdges.length > 0) {
+               diagramRoot.edges = (diagramRoot.edges ?? []).concat(newEdges);
+            }
+
+            if (diagramRoot.edges.length !== before || newEdges.length > 0) {
+               processed.add(diagramUri);
+               await this.update({ uri: diagramUri, model: diagramRoot, clientId: sourceClientId ?? LANGUAGE_CLIENT_ID });
+               try {
+                  // If the diagram file is open in the language client, also push the textual edit so the editor shows updated AST
+                  if (this.documentManager.isOpenInLanguageClient(diagramUri)) {
+                     const text = this.serialize(URI.parse(diagramUri), diagramRoot);
+                     // eslint-disable-next-line no-console
+                     await this.shared.lsp.Connection?.workspace.applyEdit({
+                        label: 'Update Diagram',
+                        documentChanges: [
+                           // eslint-disable-next-line no-null/no-null
+                           TextDocumentEdit.create(OptionalVersionedTextDocumentIdentifier.create(diagramUri, null), [
+                              TextEdit.replace(Range.create(0, 0, uinteger.MAX_VALUE, uinteger.MAX_VALUE), text)
+                           ])
+                        ]
+                     });
+                  }
+               } catch (e) {
+                  // ignore applyEdit failures
+               }
+            }
+         } catch (err: unknown) {
+            // continue
+         }
+      }
    }
 }
