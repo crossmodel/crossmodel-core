@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.3](https://github.com/crossmodel/crossmodel-core/compare/v0.19.2...v0.19.3) (2025-12-30)
+
+**Note:** Version bump only for package crossmodel-lang
+
+
+
+
+
 ## [0.19.2](https://github.com/crossmodel/crossmodel-core/compare/v0.19.1...v0.19.2) (2025-12-23)
 
 **Note:** Version bump only for package crossmodel-lang

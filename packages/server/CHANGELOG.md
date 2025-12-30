@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.3](https://github.com/crossmodel/crossmodel-core/compare/v0.19.2...v0.19.3) (2025-12-30)
+
+
+### Bug Fixes
+
+* Scope entity naming and ID generation to Data Model ([#231](https://github.com/crossmodel/crossmodel-core/issues/231)) ([8a28bf8](https://github.com/crossmodel/crossmodel-core/commit/8a28bf8b764d0bf17829dce65d248db5646877ac)), closes [#233](https://github.com/crossmodel/crossmodel-core/issues/233)
+
+
+
+
+
 ## [0.19.2](https://github.com/crossmodel/crossmodel-core/compare/v0.19.1...v0.19.2) (2025-12-23)
 
 **Note:** Version bump only for package @crossmodel/server
