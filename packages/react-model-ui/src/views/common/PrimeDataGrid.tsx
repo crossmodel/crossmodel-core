@@ -1195,7 +1195,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             resizableColumns={resizableColumns}
             columnResizeMode={columnResizeMode}
          >
-            {onSelectionChange !== undefined && <Column selectionMode='multiple' style={{ width: '3rem' }} />}
+            {onSelectionChange !== undefined && (
+               <Column
+                  selectionMode='multiple'
+                  style={{ width: '3rem' }}
+                  bodyClassName={(rowData: T) => {
+                     const rowKey = rowData[keyField];
+                     return editingRows && rowKey !== undefined && editingRows[rowKey] ? 'p-cell-editing' : '';
+                  }}
+               />
+            )}
             {columns.map(col => {
                const filter = col.filter ?? col.filterType !== undefined;
                const showFilterMatchModes = col.showFilterMatchModes === undefined ? col.filterType === 'text' : col.showFilterMatchModes;
@@ -1224,7 +1233,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                );
             })}
             {(onRowDelete || editable) && (
-               <Column header='Actions' rowEditor={editable && !readonly} body={allActionsTemplate} style={{ width: '10rem' }} />
+               <Column
+                  header='Actions'
+                  rowEditor={editable && !readonly}
+                  body={allActionsTemplate}
+                  style={{ width: '10rem' }}
+                  bodyClassName={(rowData: T) => {
+                     const rowKey = rowData[keyField];
+                     return editingRows && rowKey !== undefined && editingRows[rowKey] ? 'p-cell-editing' : '';
+                  }}
+               />
             )}
          </DataTableComponent>
       </div>

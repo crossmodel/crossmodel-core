@@ -283,7 +283,6 @@ export function GenericNumberEditor({
                   value={effectiveValue}
                   onValueChange={(e: any) => options.editorCallback(e.value)}
                   className={`w-full ${className} p-inputtext-sm`}
-                  inputStyle={{ padding: '0.25rem' }}
                   onKeyDown={handleGridEditorKeyDown}
                   disabled={isDisabled}
                   autoFocus={!isDisabled}
