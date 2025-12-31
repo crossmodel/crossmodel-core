@@ -59,8 +59,11 @@ export class DiagnosticManager {
       // any ordering of index/property the server may emit.
       const propSuffix = `${ModelDiagnostic.ELEMENT_PROPERTY_SEPARATOR}${property}`;
       const idxMarker = `${ModelDiagnostic.ELEMENT_INDEX_SEPARATOR}${idx}`;
+      const altIdxMarker = `${ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR}${idx}`;
       const keys = Object.keys(this.result);
-      const candidateKey = keys.find(k => k.endsWith(propSuffix) && k.includes(idxMarker));
+      const candidateKey = keys.find(
+         k => k.startsWith(rootElementPath) && k.endsWith(propSuffix) && (k.includes(idxMarker) || k.includes(altIdxMarker))
+      );
       if (candidateKey) {
          return this.result[candidateKey];
       }
