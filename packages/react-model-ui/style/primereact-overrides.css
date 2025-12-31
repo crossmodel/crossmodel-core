@@ -75,6 +75,8 @@
 
 /* DataGrid styles */
 .p-datatable .p-datatable-tbody > tr > td {
+   border: 1px solid var(--surface-border);
+   border-width: 0 0 1px 0;
    padding: 0.25rem;
    padding-left: 0.5rem;
 }
@@ -125,11 +127,6 @@
    background: var(--surface-card);
    color: var(--text-color);
    border: 0 none;
-}
-
-.p-datatable .p-datatable-tbody > tr > td {
-   border: 1px solid var(--surface-border);
-   border-width: 0 0 1px 0;
 }
 
 .p-datatable .p-datatable-tbody > tr:nth-child(even) {
@@ -379,6 +376,7 @@ body[class*='dark'] {
 /* Form validation styles */
 .p-error {
    color: var(--theia-errorForeground);
+   margin: 0.25rem 0 0 0;
 }
 
 .p-invalid {
@@ -412,8 +410,8 @@ span.w-full.p-autocomplete {
 }
 
 .p-datatable .p-datatable-tbody > tr > td .p-row-action-button.p-button {
-   width: 1rem;
-   height: 1rem;
+   width: 1.3rem;
+   height: 1.3rem;
    padding: 0;
    border-radius: 50%;
    color: #6b7280;
@@ -733,10 +731,6 @@ table[style*='position: fixed'] * {
    height: 0.6rem;
 }
 
-.p-inputnumber-input {
-   padding-right: 1.5rem !important; 
-}
-
 .grid-cell-container {
    display: flex;
    flex-direction: column;
@@ -749,8 +743,4 @@ table[style*='position: fixed'] * {
    color: var(--theia-errorForeground);
    font-size: 0.75rem;
    white-space: normal;
-}
-
-.p-datatable .p-datatable-tbody > tr > td {
-   vertical-align: top !important;
 }
