@@ -19,11 +19,15 @@ import { ID_PROPERTY, IdentifiableAstNode } from './cross-model-naming.js';
 import {
    AttributeMapping,
    CrossModelAstType,
+   CustomProperty,
    IdentifiedObject,
    InheritanceEdge,
    isCrossModelRoot,
+   isCustomProperty,
+   isLogicalAttribute,
    isLogicalEntity,
    isMapping,
+   isRelationship,
    isSystemDiagram,
    LogicalAttribute,
    LogicalEntity,
@@ -93,6 +97,57 @@ export class CrossModelValidator {
             property: 'name',
             data: { code: CrossModelValidationErrors.toMissing('name') }
          });
+         return;
+      }
+
+      const name = namedObject.name.toLowerCase();
+
+      if (isLogicalEntity(namedObject)) {
+         const root = namedObject.$container;
+         const other = root.entity;
+         if (other && other !== namedObject && other.name?.toLowerCase() === name) {
+            accept('error', `The entity name '${namedObject.name}' must be unique within the data model.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+         }
+      }
+
+      if (isRelationship(namedObject)) {
+         const root = namedObject.$container;
+         const other = root.relationship;
+         if (other && other !== namedObject && other.name?.toLowerCase() === name) {
+            accept('error', `The relationship name '${namedObject.name}' must be unique within the data model.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+         }
+      }
+
+      if (isLogicalAttribute(namedObject) && isLogicalEntity(namedObject.$container)) {
+         const entity = namedObject.$container;
+         const duplicates = entity.attributes.filter((a: LogicalAttribute) => a !== namedObject && a.name?.toLowerCase() === name);
+         if (duplicates.length > 0) {
+            accept('error', `The attribute name '${namedObject.name}' must be unique within the entity.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+         }
+      }
+
+      if (isCustomProperty(namedObject)) {
+         const parent = namedObject.$container;
+         const duplicates = parent.customProperties.filter((p: CustomProperty) => p !== namedObject && p.name?.toLowerCase() === name);
+         if (duplicates.length > 0) {
+            accept('error', `The custom property name '${namedObject.name}' must be unique within the parent object.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+         }
       }
    }
 
