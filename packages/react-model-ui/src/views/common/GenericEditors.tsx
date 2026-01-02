@@ -8,8 +8,42 @@ import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
-import { useDiagnosticsManager, useReadonly } from '../../ModelContext';
+import { useCanRedo, useCanUndo, useDiagnosticsManager, useReadonly, useRedo, useUndo } from '../../ModelContext';
 import { handleGridEditorKeyDown } from './gridKeydownHandler';
+
+// Route ctrl/cmd + Z / Y from focused inputs to the model undo/redo handlers
+const handleUndoRedoKeys = (
+   e: React.KeyboardEvent,
+   canUndo: (() => boolean) | undefined,
+   canRedo: (() => boolean) | undefined,
+   undo: (() => boolean) | undefined,
+   redo: (() => boolean) | undefined
+): void => {
+   const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+   if (!isCtrlOrMeta) {
+      return;
+   }
+
+   // Undo
+   if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+      if (canUndo && canUndo()) {
+         e.preventDefault();
+         e.stopPropagation();
+         undo?.();
+      }
+      return;
+   }
+
+   // Redo
+   const redoCombo = (e.key === 'z' || e.key === 'Z') && e.shiftKey;
+   if (redoCombo || e.key === 'y' || e.key === 'Y') {
+      if (canRedo && canRedo()) {
+         e.preventDefault();
+         e.stopPropagation();
+         redo?.();
+      }
+   }
+};
 
 export interface EditorContainerProps {
    basePath: string[];
@@ -119,6 +153,10 @@ export function GenericDropdownEditor({
 }): React.ReactElement {
    const rowIdx = options.rowData?.idx ?? -1;
    const readonly = useReadonly();
+   const undo = useUndo();
+   const redo = useRedo();
+   const canUndo = useCanUndo();
+   const canRedo = useCanRedo();
 
    return (
       <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
@@ -128,7 +166,10 @@ export function GenericDropdownEditor({
                   value={options.value}
                   options={dropdownOptions}
                   onChange={e => options.editorCallback(e.value)}
-                  onKeyDown={handleGridEditorKeyDown}
+                  onKeyDown={e => {
+                     handleGridEditorKeyDown(e);
+                     handleUndoRedoKeys(e, canUndo, canRedo, undo, redo);
+                  }}
                   disabled={readonly}
                   className='w-full'
                />
@@ -154,6 +195,10 @@ export function GenericAutoCompleteEditor({
 }): React.ReactElement {
    const rowIdx = options.rowData?.idx ?? -1;
    const readonly = useReadonly();
+   const undo = useUndo();
+   const redo = useRedo();
+   const canUndo = useCanUndo();
+   const canRedo = useCanRedo();
    const [suggestions, setSuggestions] = React.useState<Array<{ label: string; value: string }>>(dropdownOptions);
    const [inputValue, setInputValue] = React.useState<string>(() => {
       const initialOption = dropdownOptions.find(opt => opt.value === options.value);
@@ -202,7 +247,10 @@ export function GenericAutoCompleteEditor({
                   field='label'
                   placeholder={placeholder}
                   onChange={onChange}
-                  onKeyDown={handleGridEditorKeyDown}
+                  onKeyDown={e => {
+                     handleGridEditorKeyDown(e);
+                     handleUndoRedoKeys(e, canUndo, canRedo, undo, redo);
+                  }}
                   disabled={readonly}
                   className={`w-full ${className}`}
                   autoFocus

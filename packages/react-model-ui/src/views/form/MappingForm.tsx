@@ -4,7 +4,16 @@
 
 import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
-import { useDiagnosticsManager, useMapping, useModelDispatch, useReadonly } from '../../ModelContext';
+import {
+   useCanRedo,
+   useCanUndo,
+   useDiagnosticsManager,
+   useMapping,
+   useModelDispatch,
+   useReadonly,
+   useRedo,
+   useUndo
+} from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
@@ -25,6 +34,10 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
+   const undo = useUndo();
+   const redo = useRedo();
+   const canUndo = useCanUndo();
+   const canRedo = useCanRedo();
 
    const attributeMapping = mapping.target.mappings[props.mappingIndex];
    if (!attributeMapping) {
@@ -74,6 +87,32 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
                            expression: e.target.value ?? ''
                         })
                      }
+                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                        const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+                        if (!isCtrlOrMeta) {
+                           return;
+                        }
+
+                        // Undo
+                        if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+                           if (canUndo && canUndo()) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              undo();
+                           }
+                           return;
+                        }
+
+                        // Redo
+                        const redoKey = (e.key === 'z' || e.key === 'Z') && e.shiftKey;
+                        if (redoKey || e.key === 'y' || e.key === 'Y') {
+                           if (canRedo && canRedo()) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              redo();
+                           }
+                        }
+                     }}
                      className={expressionDiagnostics.inputClasses()}
                   />
                </div>

@@ -40,13 +40,28 @@ export const handleGridEditorKeyDown = (e: React.KeyboardEvent): void => {
    }
 
    if (e.key === 'Enter') {
+      // Let inputs (e.g., number fields) process Enter, then trigger the save button next frame
       saveTriggeredByEnter = true;
       const saveButton = editingRow.querySelector('.p-row-editor-save') as HTMLButtonElement;
       if (saveButton) {
-         setTimeout(() => saveButton.click(), 0);
+         requestAnimationFrame(() => {
+            saveButton.click();
+
+            // Move focus off the cell editor so Ctrl+Z goes to the global undo handler
+            const table = editingRow.closest('.p-datatable') as HTMLElement | null;
+            if (table) {
+               if (!table.hasAttribute('tabindex')) {
+                  table.setAttribute('tabindex', '-1');
+               }
+               table.focus({ preventScroll: true });
+            } else {
+               (document.activeElement as HTMLElement | null)?.blur?.();
+            }
+         });
       }
    } else if (e.key === 'Escape') {
       e.preventDefault();
+      e.stopPropagation();
       const cancelButton = editingRow.querySelector('.p-row-editor-cancel') as HTMLButtonElement;
       if (cancelButton) {
          cancelButton.click();

@@ -674,7 +674,8 @@ function renderActionsColumn<T>(
    props: any,
    editable: boolean,
    readonly: boolean,
-   onRowDelete?: (row: T) => void
+   onRowDelete?: (row: T) => void,
+   tableRef?: React.RefObject<DataTable<any>>
 ): React.JSX.Element {
    const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
    const buttons: React.ReactElement[] = [];
@@ -703,7 +704,18 @@ function renderActionsColumn<T>(
             <Button
                icon='pi pi-trash'
                className='p-button-text p-button-danger p-row-action-button'
-               onClick={() => onRowDelete(rowData)}
+               onClick={() => {
+                  onRowDelete(rowData);
+
+                  // Move focus to the table so Ctrl+Z triggers the global undo handler
+                  const table = tableRef?.current?.getElement?.() as HTMLElement | undefined;
+                  if (table) {
+                     if (!table.hasAttribute('tabindex')) {
+                        table.setAttribute('tabindex', '-1');
+                     }
+                     table.focus({ preventScroll: true });
+                  }
+               }}
                tooltip='Delete'
                disabled={readonly}
             />
@@ -726,7 +738,18 @@ function renderActionsColumn<T>(
             <Button
                icon='pi pi-trash'
                className='p-button-text p-button-danger p-row-action-button'
-               onClick={() => onRowDelete(rowData)}
+               onClick={() => {
+                  onRowDelete(rowData);
+
+                  // Move focus to the table so Ctrl+Z triggers the global undo handler
+                  const table = tableRef?.current?.getElement?.() as HTMLElement | undefined;
+                  if (table) {
+                     if (!table.hasAttribute('tabindex')) {
+                        table.setAttribute('tabindex', '-1');
+                     }
+                     table.focus({ preventScroll: true });
+                  }
+               }}
                tooltip='Delete'
                disabled={readonly}
             />
@@ -855,6 +878,15 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          // Clear selection after all deletes are dispatched
          if (onSelectionChange) {
             onSelectionChange({ value: [] });
+         }
+
+         // After delete actions, shift focus to the table to route Ctrl+Z to the global undo handler
+         const tableElement = tableRef.current?.getElement();
+         if (tableElement) {
+            if (!tableElement.hasAttribute('tabindex')) {
+               tableElement.setAttribute('tabindex', '-1');
+            }
+            tableElement.focus({ preventScroll: true });
          }
       }
    }, [selectedRows, onRowDelete, onSelectionChange]);
@@ -1107,7 +1139,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const cellEditor = undefined;
 
    const allActionsTemplate = React.useCallback(
-      (rowData: T, props: any): React.JSX.Element => renderActionsColumn(rowData, props, editable, readonly, onRowDelete),
+      (rowData: T, props: any): React.JSX.Element => renderActionsColumn(rowData, props, editable, readonly, onRowDelete, tableRef),
       [editable, readonly, onRowDelete]
    );
 

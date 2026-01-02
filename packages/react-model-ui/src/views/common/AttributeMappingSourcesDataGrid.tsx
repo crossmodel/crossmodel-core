@@ -2,19 +2,29 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import {
-    AttributeMapping,
-    AttributeMappingSource,
-    AttributeMappingSourceType,
-    AttributeMappingType,
-    CrossModelElement,
-    CrossReferenceContext,
-    ReferenceableElement,
-    TargetObjectType
+   AttributeMapping,
+   AttributeMappingSource,
+   AttributeMappingSourceType,
+   AttributeMappingType,
+   CrossModelElement,
+   CrossReferenceContext,
+   ReferenceableElement,
+   TargetObjectType
 } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDiagnosticsManager, useMapping, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import {
+   useCanRedo,
+   useCanUndo,
+   useDiagnosticsManager,
+   useMapping,
+   useModelDispatch,
+   useModelQueryApi,
+   useReadonly,
+   useRedo,
+   useUndo
+} from '../../ModelContext';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -52,6 +62,10 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
    const { options } = props;
    const { editorCallback } = options;
    const diagnostics = useDiagnosticsManager();
+   const undo = useUndo();
+   const redo = useRedo();
+   const canUndo = useCanUndo();
+   const canRedo = useCanRedo();
    const [errorMessage, setErrorMessage] = React.useState<string>('');
 
    const [currentValue, setCurrentValue] = React.useState(options.value);
@@ -183,7 +197,35 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
                onHide={onHide}
                disabled={readonly}
                autoFocus
-               onKeyDown={handleGridEditorKeyDown}
+               onKeyDown={e => {
+                  // Grid save/cancel handling
+                  handleGridEditorKeyDown(e);
+
+                  const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+                  if (!isCtrlOrMeta) {
+                     return;
+                  }
+
+                  // Undo
+                  if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+                     if (canUndo && canUndo()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        undo();
+                     }
+                     return;
+                  }
+
+                  // Redo
+                  const redoCombo = (e.key === 'z' || e.key === 'Z') && e.shiftKey;
+                  if (redoCombo || e.key === 'y' || e.key === 'Y') {
+                     if (canRedo && canRedo()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        redo();
+                     }
+                  }
+               }}
             />
             {errorMessage && <small className='p-error block mt-1'>{errorMessage}</small>}
          </div>
@@ -237,19 +279,13 @@ export function AttributeMappingSourcesDataGrid({
 
    const handleRowReorder = React.useCallback(
       (e: { rows: AttributeMappingSourceRow[] }): void => {
-         handleGenericRowReorder(
-            e,
-            pendingDeleteIdsRef.current,
-            sourcesRef.current || [],
-            deriveSourceRowId,
-            reorderedSources => {
-               dispatch({
-                  type: 'attribute-mapping:source:reorder-sources',
-                  mappingIdx,
-                  sources: reorderedSources
-               });
-            }
-         );
+         handleGenericRowReorder(e, pendingDeleteIdsRef.current, sourcesRef.current || [], deriveSourceRowId, reorderedSources => {
+            dispatch({
+               type: 'attribute-mapping:source:reorder-sources',
+               mappingIdx,
+               sources: reorderedSources
+            });
+         });
       },
       [dispatch, mappingIdx, deriveSourceRowId]
    );

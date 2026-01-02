@@ -4,7 +4,7 @@
 
 import { CrossModelDocument } from '@crossmodel/protocol';
 import * as React from 'react';
-import { ModelQueryApi, OpenCallback, SaveCallback } from './ModelContext';
+import { CanRedoCallback, CanUndoCallback, ModelQueryApi, OpenCallback, RedoCallback, SaveCallback, UndoCallback } from './ModelContext';
 import { ModelProvider, UpdateCallback } from './ModelProvider';
 import { ErrorView } from './views/ErrorView';
 
@@ -35,6 +35,11 @@ export interface ModelProviderProps {
     * An API to query additional Model data.
     */
    modelQueryApi: ModelQueryApi;
+
+   /**
+    * A callback that is triggered when undo/redo handlers are ready.
+    */
+   onUndoReady?: (undo: UndoCallback, redo: RedoCallback, canUndo: CanUndoCallback, canRedo: CanRedoCallback) => void;
 }
 
 export function modelComponent<P, MVP extends ModelProviderProps>(

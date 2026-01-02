@@ -3,6 +3,7 @@
  ********************************************************************************/
 
 import { CrossModelWidget, CrossModelWidgetOptions } from '@crossmodel/core/lib/browser';
+import { CanRedoCallback, CanUndoCallback, RedoCallback, UndoCallback } from '@crossmodel/react-model-ui';
 import { Message, NavigatableWidget, NavigatableWidgetOptions, StatefulWidget } from '@theia/core/lib/browser';
 import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
 import { CommandService } from '@theia/core/lib/common/command';
@@ -26,6 +27,12 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
 
    protected override handleOpenRequest = undefined;
 
+   // Store undo/redo callbacks from React context
+   protected undoCallback?: UndoCallback;
+   protected redoCallback?: RedoCallback;
+   protected canUndoCallback?: CanUndoCallback;
+   protected canRedoCallback?: CanRedoCallback;
+
    protected override getModelProviderProps(): any {
       const props = super.getModelProviderProps();
 
@@ -33,6 +40,12 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
          ...props,
          onModelSave: async () => {
             await this.commandService.executeCommand(CommonCommands.SAVE.id);
+         },
+         onUndoReady: (undo: UndoCallback, redo: RedoCallback, canUndo: CanUndoCallback, canRedo: CanRedoCallback) => {
+            this.undoCallback = undo;
+            this.redoCallback = redo;
+            this.canUndoCallback = canUndo;
+            this.canRedoCallback = canRedo;
          }
       };
    }
@@ -69,5 +82,39 @@ export class FormEditorWidget extends CrossModelWidget implements NavigatableWid
          this.selectionService.selection = undefined;
       }
       super.onCloseRequest(msg);
+   }
+
+   /**
+    * Undo the last form change.
+    * Called by Theia's undo command (CTRL+Z).
+    */
+   undo(): void {
+      if (this.undoCallback) {
+         this.undoCallback();
+      }
+   }
+
+   /**
+    * Redo the last undone form change.
+    * Called by Theia's redo command (CTRL+SHIFT+Z or CTRL+Y).
+    */
+   redo(): void {
+      if (this.redoCallback) {
+         this.redoCallback();
+      }
+   }
+
+   /**
+    * Check if undo is available.
+    */
+   canUndo(): boolean {
+      return this.canUndoCallback?.() ?? false;
+   }
+
+   /**
+    * Check if redo is available.
+    */
+   canRedo(): boolean {
+      return this.canRedoCallback?.() ?? false;
    }
 }

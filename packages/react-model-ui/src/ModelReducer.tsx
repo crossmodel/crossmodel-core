@@ -36,7 +36,6 @@ export function ModelReducer(state: ModelState, action: DispatchAction): ModelSt
    if (state.model === undefined) {
       throw Error('Model error: Model undefined');
    }
-   console.debug('[ModelReducer]', action);
    state.reason = action.type;
    if (action.type === 'model:update') {
       state.model = action.model;

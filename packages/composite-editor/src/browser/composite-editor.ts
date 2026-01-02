@@ -139,6 +139,20 @@ export class ReverseCompositeSaveable
    }
 
    /**
+    * Delegate undo to the editor's undo method.
+    */
+   undo(): void {
+      this.editor.undo();
+   }
+
+   /**
+    * Delegate redo to the editor's redo method.
+    */
+   redo(): void {
+      this.editor.redo();
+   }
+
+   /**
     * Reset the dirty state (without triggering an additional save) of the non-active saveables after a save operation.
     */
    protected resetDirtyState(activeSaveable?: Saveable): void {
@@ -323,6 +337,26 @@ export class CompositeEditor
          if (isAnyEditorDirty && !event.currentWidget.dirty) {
             event.currentWidget.setDirty(true);
          }
+      }
+   }
+
+   /**
+    * Delegate undo to the currently active widget if it supports it.
+    */
+   undo(): void {
+      const activeWidget = this.activeWidget();
+      if (activeWidget && typeof (activeWidget as any).undo === 'function') {
+         (activeWidget as any).undo();
+      }
+   }
+
+   /**
+    * Delegate redo to the currently active widget if it supports it.
+    */
+   redo(): void {
+      const activeWidget = this.activeWidget();
+      if (activeWidget && typeof (activeWidget as any).redo === 'function') {
+         (activeWidget as any).redo();
       }
    }
 
