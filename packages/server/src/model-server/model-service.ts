@@ -130,11 +130,7 @@ export class ModelService {
     */
    async request(uri: string, state = DocumentState.Validated): Promise<AstCrossModelDocument | undefined> {
       const documentUri = URI.parse(uri);
-      const documentInCurrentState = this.documents.getDocument(documentUri);
-      // Workaround for https://github.com/eclipse-langium/langium/issues/1827
-      if (!documentInCurrentState || documentInCurrentState.state < state) {
-         await this.documentBuilder.waitUntil(state, documentUri);
-      }
+      await this.documentBuilder.waitUntil(state, documentUri);
       const document = await this.documents.getOrCreateDocument(documentUri);
       const root = document.parseResult.value;
       return isCrossModelRoot(root) ? { root, diagnostics: document.diagnostics ?? [], uri } : undefined;
