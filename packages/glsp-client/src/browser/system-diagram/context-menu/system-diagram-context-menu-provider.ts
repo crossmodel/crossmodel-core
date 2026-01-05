@@ -95,14 +95,6 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
             icon: 'codicon codicon-eye-closed',
             sortString: '2'
          } as any);
-
-         items.push({
-            id: 'deleteElement',
-            label: 'Delete Relationship',
-            actions: [DeleteElementOperation.create([edge.id])],
-            icon: 'codicon codicon-trash',
-            sortString: '3'
-         } as any);
       }
 
       return items;
@@ -138,14 +130,6 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
             icon: 'codicon codicon-eye-closed',
             sortString: '2'
          } as any);
-
-         items.push({
-            id: 'deleteElement',
-            label: 'Delete inheritance',
-            actions: [DeleteElementOperation.create([edge.id])],
-            icon: 'codicon codicon-trash',
-            sortString: '3'
-         } as any);
       }
 
       return items;
@@ -180,14 +164,6 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
             actions: [DeleteElementOperation.create([entityNode.id])],
             icon: 'codicon codicon-eye-closed',
             sortString: '2'
-         } as any);
-
-         items.push({
-            id: 'deleteElement',
-            label: 'Delete Entity',
-            actions: [DeleteElementOperation.create([entityNode.id])],
-            icon: 'codicon codicon-trash',
-            sortString: '3'
          } as any);
       }
 

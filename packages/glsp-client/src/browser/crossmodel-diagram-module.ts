@@ -41,9 +41,11 @@ import { CrossModelToolPalette } from './cross-model-tool-palette';
 import { CrossModelGLSPSelectionDataService } from './crossmodel-selection-data-service';
 import { ShowPropertiesActionHandler } from './show-properties-action-handler';
 import {
-    CreateEntityAction,
-    CreateInheritanceAction,
-    CreateRelationshipAction
+   CreateEntityAction,
+   CreateInheritanceAction,
+   CreateRelationshipAction,
+   ShowEntityAction,
+   ShowRelationshipAction
 } from './system-diagram/context-menu/context-menu-actions';
 
 export function createCrossModelDiagramModule(registry: interfaces.ContainerModuleCallBack): ContainerModule {
@@ -81,7 +83,9 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       configureActionHandler(context, TriggerNodeCreationAction.KIND, ToolPalette);
       configureActionHandler(context, TriggerEdgeCreationAction.KIND, ToolPalette);
       configureActionHandler(context, CreateEntityAction.KIND, ToolPalette);
+      configureActionHandler(context, ShowEntityAction.KIND, ToolPalette);
       configureActionHandler(context, CreateRelationshipAction.KIND, ToolPalette);
+      configureActionHandler(context, ShowRelationshipAction.KIND, ToolPalette);
       configureActionHandler(context, CreateInheritanceAction.KIND, ToolPalette);
       configureActionHandler(context, EnableDefaultToolsAction.KIND, ToolPalette);
    });

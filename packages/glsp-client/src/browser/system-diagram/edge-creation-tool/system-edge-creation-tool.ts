@@ -221,7 +221,7 @@ export class SystemEdgeCreationToolMouseListener extends DragAwareMouseListener 
                   args: this.triggerAction.args
                })
             );
-            if (this.triggerAction.args?.singleUse) {
+            if (this.triggerAction.args?.singleUse !== false) {
                result.push(EnableDefaultToolsAction.create());
             }
          }

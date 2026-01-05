@@ -58,7 +58,7 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
             const action = super.getCreateOperation(ctx, event, insert) as CreateNodeOperation & { args: Args };
             action.args.name = name;
             const actions: Action[] = [action];
-            if (this.triggerAction.args?.singleUse) {
+            if (this.triggerAction.args?.singleUse !== false) {
                actions.push(EnableDefaultToolsAction.create());
             }
             this.tool.dispatchActions(actions);
