@@ -68,3 +68,37 @@ export const handleGridEditorKeyDown = (e: React.KeyboardEvent): void => {
       }
    }
 };
+
+// Route ctrl/cmd + Z / Y from focused inputs to the model undo/redo handlers
+export const handleUndoRedoKeys = (
+   e: React.KeyboardEvent,
+   canUndo: (() => boolean) | undefined,
+   canRedo: (() => boolean) | undefined,
+   undo: (() => boolean) | undefined,
+   redo: (() => boolean) | undefined
+): void => {
+   const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+   if (!isCtrlOrMeta) {
+      return;
+   }
+
+   // Undo
+   if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+      if (canUndo && canUndo()) {
+         e.preventDefault();
+         e.stopPropagation();
+         undo?.();
+      }
+      return;
+   }
+
+   // Redo
+   const redoCombo = (e.key === 'z' || e.key === 'Z') && e.shiftKey;
+   if (redoCombo || e.key === 'y' || e.key === 'Y') {
+      if (canRedo && canRedo()) {
+         e.preventDefault();
+         e.stopPropagation();
+         redo?.();
+      }
+   }
+};

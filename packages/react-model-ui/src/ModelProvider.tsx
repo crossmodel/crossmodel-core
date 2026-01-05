@@ -63,6 +63,10 @@ export function ModelProvider({
    const lastDocumentUriRef = React.useRef<string>(document.uri);
 
    React.useEffect(() => {
+      // triggered when a new model is passed from the outside via props -> update internal state
+      // we only use 'document' as dependency as the root also changes on internal updates
+      console.debug('[ModelProvider] Receive external update through props');
+
       // Same document URI: keep history; optionally sync state unless this is an undo/redo echo.
       const isExternalChange = lastDocumentUriRef.current !== document.uri;
       if (!isExternalChange) {

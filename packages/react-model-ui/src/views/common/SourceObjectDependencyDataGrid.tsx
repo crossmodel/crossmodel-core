@@ -23,7 +23,7 @@ import {
    useUndo
 } from '../../ModelContext';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, handleUndoRedoKeys, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectDependencyEditorProps {
    options: any;
@@ -172,31 +172,7 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
                autoFocus
                onKeyDown={e => {
                   handleGridEditorKeyDown(e);
-
-                  const isCtrlOrMeta = e.ctrlKey || e.metaKey;
-                  if (!isCtrlOrMeta) {
-                     return;
-                  }
-
-                  // Undo
-                  if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
-                     if (canUndo && canUndo()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        undo();
-                     }
-                     return;
-                  }
-
-                  // Redo
-                  const redoCombo = (e.key === 'z' || e.key === 'Z') && e.shiftKey;
-                  if (redoCombo || e.key === 'y' || e.key === 'Y') {
-                     if (canRedo && canRedo()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        redo();
-                     }
-                  }
+                  handleUndoRedoKeys(e, canUndo, canRedo, undo, redo);
                }}
             />
             {errorMessage && <small className='p-error block'>{errorMessage}</small>}
