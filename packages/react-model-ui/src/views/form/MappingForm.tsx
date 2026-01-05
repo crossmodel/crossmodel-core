@@ -18,6 +18,7 @@ import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
 import { AttributeMappingSourcesDataGrid } from '../common/AttributeMappingSourcesDataGrid';
+import { handleUndoRedoKeys } from '../common/gridKeydownHandler';
 import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
@@ -87,32 +88,7 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
                            expression: e.target.value ?? ''
                         })
                      }
-                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                        const isCtrlOrMeta = e.ctrlKey || e.metaKey;
-                        if (!isCtrlOrMeta) {
-                           return;
-                        }
-
-                        // Undo
-                        if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
-                           if (canUndo && canUndo()) {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              undo();
-                           }
-                           return;
-                        }
-
-                        // Redo
-                        const redoKey = (e.key === 'z' || e.key === 'Z') && e.shiftKey;
-                        if (redoKey || e.key === 'y' || e.key === 'Y') {
-                           if (canRedo && canRedo()) {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              redo();
-                           }
-                        }
-                     }}
+                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleUndoRedoKeys(e, canUndo, canRedo, undo, redo)}
                      className={expressionDiagnostics.inputClasses()}
                   />
                </div>
