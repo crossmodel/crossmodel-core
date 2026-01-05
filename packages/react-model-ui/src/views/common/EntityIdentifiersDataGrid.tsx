@@ -62,7 +62,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    const [gridData, setGridData] = React.useState<EntityIdentifierRow[]>([]);
    const [selectedRows, setSelectedRows] = React.useState<EntityIdentifierRow[]>([]);
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
-    const identifiersRef = React.useRef(entity?.identifiers || []);
+   const identifiersRef = React.useRef(entity?.identifiers || []);
 
    const handleSelectionChange = React.useCallback((e: { value: EntityIdentifierRow[] }): void => {
       setSelectedRows(e.value);
@@ -96,6 +96,18 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             type: 'entity:identifier:delete-identifier',
             identifierIdx
          });
+
+         // After delete action, ensure focus goes to the table/property widget for undo/redo
+         // Use setTimeout to ensure focus is set after React updates
+         setTimeout(() => {
+            const table = document.querySelector('.entity-identifiers-datatable') as HTMLElement | null;
+            if (table) {
+               if (!table.hasAttribute('tabindex')) {
+                  table.setAttribute('tabindex', '-1');
+               }
+               table.focus({ preventScroll: true });
+            }
+         }, 0);
       },
       [dispatch, entity.identifiers]
    );

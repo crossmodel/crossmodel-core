@@ -236,6 +236,17 @@ export function GenericAutoCompleteEditor({
       }
    };
 
+   const handleHide = (): void => {
+      // Refocus the property widget container after autocomplete dropdown closes
+      // to ensure undo/redo is available again
+      setTimeout(() => {
+         const propertyWidget = document.querySelector('[id="model-property-view"]');
+         if (propertyWidget) {
+            (propertyWidget as HTMLElement).focus();
+         }
+      }, 0);
+   };
+
    return (
       <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
          {({ invalid, error, className }) => (
@@ -251,6 +262,7 @@ export function GenericAutoCompleteEditor({
                      handleGridEditorKeyDown(e);
                      handleUndoRedoKeys(e, canUndo, canRedo, undo, redo);
                   }}
+                  onHide={handleHide}
                   disabled={readonly}
                   className={`w-full ${className}`}
                   autoFocus

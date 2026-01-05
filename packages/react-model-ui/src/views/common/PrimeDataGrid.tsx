@@ -480,6 +480,28 @@ function useDragDrop<T extends Record<string, any>>(
 
          document.body.style.userSelect = '';
 
+         const focusTable = (): void => {
+            // Try to focus the table element itself
+            const table = tableRef?.current?.getElement() as HTMLElement | null;
+            if (table) {
+               if (!table.hasAttribute('tabindex')) {
+                  table.setAttribute('tabindex', '-1');
+               }
+               table.focus({ preventScroll: true });
+            } else if (wrapperRef?.current) {
+               // Fallback: focus the wrapper div if table element is not available
+               if (!wrapperRef.current.hasAttribute('tabindex')) {
+                  wrapperRef.current.setAttribute('tabindex', '-1');
+               }
+               wrapperRef.current.focus({ preventScroll: true });
+            }
+         };
+
+         // Use requestAnimationFrame twice to ensure the DOM has settled after reordering
+         requestAnimationFrame(() => {
+            requestAnimationFrame(() => focusTable());
+         });
+
          if (dragPreviewRef.current) {
             document.body.removeChild(dragPreviewRef.current);
             dragPreviewRef.current = undefined;
@@ -538,6 +560,9 @@ function useDragDrop<T extends Record<string, any>>(
                const newData = [...nonSelectedRows];
                newData.splice(insertIndex, 0, ...selectedRowsInOrder);
                onRowReorder({ rows: newData });
+               requestAnimationFrame(() => {
+                  requestAnimationFrame(() => focusTable());
+               });
             } else {
                const sourceIndex = currentData.findIndex(row => row[keyField] === rowKey);
                if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
@@ -557,6 +582,9 @@ function useDragDrop<T extends Record<string, any>>(
 
                   newData.splice(insertIndex, 0, removed);
                   onRowReorder({ rows: newData });
+                  requestAnimationFrame(() => {
+                     requestAnimationFrame(() => focusTable());
+                  });
                }
             }
          }
@@ -881,13 +909,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          }
 
          // After delete actions, shift focus to the table to route Ctrl+Z to the global undo handler
-         const tableElement = tableRef.current?.getElement();
-         if (tableElement) {
-            if (!tableElement.hasAttribute('tabindex')) {
-               tableElement.setAttribute('tabindex', '-1');
+         // Use setTimeout to ensure focus is set after all React updates are processed
+         setTimeout(() => {
+            const tableElement = tableRef.current?.getElement();
+            if (tableElement) {
+               if (!tableElement.hasAttribute('tabindex')) {
+                  tableElement.setAttribute('tabindex', '-1');
+               }
+               tableElement.focus({ preventScroll: true });
             }
-            tableElement.focus({ preventScroll: true });
-         }
+         }, 0);
       }
    }, [selectedRows, onRowDelete, onSelectionChange]);
 
@@ -945,6 +976,20 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          const updated = { ...e.newData } as T;
          onRowUpdate(updated);
       }
+
+      // Move focus away from the cell editor to the table so undo/redo works
+      // This ensures that when clicking outside to save (not Enter key), focus is properly managed
+      setTimeout(() => {
+         const table = tableRef.current?.getElement() as HTMLElement | null;
+         if (table) {
+            if (!table.hasAttribute('tabindex')) {
+               table.setAttribute('tabindex', '-1');
+            }
+            table.focus({ preventScroll: true });
+         } else {
+            (document.activeElement as HTMLElement | null)?.blur?.();
+         }
+      }, 0);
    };
 
    const handleRowDoubleClick = (e: DataTableRowClickEvent): void => {

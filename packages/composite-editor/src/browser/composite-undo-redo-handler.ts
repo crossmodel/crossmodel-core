@@ -24,47 +24,58 @@ export class CompositeUndoRedoHandler implements UndoRedoHandler<Widget> {
    }
 
    undo(): void {
-      const activeWidget = this.shell.activeWidget;
-
-      // Try the active widget first
-      if (activeWidget && typeof (activeWidget as any).undo === 'function') {
-         (activeWidget as any).undo();
-         return;
-      }
-
-      // If active widget doesn't have undo, check if it's a property view widget
-      // and delegate to its content widget
-      const propertyViewWidget = this.findPropertyViewWidgetWithContent();
-      if (propertyViewWidget && typeof (propertyViewWidget as any).undo === 'function') {
-         (propertyViewWidget as any).undo();
-         return;
+      const target = this.findFocusedUndoableWidget();
+      if (target && typeof (target as any).undo === 'function') {
+         (target as any).undo();
       }
    }
 
    redo(): void {
-      const activeWidget = this.shell.activeWidget;
-
-      // Try the active widget first
-      if (activeWidget && typeof (activeWidget as any).redo === 'function') {
-         (activeWidget as any).redo();
-         return;
-      }
-
-      // If active widget doesn't have redo, check if it's a property view widget
-      // and delegate to its content widget
-      const propertyViewWidget = this.findPropertyViewWidgetWithContent();
-      if (propertyViewWidget && typeof (propertyViewWidget as any).redo === 'function') {
-         (propertyViewWidget as any).redo();
-         return;
+      const target = this.findFocusedUndoableWidget();
+      if (target && typeof (target as any).redo === 'function') {
+         (target as any).redo();
       }
    }
 
    /**
-    * Find a property view widget in the shell and return its content widget if available.
+    * Prefer the widget that currently owns focus; fall back to active widget, then property view.
     */
+   private findFocusedUndoableWidget(): Widget | undefined {
+      const focused = this.findWidgetContainingActiveElement();
+      if (focused && typeof (focused as any).undo === 'function') {
+         return focused;
+      }
+
+      const active = this.shell.activeWidget;
+      if (active && typeof (active as any).undo === 'function') {
+         return active;
+      }
+
+      return this.findPropertyViewWidgetWithContent();
+   }
+
+   /** Locate the widget whose DOM node currently contains the active element. */
+   private findWidgetContainingActiveElement(): Widget | undefined {
+      const activeElement = document.activeElement;
+      if (!activeElement) {
+         return undefined;
+      }
+
+      for (const widget of this.shell.widgets) {
+         if (widget.node && widget.node.contains(activeElement)) {
+            const asAny = widget as any;
+            if (asAny.contentWidget && asAny.contentWidget.node?.contains(activeElement)) {
+               return asAny.contentWidget;
+            }
+            return widget;
+         }
+      }
+      return undefined;
+   }
+
+   /** Find a property view widget in the shell and return its content widget. */
    private findPropertyViewWidgetWithContent(): Widget | undefined {
       for (const widget of this.shell.widgets) {
-         // Check if this is a property view widget (by class name or checking for getContentWidget)
          const asAny = widget as any;
          if (asAny.contentWidget && typeof asAny.contentWidget.undo === 'function') {
             return asAny.contentWidget;

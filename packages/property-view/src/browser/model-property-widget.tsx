@@ -142,12 +142,9 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    protected override getModelProviderProps(): ModelProviderProps {
       const props = super.getModelProviderProps();
-      // For mapping documents we don't want the Open/Save buttons in the property header.
-      if (this.document?.root?.mapping) {
-         return { ...props, onModelSave: undefined, onModelOpen: undefined };
-      }
 
-      return {
+      // Add onUndoReady callback for all documents
+      const propsWithUndo = {
          ...props,
          onUndoReady: (undo: UndoCallback, redo: RedoCallback, canUndo: CanUndoCallback, canRedo: CanRedoCallback) => {
             this.undoCallback = undo;
@@ -156,6 +153,13 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
             this.canRedoCallback = canRedo;
          }
       };
+
+      // For mapping documents we don't want the Open/Save buttons in the property header.
+      if (this.document?.root?.mapping) {
+         return { ...propsWithUndo, onModelSave: undefined, onModelOpen: undefined };
+      }
+
+      return propsWithUndo;
    }
 
    /**

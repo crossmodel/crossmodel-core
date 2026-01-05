@@ -133,8 +133,6 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          this.document?.uri === document.uri &&
          (!deepEqual(this.document.root, document.root) || !deepEqual(this.document.diagnostics, document.diagnostics))
       ) {
-         console.debug(`[${this.options.clientId}] Receive update from ${sourceClientId} due to '${reason}'`);
-
          if (sourceClientId !== this.options.clientId) {
             this.document = document;
             this.update();
@@ -150,7 +148,6 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          this.document.root = root;
          this.setDirty(true);
          this.onContentChangedEmitter.fire();
-         console.debug(`[${this.options.clientId}] Send update to server`);
          await this.modelService.update({ uri: this.document.uri, model: root, clientId: this.options.clientId });
       }
    }
@@ -165,10 +162,8 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
       }
       if (ModelDiagnostic.hasErrors(doc.diagnostics)) {
          // we do not support saving erroneous models in model widgets as we cannot deal with them properly, fixes are done via code editor
-         console.debug(`[${this.options.clientId}] Abort Save as we have an erroneous model`);
          return;
       }
-      console.debug(`[${this.options.clientId}] Save model`);
       try {
          await this.modelService.save({ uri: doc.uri.toString(), model: doc.root, clientId: this.options.clientId });
          // Mark this widget clean
