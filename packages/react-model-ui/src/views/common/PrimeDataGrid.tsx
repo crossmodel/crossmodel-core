@@ -95,6 +95,22 @@ export interface PrimeDataGridProps<T> {
    columnResizeMode?: 'fit' | 'expand';
 }
 
+const pluralize = (word: string, count?: number): string => {
+   if (!word || !count || count === 1) {
+      return word;
+   }
+
+   if (/[^aeiou]y$/i.test(word)) {
+      return word.replace(/y$/i, 'ies');
+   }
+
+   if (/(s|x|z|ch|sh)$/i.test(word)) {
+      return `${word}es`;
+   }
+
+   return `${word}s`;
+};
+
 function useFilters<T>(columns: GridColumn<T>[]): {
    filters: DataTableFilterMeta;
    setFilters: React.Dispatch<React.SetStateAction<DataTableFilterMeta>>;
@@ -232,7 +248,7 @@ function useFilters<T>(columns: GridColumn<T>[]): {
          {onRowAdd && <Button label={addButtonLabel} icon='pi pi-plus' severity='info' onClick={onRowAdd} disabled={readonly} />}
          {onRowDelete && (
             <Button
-               label={`Delete ${addButtonLabel.replace('Add ', '')}${selectedRowsCount && selectedRowsCount > 1 ? 's' : ''}`}
+               label={`Delete ${pluralize(addButtonLabel.replace(/^Add\s+/i, '').trim(), selectedRowsCount)}`}
                icon='pi pi-trash'
                severity='danger'
                onClick={onRowDelete}
@@ -862,6 +878,22 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const header = renderFilterHeader();
 
    const footer = renderActionFooter(addButtonLabel, handleAddRow, handleMultiDelete, selectedRows?.length, readonly);
+
+   // Reconcile selection with current data to prevent ghost selections after add/delete
+   React.useEffect(() => {
+      if (!onSelectionChange) {
+         return;
+      }
+      const dataKeys = new Set((data || []).map(row => row[keyField]).filter(k => k !== undefined) as Array<string | number>);
+      const currentSelected = selectedRows || [];
+      const filteredSelected = currentSelected.filter(row => {
+         const k = row[keyField];
+         return k !== undefined && dataKeys.has(k as any);
+      });
+      if (filteredSelected.length !== currentSelected.length) {
+         onSelectionChange({ value: filteredSelected as T[] });
+      }
+   }, [data, selectedRows, keyField, onSelectionChange]);
 
    React.useEffect(() => {
       if (!tableRef.current || !editingRows || Object.keys(editingRows).length === 0) {
