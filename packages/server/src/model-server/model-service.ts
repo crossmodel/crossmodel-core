@@ -15,16 +15,24 @@ import {
    OpenModelArgs,
    ReferenceableElement,
    SaveModelArgs,
-   UpdateModelArgs
+   UpdateModelArgs,
+   toIdReference
 } from '@crossmodel/protocol';
-import { AstNode, Deferred, DocumentState, UriUtils, isAstNode } from 'langium';
+import { AstNode, Deferred, DocumentState, Reference, UriUtils, isAstNode } from 'langium';
 import { basename } from 'path';
 import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumentEdit, TextEdit, uinteger } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
-import { CrossModelRoot, isCrossModelRoot } from '../language-server/generated/ast.js';
-import { findDocument } from '../language-server/util/ast-util.js';
+import {
+   CrossModelRoot,
+   LogicalEntityNode,
+   Relationship,
+   SystemDiagram,
+   isCrossModelRoot,
+   isRelationshipEdge
+} from '../language-server/generated/ast.js';
+import { findDocument, findSystemDiagram } from '../language-server/util/ast-util.js';
 import { AstCrossModelDocument } from './open-text-document-manager.js';
 import { LANGUAGE_CLIENT_ID } from './openable-text-documents.js';
 
@@ -175,7 +183,80 @@ export class ModelService {
          }, 5000)
       );
       await this.documentManager.update(args.uri, newVersion, text, args.clientId);
-      return Promise.race([pendingUpdate.promise, timeout]);
+      const result = await Promise.race([pendingUpdate.promise, timeout]);
+
+      // If a relationship was updated, propagate minimal diagram updates and persist the file
+      const relationship = (result?.root as CrossModelRoot)?.relationship as Relationship | undefined;
+      if (relationship) {
+         const targetClient = args.clientId ?? LANGUAGE_CLIENT_ID;
+         await this.documentManager.save(args.uri, text, targetClient);
+         await this.updateDiagramsForRelationship(documentUri, relationship, targetClient);
+      }
+
+      return result;
+   }
+
+   protected async updateDiagramsForRelationship(uri: URI, relationship: Relationship, clientId: string): Promise<void> {
+      const parentRef = relationship.parent;
+      const childRef = relationship.child;
+      if (!parentRef || !childRef) {
+         return;
+      }
+
+      const relRefText = toIdReference(relationship.id ?? '');
+
+      const diagramDocs = this.documents.all.filter(doc => !!findSystemDiagram(doc.parseResult.value)).toArray();
+      for (const diagramDoc of diagramDocs) {
+         const diagram = findSystemDiagram(diagramDoc.parseResult.value) as SystemDiagram | undefined;
+         if (!diagram) {
+            continue;
+         }
+
+         const services = this.shared.ServiceRegistry.getServices(diagramDoc.uri) as CrossModelServices;
+         const idp = services.references.IdProvider;
+
+         const relationshipRefText = toIdReference(idp.getGlobalId(relationship) ?? relationship.id ?? '');
+
+         const parentNode = diagram.nodes?.find(
+            node => node.entity?.ref?.id === parentRef.ref?.id || node.entity?.$refText === parentRef.$refText
+         );
+         const childNode = diagram.nodes?.find(
+            node => node.entity?.ref?.id === childRef.ref?.id || node.entity?.$refText === childRef.$refText
+         );
+         if (!parentNode || !childNode) {
+            continue;
+         }
+
+         let changed = false;
+         for (const edge of diagram.edges ?? []) {
+            if (!isRelationshipEdge(edge)) {
+               continue;
+            }
+            const edgeRel = edge.relationship?.ref?.id ?? edge.relationship?.$refText;
+            if (edgeRel !== relationship.id && edgeRel !== relRefText && edgeRel !== relationshipRefText) {
+               continue;
+            }
+            edge.relationship = { ref: relationship, $refText: relationshipRefText } as Reference<Relationship>;
+            edge.sourceNode = {
+               ref: parentNode,
+               $refText: toIdReference(idp.getNodeId(parentNode) ?? parentNode.id ?? '')
+            } as Reference<LogicalEntityNode>;
+            edge.targetNode = {
+               ref: childNode,
+               $refText: toIdReference(idp.getNodeId(childNode) ?? childNode.id ?? '')
+            } as Reference<LogicalEntityNode>;
+            changed = true;
+         }
+
+         if (changed) {
+            const updatedModel = diagramDoc.parseResult.value as CrossModelRoot;
+            const updatedText = this.serialize(diagramDoc.uri, updatedModel);
+
+            // Update open clients and persist so the diagram does not stay dirty when opened
+            await this.update({ uri: diagramDoc.uri.toString(), model: updatedModel, clientId });
+            await this.documentManager.save(diagramDoc.uri.toString(), updatedText, clientId);
+         }
+      }
    }
 
    onModelUpdated(uri: string, listener: (model: ModelUpdatedEvent<AstCrossModelDocument>) => void): Disposable {
