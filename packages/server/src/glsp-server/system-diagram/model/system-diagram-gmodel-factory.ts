@@ -50,17 +50,7 @@ export class SystemDiagramGModelFactory implements GModelFactory {
    }
 
    protected createRelationshipEdge(edge: RelationshipEdge): GEdge {
-      const gEdge = GRelationshipEdge.builder().set(edge, this.modelState.index).build();
-      try {
-         const logger = this.modelState.services.shared.logger.ClientLogger;
-         const relRef = edge.relationship?.$refText;
-         const src = edge.sourceNode?.ref?.id ?? edge.sourceNode?.$refText;
-         const tgt = edge.targetNode?.ref?.id ?? edge.targetNode?.$refText;
-         logger.info(`[MS] GModel createRelationshipEdge id=${gEdge.id} rel=${relRef} src=${src} tgt=${tgt}`);
-      } catch (e) {
-         // ignore logging errors
-      }
-      return gEdge;
+      return GRelationshipEdge.builder().set(edge, this.modelState.index).build();
    }
 
    protected createInheritanceEdge(edge: InheritanceEdge): GEdge {
