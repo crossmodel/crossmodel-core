@@ -8,6 +8,7 @@ import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorContainer, EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { focusTable } from './focusManagement';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityIdentifierRow {
@@ -100,13 +101,8 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          // After delete action, ensure focus goes to the table/property widget for undo/redo
          // Use setTimeout to ensure focus is set after React updates
          setTimeout(() => {
-            const table = document.querySelector('.entity-identifiers-datatable') as HTMLElement | null;
-            if (table) {
-               if (!table.hasAttribute('tabindex')) {
-                  table.setAttribute('tabindex', '-1');
-               }
-               table.focus({ preventScroll: true });
-            }
+            const table = (document.querySelector('.entity-identifiers-datatable') ?? undefined) as HTMLElement | undefined;
+            focusTable(table);
          }, 0);
       },
       [dispatch, entity.identifiers]

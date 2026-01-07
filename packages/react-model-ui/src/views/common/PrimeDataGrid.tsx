@@ -20,6 +20,7 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
+import { focusTable } from './focusManagement';
 
 export function handleGenericRowReorder<TRow extends { id: string; _uncommitted?: boolean }, TModel>(
    e: { rows: TRow[] },
@@ -480,26 +481,14 @@ function useDragDrop<T extends Record<string, any>>(
 
          document.body.style.userSelect = '';
 
-         const focusTable = (): void => {
-            // Try to focus the table element itself
-            const table = tableRef?.current?.getElement() as HTMLElement | null;
-            if (table) {
-               if (!table.hasAttribute('tabindex')) {
-                  table.setAttribute('tabindex', '-1');
-               }
-               table.focus({ preventScroll: true });
-            } else if (wrapperRef?.current) {
-               // Fallback: focus the wrapper div if table element is not available
-               if (!wrapperRef.current.hasAttribute('tabindex')) {
-                  wrapperRef.current.setAttribute('tabindex', '-1');
-               }
-               wrapperRef.current.focus({ preventScroll: true });
-            }
+         const focusTableElement = (): void => {
+            const table = (tableRef?.current?.getElement() ?? undefined) as HTMLElement | undefined;
+            focusTable(table, wrapperRef?.current ?? undefined);
          };
 
          // Use requestAnimationFrame twice to ensure the DOM has settled after reordering
          requestAnimationFrame(() => {
-            requestAnimationFrame(() => focusTable());
+            requestAnimationFrame(() => focusTableElement());
          });
 
          if (dragPreviewRef.current) {
@@ -561,7 +550,10 @@ function useDragDrop<T extends Record<string, any>>(
                newData.splice(insertIndex, 0, ...selectedRowsInOrder);
                onRowReorder({ rows: newData });
                requestAnimationFrame(() => {
-                  requestAnimationFrame(() => focusTable());
+                  requestAnimationFrame(() => {
+                     const table = (tableRef?.current?.getElement() ?? undefined) as HTMLElement | undefined;
+                     focusTable(table, wrapperRef?.current ?? undefined);
+                  });
                });
             } else {
                const sourceIndex = currentData.findIndex(row => row[keyField] === rowKey);
@@ -583,7 +575,10 @@ function useDragDrop<T extends Record<string, any>>(
                   newData.splice(insertIndex, 0, removed);
                   onRowReorder({ rows: newData });
                   requestAnimationFrame(() => {
-                     requestAnimationFrame(() => focusTable());
+                     requestAnimationFrame(() => {
+                        const table = (tableRef?.current?.getElement() ?? undefined) as HTMLElement | undefined;
+                        focusTable(table, wrapperRef?.current ?? undefined);
+                     });
                   });
                }
             }
@@ -737,12 +732,7 @@ function renderActionsColumn<T>(
 
                   // Move focus to the table so Ctrl+Z triggers the global undo handler
                   const table = tableRef?.current?.getElement?.() as HTMLElement | undefined;
-                  if (table) {
-                     if (!table.hasAttribute('tabindex')) {
-                        table.setAttribute('tabindex', '-1');
-                     }
-                     table.focus({ preventScroll: true });
-                  }
+                  focusTable(table);
                }}
                tooltip='Delete'
                disabled={readonly}
@@ -771,12 +761,7 @@ function renderActionsColumn<T>(
 
                   // Move focus to the table so Ctrl+Z triggers the global undo handler
                   const table = tableRef?.current?.getElement?.() as HTMLElement | undefined;
-                  if (table) {
-                     if (!table.hasAttribute('tabindex')) {
-                        table.setAttribute('tabindex', '-1');
-                     }
-                     table.focus({ preventScroll: true });
-                  }
+                  focusTable(table);
                }}
                tooltip='Delete'
                disabled={readonly}
@@ -911,13 +896,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          // After delete actions, shift focus to the table to route Ctrl+Z to the global undo handler
          // Use setTimeout to ensure focus is set after all React updates are processed
          setTimeout(() => {
-            const tableElement = tableRef.current?.getElement();
-            if (tableElement) {
-               if (!tableElement.hasAttribute('tabindex')) {
-                  tableElement.setAttribute('tabindex', '-1');
-               }
-               tableElement.focus({ preventScroll: true });
-            }
+            const tableElement = (tableRef.current?.getElement() ?? undefined) as HTMLElement | undefined;
+            focusTable(tableElement);
          }, 0);
       }
    }, [selectedRows, onRowDelete, onSelectionChange]);
@@ -980,15 +960,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       // Move focus away from the cell editor to the table so undo/redo works
       // This ensures that when clicking outside to save (not Enter key), focus is properly managed
       setTimeout(() => {
-         const table = tableRef.current?.getElement() as HTMLElement | null;
-         if (table) {
-            if (!table.hasAttribute('tabindex')) {
-               table.setAttribute('tabindex', '-1');
-            }
-            table.focus({ preventScroll: true });
-         } else {
-            (document.activeElement as HTMLElement | null)?.blur?.();
-         }
+         const table = (tableRef.current?.getElement() ?? undefined) as HTMLElement | undefined;
+         focusTable(table);
       }, 0);
    };
 

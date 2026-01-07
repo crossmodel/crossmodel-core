@@ -17,6 +17,7 @@ import {
    useUndo
 } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
+import { refocusPropertyWidget } from './focusManagement';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
 import { handleGridEditorKeyDown, handleUndoRedoKeys, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
@@ -118,12 +119,7 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
    const onHide = (): void => {
       setIsDropdownOpen(false);
       // Refocus the property widget container after autocomplete dropdown closes
-      setTimeout(() => {
-         const propertyWidget = document.querySelector('[id="model-property-view"]');
-         if (propertyWidget) {
-            (propertyWidget as HTMLElement).focus();
-         }
-      }, 0);
+      refocusPropertyWidget();
    };
 
    // Handle click outside to close dropdown

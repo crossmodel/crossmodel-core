@@ -2,6 +2,7 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import * as React from 'react';
+import { focusTable } from './focusManagement';
 
 // Global flag to track if save was triggered by Enter key
 let saveTriggeredByEnter = false;
@@ -48,15 +49,8 @@ export const handleGridEditorKeyDown = (e: React.KeyboardEvent): void => {
             saveButton.click();
 
             // Move focus off the cell editor so Ctrl+Z goes to the global undo handler
-            const table = editingRow.closest('.p-datatable') as HTMLElement | null;
-            if (table) {
-               if (!table.hasAttribute('tabindex')) {
-                  table.setAttribute('tabindex', '-1');
-               }
-               table.focus({ preventScroll: true });
-            } else {
-               (document.activeElement as HTMLElement | null)?.blur?.();
-            }
+            const table = (editingRow.closest('.p-datatable') ?? undefined) as HTMLElement | undefined;
+            focusTable(table);
          });
       }
    } else if (e.key === 'Escape') {
