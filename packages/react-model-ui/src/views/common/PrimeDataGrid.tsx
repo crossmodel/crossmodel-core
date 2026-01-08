@@ -20,6 +20,7 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import * as React from 'react';
+import { focusTable } from './focusManagement';
 
 export function handleGenericRowReorder<TRow extends { id: string; _uncommitted?: boolean }, TModel>(
    e: { rows: TRow[] },
@@ -480,6 +481,16 @@ function useDragDrop<T extends Record<string, any>>(
 
          document.body.style.userSelect = '';
 
+         const focusTableElement = (): void => {
+            const table = (tableRef?.current?.getElement() ?? undefined) as HTMLElement | undefined;
+            focusTable(table, wrapperRef?.current ?? undefined);
+         };
+
+         // Use requestAnimationFrame twice to ensure the DOM has settled after reordering
+         requestAnimationFrame(() => {
+            requestAnimationFrame(() => focusTableElement());
+         });
+
          if (dragPreviewRef.current) {
             document.body.removeChild(dragPreviewRef.current);
             dragPreviewRef.current = undefined;
@@ -538,6 +549,12 @@ function useDragDrop<T extends Record<string, any>>(
                const newData = [...nonSelectedRows];
                newData.splice(insertIndex, 0, ...selectedRowsInOrder);
                onRowReorder({ rows: newData });
+               requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                     const table = (tableRef?.current?.getElement() ?? undefined) as HTMLElement | undefined;
+                     focusTable(table, wrapperRef?.current ?? undefined);
+                  });
+               });
             } else {
                const sourceIndex = currentData.findIndex(row => row[keyField] === rowKey);
                if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
@@ -557,6 +574,12 @@ function useDragDrop<T extends Record<string, any>>(
 
                   newData.splice(insertIndex, 0, removed);
                   onRowReorder({ rows: newData });
+                  requestAnimationFrame(() => {
+                     requestAnimationFrame(() => {
+                        const table = (tableRef?.current?.getElement() ?? undefined) as HTMLElement | undefined;
+                        focusTable(table, wrapperRef?.current ?? undefined);
+                     });
+                  });
                }
             }
          }
@@ -674,7 +697,8 @@ function renderActionsColumn<T>(
    props: any,
    editable: boolean,
    readonly: boolean,
-   onRowDelete?: (row: T) => void
+   onRowDelete?: (row: T) => void,
+   tableRef?: React.RefObject<DataTable<any>>
 ): React.JSX.Element {
    const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
    const buttons: React.ReactElement[] = [];
@@ -703,7 +727,13 @@ function renderActionsColumn<T>(
             <Button
                icon='pi pi-trash'
                className='p-button-text p-button-danger p-row-action-button'
-               onClick={() => onRowDelete(rowData)}
+               onClick={() => {
+                  onRowDelete(rowData);
+
+                  // Move focus to the table so Ctrl+Z triggers the global undo handler
+                  const table = tableRef?.current?.getElement?.() as HTMLElement | undefined;
+                  focusTable(table);
+               }}
                tooltip='Delete'
                disabled={readonly}
             />
@@ -726,7 +756,13 @@ function renderActionsColumn<T>(
             <Button
                icon='pi pi-trash'
                className='p-button-text p-button-danger p-row-action-button'
-               onClick={() => onRowDelete(rowData)}
+               onClick={() => {
+                  onRowDelete(rowData);
+
+                  // Move focus to the table so Ctrl+Z triggers the global undo handler
+                  const table = tableRef?.current?.getElement?.() as HTMLElement | undefined;
+                  focusTable(table);
+               }}
                tooltip='Delete'
                disabled={readonly}
             />
@@ -856,6 +892,13 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          if (onSelectionChange) {
             onSelectionChange({ value: [] });
          }
+
+         // After delete actions, shift focus to the table to route Ctrl+Z to the global undo handler
+         // Use setTimeout to ensure focus is set after all React updates are processed
+         setTimeout(() => {
+            const tableElement = (tableRef.current?.getElement() ?? undefined) as HTMLElement | undefined;
+            focusTable(tableElement);
+         }, 0);
       }
    }, [selectedRows, onRowDelete, onSelectionChange]);
 
@@ -913,6 +956,13 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          const updated = { ...e.newData } as T;
          onRowUpdate(updated);
       }
+
+      // Move focus away from the cell editor to the table so undo/redo works
+      // This ensures that when clicking outside to save (not Enter key), focus is properly managed
+      setTimeout(() => {
+         const table = (tableRef.current?.getElement() ?? undefined) as HTMLElement | undefined;
+         focusTable(table);
+      }, 0);
    };
 
    const handleRowDoubleClick = (e: DataTableRowClickEvent): void => {
@@ -1107,7 +1157,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const cellEditor = undefined;
 
    const allActionsTemplate = React.useCallback(
-      (rowData: T, props: any): React.JSX.Element => renderActionsColumn(rowData, props, editable, readonly, onRowDelete),
+      (rowData: T, props: any): React.JSX.Element => renderActionsColumn(rowData, props, editable, readonly, onRowDelete, tableRef),
       [editable, readonly, onRowDelete]
    );
 

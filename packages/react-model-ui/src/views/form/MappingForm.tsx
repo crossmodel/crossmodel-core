@@ -4,11 +4,21 @@
 
 import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
-import { useDiagnosticsManager, useMapping, useModelDispatch, useReadonly } from '../../ModelContext';
+import {
+   useCanRedo,
+   useCanUndo,
+   useDiagnosticsManager,
+   useMapping,
+   useModelDispatch,
+   useReadonly,
+   useRedo,
+   useUndo
+} from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
 import { AttributeMappingSourcesDataGrid } from '../common/AttributeMappingSourcesDataGrid';
+import { handleUndoRedoKeys } from '../common/gridKeydownHandler';
 import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
@@ -25,6 +35,10 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
+   const undo = useUndo();
+   const redo = useRedo();
+   const canUndo = useCanUndo();
+   const canRedo = useCanRedo();
 
    const attributeMapping = mapping.target.mappings[props.mappingIndex];
    if (!attributeMapping) {
@@ -74,6 +88,7 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
                            expression: e.target.value ?? ''
                         })
                      }
+                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleUndoRedoKeys(e, canUndo, canRedo, undo, redo)}
                      className={expressionDiagnostics.inputClasses()}
                   />
                </div>

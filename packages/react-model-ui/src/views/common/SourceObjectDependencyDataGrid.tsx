@@ -2,19 +2,28 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 import {
-    CrossReferenceContext,
-    Mapping,
-    ReferenceableElement,
-    SourceObject,
-    SourceObjectDependency,
-    SourceObjectDependencyType
+   CrossReferenceContext,
+   Mapping,
+   ReferenceableElement,
+   SourceObject,
+   SourceObjectDependency,
+   SourceObjectDependencyType
 } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteChangeEvent, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import {
+   useCanRedo,
+   useCanUndo,
+   useDiagnosticsManager,
+   useModelDispatch,
+   useModelQueryApi,
+   useReadonly,
+   useRedo,
+   useUndo
+} from '../../ModelContext';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
-import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, handleUndoRedoKeys, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectDependencyEditorProps {
    options: any;
@@ -27,6 +36,10 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
    const { editorCallback } = options;
 
    const diagnostics = useDiagnosticsManager();
+   const undo = useUndo();
+   const redo = useRedo();
+   const canUndo = useCanUndo();
+   const canRedo = useCanRedo();
 
    const [currentValue, setCurrentValue] = React.useState(options.value || '');
    const [suggestions, setSuggestions] = React.useState<ReferenceableElement[]>([]);
@@ -157,7 +170,10 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
                onHide={onHide}
                disabled={readonly}
                autoFocus
-               onKeyDown={handleGridEditorKeyDown}
+               onKeyDown={e => {
+                  handleGridEditorKeyDown(e);
+                  handleUndoRedoKeys(e, canUndo, canRedo, undo, redo);
+               }}
             />
             {errorMessage && <small className='p-error block'>{errorMessage}</small>}
          </div>
@@ -250,8 +266,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
             return;
          }
 
-         const dependencyIdx =
-            (sourceObject.dependencies || []).findIndex((dep, idx) => deriveDependencyRowId(dep, idx) === dependency.id);
+         const dependencyIdx = (sourceObject.dependencies || []).findIndex((dep, idx) => deriveDependencyRowId(dep, idx) === dependency.id);
          if (dependencyIdx === -1) {
             if (dependency.id) {
                pendingDeleteIdsRef.current.delete(dependency.id);

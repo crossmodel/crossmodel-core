@@ -203,3 +203,34 @@ export function useMapping(): Mapping {
 export function useDataModel(): DataModel {
    return useModel().datamodel!;
 }
+
+export type UndoCallback = () => boolean;
+export type RedoCallback = () => boolean;
+export type CanUndoCallback = () => boolean;
+export type CanRedoCallback = () => boolean;
+
+export const DEFAULT_UNDO_CALLBACK: UndoCallback = () => false;
+export const DEFAULT_REDO_CALLBACK: RedoCallback = () => false;
+export const DEFAULT_CAN_UNDO_CALLBACK: CanUndoCallback = () => false;
+export const DEFAULT_CAN_REDO_CALLBACK: CanRedoCallback = () => false;
+
+export const UndoContext = React.createContext<UndoCallback>(DEFAULT_UNDO_CALLBACK);
+export const RedoContext = React.createContext<RedoCallback>(DEFAULT_REDO_CALLBACK);
+export const CanUndoContext = React.createContext<CanUndoCallback>(DEFAULT_CAN_UNDO_CALLBACK);
+export const CanRedoContext = React.createContext<CanRedoCallback>(DEFAULT_CAN_REDO_CALLBACK);
+
+export function useUndo(): UndoCallback {
+   return React.useContext(UndoContext);
+}
+
+export function useRedo(): RedoCallback {
+   return React.useContext(RedoContext);
+}
+
+export function useCanUndo(): CanUndoCallback {
+   return React.useContext(CanUndoContext);
+}
+
+export function useCanRedo(): CanRedoCallback {
+   return React.useContext(CanRedoContext);
+}

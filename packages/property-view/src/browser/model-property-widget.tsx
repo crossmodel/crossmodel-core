@@ -8,7 +8,7 @@ import { PropertyViewContentWidget } from '@theia/property-view/lib/browser/prop
 
 import { CrossModelWidget } from '@crossmodel/core/lib/browser';
 import { RenderProps } from '@crossmodel/protocol';
-import { ModelProviderProps } from '@crossmodel/react-model-ui';
+import { CanRedoCallback, CanUndoCallback, ModelProviderProps, RedoCallback, UndoCallback } from '@crossmodel/react-model-ui';
 import { GLSPDiagramWidget, GlspSelection, getDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { injectable } from '@theia/core/shared/inversify';
 import * as deepEqual from 'fast-deep-equal';
@@ -18,6 +18,12 @@ import { PropertiesRenderData } from './model-data-service';
 export class ModelPropertyWidget extends CrossModelWidget implements PropertyViewContentWidget {
    protected renderData?: PropertiesRenderData;
    private _closeInProgress: Promise<void> | undefined;
+
+   // Store undo/redo callbacks from React context
+   protected undoCallback?: UndoCallback;
+   protected redoCallback?: RedoCallback;
+   protected canUndoCallback?: CanUndoCallback;
+   protected canRedoCallback?: CanRedoCallback;
 
    constructor() {
       super();
@@ -136,10 +142,57 @@ export class ModelPropertyWidget extends CrossModelWidget implements PropertyVie
 
    protected override getModelProviderProps(): ModelProviderProps {
       const props = super.getModelProviderProps();
+
+      // Add onUndoReady callback for all documents
+      const propsWithUndo = {
+         ...props,
+         onUndoReady: (undo: UndoCallback, redo: RedoCallback, canUndo: CanUndoCallback, canRedo: CanRedoCallback) => {
+            this.undoCallback = undo;
+            this.redoCallback = redo;
+            this.canUndoCallback = canUndo;
+            this.canRedoCallback = canRedo;
+         }
+      };
+
       // For mapping documents we don't want the Open/Save buttons in the property header.
       if (this.document?.root?.mapping) {
-         return { ...props, onModelSave: undefined, onModelOpen: undefined };
+         return { ...propsWithUndo, onModelSave: undefined, onModelOpen: undefined };
       }
-      return props;
+
+      return propsWithUndo;
+   }
+
+   /**
+    * Undo the last form change.
+    * Called by Theia's undo command (CTRL+Z).
+    */
+   undo(): void {
+      if (this.undoCallback) {
+         this.undoCallback();
+      }
+   }
+
+   /**
+    * Redo the last undone form change.
+    * Called by Theia's redo command (CTRL+SHIFT+Z or CTRL+Y).
+    */
+   redo(): void {
+      if (this.redoCallback) {
+         this.redoCallback();
+      }
+   }
+
+   /**
+    * Check if undo is available.
+    */
+   canUndo(): boolean {
+      return this.canUndoCallback?.() ?? false;
+   }
+
+   /**
+    * Check if redo is available.
+    */
+   canRedo(): boolean {
+      return this.canRedoCallback?.() ?? false;
    }
 }

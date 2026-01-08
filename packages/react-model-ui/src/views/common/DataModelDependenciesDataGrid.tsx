@@ -5,10 +5,21 @@ import { CrossReferenceContext, DataModelDependency, DataModelDependencyType } f
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useDataModel, useDiagnosticsManager, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
+import {
+   useCanRedo,
+   useCanUndo,
+   useDataModel,
+   useDiagnosticsManager,
+   useModelDispatch,
+   useModelQueryApi,
+   useReadonly,
+   useRedo,
+   useUndo
+} from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
+import { refocusPropertyWidget } from './focusManagement';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
-import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
+import { handleGridEditorKeyDown, handleUndoRedoKeys, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 
 export interface DataModelDependencyRow extends DataModelDependency {
@@ -39,6 +50,10 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
    const dataModel = useDataModel();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
+   const undo = useUndo();
+   const redo = useRedo();
+   const canUndo = useCanUndo();
+   const canRedo = useCanRedo();
    const basePath = ['datamodel', 'dependencies'];
    const fieldInfo = diagnostics.info(basePath, field, rowData.idx);
    const error = fieldInfo.empty ? undefined : fieldInfo.text();
@@ -103,6 +118,8 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
 
    const onHide = (): void => {
       setIsDropdownOpen(false);
+      // Refocus the property widget container after autocomplete dropdown closes
+      refocusPropertyWidget();
    };
 
    // Handle click outside to close dropdown
@@ -141,9 +158,12 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
                onSelect={onSelect}
                onShow={onShow}
                onHide={onHide}
+               onKeyDown={e => {
+                  handleGridEditorKeyDown(e);
+                  handleUndoRedoKeys(e, canUndo, canRedo, undo, redo);
+               }}
                disabled={readonly}
                autoFocus
-               onKeyDown={handleGridEditorKeyDown}
             />
             {error && <small className='p-error block'>{error}</small>}
          </div>
@@ -249,8 +269,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
             return;
          }
 
-         const dependencyIdx =
-            (dataModel?.dependencies || []).findIndex((dep, idx) => deriveDependencyRowId(dep, idx) === dependency.id);
+         const dependencyIdx = (dataModel?.dependencies || []).findIndex((dep, idx) => deriveDependencyRowId(dep, idx) === dependency.id);
          if (dependencyIdx === -1) {
             if (dependency.id) {
                pendingDeleteIdsRef.current.delete(dependency.id);

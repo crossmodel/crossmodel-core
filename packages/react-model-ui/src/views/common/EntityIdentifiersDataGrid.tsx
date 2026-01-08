@@ -8,6 +8,7 @@ import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorContainer, EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { focusTable } from './focusManagement';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityIdentifierRow {
@@ -62,7 +63,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
    const [gridData, setGridData] = React.useState<EntityIdentifierRow[]>([]);
    const [selectedRows, setSelectedRows] = React.useState<EntityIdentifierRow[]>([]);
    const pendingDeleteIdsRef = React.useRef<Set<string>>(new Set());
-    const identifiersRef = React.useRef(entity?.identifiers || []);
+   const identifiersRef = React.useRef(entity?.identifiers || []);
 
    const handleSelectionChange = React.useCallback((e: { value: EntityIdentifierRow[] }): void => {
       setSelectedRows(e.value);
@@ -96,6 +97,13 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             type: 'entity:identifier:delete-identifier',
             identifierIdx
          });
+
+         // After delete action, ensure focus goes to the table/property widget for undo/redo
+         // Use setTimeout to ensure focus is set after React updates
+         setTimeout(() => {
+            const table = (document.querySelector('.entity-identifiers-datatable') ?? undefined) as HTMLElement | undefined;
+            focusTable(table);
+         }, 0);
       },
       [dispatch, entity.identifiers]
    );
