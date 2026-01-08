@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.20.0](https://github.com/crossmodel/crossmodel-core/compare/v0.19.5...v0.20.0) (2026-01-08)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
 ## [0.19.5](https://github.com/crossmodel/crossmodel-core/compare/v0.19.4...v0.19.5) (2026-01-04)
 
 **Note:** Version bump only for package crossmodel-e2e-tests
