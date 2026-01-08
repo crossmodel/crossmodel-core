@@ -184,7 +184,6 @@ export class CrossModelValidator {
 
    checkCrossModelRoot(node: CrossModelRoot, accept: ValidationAcceptor): void {
       this.checkUniqueLocalId(node, accept);
-      this.checkUniqueLocalName(node, accept);
    }
 
    protected checkUniqueLocalId(node: AstNode, accept: ValidationAcceptor): void {
