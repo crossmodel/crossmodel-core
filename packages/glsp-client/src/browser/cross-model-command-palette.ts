@@ -23,11 +23,6 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 export class CrossModelMousePositionTracker extends GLSPMousePositionTracker {
    clientPosition: Point | undefined;
    diagramOffset: Point | undefined;
-   private _overrideLastPosition: Point | undefined;
-
-   override get lastPositionOnDiagram(): Point | undefined {
-      return this._overrideLastPosition || super.lastPositionOnDiagram;
-   }
 
    override mouseMove(target: GModelElement, event: MouseEvent): (Action | Promise<Action>)[] {
       this.clientPosition = { x: event.clientX, y: event.clientY };
@@ -38,12 +33,7 @@ export class CrossModelMousePositionTracker extends GLSPMousePositionTracker {
       } else {
          this.diagramOffset = { x: event.offsetX, y: event.offsetY };
       }
-      this._overrideLastPosition = undefined;
       return super.mouseMove(target, event);
-   }
-
-   setLastPosition(position: Point): void {
-      this._overrideLastPosition = position;
    }
 }
 

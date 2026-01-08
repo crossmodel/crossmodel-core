@@ -4,35 +4,35 @@
 
 import { GRID, ShowPropertiesAction } from '@crossmodel/protocol';
 import {
-    ConsoleLogger,
-    EnableDefaultToolsAction,
-    GLSPHiddenBoundsUpdater,
-    GLSPMousePositionTracker,
-    GModelElement,
-    GlspCommandPalette,
-    LogLevel,
-    MetadataPlacer,
-    MouseDeleteTool,
-    TYPES,
-    ToolManager,
-    ToolPalette,
-    TriggerEdgeCreationAction,
-    TriggerNodeCreationAction,
-    bindAsService,
-    bindOrRebind,
-    configureActionHandler,
-    isRoutable,
-    toElementAndRoutingPoints
+   ConsoleLogger,
+   EnableDefaultToolsAction,
+   GLSPHiddenBoundsUpdater,
+   GLSPMousePositionTracker,
+   GModelElement,
+   GlspCommandPalette,
+   LogLevel,
+   MetadataPlacer,
+   MouseDeleteTool,
+   TYPES,
+   ToolManager,
+   ToolPalette,
+   TriggerEdgeCreationAction,
+   TriggerNodeCreationAction,
+   bindAsService,
+   bindOrRebind,
+   configureActionHandler,
+   isRoutable,
+   toElementAndRoutingPoints
 } from '@eclipse-glsp/client';
 import { GlspSelectionDataService } from '@eclipse-glsp/theia-integration';
 import { ContainerModule, injectable, interfaces } from '@theia/core/shared/inversify';
 import { VNode } from 'snabbdom';
 import { CmMetadataPlacer } from './cm-metadata-placer';
 import {
-    CrossModelCommandPalette,
-    CrossModelMousePositionTracker,
-    EntityCommandPalette,
-    RelationshipCommandPalette
+   CrossModelCommandPalette,
+   CrossModelMousePositionTracker,
+   EntityCommandPalette,
+   RelationshipCommandPalette
 } from './cross-model-command-palette';
 import { CrossModelMouseDeleteTool } from './cross-model-delete-tool';
 import { CrossModelDiagramStartup } from './cross-model-diagram-startup';
@@ -76,7 +76,6 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       rebind(MetadataPlacer).to(CmMetadataPlacer).inSingletonScope();
 
       bind(CrossModelHiddenBoundsUpdater).toSelf().inSingletonScope();
-      rebind(GLSPHiddenBoundsUpdater).to(CrossModelHiddenBoundsUpdater).inSingletonScope();
       rebind(GLSPHiddenBoundsUpdater).to(CrossModelHiddenBoundsUpdater).inSingletonScope();
 
       configureActionHandler(context, ShowPropertiesAction.KIND, ShowPropertiesActionHandler);
