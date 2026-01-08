@@ -4,13 +4,13 @@
 
 import { ModelService } from '@crossmodel/model-service/lib/common';
 import {
-    ENTITY_NODE_TYPE,
-    EnableDefaultToolsAction,
-    INHERITANCE_EDGE_TYPE,
-    RELATIONSHIP_EDGE_TYPE,
-    RelationshipType,
-    findNextUnique,
-    identity
+   ENTITY_NODE_TYPE,
+   EnableDefaultToolsAction,
+   INHERITANCE_EDGE_TYPE,
+   RELATIONSHIP_EDGE_TYPE,
+   RelationshipType,
+   findNextUnique,
+   identity
 } from '@crossmodel/protocol';
 import {
    Action,
@@ -30,15 +30,15 @@ import { URI } from '@theia/core';
 import { Message, OpenerService, SingleTextInputDialog, SingleTextInputDialogProps } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { CrossModelMousePositionTracker, EntityCommandPalette, RelationshipCommandPalette } from '../../cross-model-command-palette';
+import { EntityCommandPalette, RelationshipCommandPalette } from '../../cross-model-command-palette';
 import {
-    CreateEntityAction,
-    CreateInheritanceAction,
-    CreateRelationshipAction,
-    OpenInCodeEditorAction,
-    OpenInFormEditorAction,
-    ShowEntityAction,
-    ShowRelationshipAction
+   CreateEntityAction,
+   CreateInheritanceAction,
+   CreateRelationshipAction,
+   OpenInCodeEditorAction,
+   OpenInFormEditorAction,
+   ShowEntityAction,
+   ShowRelationshipAction
 } from './context-menu-actions';
 
 /**
@@ -140,27 +140,7 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
       (async () => {
          try {
             const opener = await this.openerService.getOpener(new URI(semanticUri));
-            const widget = await opener.open(new URI(semanticUri));
-
-            if (widget) {
-                let compositeEditor: any = widget;
-                if (!(typeof compositeEditor.getPrimaryWidget === 'function' && typeof compositeEditor.revealCodeTab === 'function')) {
-                    const widgetAny = widget as any;
-                    if (widgetAny.parent && typeof widgetAny.parent.getPrimaryWidget === 'function'
-                    && typeof widgetAny.parent.revealCodeTab === 'function') {
-                        compositeEditor = widgetAny.parent;
-                    } else {
-                        compositeEditor = undefined;
-                    }
-                }
-
-                if (compositeEditor) {
-                    const primaryWidget = compositeEditor.getPrimaryWidget();
-                    if (primaryWidget && compositeEditor['tabPanel']) {
-                       compositeEditor['tabPanel'].currentWidget = primaryWidget;
-                    }
-                }
-            }
+            await opener.open(new URI(semanticUri));
          } catch (err) {
             console.error('[OpenInFormEditorActionHandler] Error opening URI:', err);
          }
@@ -230,24 +210,7 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
       (async () => {
          try {
             const opener = await this.openerService.getOpener(new URI(semanticUri));
-            const widget = await opener.open(new URI(semanticUri), { initialTab: 'code' } as any);
-
-            if (widget) {
-                let compositeEditor: any = widget;
-                if (!(typeof compositeEditor.getPrimaryWidget === 'function' && typeof compositeEditor.revealCodeTab === 'function')) {
-                    const widgetAny = widget as any;
-                    if (widgetAny.parent && typeof widgetAny.parent.getPrimaryWidget === 'function'
-                    && typeof widgetAny.parent.revealCodeTab === 'function') {
-                        compositeEditor = widgetAny.parent;
-                    } else {
-                        compositeEditor = undefined;
-                    }
-                }
-
-                if (compositeEditor) {
-                    compositeEditor.revealCodeTab({});
-                }
-            }
+            await opener.open(new URI(semanticUri), { initialTab: 'code' } as any);
          } catch (err) {
             console.error('[OpenInCodeEditorActionHandler] Error opening URI:', err);
          }
@@ -316,16 +279,10 @@ export class CreateEntityActionHandler implements IActionHandler {
 @injectable()
 export class ShowEntityActionHandler implements IActionHandler {
    @inject(TYPES.IActionDispatcher) protected readonly actionDispatcher: IActionDispatcher;
-   @inject(CrossModelMousePositionTracker) protected readonly mousePositionTracker: CrossModelMousePositionTracker;
 
    handle(action: Action): void | Action | ICommand {
       if (!ShowEntityAction.is(action)) {
          return;
-      }
-
-      if (action.diagramOffset) {
-         this.mousePositionTracker.diagramOffset = action.diagramOffset;
-         this.mousePositionTracker.setLastPosition(action.location);
       }
 
       return SetUIExtensionVisibilityAction.create({
@@ -359,16 +316,10 @@ export class CreateRelationshipActionHandler implements IActionHandler {
 @injectable()
 export class ShowRelationshipActionHandler implements IActionHandler {
    @inject(TYPES.IActionDispatcher) protected readonly actionDispatcher: IActionDispatcher;
-   @inject(CrossModelMousePositionTracker) protected readonly mousePositionTracker: CrossModelMousePositionTracker;
 
    handle(action: Action): void | Action | ICommand {
       if (!ShowRelationshipAction.is(action)) {
          return;
-      }
-
-      if (action.diagramOffset) {
-         this.mousePositionTracker.diagramOffset = action.diagramOffset;
-         this.mousePositionTracker.setLastPosition(action.location);
       }
 
       return SetUIExtensionVisibilityAction.create({
