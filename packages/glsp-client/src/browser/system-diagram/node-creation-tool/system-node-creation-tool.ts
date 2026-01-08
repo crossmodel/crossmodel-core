@@ -47,9 +47,7 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
    }
 
    protected override getCreateOperation(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Action {
-      if (this.triggerAction.args?.type === 'show') {
-         return MessageAction.create('', { severity: 'NONE' });
-      } else if (this.triggerAction.args?.type === 'create') {
+      if (this.triggerAction.args?.type === 'create') {
          this.queryEntityName(ctx, event, insert).then(name => {
             if (name === undefined) {
                // user cancelled the dialog
@@ -63,9 +61,11 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
             }
             this.tool.dispatchActions(actions);
          });
-         return MessageAction.create('', { severity: 'NONE' });
+      } else if (this.triggerAction.args?.type !== 'show') {
+         throw new Error('Invalid node creation type');
       }
-      throw new Error('Invalid node creation type');
+   
+      return MessageAction.create('', { severity: 'NONE' });
    }
 
    protected async queryEntityName(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Promise<string | undefined> {
