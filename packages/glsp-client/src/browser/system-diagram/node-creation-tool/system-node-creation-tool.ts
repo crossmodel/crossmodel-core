@@ -126,5 +126,13 @@ class EntityNameInputDialog extends SingleTextInputDialog {
             block.style.top = `${this.props.position.y}px`;
          }
       }
+
+      const content = this.node.getElementsByClassName('dialogContent')?.[0] as HTMLElement;
+      if (content && !content.querySelector('.entity-name-hint')) {
+         const hint = document.createElement('div');
+         hint.className = 'entity-name-hint';
+         hint.textContent = "Press 'Enter' to confirm or 'Escape' to cancel";
+         content.appendChild(hint);
+      }
    }
 }

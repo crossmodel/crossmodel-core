@@ -294,6 +294,15 @@
    padding: 1px;
 }
 
+.dialogOverlay.entity-name-dialog .entity-name-hint {
+   margin-top: 6px;
+   font-size: 11px;
+   color: var(--theia-descriptionForeground, #666666);
+   text-align: center;
+   line-height: 1.3;
+   pointer-events: none;
+}
+
 .sprotty-graph.input-mode {
    background-color: rgba(0, 0, 0, 0.05);
 }
