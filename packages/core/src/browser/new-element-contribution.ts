@@ -491,7 +491,11 @@ export class CrossModelFileNavigatorContribution extends FileNavigatorContributi
          registry.registerCommand(
             { ...template, label: undefined, id: template.id + '.toolbar' },
             {
-               execute: (...args) => registry.executeCommand(template.id, ...args),
+               execute: (widget: any) =>
+                  this.withWidget(widget, navigator => {
+                     const uri = UriSelection.getUri(navigator.model.selectedNodes);
+                     return registry.executeCommand(template.id, uri);
+                  }),
                isEnabled: widget =>
                   this.withWidget(
                      widget,
