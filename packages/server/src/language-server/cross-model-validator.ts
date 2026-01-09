@@ -223,7 +223,7 @@ export class CrossModelValidator {
 
       if (distinctOrigins.size > 1) {
          const typeName = isLogicalEntity(namedObject) ? 'entity' : isRelationship(namedObject) ? 'relationship' : 'element';
-         accept('error', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
+         accept('warning', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
             node: namedObject,
             property: 'name',
             data: { code: CrossModelValidationErrors.toMalformed('name') }
