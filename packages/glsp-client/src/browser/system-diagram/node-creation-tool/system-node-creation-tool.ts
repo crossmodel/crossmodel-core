@@ -10,6 +10,7 @@ import {
    CreateNodeOperation,
    Disposable,
    DisposableCollection,
+   EnableDefaultToolsAction,
    GModelElement,
    GhostElement,
    IDiagramOptions,
@@ -46,13 +47,7 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
    }
 
    protected override getCreateOperation(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Action {
-      if (this.triggerAction.args?.type === 'show') {
-         return SetUIExtensionVisibilityAction.create({
-            extensionId: EntityCommandPalette.PALETTE_ID,
-            visible: true,
-            contextElementsId: [this.ghostElementId]
-         });
-      } else if (this.triggerAction.args?.type === 'create') {
+      if (this.triggerAction.args?.type === 'create') {
          this.queryEntityName(ctx, event, insert).then(name => {
             if (name === undefined) {
                // user cancelled the dialog
@@ -60,11 +55,17 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
             }
             const action = super.getCreateOperation(ctx, event, insert) as CreateNodeOperation & { args: Args };
             action.args.name = name;
-            this.tool.dispatchActions([action]);
+            const actions: Action[] = [action];
+            if (this.triggerAction.args?.singleUse !== false) {
+               actions.push(EnableDefaultToolsAction.create());
+            }
+            this.tool.dispatchActions(actions);
          });
-         return MessageAction.create('', { severity: 'NONE' });
+      } else if (this.triggerAction.args?.type !== 'show') {
+         throw new Error('Invalid node creation type');
       }
-      throw new Error('Invalid node creation type');
+   
+      return MessageAction.create('', { severity: 'NONE' });
    }
 
    protected async queryEntityName(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Promise<string | undefined> {
@@ -102,7 +103,17 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
       if (event.button !== 0) {
          return [];
       }
-      return super.nonDraggingMouseUp(ctx, event);
+      const result = super.nonDraggingMouseUp(ctx, event);
+      if (this.triggerAction.args?.type === 'show') {
+         result.push(
+            SetUIExtensionVisibilityAction.create({
+               extensionId: EntityCommandPalette.PALETTE_ID,
+               visible: true,
+               contextElementsId: [this.ghostElementId]
+            })
+         );
+      }
+      return result;
    }
 }
 

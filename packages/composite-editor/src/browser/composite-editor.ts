@@ -252,6 +252,12 @@ export class CompositeEditor
       this.addWidget(primaryWidget);
       this.addWidget(codeWidget);
 
+      if (this.options.initialTab === 'code') {
+         this.tabPanel.currentWidget = codeWidget;
+      } else {
+         this.tabPanel.currentWidget = primaryWidget;
+      }
+
       this.update();
       this.initialized.resolve();
    }
@@ -454,7 +460,7 @@ export class CompositeEditor
 
    storeState(): object | undefined {
       return {
-         primaryWidget: this.getPrimaryWidget()?.storeState(),
+      primaryWidget: this.getPrimaryWidget()?.storeState(),
          codeWidget: this.getCodeWidget()?.storeState()
       };
    }

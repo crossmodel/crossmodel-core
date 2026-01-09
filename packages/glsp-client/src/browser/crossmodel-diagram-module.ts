@@ -5,6 +5,7 @@
 import { GRID, ShowPropertiesAction } from '@crossmodel/protocol';
 import {
    ConsoleLogger,
+   EnableDefaultToolsAction,
    GLSPHiddenBoundsUpdater,
    GLSPMousePositionTracker,
    GModelElement,
@@ -15,6 +16,8 @@ import {
    TYPES,
    ToolManager,
    ToolPalette,
+   TriggerEdgeCreationAction,
+   TriggerNodeCreationAction,
    bindAsService,
    bindOrRebind,
    configureActionHandler,
@@ -37,6 +40,13 @@ import { CrossModelErrorExtension } from './cross-model-error-extension';
 import { CrossModelToolPalette } from './cross-model-tool-palette';
 import { CrossModelGLSPSelectionDataService } from './crossmodel-selection-data-service';
 import { ShowPropertiesActionHandler } from './show-properties-action-handler';
+import {
+   CreateEntityAction,
+   CreateInheritanceAction,
+   CreateRelationshipAction,
+   ShowEntityAction,
+   ShowRelationshipAction
+} from './system-diagram/context-menu/context-menu-actions';
 
 export function createCrossModelDiagramModule(registry: interfaces.ContainerModuleCallBack): ContainerModule {
    return new ContainerModule((bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation) => {
@@ -53,8 +63,8 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       registry(bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation);
       bind(CrossModelCommandPalette).toSelf().inSingletonScope();
       rebind(GlspCommandPalette).toService(CrossModelCommandPalette);
-      bindAsService(bind, TYPES.IUIExtension, EntityCommandPalette);
-      bindAsService(bind, TYPES.IUIExtension, RelationshipCommandPalette);
+      bindAsService(context, TYPES.IUIExtension, EntityCommandPalette);
+      bindAsService(context, TYPES.IUIExtension, RelationshipCommandPalette);
 
       bind(CrossModelMousePositionTracker).toSelf().inSingletonScope();
       bindOrRebind(context, GLSPMousePositionTracker).toService(CrossModelMousePositionTracker);
@@ -62,13 +72,21 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       bind(CrossModelToolManager).toSelf().inSingletonScope();
       bindOrRebind(context, TYPES.IToolManager).toService(CrossModelToolManager);
 
-      bindAsService(bind, TYPES.IUIExtension, CrossModelErrorExtension);
+      bindAsService(context, TYPES.IUIExtension, CrossModelErrorExtension);
       rebind(MetadataPlacer).to(CmMetadataPlacer).inSingletonScope();
 
       bind(CrossModelHiddenBoundsUpdater).toSelf().inSingletonScope();
       rebind(GLSPHiddenBoundsUpdater).to(CrossModelHiddenBoundsUpdater).inSingletonScope();
 
       configureActionHandler(context, ShowPropertiesAction.KIND, ShowPropertiesActionHandler);
+      configureActionHandler(context, TriggerNodeCreationAction.KIND, ToolPalette);
+      configureActionHandler(context, TriggerEdgeCreationAction.KIND, ToolPalette);
+      configureActionHandler(context, CreateEntityAction.KIND, ToolPalette);
+      configureActionHandler(context, ShowEntityAction.KIND, ToolPalette);
+      configureActionHandler(context, CreateRelationshipAction.KIND, ToolPalette);
+      configureActionHandler(context, ShowRelationshipAction.KIND, ToolPalette);
+      configureActionHandler(context, CreateInheritanceAction.KIND, ToolPalette);
+      configureActionHandler(context, EnableDefaultToolsAction.KIND, ToolPalette);
    });
 }
 

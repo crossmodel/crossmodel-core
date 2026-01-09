@@ -19,6 +19,7 @@ import { CompositeEditor } from './composite-editor';
 export interface CompositeEditorOptions extends NavigatableWidgetOptions {
    selection?: RecursivePartial<Range>;
    fileType: Exclude<ModelFileType, 'Generic'>;
+   initialTab?: 'primary' | 'code';
 }
 
 @injectable()
@@ -54,7 +55,8 @@ export class CompositeEditorOpenHandler
       return {
          kind,
          uri,
-         fileType
+         fileType,
+         initialTab: (options as any)?.initialTab
       };
    }
 
