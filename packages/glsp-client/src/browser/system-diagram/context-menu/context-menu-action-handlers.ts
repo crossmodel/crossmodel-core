@@ -87,60 +87,20 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
    @inject(EditorManager) protected readonly editorManager: EditorManager;
 
    override handle(action: Action): void | Action | ICommand {
+      console.debug('[OpenInFormEditorActionHandler] Handling action:', action);
       if (!OpenInFormEditorAction.is(action)) {
          return;
       }
 
-      let diagramWidget: GLSPDiagramWidget | undefined;
-      for (const widget of this.editorManager.all) {
-         let glspWidget: GLSPDiagramWidget | undefined;
-         let current: any = widget;
-         while (current) {
-            if (typeof current.getPrimaryWidget === 'function' && typeof current.revealCodeTab === 'function') {
-               const primary = current.getPrimaryWidget();
-               if (primary instanceof GLSPDiagramWidget) {
-                  glspWidget = primary;
-               }
-               break;
-            }
-            current = current.parent;
-         }
-         if (!glspWidget && widget instanceof GLSPDiagramWidget) {
-            glspWidget = widget;
-         }
-
-         const widgetUri = glspWidget ? (glspWidget as any).options?.uri?.toString() : undefined;
-         const modelId = glspWidget?.modelSource?.model?.id || 'N/A';
-
-         if (glspWidget && (widgetUri === action.rootId || modelId === action.rootId)) {
-            diagramWidget = glspWidget;
-            break;
-         }
-      }
-
-      if (!diagramWidget) {
-         return;
-      }
-
-      const rootElement = (diagramWidget as any).model
-         || (diagramWidget as any).modelSource?.model
-         || (diagramWidget as any).modelSource?.modelRoot
-         || (diagramWidget as any).editorContext?.modelRoot;
-
-      if (!rootElement) {
-         return;
-      }
-
-      const semanticUri = this.resolveSemanticUri(action.elementId, rootElement);
-
-      if (!semanticUri) {
+      if (!action.semanticUri) {
          return;
       }
 
       (async () => {
          try {
-            const opener = await this.openerService.getOpener(new URI(semanticUri));
-            await opener.open(new URI(semanticUri));
+            const semanticUriObj = new URI(action.semanticUri);
+            const opener = await this.openerService.getOpener(semanticUriObj);
+            await opener.open(semanticUriObj);
          } catch (err) {
             console.error('[OpenInFormEditorActionHandler] Error opening URI:', err);
          }
@@ -192,10 +152,11 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
          return;
       }
 
-      const rootElement = (diagramWidget as any).model
-         || (diagramWidget as any).modelSource?.model
-         || (diagramWidget as any).modelSource?.modelRoot
-         || (diagramWidget as any).editorContext?.modelRoot;
+      const rootElement =
+         (diagramWidget as any).model ||
+         (diagramWidget as any).modelSource?.model ||
+         (diagramWidget as any).modelSource?.modelRoot ||
+         (diagramWidget as any).editorContext?.modelRoot;
 
       if (!rootElement) {
          return;

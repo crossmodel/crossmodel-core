@@ -51,8 +51,10 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
       if (entityNode) {
          return this.getEntityMenuItems(entityNode, root);
       }
-      const relationshipEdge = findParentByFeature(target,
-         (element): element is RelationshipEdge => element.type === RELATIONSHIP_EDGE_TYPE);
+      const relationshipEdge = findParentByFeature(
+         target,
+         (element): element is RelationshipEdge => element.type === RELATIONSHIP_EDGE_TYPE
+      );
       if (relationshipEdge) {
          return this.getRelationshipMenuItems(relationshipEdge, root);
       }
@@ -71,13 +73,15 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
    protected getRelationshipMenuItems(edge: RelationshipEdge, root: GModelRoot): LabeledAction[] {
       const items: LabeledAction[] = [];
 
-      items.push({
-         id: 'openInFormEditor',
-         label: 'Open in Form Editor',
-         actions: [OpenInFormEditorAction.create(edge.id, root.id)],
-         icon: 'codicon codicon-edit',
-         sortString: '0'
-      } as any);
+      if (edge.args?.semanticUri !== undefined) {
+         items.push({
+            id: 'openInFormEditor',
+            label: 'Open in Form Editor',
+            actions: [OpenInFormEditorAction.create(edge.args.semanticUri.toString())],
+            icon: 'codicon codicon-edit',
+            sortString: '0'
+         } as any);
+      }
 
       items.push({
          id: 'openInCodeEditor',
@@ -106,13 +110,15 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
    protected getInheritanceMenuItems(edge: InheritanceEdge, root: GModelRoot): LabeledAction[] {
       const items: LabeledAction[] = [];
 
-      items.push({
-         id: 'openInFormEditor',
-         label: 'Open in Form Editor',
-         actions: [OpenInFormEditorAction.create(edge.id, root.id)],
-         icon: 'codicon codicon-edit',
-         sortString: '0'
-      } as any);
+      if (edge.args?.semanticUri !== undefined) {
+         items.push({
+            id: 'openInFormEditor',
+            label: 'Open in Form Editor',
+            actions: [OpenInFormEditorAction.create(edge.args.semanticUri.toString())],
+            icon: 'codicon codicon-edit',
+            sortString: '0'
+         } as any);
+      }
 
       items.push({
          id: 'openInCodeEditor',
@@ -141,13 +147,15 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
    protected getEntityMenuItems(entityNode: EntityNode, root: GModelRoot): LabeledAction[] {
       const items: LabeledAction[] = [];
 
-      items.push({
-         id: 'openInFormEditor',
-         label: 'Open in Form Editor',
-         actions: [OpenInFormEditorAction.create(entityNode.id, root.id)],
-         icon: 'codicon codicon-edit',
-         sortString: '0'
-      } as any);
+      if (entityNode.semanticUri !== undefined) {
+         items.push({
+            id: 'openInFormEditor',
+            label: 'Open in Form Editor',
+            actions: [OpenInFormEditorAction.create(entityNode.semanticUri.toString())],
+            icon: 'codicon codicon-edit',
+            sortString: '0'
+         } as any);
+      }
 
       items.push({
          id: 'openInCodeEditor',

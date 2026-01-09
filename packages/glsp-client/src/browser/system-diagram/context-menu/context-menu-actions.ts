@@ -10,22 +10,20 @@ import { Action, hasStringProp } from '@eclipse-glsp/protocol';
  */
 export interface OpenInFormEditorAction extends Action {
    kind: typeof OpenInFormEditorAction.KIND;
-   elementId: string;
-   rootId: string;
+   semanticUri?: string;
 }
 
 export namespace OpenInFormEditorAction {
    export const KIND = 'openInFormEditor';
 
    export function is(object: any): object is OpenInFormEditorAction {
-      return Action.hasKind(object, KIND) && hasStringProp(object, 'elementId') && hasStringProp(object, 'rootId');
+      return Action.hasKind(object, KIND) && hasStringProp(object, 'semanticUri');
    }
 
-   export function create(elementId: string, rootId: string): OpenInFormEditorAction {
+   export function create(semanticUri?: string): OpenInFormEditorAction {
       return {
          kind: KIND,
-         elementId,
-         rootId
+         semanticUri
       };
    }
 }
