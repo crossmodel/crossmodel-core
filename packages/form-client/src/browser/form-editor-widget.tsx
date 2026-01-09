@@ -4,8 +4,7 @@
 
 import { CrossModelWidget, CrossModelWidgetOptions } from '@crossmodel/core/lib/browser';
 import { CanRedoCallback, CanUndoCallback, RedoCallback, UndoCallback } from '@crossmodel/react-model-ui';
-import { Message, NavigatableWidget, NavigatableWidgetOptions, StatefulWidget } from '@theia/core/lib/browser';
-import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
+import { CommonCommands, Message, NavigatableWidget, NavigatableWidgetOptions, StatefulWidget } from '@theia/core/lib/browser';
 import { CommandService } from '@theia/core/lib/common/command';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import URI from '@theia/core/lib/common/uri';
