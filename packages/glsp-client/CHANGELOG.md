@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.20.4](https://github.com/crossmodel/crossmodel-core/compare/v0.20.3...v0.20.4) (2026-01-11)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
 ## [0.20.3](https://github.com/crossmodel/crossmodel-core/compare/v0.20.2...v0.20.3) (2026-01-09)
 
 **Note:** Version bump only for package @crossmodel/glsp-client
