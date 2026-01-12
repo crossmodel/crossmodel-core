@@ -27,7 +27,6 @@ import {
    isIdentifiedObject,
    isLogicalEntity,
    isNamedObject,
-   isRelationship,
    LogicalAttribute,
    LogicalEntity,
    Mapping,
@@ -39,7 +38,8 @@ import {
    SourceObjectCondition,
    SourceObjectDependency,
    TargetObject,
-   TargetObjectAttribute
+   TargetObjectAttribute,
+   WithCustomProperties
 } from './generated/ast.js';
 import { findDocument, getOwner, isSemanticRoot } from './util/ast-util.js';
 
@@ -77,8 +77,8 @@ export function registerValidationChecks(services: CrossModelServices): void {
       SourceObjectDependency: validator.checkSourceObjectDependency,
       TargetObject: validator.checkTargetObject,
       NamedObject: validator.checkNamedObject,
-      DataModel: validator.checkNamedObject,
-      CrossModelRoot: validator.checkCrossModelRoot
+      CrossModelRoot: validator.checkCrossModelRoot,
+      WithCustomProperties: validator.checkUniqueCustomerPropertyId
    };
    registry.register(checks, validator);
 }
@@ -98,6 +98,7 @@ export class CrossModelValidator {
          });
       } else {
          this.checkUniqueGlobalName(namedObject, accept);
+         this.checkUniqueLocalName(namedObject, accept);
       }
    }
 
@@ -156,39 +157,33 @@ export class CrossModelValidator {
          return;
       }
 
-      const document = findDocument(identifiedObject);
-      const currentUri = document?.uri.toString().toLowerCase() ?? '';
-      const currentPath = this.services.workspace.AstNodeLocator.getAstNodePath(identifiedObject);
-
       const allElements = this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type);
-      const distinctOrigins = new Set<string>();
 
       for (const description of allElements) {
-         if (description.name !== globalId) {
-            continue;
+         if (description.name === globalId && !this.isSameNode(identifiedObject, description)) {
+            accept('error', 'Must provide a unique id.', {
+               node: identifiedObject,
+               property: ID_PROPERTY,
+               data: { code: CrossModelValidationErrors.toMalformed('id') }
+            });
+            return;
          }
-
-         distinctOrigins.add(`${description.documentUri.toString().toLowerCase()}#${description.path}`);
-      }
-
-      distinctOrigins.add(`${currentUri}#${currentPath}`);
-
-      if (distinctOrigins.size > 1) {
-         accept('error', 'Must provide a unique id.', {
-            node: identifiedObject,
-            property: ID_PROPERTY,
-            data: { code: CrossModelValidationErrors.toMalformed('id') }
-         });
       }
    }
 
    checkCrossModelRoot(node: CrossModelRoot, accept: ValidationAcceptor): void {
       this.checkUniqueLocalId(node, accept);
+      this.checkUniqueLocalName(node, accept);
    }
 
    protected checkUniqueLocalId(node: AstNode, accept: ValidationAcceptor): void {
-      const elements = AstUtils.streamContents(node).filter(isIdentifiedObject).toArray();
-      this.markDuplicateIds(elements, accept);
+      if (isLogicalEntity(node)) {
+         this.markDuplicateIds(node.attributes, accept);
+         this.markDuplicateIds(node.identifiers, accept);
+      } else {
+         const elements = AstUtils.streamContents(node).filter(isIdentifiedObject).toArray();
+         this.markDuplicateIds(elements, accept);
+      }
    }
 
    protected checkUniqueGlobalName(namedObject: NamedObject, accept: ValidationAcceptor): void {
@@ -201,13 +196,13 @@ export class CrossModelValidator {
       }
       const document = findDocument(namedObject);
       const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
-      const currentUri = document?.uri.toString().toLowerCase() ?? '';
-      const currentPath = this.services.workspace.AstNodeLocator.getAstNodePath(namedObject);
 
       const allElements = this.services.shared.workspace.IndexManager.allElements(namedObject.$type);
-      const distinctOrigins = new Set<string>();
 
       for (const description of allElements) {
+         if (this.isSameNode(namedObject, description)) {
+            continue;
+         }
          const descDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(description.documentUri);
          if (descDataModelId !== dataModelId) {
             continue;
@@ -215,25 +210,30 @@ export class CrossModelValidator {
 
          const descName = getLocalName(description)?.toLowerCase();
          if (descName === name) {
-            distinctOrigins.add(`${description.documentUri.toString().toLowerCase()}#${description.path}`);
+            const typeName = namedObject.$type.toLowerCase();
+            accept('warning', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+            return;
          }
-      }
-
-      distinctOrigins.add(`${currentUri}#${currentPath}`);
-
-      if (distinctOrigins.size > 1) {
-         const typeName = isLogicalEntity(namedObject) ? 'entity' : isRelationship(namedObject) ? 'relationship' : 'element';
-         accept('warning', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
-            node: namedObject,
-            property: 'name',
-            data: { code: CrossModelValidationErrors.toMalformed('name') }
-         });
       }
    }
 
-   protected checkUniqueLocalName(node: AstNode, accept: ValidationAcceptor): void {
+  protected checkUniqueLocalName(node: AstNode, accept: ValidationAcceptor): void {
+   if (isLogicalEntity(node)) {
+      this.markDuplicateNames(node.attributes, accept);
+
+      this.markDuplicateNames(node.identifiers, accept);
+   } else {
       const elements = AstUtils.streamContents(node).filter(isNamedObject).toArray();
       this.markDuplicateNames(elements, accept);
+   }
+}
+
+   checkUniqueCustomerPropertyId(node: WithCustomProperties, accept: ValidationAcceptor): void {
+      this.markDuplicateIds(node.customProperties, accept);
    }
 
    checkLogicalAttribute(attribute: LogicalAttribute, accept: ValidationAcceptor): void {
@@ -592,5 +592,12 @@ export class CrossModelValidator {
       if (right.$type === 'SourceObjectAttributeReference' && !checkReference(right.value)) {
          accept('error', 'Can only reference attributes from source objects that are listed as dependency.', { node: right });
       }
+   }
+
+   protected isSameNode(node: AstNode, description: import('langium').AstNodeDescription): boolean {
+      return (
+         UriUtils.equals(findDocument(node)?.uri, description.documentUri) &&
+         this.services.workspace.AstNodeLocator.getAstNodePath(node) === description.path
+      );
    }
 }
