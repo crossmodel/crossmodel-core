@@ -884,7 +884,14 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             return;
          }
 
-         const editingCell = lastInteractedCellRef.current ?? (tableElement.querySelector('.p-cell-editing') as HTMLElement | null);
+         let editingCell = lastInteractedCellRef.current as HTMLElement | null;
+         if (!editingCell) {
+            // Find the first editable cell, excluding the grid row checkbox
+            const editingCells = Array.from(tableElement.querySelectorAll('.p-cell-editing:not(.p-grid-row-checkbox)')) as HTMLElement[];
+            if (editingCells.length > 0) {
+               editingCell = editingCells[0];
+            }
+         }
 
          if (editingCell) {
             const focusTarget = editingCell.querySelector<HTMLElement>(
@@ -1201,7 +1208,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   style={{ width: '3rem' }}
                   bodyClassName={(rowData: T) => {
                      const rowKey = rowData[keyField];
-                     return editingRows && rowKey !== undefined && editingRows[rowKey] ? 'p-cell-editing' : '';
+                     return editingRows && rowKey !== undefined && editingRows[rowKey] ? 'p-cell-editing p-grid-row-checkbox' : '';
                   }}
                />
             )}

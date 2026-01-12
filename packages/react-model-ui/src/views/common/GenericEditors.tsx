@@ -60,6 +60,7 @@ export function GenericTextEditor({ options, basePath, field }: { options: any; 
          {({ invalid, error, className }) => (
             <div className={`grid-cell-container ${invalid ? 'p-invalid' : ''}`} title={error || undefined}>
                <InputText
+                  type='text'
                   value={options.value ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => options.editorCallback(e.target.value)}
                   className={className}
