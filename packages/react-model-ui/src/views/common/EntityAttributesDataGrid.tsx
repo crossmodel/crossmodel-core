@@ -255,8 +255,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                                  const datatype = value?.toLowerCase();
                                  const isLengthApplicable = datatype === 'text' || datatype === 'binary';
                                  const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
-                                 const isScaleApplicable =
-                                    datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+                                 const isScaleApplicable = datatype === 'decimal' || datatype === 'time' || datatype === 'datetime';
 
                                  return {
                                     ...row,
@@ -340,23 +339,23 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   </div>
                );
             },
-             editor: (options: any) => {
-                const currentRow = gridData.find(r => r.id === options.rowData.id);
-                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
-                const isApplicable = datatype === 'decimal' || datatype === 'integer';
-                return (
-                   <GenericNumberEditor
-                      options={options}
-                      basePath={['entity', 'attributes']}
-                      field='precision'
-                      disabled={!isApplicable}
-                      value={isApplicable ? options.value : undefined}
-                      showButtons={isApplicable}
-                      tooltip='Precision is applicable only for Decimal and Integer datatypes'
-                      forceClear={!isApplicable}
-                   />
-                );
-             }
+            editor: (options: any) => {
+               const currentRow = gridData.find(r => r.id === options.rowData.id);
+               const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'integer';
+               return (
+                  <GenericNumberEditor
+                     options={options}
+                     basePath={['entity', 'attributes']}
+                     field='precision'
+                     disabled={!isApplicable}
+                     value={isApplicable ? options.value : undefined}
+                     showButtons={isApplicable}
+                     tooltip='Precision is applicable only for Decimal and Integer datatypes'
+                     forceClear={!isApplicable}
+                  />
+               );
+            }
          },
          {
             field: 'scale',
@@ -365,37 +364,37 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             headerStyle: { width: '70px' },
             style: { width: '70px' },
             headerTooltip: 'Scale is applicable only for Decimal, Date, Time and DateTime datatypes',
-             body: (rowData: EntityAttributeRow) => {
-                const datatype = rowData.datatype?.toLowerCase();
-                const isApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
-                return (
-                   <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
-                      <EditorProperty
-                         basePath={['entity', 'attributes']}
-                         field='scale'
-                         row={rowData}
-                         value={rowData.scale?.toString() || ''}
-                      />
-                   </div>
-                );
-             },
-             editor: (options: any) => {
-                const currentRow = gridData.find(r => r.id === options.rowData.id);
-                const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
-                const isApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
-                return (
-                   <GenericNumberEditor
-                      options={options}
-                      basePath={['entity', 'attributes']}
-                      field='scale'
-                      disabled={!isApplicable}
-                      value={isApplicable ? options.value : undefined}
-                      showButtons={isApplicable}
-                      tooltip='Scale is applicable only for Decimal, Date, Time and DateTime datatypes'
-                      forceClear={!isApplicable}
-                   />
-                );
-             }
+            body: (rowData: EntityAttributeRow) => {
+               const datatype = rowData.datatype?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'time' || datatype === 'datetime';
+               return (
+                  <div style={{ opacity: isApplicable ? 1 : 0.4 }}>
+                     <EditorProperty
+                        basePath={['entity', 'attributes']}
+                        field='scale'
+                        row={rowData}
+                        value={rowData.scale?.toString() || ''}
+                     />
+                  </div>
+               );
+            },
+            editor: (options: any) => {
+               const currentRow = gridData.find(r => r.id === options.rowData.id);
+               const datatype = (currentRow?.datatype || options.rowData?.datatype)?.toLowerCase();
+               const isApplicable = datatype === 'decimal' || datatype === 'time' || datatype === 'datetime';
+               return (
+                  <GenericNumberEditor
+                     options={options}
+                     basePath={['entity', 'attributes']}
+                     field='scale'
+                     disabled={!isApplicable}
+                     value={isApplicable ? options.value : undefined}
+                     showButtons={isApplicable}
+                     tooltip='Scale is applicable only for Decimal, Date, Time and DateTime datatypes'
+                     forceClear={!isApplicable}
+                  />
+               );
+            }
          },
          {
             field: 'identifier',
@@ -531,7 +530,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             const datatype = attribute.datatype?.toLowerCase();
             const isLengthApplicable = datatype === 'text' || datatype === 'binary';
             const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
-            const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+            const isScaleApplicable = datatype === 'decimal' || datatype === 'time' || datatype === 'datetime';
 
             const finalAttribute = {
                ...attributeData,
@@ -574,7 +573,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             const datatype = attribute.datatype?.toLowerCase();
             const isLengthApplicable = datatype === 'text' || datatype === 'binary';
             const isPrecisionApplicable = datatype === 'decimal' || datatype === 'integer';
-            const isScaleApplicable = datatype === 'decimal' || datatype === 'date' || datatype === 'time' || datatype === 'datetime';
+            const isScaleApplicable = datatype === 'decimal' || datatype === 'time' || datatype === 'datetime';
 
             const updatedAttribute = {
                ...rest,
