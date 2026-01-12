@@ -83,13 +83,13 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
          } as any);
       }
 
-      items.push({
-         id: 'openInCodeEditor',
-         label: 'Open in Code Editor',
-         actions: [OpenInCodeEditorAction.create(edge.id, root.id)],
-         icon: 'codicon codicon-code',
-         sortString: '1'
-      } as any);
+         items.push({
+            id: 'openInCodeEditor',
+            label: 'Open in Code Editor',
+            actions: [OpenInCodeEditorAction.create(edge.args?.semanticUri.toString())],
+            icon: 'codicon codicon-code',
+            sortString: '1'
+         } as any);
 
       if (isDeletable(edge)) {
          items.push({
@@ -120,13 +120,13 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
          } as any);
       }
 
-      items.push({
-         id: 'openInCodeEditor',
-         label: 'Open in Code Editor',
-         actions: [OpenInCodeEditorAction.create(edge.id, root.id)],
-         icon: 'codicon codicon-code',
-         sortString: '1'
-      } as any);
+         items.push({
+            id: 'openInCodeEditor',
+            label: 'Open in Code Editor',
+            actions: [OpenInCodeEditorAction.create(edge.args?.semanticUri.toString())],
+            icon: 'codicon codicon-code',
+            sortString: '1'
+         } as any);
 
       if (isDeletable(edge)) {
          items.push({
@@ -147,23 +147,24 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
    protected getEntityMenuItems(entityNode: EntityNode, root: GModelRoot): LabeledAction[] {
       const items: LabeledAction[] = [];
 
-      if (entityNode.semanticUri !== undefined) {
+      const semanticUri = entityNode.semanticUri || (entityNode as any).args?.semanticUri;
+      if (semanticUri !== undefined) {
          items.push({
             id: 'openInFormEditor',
             label: 'Open in Form Editor',
-            actions: [OpenInFormEditorAction.create(entityNode.semanticUri.toString())],
+            actions: [OpenInFormEditorAction.create(semanticUri.toString())],
             icon: 'codicon codicon-edit',
             sortString: '0'
          } as any);
-      }
 
-      items.push({
-         id: 'openInCodeEditor',
-         label: 'Open in Code Editor',
-         actions: [OpenInCodeEditorAction.create(entityNode.id, root.id)],
-         icon: 'codicon codicon-code',
-         sortString: '1'
-      } as any);
+         items.push({
+            id: 'openInCodeEditor',
+            label: 'Open in Code Editor',
+            actions: [OpenInCodeEditorAction.create(semanticUri.toString())],
+            icon: 'codicon codicon-code',
+            sortString: '1'
+         } as any);
+      }
 
       if (isDeletable(entityNode)) {
          items.push({

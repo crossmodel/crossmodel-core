@@ -33,22 +33,20 @@ export namespace OpenInFormEditorAction {
  */
 export interface OpenInCodeEditorAction extends Action {
    kind: typeof OpenInCodeEditorAction.KIND;
-   elementId: string;
-   rootId: string;
+   semanticUri?: string;
 }
 
 export namespace OpenInCodeEditorAction {
    export const KIND = 'openInCodeEditor';
 
    export function is(object: any): object is OpenInCodeEditorAction {
-      return Action.hasKind(object, KIND) && hasStringProp(object, 'elementId') && hasStringProp(object, 'rootId');
+      return Action.hasKind(object, KIND) && hasStringProp(object, 'semanticUri');
    }
 
-   export function create(elementId: string, rootId: string): OpenInCodeEditorAction {
+   export function create(semanticUri?: string): OpenInCodeEditorAction {
       return {
          kind: KIND,
-         elementId,
-         rootId
+         semanticUri
       };
    }
 }

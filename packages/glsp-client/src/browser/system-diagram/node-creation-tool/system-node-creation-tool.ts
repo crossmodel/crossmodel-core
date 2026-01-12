@@ -44,11 +44,11 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
 
    protected override isContinuousMode(_ctx: GModelElement, _event: MouseEvent): boolean {
       return true;
-   }
+   }  
 
    protected override getCreateOperation(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Action {
       if (this.triggerAction.args?.type === 'create') {
-         this.queryEntityName(ctx, event, insert).then(name => {
+         this.queryEntityName(ctx, event).then(name => {
             if (name === undefined) {
                // user cancelled the dialog
                return;
@@ -61,67 +61,71 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
             }
             this.tool.dispatchActions(actions);
          });
-      } else if (this.triggerAction.args?.type !== 'show') {
-         throw new Error('Invalid node creation type');
-      }
-   
-      return MessageAction.create('', { severity: 'NONE' });
-   }
 
-   protected async queryEntityName(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Promise<string | undefined> {
-      const referenceableEntities = await this.tool.modelService.findReferenceableElements({
-         container: { uri: this.tool.diagramOptions.sourceUri!, type: RelationshipType },
-         property: 'parent'
-      });
-      const existingNames = referenceableEntities.map(entity => entity.label);
-      const nextUniqueName = findNextUnique('NewEntity', existingNames, identity);
-      const position = { x: event.pageX, y: event.pageY };
-      this.tool.dispatchActions([applyCssClasses(ctx.root, 'input-mode')]);
-      return new EntityNameInputDialog({
-         title: 'Entity Name',
-         placeholder: nextUniqueName,
-         initialValue: nextUniqueName,
-         position,
-         validate: name => {
-            if (name.trim().length === 0) {
-               return 'Entity name cannot be empty';
-            }
-            if (existingNames.includes(name)) {
-               return 'Entity with that name already exists';
-            }
-            return true;
-         }
-      })
-         .open()
-         .finally(() => {
-            this.tool.dispatchActions([deleteCssClasses(ctx.root, 'input-mode')]);
-         });
-   }
-
-   override nonDraggingMouseUp(ctx: GModelElement, event: MouseEvent): Action[] {
-      // only handle main mouse button
-      if (event.button !== 0) {
-         return [];
-      }
-      const result = super.nonDraggingMouseUp(ctx, event);
-      if (this.triggerAction.args?.type === 'show') {
-         result.push(
+      } else if (this.triggerAction.args?.type === 'show') {
+         const actions: Action[] = [
             SetUIExtensionVisibilityAction.create({
                extensionId: EntityCommandPalette.PALETTE_ID,
                visible: true,
                contextElementsId: [this.ghostElementId]
             })
-         );
+         ];
+
+         this.tool.dispatchActions(actions);
+
+      } else {
+         throw new Error('Invalid node creation type');
       }
-      return result;
+
+      return MessageAction.create('', { severity: 'NONE' });
+   }
+
+   protected async queryEntityName(
+      ctx: GModelElement,
+      event: MouseEvent
+   ): Promise<string | undefined> {
+      const position = { x: event.pageX, y: event.pageY };
+      this.tool.dispatchActions([applyCssClasses(ctx.root, 'input-mode')]);
+      return queryEntityName(this.tool.modelService, this.tool.diagramOptions, position).finally(() => {
+         this.tool.dispatchActions([deleteCssClasses(ctx.root, 'input-mode')]);
+      });
    }
 }
 
-class EntityNameInputDialogProps extends SingleTextInputDialogProps {
+export async function queryEntityName(
+   modelService: ModelService,
+   diagramOptions: IDiagramOptions,
+   location: Point
+): Promise<string | undefined> {
+   const referenceableEntities = await modelService.findReferenceableElements({
+      container: { uri: diagramOptions.sourceUri!, type: RelationshipType },
+      property: 'parent'
+   });
+   const existingNames = referenceableEntities.map(entity => entity.label);
+   const nextUniqueName = findNextUnique('NewEntity', existingNames, identity);
+
+   return new EntityNameInputDialog({
+      title: 'Entity Name',
+      placeholder: nextUniqueName,
+      initialValue: nextUniqueName,
+      position: location,
+      validate: name => {
+         if (name.trim().length === 0) {
+            return 'Entity name cannot be empty';
+         }
+         if (existingNames.includes(name)) {
+            return 'Entity with that name already exists';
+         }
+         return true;
+      }
+   }).open();
+}
+
+export class EntityNameInputDialogProps extends SingleTextInputDialogProps {
    position?: Point;
 }
 
-class EntityNameInputDialog extends SingleTextInputDialog {
+export class EntityNameInputDialog extends SingleTextInputDialog {
    constructor(protected override props: EntityNameInputDialogProps) {
       super(props);
       this.addClass('entity-name-dialog');

@@ -7,10 +7,7 @@ import {
    ENTITY_NODE_TYPE,
    EnableDefaultToolsAction,
    INHERITANCE_EDGE_TYPE,
-   RELATIONSHIP_EDGE_TYPE,
-   RelationshipType,
-   findNextUnique,
-   identity
+   RELATIONSHIP_EDGE_TYPE
 } from '@crossmodel/protocol';
 import {
    Action,
@@ -20,17 +17,16 @@ import {
    IActionHandler,
    ICommand,
    IDiagramOptions,
-   Point,
    SetUIExtensionVisibilityAction,
    TYPES,
    TriggerEdgeCreationAction
 } from '@eclipse-glsp/client';
-import { GLSPDiagramWidget } from '@eclipse-glsp/theia-integration';
 import { URI } from '@theia/core';
-import { Message, OpenerService, SingleTextInputDialog, SingleTextInputDialogProps } from '@theia/core/lib/browser';
+import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { EntityCommandPalette, RelationshipCommandPalette } from '../../cross-model-command-palette';
+import { queryEntityName } from '../node-creation-tool/system-node-creation-tool';
 import {
    CreateEntityAction,
    CreateInheritanceAction,
@@ -121,57 +117,15 @@ export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
          return;
       }
 
-      let diagramWidget: GLSPDiagramWidget | undefined;
-      for (const widget of this.editorManager.all) {
-         let glspWidget: GLSPDiagramWidget | undefined;
-         let current: any = widget;
-         while (current) {
-            if (typeof current.getPrimaryWidget === 'function' && typeof current.revealCodeTab === 'function') {
-               const primary = current.getPrimaryWidget();
-               if (primary instanceof GLSPDiagramWidget) {
-                  glspWidget = primary;
-               }
-               break;
-            }
-            current = current.parent;
-         }
-         if (!glspWidget && widget instanceof GLSPDiagramWidget) {
-            glspWidget = widget;
-         }
-
-         const widgetUri = glspWidget ? (glspWidget as any).options?.uri?.toString() : undefined;
-         const modelId = glspWidget?.modelSource?.model?.id || 'N/A';
-
-         if (glspWidget && (widgetUri === action.rootId || modelId === action.rootId)) {
-            diagramWidget = glspWidget;
-            break;
-         }
-      }
-
-      if (!diagramWidget) {
-         return;
-      }
-
-      const rootElement =
-         (diagramWidget as any).model ||
-         (diagramWidget as any).modelSource?.model ||
-         (diagramWidget as any).modelSource?.modelRoot ||
-         (diagramWidget as any).editorContext?.modelRoot;
-
-      if (!rootElement) {
-         return;
-      }
-
-      const semanticUri = this.resolveSemanticUri(action.elementId, rootElement);
-
-      if (!semanticUri) {
+      if (!action.semanticUri) {
          return;
       }
 
       (async () => {
          try {
-            const opener = await this.openerService.getOpener(new URI(semanticUri));
-            await opener.open(new URI(semanticUri), { initialTab: 'code' } as any);
+            const semanticUriObj = new URI(action.semanticUri);
+            const opener = await this.openerService.getOpener(semanticUriObj);
+            await opener.open(semanticUriObj, { initialTab: 'code' } as any);
          } catch (err) {
             console.error('[OpenInCodeEditorActionHandler] Error opening URI:', err);
          }
@@ -193,7 +147,7 @@ export class CreateEntityActionHandler implements IActionHandler {
          return;
       }
 
-      this.queryEntityName(action.screenLocation).then(name => {
+      queryEntityName(this.modelService, this.diagramOptions, action.screenLocation).then(name => {
          if (name) {
             this.actionDispatcher.dispatch({
                kind: CreateNodeOperation.KIND,
@@ -208,30 +162,7 @@ export class CreateEntityActionHandler implements IActionHandler {
       });
    }
 
-   protected async queryEntityName(location: Point): Promise<string | undefined> {
-      const referenceableEntities = await this.modelService.findReferenceableElements({
-         container: { uri: this.diagramOptions.sourceUri!, type: RelationshipType },
-         property: 'parent'
-      });
-      const existingNames = referenceableEntities.map(entity => entity.label);
-      const nextUniqueName = findNextUnique('NewEntity', existingNames, identity);
 
-      return new EntityNameInputDialog({
-         title: 'Entity Name',
-         placeholder: nextUniqueName,
-         initialValue: nextUniqueName,
-         position: location,
-         validate: name => {
-            if (name.trim().length === 0) {
-               return 'Entity name cannot be empty';
-            }
-            if (existingNames.includes(name)) {
-               return 'Entity with that name already exists';
-            }
-            return true;
-         }
-      }).open();
-   }
 }
 
 /**
@@ -308,25 +239,3 @@ export class CreateInheritanceActionHandler implements IActionHandler {
    }
 }
 
-class EntityNameInputDialogProps extends SingleTextInputDialogProps {
-   position?: Point;
-}
-
-class EntityNameInputDialog extends SingleTextInputDialog {
-   constructor(protected override props: EntityNameInputDialogProps) {
-      super(props);
-      this.addClass('entity-name-dialog');
-   }
-
-   protected override onAfterAttach(msg: Message): void {
-      super.onAfterAttach(msg);
-      if (this.props.position) {
-         const block = this.node.getElementsByClassName('dialogBlock')?.[0] as HTMLElement;
-         if (block) {
-            block.style.position = 'absolute';
-            block.style.left = `${this.props.position.x}px`;
-            block.style.top = `${this.props.position.y}px`;
-         }
-      }
-   }
-}
