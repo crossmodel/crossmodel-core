@@ -83,13 +83,13 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
          } as any);
       }
 
-         items.push({
-            id: 'openInCodeEditor',
-            label: 'Open in Code Editor',
-            actions: [OpenInCodeEditorAction.create(edge.args?.semanticUri.toString())],
-            icon: 'codicon codicon-code',
-            sortString: '1'
-         } as any);
+      items.push({
+         id: 'openInCodeEditor',
+         label: 'Open in Code Editor',
+         actions: [OpenInCodeEditorAction.create(edge.args?.semanticUri.toString())],
+         icon: 'codicon codicon-code',
+         sortString: '1'
+      } as any);
 
       if (isDeletable(edge)) {
          items.push({
@@ -118,7 +118,6 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
             icon: 'codicon codicon-edit',
             sortString: '0'
          } as any);
-      }
 
          items.push({
             id: 'openInCodeEditor',
@@ -127,6 +126,7 @@ export class SystemDiagramContextMenuProvider implements IContextMenuItemProvide
             icon: 'codicon codicon-code',
             sortString: '1'
          } as any);
+      }
 
       if (isDeletable(edge)) {
          items.push({

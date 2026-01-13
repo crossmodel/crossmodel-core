@@ -44,11 +44,11 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
 
    protected override isContinuousMode(_ctx: GModelElement, _event: MouseEvent): boolean {
       return true;
-   }  
+   }
 
    protected override getCreateOperation(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Action {
       if (this.triggerAction.args?.type === 'create') {
-         this.queryEntityName(ctx, event).then(name => {
+         this.queryEntityNameAtMousePosition(ctx, event).then(name => {
             if (name === undefined) {
                // user cancelled the dialog
                return;
@@ -61,7 +61,6 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
             }
             this.tool.dispatchActions(actions);
          });
-
       } else if (this.triggerAction.args?.type === 'show') {
          const actions: Action[] = [
             SetUIExtensionVisibilityAction.create({
@@ -72,7 +71,6 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
          ];
 
          this.tool.dispatchActions(actions);
-
       } else {
          throw new Error('Invalid node creation type');
       }
@@ -80,19 +78,16 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
       return MessageAction.create('', { severity: 'NONE' });
    }
 
-   protected async queryEntityName(
-      ctx: GModelElement,
-      event: MouseEvent
-   ): Promise<string | undefined> {
+   protected async queryEntityNameAtMousePosition(ctx: GModelElement, event: MouseEvent): Promise<string | undefined> {
       const position = { x: event.pageX, y: event.pageY };
       this.tool.dispatchActions([applyCssClasses(ctx.root, 'input-mode')]);
-      return queryEntityName(this.tool.modelService, this.tool.diagramOptions, position).finally(() => {
+      return queryEntityNameAtPoint(this.tool.modelService, this.tool.diagramOptions, position).finally(() => {
          this.tool.dispatchActions([deleteCssClasses(ctx.root, 'input-mode')]);
       });
    }
 }
 
-export async function queryEntityName(
+export async function queryEntityNameAtPoint(
    modelService: ModelService,
    diagramOptions: IDiagramOptions,
    location: Point

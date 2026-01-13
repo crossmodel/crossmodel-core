@@ -3,16 +3,10 @@
  ********************************************************************************/
 
 import { ModelService } from '@crossmodel/model-service/lib/common';
-import {
-   ENTITY_NODE_TYPE,
-   EnableDefaultToolsAction,
-   INHERITANCE_EDGE_TYPE,
-   RELATIONSHIP_EDGE_TYPE
-} from '@crossmodel/protocol';
+import { ENTITY_NODE_TYPE, EnableDefaultToolsAction, INHERITANCE_EDGE_TYPE, RELATIONSHIP_EDGE_TYPE } from '@crossmodel/protocol';
 import {
    Action,
    CreateNodeOperation,
-   GModelElement,
    IActionDispatcher,
    IActionHandler,
    ICommand,
@@ -24,9 +18,8 @@ import {
 import { URI } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { EditorManager } from '@theia/editor/lib/browser';
 import { EntityCommandPalette, RelationshipCommandPalette } from '../../cross-model-command-palette';
-import { queryEntityName } from '../node-creation-tool/system-node-creation-tool';
+import { queryEntityNameAtPoint } from '../node-creation-tool/system-node-creation-tool';
 import {
    CreateEntityAction,
    CreateInheritanceAction,
@@ -43,34 +36,10 @@ import {
 @injectable()
 export abstract class SemanticUriActionHandler implements IActionHandler {
    @inject(TYPES.IActionDispatcher) protected readonly actionDispatcher: IActionDispatcher;
+   @inject(OpenerService) protected readonly openerService: OpenerService;
 
    handle(action: Action): void | Action | ICommand {
       return;
-   }
-
-   /**
-    * Resolve the semantic URI for a given element ID.
-    */
-   protected resolveSemanticUri(elementId: string, root: any): string | undefined {
-      const element = root.index.getById(elementId);
-      if (!element) {
-         return undefined;
-      }
-
-      if (this.hasSemanticUri(element)) {
-         return element.semanticUri;
-      }
-
-      const elementWithArgs = element as any;
-      if (elementWithArgs.args && typeof elementWithArgs.args['semanticUri'] === 'string') {
-         return elementWithArgs.args['semanticUri'] as string;
-      }
-
-      return undefined;
-   }
-
-   protected hasSemanticUri(element: GModelElement): element is GModelElement & { semanticUri: string } {
-      return 'semanticUri' in element && typeof (element as any).semanticUri === 'string';
    }
 }
 
@@ -79,9 +48,6 @@ export abstract class SemanticUriActionHandler implements IActionHandler {
  */
 @injectable()
 export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
-   @inject(OpenerService) protected readonly openerService: OpenerService;
-   @inject(EditorManager) protected readonly editorManager: EditorManager;
-
    override handle(action: Action): void | Action | ICommand {
       console.debug('[OpenInFormEditorActionHandler] Handling action:', action);
       if (!OpenInFormEditorAction.is(action)) {
@@ -89,7 +55,7 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
       }
 
       if (!action.semanticUri) {
-         return;
+         console.error('[OpenInFormEditorActionHandler] Action called without semanticUri:', action);
       }
 
       (async () => {
@@ -109,16 +75,13 @@ export class OpenInFormEditorActionHandler extends SemanticUriActionHandler {
  */
 @injectable()
 export class OpenInCodeEditorActionHandler extends SemanticUriActionHandler {
-   @inject(OpenerService) protected readonly openerService: OpenerService;
-   @inject(EditorManager) protected readonly editorManager: EditorManager;
-
    override handle(action: Action): void | Action | ICommand {
       if (!OpenInCodeEditorAction.is(action)) {
          return;
       }
 
       if (!action.semanticUri) {
-         return;
+         console.error('[OpenInCodeEditorActionHandler] Action called without semanticUri:', action);
       }
 
       (async () => {
@@ -147,22 +110,22 @@ export class CreateEntityActionHandler implements IActionHandler {
          return;
       }
 
-      queryEntityName(this.modelService, this.diagramOptions, action.screenLocation).then(name => {
-         if (name) {
-            this.actionDispatcher.dispatch({
-               kind: CreateNodeOperation.KIND,
-               isOperation: true,
-               elementTypeId: ENTITY_NODE_TYPE,
-               containerId: action.rootId,
-               location: action.location,
-               args: { name }
-            } as CreateNodeOperation);
+      queryEntityNameAtPoint(this.modelService, this.diagramOptions, action.screenLocation).then(name => {
+         if (name === undefined) {
+            // user cancelled the dialog
+            return;
          }
+         this.actionDispatcher.dispatch({
+            kind: CreateNodeOperation.KIND,
+            isOperation: true,
+            elementTypeId: ENTITY_NODE_TYPE,
+            containerId: action.rootId,
+            location: action.location,
+            args: { name }
+         } as CreateNodeOperation);
          this.actionDispatcher.dispatch(EnableDefaultToolsAction.create());
       });
    }
-
-
 }
 
 /**
@@ -238,4 +201,3 @@ export class CreateInheritanceActionHandler implements IActionHandler {
       });
    }
 }
-

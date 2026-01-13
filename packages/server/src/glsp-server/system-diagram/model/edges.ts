@@ -38,9 +38,9 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
       if (edge.relationship?.ref?.$document?.uri) {
          this.addArg('semanticUri', edge.relationship.ref.$document.uri.toString());
       } else if (edge.relationship?.$refText) {
-
-         const description = index.services.shared.workspace.IndexManager.allElements(Relationship)
-            .find(e => e.name === edge.relationship.$refText);
+         const description = index.services.shared.workspace.IndexManager.allElements(Relationship).find(
+            e => e.name === edge.relationship.$refText
+         );
          if (description) {
             this.addArg('semanticUri', description.documentUri.toString());
          }
@@ -87,28 +87,11 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
          semanticUri = baseEntity.$document.uri.toString();
       } else {
          if (baseNode?.entity?.$refText) {
-            const entityDescription = index.services.shared.workspace.IndexManager.allElements(LogicalEntity)
-               .find(e => e.name === baseNode.entity.$refText);
+            const entityDescription = index.services.shared.workspace.IndexManager.allElements(LogicalEntity).find(
+               e => e.name === baseNode.entity.$refText
+            );
             if (entityDescription) {
                semanticUri = entityDescription.documentUri.toString();
-            }
-         }
-
-         if (!semanticUri && edge.baseNode?.$refText) {
-            const diagramId = index.findId(edge.$container);
-            const fullId = diagramId ? combineIds(diagramId, edge.baseNode.$refText) : edge.baseNode.$refText;
-            const diagramNode = index.findLogicalEntityNode(fullId) || index.findLogicalEntityNode(edge.baseNode.$refText);
-
-            if (diagramNode) {
-               if (diagramNode.entity?.ref?.$document?.uri) {
-                  semanticUri = diagramNode.entity.ref.$document.uri.toString();
-               } else if (diagramNode.entity?.$refText) {
-                  const entityDescription = index.services.shared.workspace.IndexManager.allElements(LogicalEntity)
-                     .find(e => e.name === diagramNode.entity.$refText);
-                  if (entityDescription) {
-                     semanticUri = entityDescription.documentUri.toString();
-                  }
-               }
             }
          }
       }
