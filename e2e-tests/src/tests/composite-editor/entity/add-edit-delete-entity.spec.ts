@@ -49,6 +49,11 @@ test.describe.serial('Add/Edit/Delete entity from explorer', () => {
       explorer.activate();
       expect(await explorer.existsFileNode(`${NEW_ENTITY_PARENT_PATH}/Spaced_Name.entity.cm`)).toBeTruthy();
 
+      // Verify that the entities folder is expanded after entity creation
+      const entitiesFolder = await explorer.findTreeNode(NEW_ENTITY_PARENT_PATH);
+      expect(entitiesFolder).toBeDefined();
+      expect(await entitiesFolder!.isCollapsed()).toBeFalsy();
+
       // Verify the entity file contents is as expected.
       const savedEditor = await app.openCompositeEditor(`${NEW_ENTITY_PARENT_PATH}/Spaced_Name.entity.cm`, 'Code Editor');
       expect(await savedEditor.textContentOfLineByLineNumber(1)).toBe('entity:');
@@ -87,6 +92,11 @@ test.describe.serial('Add/Edit/Delete entity from explorer', () => {
 
       // Verify that the entity was created as expected
       expect(await explorer.existsFileNode(NEW_ENTITY2_PATH)).toBeTruthy();
+
+      // Verify that the entities folder is expanded after entity creation
+      const entitiesFolderAfterContextMenu = await explorer.findTreeNode(NEW_ENTITY_PARENT_PATH);
+      expect(entitiesFolderAfterContextMenu).toBeDefined();
+      expect(await entitiesFolderAfterContextMenu!.isCollapsed()).toBeFalsy();
 
       // Delete node
       await explorer.deleteNode(NEW_ENTITY2_PATH);
