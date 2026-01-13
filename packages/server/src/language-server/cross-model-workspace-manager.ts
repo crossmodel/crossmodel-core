@@ -1,16 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import {
-   AstNode,
-   DefaultWorkspaceManager,
-   Deferred,
-   DocumentState,
-   FileSelector,
-   FileSystemNode,
-   LangiumDocument,
-   UriUtils
-} from 'langium';
+import { AstNode, DefaultWorkspaceManager, Deferred, DocumentState, LangiumDocument, UriUtils } from 'langium';
 import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CrossModelSharedServices } from './cross-model-module.js';
@@ -78,13 +69,5 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
       // build up datamodel-system based on the workspace
       this.logger.info('[Workspace] Initialize DataModels...');
       return this.services.workspace.DataModelManager.initialize(folders);
-   }
-
-   protected override includeEntry(_workspaceFolder: WorkspaceFolder, entry: FileSystemNode, selector: FileSelector): boolean {
-      const name = UriUtils.basename(entry.uri);
-      if (entry.isDirectory && name === 'node_modules') {
-         return true; // Allow 'node_modules' directories to be scanned
-      }
-      return super.includeEntry(_workspaceFolder, entry, selector);
    }
 }

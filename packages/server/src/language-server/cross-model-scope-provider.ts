@@ -74,7 +74,7 @@ export class DataModelScopeProvider extends DefaultScopeProvider {
       const globalScope = this.getDefaultGlobalScope(referenceType, context);
 
       // if we are referencing from a datamodel, all elements are visible
-      if (context.container.$type === DataModelDependency) {
+      if (context.container.$type === DataModelDependency.$type) {
          return globalScope;
       }
 
@@ -156,7 +156,7 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
          };
       }
       const referenceInfo: ReferenceInfo = {
-         reference: { $refText: '' },
+         reference: { $refText: '', ref: undefined },
          container: container,
          property: ctx.property
       };

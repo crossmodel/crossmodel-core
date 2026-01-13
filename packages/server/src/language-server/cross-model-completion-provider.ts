@@ -229,8 +229,12 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
       return true;
    }
 
-   protected override createReferenceCompletionItem(description: AstNodeDescription): CompletionValueItem {
-      const item = super.createReferenceCompletionItem(description);
+   protected override createReferenceCompletionItem(
+      description: AstNodeDescription,
+      refInfo: ReferenceInfo,
+      context: CompletionContext
+   ): CompletionValueItem {
+      const item = super.createReferenceCompletionItem(description, refInfo, context);
       return {
          ...item,
          sortText: this.scopeProvider.sortText(description),

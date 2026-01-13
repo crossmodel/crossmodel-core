@@ -67,10 +67,10 @@ export class SystemDiagramCreateInheritanceOperationHandler extends JsonCreateEd
 
    protected async createEdge(baseEntityNode: LogicalEntityNode, superEntityNode: LogicalEntityNode): Promise<void> {
       const edge: InheritanceEdge = {
-         $type: InheritanceEdge,
+         $type: InheritanceEdge.$type,
          $container: this.modelState.systemDiagram,
          id: this.modelState.idProvider.findNextInternalId(
-            InheritanceEdge,
+            InheritanceEdge.$type,
             baseEntityNode.id + 'InheritanceEdge',
             this.modelState.systemDiagram
          ),

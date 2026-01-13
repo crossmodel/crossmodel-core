@@ -2638,7 +2638,7 @@
   dependencies:
     playwright "1.55.0"
 
-"@prettier/eslint@npm:prettier-eslint@^16.1.0":
+"@prettier/eslint@npm:prettier-eslint@^16.1.0", prettier-eslint@^16.1.2:
   version "16.4.2"
   resolved "https://registry.yarnpkg.com/prettier-eslint/-/prettier-eslint-16.4.2.tgz#d84bff76e0ce4a6ffccacacb2474f7635ca8ac35"
   integrity sha512-vtJAQEkaN8fW5QKl08t7A5KCjlZuDUNeIlr9hgolMS5s3+uzbfRHDwaRnzrdqnY2YpHDmeDS/8zY0MKQHXJtaA==
@@ -6222,10 +6222,10 @@ chalk@^5.3.0:
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.6.2.tgz#b1238b6e23ea337af71c7f8a295db5af0c158aea"
   integrity sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==
 
-chalk@~5.3.0:
-  version "5.3.0"
-  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.3.0.tgz#67c20a7ebef70e7f3970a01f90fa210cb6860385"
-  integrity sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==
+chalk@~5.4.1:
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.4.1.tgz#1b48bf0963ec158dce2aacf69c093ae2dd2092d8"
+  integrity sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==
 
 char-regex@^1.0.2:
   version "1.0.2"
@@ -6586,10 +6586,10 @@ commander@^8.3.0:
   resolved "https://registry.yarnpkg.com/commander/-/commander-8.3.0.tgz#4837ea1b2da67b9c616a67afbb0fafee567bca66"
   integrity sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==
 
-commander@~11.0.0:
-  version "11.0.0"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-11.0.0.tgz#43e19c25dbedc8256203538e8d7e9346877a6f67"
-  integrity sha512-9HMlXtt/BNoYr8ooyjjNRdIilOTkVJXB+GhxMTtOKwk0R4j4lS4NpjuqmRxroBfnfTSHQIHQB7wryHhXarNjmQ==
+commander@~14.0.0:
+  version "14.0.2"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-14.0.2.tgz#b71fd37fe4069e4c3c7c13925252ada4eba14e8e"
+  integrity sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ==
 
 common-ancestor-path@^1.0.1:
   version "1.0.1"
@@ -8791,10 +8791,10 @@ fs-extra@^9.0.0, fs-extra@^9.0.1, fs-extra@^9.0.8:
     jsonfile "^6.0.1"
     universalify "^2.0.0"
 
-fs-extra@~11.1.1:
-  version "11.1.1"
-  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-11.1.1.tgz#da69f7c39f3b002378b0954bb6ae7efdc0876e2d"
-  integrity sha512-MGIE4HOvQCeUCzmlHs0vXpih4ysz4wg9qiSAu6cd42lVwPbTM1TjV7RusoyQqMmk/95gdQZX72u+YW+c3eEpFQ==
+fs-extra@~11.3.0:
+  version "11.3.3"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-11.3.3.tgz#a27da23b72524e81ac6c3815cc0179b8c74c59ee"
+  integrity sha512-VWSRii4t0AFm6ixFFmLLx1t7wS1gh+ckoa84aOeapGum0h+EZd1EhEumSB+ZdDLnEPuucsVB9oB7cxJHap6Afg==
   dependencies:
     graceful-fs "^4.2.0"
     jsonfile "^6.0.1"
@@ -10766,10 +10766,10 @@ jsonparse@^1.2.0, jsonparse@^1.3.1:
   resolved "https://registry.yarnpkg.com/jsonparse/-/jsonparse-1.3.1.tgz#3f4dae4a91fac315f71062f8521cc239f1366280"
   integrity sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==
 
-jsonschema@~1.4.1:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/jsonschema/-/jsonschema-1.4.1.tgz#cc4c3f0077fb4542982973d8a083b6b34f482dab"
-  integrity sha512-S6cATIPVv1z0IlxdN+zUk5EPjkGCdnhN4wVSBlvoUO1tOLJootbo9CquNJmbIh4yikWHiUedhRYrNPn1arpEmQ==
+jsonschema@~1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/jsonschema/-/jsonschema-1.5.0.tgz#f6aceb1ab9123563dd901d05f81f9d4883d3b7d8"
+  integrity sha512-K+A9hhqbn0f3pJX17Q/7H6yQfD/5OXgdrR5UE12gMXCiN9D5Xq2o5mddV2QEcX/bjla99ASsAAQUyMCCRWAEhw==
 
 jsonwebtoken@9.0.2, jsonwebtoken@^9.0.0:
   version "9.0.2"
@@ -10886,37 +10886,37 @@ kuler@^2.0.0:
   resolved "https://registry.yarnpkg.com/kuler/-/kuler-2.0.0.tgz#e2c570a3800388fb44407e851531c1d670b061b3"
   integrity sha512-Xq9nH7KlWZmXAtodXDDRE7vs6DU1gTU8zYDHDiWLSip45Egwq3plLHzPn27NgvzL2r1LMPC1vdqh98sQxtqj4A==
 
-langium-cli@^3.5.0:
-  version "3.5.2"
-  resolved "https://registry.yarnpkg.com/langium-cli/-/langium-cli-3.5.2.tgz#9d3ccebdf9622170169463330f83156004e7b410"
-  integrity sha512-EVI462CIx8YnJfLSGArvvrlTzAXafA8zNeNbX6FPI5eX8ahicJcvnqW0eAmZ6mLFP7aipzV2F0Sehexe7KHmzA==
+langium-cli@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/langium-cli/-/langium-cli-4.1.0.tgz#0d7c4c01232bc4a056bb2d9bf494b501451972d5"
+  integrity sha512-MhjE6R/K+oBjHhOP5j3orSR3q3FKeFNgJ533tOC+dJw/6WMDFMc9tROCbJGx6Aj+3Dt3jkuHDD6npa+dH/dV6Q==
   dependencies:
-    chalk "~5.3.0"
-    commander "~11.0.0"
-    fs-extra "~11.1.1"
-    jsonschema "~1.4.1"
-    langium "~3.5.0"
-    langium-railroad "~3.5.0"
+    chalk "~5.4.1"
+    commander "~14.0.0"
+    fs-extra "~11.3.0"
+    jsonschema "~1.5.0"
+    langium "~4.1.0"
+    langium-railroad "~4.1.0"
     lodash "~4.17.21"
 
-langium-railroad@~3.5.0:
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/langium-railroad/-/langium-railroad-3.5.0.tgz#66ad14dc6dc5daa86372b4aea3d54337cc992ecc"
-  integrity sha512-80Enc6bOR6oHZD18IQlVTdfCh07rbrM5SOsPUPc1kyh7n3zQbmLs5P2E9hV4SoWlkhOjGKL1I9Z6uORpgy+jTQ==
+langium-railroad@~4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/langium-railroad/-/langium-railroad-4.1.0.tgz#948f6df0587a885b612d6245b970adf0a701d0be"
+  integrity sha512-3m9TeMNnS/rMYaueGDIAPnxhBz7eJLy4iEmMrmSt5FycxAgGtGIVbWT2ry3YRqBy/ICOaAwu530gp4IWcRM5Jg==
   dependencies:
-    langium "~3.5.0"
+    langium "~4.1.0"
     railroad-diagrams "~1.0.0"
 
-langium@^3.5.0, langium@~3.5.0:
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/langium/-/langium-3.5.0.tgz#110ca6cd66e3863a978dfe82998201eaa767ba40"
-  integrity sha512-tnqVzWOkUcoiY0bWlyE8diFrZjmGBCF7MesC1bjUaZM+YGQSfdPC+KkhmHM0DWFG+uLcPxidKaPP1SYGtg3J0Q==
+langium@^4.1.0, langium@~4.1.0:
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/langium/-/langium-4.1.3.tgz#4625fdbedfca0464c0cefb0cf02ce83b93ed81b9"
+  integrity sha512-53IBMnzMkULRVnavSaqPUfPriMAJQiK7lpHENRRGihwcuF5esISMn/L8FqX3NvaBmWqiom25FCaX6kq4yJ74yA==
   dependencies:
     chevrotain "~11.0.3"
     chevrotain-allstar "~0.3.0"
     vscode-languageserver "~9.0.1"
     vscode-languageserver-textdocument "~1.0.11"
-    vscode-uri "~3.0.8"
+    vscode-uri "~3.1.0"
 
 lazy-val@^1.0.5:
   version "1.0.5"
@@ -13275,24 +13275,6 @@ prettier-eslint-cli@^8.0.1:
     rxjs "^7.8.1"
     yargs "^17.7.2"
 
-prettier-eslint@^16.1.2:
-  version "16.4.2"
-  resolved "https://registry.yarnpkg.com/prettier-eslint/-/prettier-eslint-16.4.2.tgz#d84bff76e0ce4a6ffccacacb2474f7635ca8ac35"
-  integrity sha512-vtJAQEkaN8fW5QKl08t7A5KCjlZuDUNeIlr9hgolMS5s3+uzbfRHDwaRnzrdqnY2YpHDmeDS/8zY0MKQHXJtaA==
-  dependencies:
-    "@typescript-eslint/parser" "^6.21.0"
-    common-tags "^1.8.2"
-    dlv "^1.1.3"
-    eslint "^8.57.1"
-    indent-string "^4.0.0"
-    lodash.merge "^4.6.2"
-    loglevel-colored-level-prefix "^1.0.0"
-    prettier "^3.5.3"
-    pretty-format "^29.7.0"
-    require-relative "^0.8.7"
-    tslib "^2.8.1"
-    vue-eslint-parser "^9.4.3"
-
 prettier-linter-helpers@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/prettier-linter-helpers/-/prettier-linter-helpers-1.0.0.tgz#d23d41fe1375646de2d0104d3454a3008802cf7b"
@@ -14940,16 +14922,7 @@ string-length@^4.0.1:
     char-regex "^1.0.2"
     strip-ansi "^6.0.0"
 
-"string-width-cjs@npm:string-width@^4.2.0":
-  version "4.2.3"
-  resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
-  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
-  dependencies:
-    emoji-regex "^8.0.0"
-    is-fullwidth-code-point "^3.0.0"
-    strip-ansi "^6.0.1"
-
-"string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
+"string-width-cjs@npm:string-width@^4.2.0", "string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -15049,7 +15022,7 @@ string_decoder@~1.1.1:
   dependencies:
     safe-buffer "~5.1.0"
 
-"strip-ansi-cjs@npm:strip-ansi@^6.0.1":
+"strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -15069,13 +15042,6 @@ strip-ansi@^5.2.0:
   integrity sha512-DuRs1gKbBqsMKIZlrffwlug8MHkcnpjs5VPmL1PAh+mA30U0DTotfDZ0d2UUsXpPmPmMMJ6W773MaA3J+lbiWA==
   dependencies:
     ansi-regex "^4.1.0"
-
-strip-ansi@^6.0.0, strip-ansi@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
-  integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
-  dependencies:
-    ansi-regex "^5.0.1"
 
 strip-ansi@^7.0.1, strip-ansi@^7.1.0:
   version "7.1.2"
@@ -16237,15 +16203,10 @@ vscode-uri@^2.1.1:
   resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-2.1.2.tgz#c8d40de93eb57af31f3c715dd650e2ca2c096f1c"
   integrity sha512-8TEXQxlldWAuIODdukIb+TR5s+9Ds40eSJrw+1iDDA9IFORPjMELarNQE3myz5XIkWWpdprmJjm1/SxMlWOC8A==
 
-vscode-uri@^3.1.0:
+vscode-uri@^3.1.0, vscode-uri@~3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-3.1.0.tgz#dd09ec5a66a38b5c3fffc774015713496d14e09c"
   integrity sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==
-
-vscode-uri@~3.0.8:
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-3.0.8.tgz#1770938d3e72588659a172d0fd4642780083ff9f"
-  integrity sha512-AyFQ0EVmsOZOlAnxoFOGOq1SQDWAB7C6aqMGS23svWAllfOaxbuFvcT8D1i8z3Gyn8fraVeZNNmN6e9bxxXkKw==
 
 vue-eslint-parser@^9.4.3:
   version "9.4.3"
@@ -16523,7 +16484,7 @@ workerpool@^6.5.1:
   resolved "https://registry.yarnpkg.com/workerpool/-/workerpool-6.5.1.tgz#060f73b39d0caf97c6db64da004cd01b4c099544"
   integrity sha512-Fs4dNYcsdpYSAfVxhnl1L5zTksjvOJxtC5hzMNl+1t9B8hTJTdKDyZ5ju7ztgPy+ft9tBFXoOlDNiOT9WUXZlA==
 
-"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0":
+"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
@@ -16536,15 +16497,6 @@ wrap-ansi@^6.0.1, wrap-ansi@^6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-6.2.0.tgz#e9393ba07102e6c91a3b221478f0257cd2856e53"
   integrity sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA==
-  dependencies:
-    ansi-styles "^4.0.0"
-    string-width "^4.1.0"
-    strip-ansi "^6.0.0"
-
-wrap-ansi@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
-  integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
   dependencies:
     ansi-styles "^4.0.0"
     string-width "^4.1.0"
