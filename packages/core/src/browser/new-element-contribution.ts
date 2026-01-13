@@ -166,6 +166,11 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
    @inject(ModelService) modelService: ModelService;
    @inject(UntitledResourceResolver) untitledResources: UntitledResourceResolver;
 
+   // Public helper to trigger navigator expansion for newly created files
+   expandNavigatorForNewFile(parent: URI, uri: URI): void {
+      this.fireCreateNewFile({ parent, uri });
+   }
+
    override registerCommands(commands: CommandRegistry): void {
       super.registerCommands(commands);
       for (const template of NEW_ELEMENT_TEMPLATES) {
@@ -483,9 +488,31 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
 @injectable()
 export class CrossModelFileNavigatorContribution extends FileNavigatorContribution {
    @inject(ModelService) modelService: ModelService;
+   @inject(CrossModelWorkspaceContribution) protected readonly workspaceContribution: CrossModelWorkspaceContribution;
+
+   static readonly EXPAND_NEW_FILE_COMMAND = {
+      id: 'crossmodel.expandNavigatorForNewFile',
+      label: 'Expand Navigator For New File'
+   };
 
    override registerCommands(registry: CommandRegistry): void {
       super.registerCommands(registry);
+
+      // Public command to expand the navigator for a newly created file
+      registry.registerCommand(CrossModelFileNavigatorContribution.EXPAND_NEW_FILE_COMMAND, {
+         execute: (parentUri?: string, uri?: string) => {
+            if (!parentUri || !uri) {
+               return;
+            }
+            try {
+               const parent = new URI(parentUri);
+               const file = new URI(uri);
+               this.workspaceContribution.expandNavigatorForNewFile(parent, file);
+            } catch (e) {
+               // ignore invalid input
+            }
+         }
+      });
 
       for (const template of NEW_ELEMENT_TEMPLATES) {
          registry.registerCommand(
