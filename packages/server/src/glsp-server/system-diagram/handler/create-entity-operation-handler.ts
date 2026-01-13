@@ -9,7 +9,8 @@ import {
    CreateNodeOperation,
    JsonCreateNodeOperationHandler,
    MaybePromise,
-   Point
+   Point,
+   SelectAction
 } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
 import { Utils as UriUtils } from 'vscode-uri';
@@ -51,10 +52,14 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
          height: 10
       };
       container.nodes.push(node);
+      const nodeId = this.modelState.index.createId(node);
+      // Dispatch EditLabel action to allow inline name editing
       this.actionDispatcher.dispatchAfterNextUpdate({
          kind: 'EditLabel',
-         labelId: `${this.modelState.index.createId(node)}_label`
+         labelId: `${nodeId}_label`
       } as Action);
+      // Select the node to trigger property widget loading
+      this.actionDispatcher.dispatchAfterNextUpdate(SelectAction.create({ selectedElementsIDs: [nodeId] }));
    }
 
    /**
