@@ -959,7 +959,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
             return;
          }
 
-         const editingCell = lastInteractedCellRef.current ?? (tableElement.querySelector('.p-cell-editing') as HTMLElement | null);
+         const editingCell =
+            lastInteractedCellRef.current ??
+            (tableElement.querySelector('.p-cell-editing:not(.p-grid-row-checkbox)') as HTMLElement | null);
 
          if (editingCell) {
             const focusTarget = editingCell.querySelector<HTMLElement>(
@@ -1283,7 +1285,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   style={{ width: '3rem' }}
                   bodyClassName={(rowData: T) => {
                      const rowKey = rowData[keyField];
-                     return editingRows && rowKey !== undefined && editingRows[rowKey] ? 'p-cell-editing' : '';
+                     return editingRows && rowKey !== undefined && editingRows[rowKey] ? 'p-cell-editing p-grid-row-checkbox' : '';
                   }}
                />
             )}
