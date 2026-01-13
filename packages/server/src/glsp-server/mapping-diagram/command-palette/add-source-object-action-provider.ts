@@ -14,7 +14,7 @@ export class MappingDiagramCommandPaletteActionProvider extends CommandPaletteAc
    getPaletteActions(_selectedElementIds: string[], _selectedElements: GModelElement[], position: Point, args?: Args): LabeledAction[] {
       const completionItems = this.modelState.services.language.references.ScopeProvider.complete({
          container: { globalId: this.modelState.mapping.id! },
-         syntheticElements: [{ property: 'sources', type: SourceObject }],
+         syntheticElements: [{ property: 'sources', type: SourceObject.$type }],
          property: 'entity'
       });
       return completionItems.map<LabeledAction>(item => ({

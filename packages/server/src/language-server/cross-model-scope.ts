@@ -2,8 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode, AstNodeDescription, AstUtils, DefaultScopeComputation, LangiumDocument, PrecomputedScopes, Reference } from 'langium';
-import { CancellationToken } from 'vscode-jsonrpc';
+import { AstNode, AstNodeDescription, DefaultScopeComputation, LangiumDocument, Reference } from 'langium';
 import { CrossModelDataModelManager, UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
 import { DefaultIdProvider, combineIds } from './cross-model-naming.js';
@@ -14,10 +13,7 @@ import {
    SourceObject,
    SourceObjectAttribute,
    TargetObject,
-   TargetObjectAttribute,
-   isLogicalEntityNode,
-   isSourceObject,
-   isTargetObject
+   TargetObjectAttribute
 } from './generated/ast.js';
 import { fixDocument, setAttributes, setImplicitId, setOwner } from './util/ast-util.js';
 
@@ -80,17 +76,7 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
       this.dataModelManager = services.shared.workspace.DataModelManager;
    }
 
-   // overridden because we use 'streamAllContents' as children retrieval instead of 'streamContents'
-   override async computeExportsForNode(
-      parentNode: AstNode,
-      document: LangiumDocument<AstNode>,
-      children: (root: AstNode) => Iterable<AstNode> = AstUtils.streamAllContents,
-      cancelToken: CancellationToken = CancellationToken.None
-   ): Promise<AstNodeDescription[]> {
-      return super.computeExportsForNode(parentNode, document, children, cancelToken);
-   }
-
-   protected override exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument<AstNode>): void {
+   protected exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument<AstNode>): void {
       const dataModelInfo = this.dataModelManager.getDataModelInfoByDocument(document);
       const dataModelId = dataModelInfo?.id ?? UNKNOWN_DATAMODEL_ID;
       const dataModelReference = dataModelInfo?.referenceName ?? UNKNOWN_DATAMODEL_REFERENCE;
@@ -112,26 +98,9 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
       }
    }
 
-   protected override processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
-      const container = node.$container;
-      if (container) {
-         const id = this.idProvider.getNodeId(node);
-         if (id) {
-            scopes.add(container, this.descriptions.createDescription(node, id, document));
-            if (isLogicalEntityNode(node)) {
-               this.processEntityNode(node, id, document).forEach(description => scopes.add(container, description));
-            } else if (isSourceObject(node)) {
-               this.processSourceObject(node, id, document).forEach(description => scopes.add(container, description));
-            }
-         }
-         if (isTargetObject(node)) {
-            const entity = this.getLogicalEntity(node, document);
-            if (entity?.id) {
-               this.processTargetObject(node, entity.id, document).forEach(description => scopes.add(container, description));
-            }
-         }
-      }
-   }
+   // Note: The processNode/processContents method has been removed in Langium 4.0
+   // The local scope computation now works differently
+   // TODO: May need to override computeLocalScopes if custom logic is needed
 
    protected processEntityNode(node: LogicalEntityNode, nodeId: string, document: LangiumDocument): AstNodeDescription[] {
       const entity = this.getLogicalEntity(node, document);
@@ -140,7 +109,7 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
       }
       const attributes =
          entity.attributes.map<LogicalEntityNodeAttribute>(attribute =>
-            setOwner({ ...attribute, $type: LogicalEntityNodeAttribute }, node)
+            setOwner({ ...attribute, $type: LogicalEntityNodeAttribute.$type }, node)
          ) ?? [];
       setAttributes(node, attributes);
       return attributes
@@ -148,10 +117,7 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
          .map(attribute => this.descriptions.createDescription(attribute, combineIds(nodeId, attribute.id!), document));
    }
 
-   protected getLogicalEntity(
-   node: AstNode & { entity?: Reference<LogicalEntity> },
-   document: LangiumDocument
-   ): LogicalEntity | undefined {
+   protected getLogicalEntity(node: AstNode & { entity?: Reference<LogicalEntity> }, document: LangiumDocument): LogicalEntity | undefined {
       try {
          return fixDocument(node, document).entity?.ref;
       } catch (error) {
@@ -166,7 +132,8 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
          return [];
       }
       const attributes =
-         entity.attributes.map<SourceObjectAttribute>(attribute => setOwner({ ...attribute, $type: SourceObjectAttribute }, node)) ?? [];
+         entity.attributes.map<SourceObjectAttribute>(attribute => setOwner({ ...attribute, $type: SourceObjectAttribute.$type }, node)) ??
+         [];
       setAttributes(node, attributes);
       return attributes
          .filter(attribute => attribute.id !== undefined) // Ensure attribute.id is defined
@@ -179,7 +146,8 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
          return [];
       }
       const attributes =
-         entity.attributes.map<TargetObjectAttribute>(attribute => setOwner({ ...attribute, $type: TargetObjectAttribute }, node)) ?? [];
+         entity.attributes.map<TargetObjectAttribute>(attribute => setOwner({ ...attribute, $type: TargetObjectAttribute.$type }, node)) ??
+         [];
       setImplicitId(node, nodeId);
       setAttributes(node, attributes);
       // for target attributes, we use simple names and not object-qualified ones

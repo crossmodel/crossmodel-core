@@ -54,10 +54,10 @@ const CUSTOM_PROPERTIES = ['customProperties'];
  * It cannot be derived for interfaces as the interface order does not reflect property order in grammar due to inheritance.
  */
 const PROPERTY_ORDER = new Map<string, string[]>([
-   [LogicalEntity, [...NAMED_OBJECT_PROPERTIES, 'superEntities', 'attributes', 'identifiers', ...CUSTOM_PROPERTIES]],
-   [LogicalAttribute, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', 'mandatory', ...CUSTOM_PROPERTIES]],
+   [LogicalEntity.$type, [...NAMED_OBJECT_PROPERTIES, 'superEntities', 'attributes', 'identifiers', ...CUSTOM_PROPERTIES]],
+   [LogicalAttribute.$type, [...NAMED_OBJECT_PROPERTIES, 'datatype', 'length', 'precision', 'scale', 'mandatory', ...CUSTOM_PROPERTIES]],
    [
-      Relationship,
+      Relationship.$type,
       [
          ...NAMED_OBJECT_PROPERTIES,
          'parent',
@@ -70,22 +70,22 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          ...CUSTOM_PROPERTIES
       ]
    ],
-   [RelationshipAttribute, ['parent', 'child', ...CUSTOM_PROPERTIES]],
-   [SystemDiagram, [...IDENTIFIED_PROPERTIES, 'nodes', 'edges']],
-   [LogicalEntityNode, [...IDENTIFIED_PROPERTIES, 'entity', 'x', 'y', 'width', 'height']],
-   [RelationshipEdge, [...IDENTIFIED_PROPERTIES, 'relationship', 'sourceNode', 'targetNode']],
-   [InheritanceEdge, [...IDENTIFIED_PROPERTIES, 'baseNode', 'superNode']],
-   [Mapping, [...IDENTIFIED_PROPERTIES, 'sources', 'target', ...CUSTOM_PROPERTIES]],
-   [SourceObject, [...IDENTIFIED_PROPERTIES, 'entity', 'join', 'dependencies', 'conditions', ...CUSTOM_PROPERTIES]],
-   [TargetObject, ['entity', 'mappings', ...CUSTOM_PROPERTIES]],
-   [AttributeMapping, ['attribute', 'sources', 'expression', ...CUSTOM_PROPERTIES]],
-   [CustomProperty, [...NAMED_OBJECT_PROPERTIES, 'value']],
-   [LogicalIdentifier, [...NAMED_OBJECT_PROPERTIES, 'primary', 'attributes', ...CUSTOM_PROPERTIES]],
-   [DataModel, [...NAMED_OBJECT_PROPERTIES, 'type', 'version', 'dependencies', ...CUSTOM_PROPERTIES]],
-   [DataModelDependency, ['datamodel', 'version']]
+   [RelationshipAttribute.$type, ['parent', 'child', ...CUSTOM_PROPERTIES]],
+   [SystemDiagram.$type, [...IDENTIFIED_PROPERTIES, 'nodes', 'edges']],
+   [LogicalEntityNode.$type, [...IDENTIFIED_PROPERTIES, 'entity', 'x', 'y', 'width', 'height']],
+   [RelationshipEdge.$type, [...IDENTIFIED_PROPERTIES, 'relationship', 'sourceNode', 'targetNode']],
+   [InheritanceEdge.$type, [...IDENTIFIED_PROPERTIES, 'baseNode', 'superNode']],
+   [Mapping.$type, [...IDENTIFIED_PROPERTIES, 'sources', 'target', ...CUSTOM_PROPERTIES]],
+   [SourceObject.$type, [...IDENTIFIED_PROPERTIES, 'entity', 'join', 'dependencies', 'conditions', ...CUSTOM_PROPERTIES]],
+   [TargetObject.$type, ['entity', 'mappings', ...CUSTOM_PROPERTIES]],
+   [AttributeMapping.$type, ['attribute', 'sources', 'expression', ...CUSTOM_PROPERTIES]],
+   [CustomProperty.$type, [...NAMED_OBJECT_PROPERTIES, 'value']],
+   [LogicalIdentifier.$type, [...NAMED_OBJECT_PROPERTIES, 'primary', 'attributes', ...CUSTOM_PROPERTIES]],
+   [DataModel.$type, [...NAMED_OBJECT_PROPERTIES, 'type', 'version', 'dependencies', ...CUSTOM_PROPERTIES]],
+   [DataModelDependency.$type, ['datamodel', 'version']]
 ]);
-PROPERTY_ORDER.set(SourceObjectAttribute, PROPERTY_ORDER.get(LogicalAttribute) ?? []);
-PROPERTY_ORDER.set(TargetObjectAttribute, PROPERTY_ORDER.get(LogicalAttribute) ?? []);
+PROPERTY_ORDER.set(SourceObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
+PROPERTY_ORDER.set(TargetObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
 
 /**
  * Hand-written AST serializer as there is currently no out-of-the box serializer from Langium, but it is on the roadmap.
@@ -170,7 +170,6 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                   return undefined;
                }
                if (isLogicalAttribute(value) && prop === 'mandatory' && propValue === false) {
-
                   return undefined;
                }
                // arrays and objects start on a new line -- skip some objects that we do not actually serialize in object structure
@@ -223,7 +222,7 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
       }
       try {
          // if finding the reference type fails, is it not a valid reference
-         reflection.getReferenceType({ container: node, property: key, reference: { $refText: toIdReference(value) } });
+         reflection.getReferenceType({ container: node, property: key, reference: { $refText: toIdReference(value), ref: undefined } });
          return true;
       } catch (error) {
          return false;
@@ -267,10 +266,10 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
    }
 
    private serializeBooleanExpression(obj: BooleanExpression): string {
-      if (obj.$type === StringLiteral) {
+      if (obj.$type === StringLiteral.$type) {
          return quote(obj.value);
       }
-      if (obj.$type === SourceObjectAttributeReference) {
+      if (obj.$type === SourceObjectAttributeReference.$type) {
          return toIdReference(obj.value as unknown as string);
       }
       return obj.value.toString();

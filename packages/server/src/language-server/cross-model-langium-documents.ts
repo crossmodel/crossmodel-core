@@ -35,7 +35,7 @@ export class CrossModelLangiumDocuments extends DefaultLangiumDocuments {
    createEmptyDocument(uri: URI): CrossModelLangiumDocument {
       const document: CrossModelLangiumDocument = {
          uri,
-         parseResult: { lexerErrors: [], parserErrors: [], value: { $type: CrossModelRoot } },
+         parseResult: { lexerErrors: [], parserErrors: [], value: { $type: CrossModelRoot.$type } },
          references: [],
          state: DocumentState.Validated,
          textDocument: TextDocument.create(uri.toString(), '', 1, ''),

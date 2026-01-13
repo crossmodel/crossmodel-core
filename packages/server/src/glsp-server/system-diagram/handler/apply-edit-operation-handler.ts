@@ -27,7 +27,7 @@ export class SystemDiagramApplyLabelEditOperationHandler extends JsonOperationHa
             this.renameEntity(
                getOrThrow(this.modelState.index.findLogicalEntityNode(operation.labelId), 'Entity node not found'),
                getOrThrow(entityNode.entity.ref, 'Entity not found'),
-               oldName ?? this.modelState.idProvider.findNextLocalId(LogicalEntity, 'NewEntity', document.uri)
+               oldName ?? this.modelState.idProvider.findNextLocalId(LogicalEntity.$type, 'NewEntity', document.uri)
             ),
          () =>
             this.renameEntity(
@@ -47,7 +47,7 @@ export class SystemDiagramApplyLabelEditOperationHandler extends JsonOperationHa
       if (references.length === 0 || (references.length === 1 && references[0].sourceUri.fsPath === this.modelState.sourceUri)) {
          // if the diagram is the only reference to the entity, we can safely rename it
          // otherwise we need to ensure to implement proper rename behavior
-         entity.id = toId(this.modelState.idProvider.findNextLocalId(LogicalEntity, toId(entity.name), document.uri));
+         entity.id = toId(this.modelState.idProvider.findNextLocalId(LogicalEntity.$type, toId(entity.name), document.uri));
          entityNode.entity = { $refText: toIdReference(entity.id), ref: entity };
       }
       await this.modelState.modelService.save({

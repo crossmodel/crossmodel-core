@@ -71,9 +71,9 @@ export class SystemDiagramDropFilesOperationHandler extends JsonOperationHandler
          return;
       }
       const node: LogicalEntityNode = {
-         $type: LogicalEntityNode,
+         $type: LogicalEntityNode.$type,
          $container: container,
-         id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode, entity.id + 'Node', this.modelState.systemDiagram),
+         id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode.$type, entity.id + 'Node', this.modelState.systemDiagram),
          entity: {
             $refText: referenceText,
             ref: entity
@@ -112,10 +112,10 @@ export class SystemDiagramDropFilesOperationHandler extends JsonOperationHandler
 
             if (!existingEdge) {
                const edge: RelationshipEdge = {
-                  $type: RelationshipEdge,
+                  $type: RelationshipEdge.$type,
                   $container: container,
                   id: this.modelState.idProvider.findNextInternalId(
-                     RelationshipEdge,
+                     RelationshipEdge.$type,
                      relationship.id + 'Edge_' + parentNode.id + '_' + childNode.id,
                      this.modelState.systemDiagram
                   ),
@@ -159,7 +159,7 @@ export class SystemDiagramDropFilesOperationHandler extends JsonOperationHandler
       const scope = this.modelState.services.language.references.ScopeProvider.getCompletionScope(
          {
             container: { globalId: this.modelState.systemDiagram.id! },
-            syntheticElements: [{ property: 'nodes', type: LogicalEntityNode }],
+            syntheticElements: [{ property: 'nodes', type: LogicalEntityNode.$type }],
             property: 'entity'
          },
          { filterGlobalForLocal: false } // references may use local or global id, we accept both
