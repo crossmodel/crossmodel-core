@@ -161,7 +161,7 @@ export interface BinaryExpression extends langium.AstNode {
     readonly $container: JoinCondition;
     readonly $type: 'BinaryExpression';
     left: BooleanExpression;
-    op: '!=' | '<' | '<=' | '=' | '>' | '>=';
+    op?: '!=' | '<' | '<=' | '=' | '>' | '>=';
     right: BooleanExpression;
 }
 

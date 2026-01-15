@@ -65,7 +65,7 @@ JoinCondition: expression=BinaryExpression
 ;
 
 BinaryExpression:
-    left=PrimaryExpression op=('=' | '!=' | '<' | '<=' | '>' | '>=') right=PrimaryExpression
+    left=PrimaryExpression op=('=' | '!=' | '<' | '<=' | '>' | '>=')? right=PrimaryExpression
 ;
 
 PrimaryExpression infers BooleanExpression:

@@ -501,6 +501,13 @@ export class CrossModelValidator {
    }
 
    checkSourceObjectCondition(condition: SourceObjectCondition, accept: ValidationAcceptor): void {
+      if (!condition.expression.op) {
+         accept('warning', 'An operator is required.', {
+            node: condition.expression,
+            property: 'op',
+            data: { code: CrossModelValidationErrors.toMissing('op') }
+         });
+      }
       const sourceObject = condition.$container;
       const left = condition.expression.left;
       const checkReference: (reference: Reference<SourceObjectAttribute>) => boolean = reference => {
