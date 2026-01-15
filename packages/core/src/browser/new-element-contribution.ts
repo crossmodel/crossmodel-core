@@ -115,7 +115,7 @@ const NEW_ELEMENT_TEMPLATES: ReadonlyArray<NewElementTemplate> = [
    },
    {
       id: 'crossbreeze.new.system-diagram',
-      label: 'System Diagram',
+      label: 'Diagram',
       memberType: 'SystemDiagram',
       toUri: (parent, name) => join(parent, toId(name), ModelFileExtensions.SystemDiagram),
       category: TEMPLATE_CATEGORY,
@@ -363,8 +363,8 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
             {
                title: 'New ' + template.label + '...',
                parentUri: targetDirectory,
-               initialValue: 'New' + template.memberType,
-               placeholder: 'New ' + template.memberType
+               initialValue: 'New' + template.label,
+               placeholder: 'New ' + template.label
             },
             template,
             targetDirectory

@@ -65,7 +65,7 @@ test.describe('CrossModel Explorer View', () => {
       // Expect the Code and Form editor to be in the Open With menu option.
       await menu.clickMenuItem('Open With...');
       expect(await checkOpenWithItem(explorer.page, 'Text Editor')).toBeTruthy();
-      expect(await checkOpenWithItem(explorer.page, 'System Diagram')).toBeTruthy();
+      expect(await checkOpenWithItem(explorer.page, 'Diagram')).toBeTruthy();
       await menu.close();
    });
 });

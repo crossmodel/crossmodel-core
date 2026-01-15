@@ -72,7 +72,7 @@ export const ModelFileExtensions = {
    LogicalEntity: '.entity.cm',
    Relationship: '.relationship.cm',
    Mapping: '.mapping.cm',
-   SystemDiagram: '.system-diagram.cm',
+   SystemDiagram: '.diagram.cm',
    /* @deprecated Use SystemDiagram instead */
    Diagram: '.diagram.cm',
 

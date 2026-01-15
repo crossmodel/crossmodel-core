@@ -1,5 +1,5 @@
 datamodel:
     id: system-diagram
-    name: "System Diagram"
+    name: "Diagram"
     type: logical
     version: 1.0.0

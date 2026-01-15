@@ -10,7 +10,7 @@ import { IntegratedSystemDiagramEditor } from '../../page-objects/system-diagram
 
 test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteRelationshipDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteRelationshipDiagram.diagram.cm';
    const CUSTOMER_ENTITY_ID = 'Customer';
    const ORDER_ENTITY_ID = 'Order';
    const NEW_RELATIONSHIP_PATH = 'system-diagram/relationships/Customer_to_Order.relationship.cm';
@@ -29,8 +29,8 @@ test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
    }
 
    test('Create new relationship via toolbox', async () => {
-      // Open the system diagram and create a relationship between the customer and order entity using the '1:1 Relationship tool'.
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Open the diagram and create a relationship between the customer and order entity using the '1:1 Relationship tool'.
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const sourceEntity = await diagramEditor.getLogicalEntity(CUSTOMER_ENTITY_ID);
       const targetEntity = await diagramEditor.getLogicalEntity(ORDER_ENTITY_ID);
 
@@ -64,8 +64,8 @@ test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
    });
 
    test('Edit relationship name & description via properties', async () => {
-      // Open the system diagram and change it using the property widget
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Open the diagram and change it using the property widget
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const relationship = await getNewRelationship(diagramEditor);
       await relationship.select();
       const properties = await app.openView(RelationshipPropertiesView);
@@ -90,8 +90,8 @@ test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
    // This means the relationship file isn't actually removed.
    // TODO: Have separate Hide and Delete tools so the behavior is equal to entities.
    test('Hide new relationship', async () => {
-      // Open the system diagram and delete the relationship edge from the diagram.
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Open the diagram and delete the relationship edge from the diagram.
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const relationship = await getNewRelationship(diagramEditor);
       await relationship.delete();
       const diagramCodeEditor = await diagramEditor.parent.switchToCodeEditor();
