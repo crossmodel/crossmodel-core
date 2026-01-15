@@ -369,7 +369,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             dataType: 'numeric',
             headerStyle: { width: '70px' },
             style: { width: '70px' },
-            headerTooltip: 'Scale is applicable only for Decimal, Date, Time and DateTime datatypes',
+            headerTooltip: 'Scale is applicable only for Decimal, Time and DateTime datatypes',
             body: (rowData: EntityAttributeRow) => {
                const isApplicable = isScaleApplicable(rowData.datatype);
                return (
@@ -395,7 +395,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      disabled={!isApplicable}
                      value={isApplicable ? options.value : undefined}
                      showButtons={isApplicable}
-                     tooltip='Scale is applicable only for Decimal, Date, Time and DateTime datatypes'
+                     tooltip='Scale is applicable only for Decimal, Time and DateTime datatypes'
                      forceClear={!isApplicable}
                   />
                );
