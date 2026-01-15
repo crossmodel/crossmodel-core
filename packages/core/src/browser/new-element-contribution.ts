@@ -491,14 +491,14 @@ export class CrossModelFileNavigatorContribution extends FileNavigatorContributi
    @inject(CrossModelWorkspaceContribution) protected readonly workspaceContribution: CrossModelWorkspaceContribution;
 
    static readonly EXPAND_NEW_FILE_COMMAND = {
-      id: 'crossmodel.expandNavigatorForNewFile',
-      label: 'Expand Navigator For New File'
+      id: '_crossmodel.expandNavigatorForNewFile'
    };
 
    override registerCommands(registry: CommandRegistry): void {
       super.registerCommands(registry);
 
-      // Public command to expand the navigator for a newly created file
+      // Internal command to expand the navigator for a newly created file
+      // This command is not exposed in menus/command palette - it's only used internally
       registry.registerCommand(CrossModelFileNavigatorContribution.EXPAND_NEW_FILE_COMMAND, {
          execute: (parentUri?: string, uri?: string) => {
             if (!parentUri || !uri) {

@@ -6,7 +6,7 @@ import { Action, IActionHandler, ICommand } from '@eclipse-glsp/client';
 import { CommandService } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
-const EXPAND_NEW_FILE_COMMAND_ID = 'crossmodel.expandNavigatorForNewFile';
+const EXPAND_NEW_FILE_COMMAND_ID = '_crossmodel.expandNavigatorForNewFile';
 
 /**
  * Handles ExpandNavigatorForNewFileAction by executing a command to expand the File Explorer.
