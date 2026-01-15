@@ -156,18 +156,29 @@ export class CrossModelValidator {
          });
          return;
       }
+      const document = findDocument(identifiedObject);
+      const currentUri = document?.uri.toString().toLowerCase() ?? '';
+      const currentPath = this.services.workspace.AstNodeLocator.getAstNodePath(identifiedObject);
 
       const allElements = this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type);
+      const distinctOrigins = new Set<string>();
 
-      for (const description of allElements) {
-         if (description.name === globalId && !this.isSameNode(identifiedObject, description)) {
-            accept('error', 'Must provide a unique id.', {
-               node: identifiedObject,
-               property: ID_PROPERTY,
-               data: { code: CrossModelValidationErrors.toMalformed('id') }
-            });
-            return;
+       for (const description of allElements) {
+         if (description.name !== globalId) {
+            continue;
          }
+
+         distinctOrigins.add(`${description.documentUri.toString().toLowerCase()}#${description.path}`);
+      }
+
+      distinctOrigins.add(`${currentUri}#${currentPath}`);
+
+      if (distinctOrigins.size > 1) {
+         accept('error', 'Must provide a unique id.', {
+            node: identifiedObject,
+            property: ID_PROPERTY,
+            data: { code: CrossModelValidationErrors.toMalformed('id') }
+         });
       }
    }
 
@@ -181,8 +192,8 @@ export class CrossModelValidator {
          this.markDuplicateIds(node.attributes, accept);
          this.markDuplicateIds(node.identifiers, accept);
       } else {
-         const elements = AstUtils.streamContents(node).filter(isIdentifiedObject).toArray();
-         this.markDuplicateIds(elements, accept);
+      const elements = AstUtils.streamContents(node).filter(isIdentifiedObject).toArray();
+      this.markDuplicateIds(elements, accept);
       }
    }
 
