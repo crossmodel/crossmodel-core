@@ -8,7 +8,7 @@ import { LogicalEntity } from '../../page-objects/system-diagram/diagram-element
 
 test.describe.serial('Add existing entity to a diagram', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddExistingEntityDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddExistingEntityDiagram.diagram.cm';
    const CUSTOMER_ENTITY_ID = 'Customer';
 
    test.beforeAll(async ({ browser, playwright }) => {
@@ -19,8 +19,8 @@ test.describe.serial('Add existing entity to a diagram', () => {
    });
 
    test('Add existing entity via toolbox', async () => {
-      // Open the system diagram and add the existing entity via the 'Show Entity' tool.
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Open the diagram and add the existing entity via the 'Show Entity' tool.
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const diagram = diagramEditor.diagram;
       await diagram.graph.waitForCreationOfType(LogicalEntity, async () => {
          const position = (await diagram.graph.bounds()).position('middle_center');
@@ -44,8 +44,8 @@ test.describe.serial('Add existing entity to a diagram', () => {
    });
 
    test('Add existing entity via keyboard shortcut', async () => {
-      // Open the system diagram and add the existing customer entity via keyboard shortcut.
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Open the diagram and add the existing customer entity via keyboard shortcut.
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const diagram = diagramEditor.diagram;
       await diagram.graph.waitForCreationOfType(LogicalEntity, async () => {
          await diagram.globalCommandPalette.open();

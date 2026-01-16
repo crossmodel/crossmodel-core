@@ -44,11 +44,11 @@ import { SystemDiagramConfiguration } from './system-diagram-configuration.js';
 import { SystemToolPaletteProvider } from './tool-palette/system-tool-palette-provider.js';
 
 /**
- * Provides configuration about our system diagrams.
+ * Provides configuration about our diagrams.
  */
 @injectable()
 export class SystemDiagramModule extends DiagramModule {
-   readonly diagramType = 'system-diagram';
+   readonly diagramType = 'diagram';
 
    protected bindDiagramConfiguration(): BindingTarget<DiagramConfiguration> {
       return SystemDiagramConfiguration;

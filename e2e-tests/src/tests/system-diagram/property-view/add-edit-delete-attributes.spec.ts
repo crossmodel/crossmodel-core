@@ -7,7 +7,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 
 test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteAttributesDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteAttributesDiagram.diagram.cm';
    const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteAttributesEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'AddEditDeleteAttributesEntity';
 
@@ -20,8 +20,8 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
 
    test('Add attribute via properties view', async () => {
       const ATTRIBUTE_NAME_TO_ADD = 'AttributeToAdd';
-      // Open the system diagram, select the existing empty entity and add an attribute via the property widget.
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Open the diagram, select the existing empty entity and add an attribute via the property widget.
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
       const attributeInEdit = await form.attributesSection.startAddAttribute();
@@ -59,7 +59,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       await entityCodeEditor.saveAndClose();
 
       // Cleanup for next test
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -74,7 +74,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       const ATTRIBUTE_NAME_TO_EDIT = 'AttributeToEdit';
       const RENAMED_ATTRIBUTE_LABEL = 'Renamed Attribute';
       // Add attribute first to ensure it exists for editing
-      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForAdd = await propertyViewForAdd.form();
 
@@ -90,8 +90,8 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       expect(newProperties).toMatchObject({ name: ATTRIBUTE_NAME_TO_EDIT });
       await diagramEditorForAdd.saveAndClose();
 
-      // Now, open the system diagram again to edit the attribute
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Now, open the diagram again to edit the attribute
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -148,7 +148,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       await entityCodeEditor.saveAndClose();
 
       // Cleanup for next test
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -161,8 +161,8 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
 
    test('Edit attribute and verify changes in code editor before saving', async () => {
       const ATTRIBUTE_NAME_TO_EDIT = 'AttributeToEdit';
-      // Open the system diagram, select the existing empty entity and edit its attribute
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Open the diagram, select the existing empty entity and edit its attribute
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
       const attributeInEdit = await form.attributesSection.startAddAttribute();
@@ -187,7 +187,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
    test('Delete the attribute via properties view', async () => {
       const ATTRIBUTE_NAME_TO_DELETE = 'AttributeToDelete';
       // Clean up leftover attribute from previous test if it exists
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       const attrs = await formForCleanup.attributesSection.getAllAttributes();
@@ -202,7 +202,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       await diagramEditorForCleanup.close();
 
       // Add an attribute first to ensure it exists for deletion
-      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForAdd = await propertyViewForAdd.form();
       const attributeInEdit = await formForAdd.attributesSection.startAddAttribute();
@@ -210,8 +210,8 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       await formForAdd.waitForDirty();
       await diagramEditorForAdd.saveAndClose();
 
-      // Now, open the system diagram again to delete the attribute
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      // Now, open the diagram again to delete the attribute
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -221,7 +221,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       await diagramEditor.saveAndClose();
 
       // Delete the attribute and wait for model update
-      const diagramEditorForDelete = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForDelete = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForDelete = await diagramEditorForDelete.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForDelete = await propertyViewForDelete.form();
       await diagramEditorForDelete.waitForModelUpdate(async () => {
@@ -237,7 +237,7 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       await diagramEditorForDelete.saveAndClose();
 
       // Verify that the attribute node is deleted from the diagram
-      const diagramEditorForCheck = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCheck = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       await diagramEditorForCheck.waitForModelUpdate(async () => {
          const entity = await diagramEditorForCheck.getLogicalEntity(EMPTY_ENTITY_ID);
          const attributeNodes = await entity.children.attributes();

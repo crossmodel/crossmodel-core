@@ -8,7 +8,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 test.describe('Add/Edit/Delete identifiers via properties view', () => {
    let app: CMApp;
 
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteIdentifiersDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteIdentifiersDiagram.diagram.cm';
    const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteIdentifiersEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'AddEditDeleteIdentifiersEntity';
 
@@ -55,7 +55,7 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       entityEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -102,7 +102,7 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       entityEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -148,7 +148,7 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       entityEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -205,7 +205,7 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       entityEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -254,7 +254,7 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
       entityEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -268,7 +268,7 @@ test.describe('Add/Edit/Delete identifiers via properties view', () => {
    });
 
    async function openEntityForm(): Promise<{ diagramEditor: any; propertyView: any; form: any }> {
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
       return { diagramEditor, propertyView, form };

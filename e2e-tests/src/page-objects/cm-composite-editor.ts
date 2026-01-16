@@ -14,7 +14,7 @@ export type CompositeEditorName = keyof IntegratedEditorType;
 export interface IntegratedEditorType {
    'Code Editor': IntegratedCodeEditor;
    'Form Editor': IntegratedFormEditor;
-   'System Diagram': IntegratedSystemDiagramEditor;
+   Diagram: IntegratedSystemDiagramEditor;
    'Mapping Diagram': IntegratedMappingDiagramEditor;
 }
 
@@ -78,8 +78,8 @@ export class CMCompositeEditor extends TheiaEditor {
    }
 
    async switchToSystemDiagram(): Promise<IntegratedSystemDiagramEditor> {
-      await this.switchToEditor('System Diagram');
-      const diagramEditor = new IntegratedSystemDiagramEditor(this.filePath, this, this.editorTabSelector('System Diagram'));
+      await this.switchToEditor('Diagram');
+      const diagramEditor = new IntegratedSystemDiagramEditor(this.filePath, this, this.editorTabSelector('Diagram'));
       await diagramEditor.waitForVisible();
       await diagramEditor.activate();
 

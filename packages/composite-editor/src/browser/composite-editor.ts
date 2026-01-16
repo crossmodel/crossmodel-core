@@ -411,7 +411,7 @@ export class CompositeEditor
    }
 
    protected async createSystemDiagramWidget(): Promise<Widget> {
-      const diagramOptions = this.createDiagramWidgetOptions(SystemDiagramLanguage, 'System Diagram');
+      const diagramOptions = this.createDiagramWidgetOptions(SystemDiagramLanguage, 'Diagram');
       const widget = await this.widgetManager.getOrCreateWidget<GLSPDiagramWidget>(SystemDiagramManager.ID, diagramOptions);
       widget.title.closable = false;
       return widget;
