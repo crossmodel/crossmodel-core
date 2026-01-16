@@ -12,19 +12,21 @@ import {
    ModelFileExtensions,
    ModelMemberPermissions
 } from '@crossmodel/protocol';
-import { AstNode, GrammarUtils, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
+import { AstNode, AstUtils, GrammarUtils, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
 import { Diagnostic } from 'vscode-languageserver-protocol';
 import type { CrossModelServices } from './cross-model-module.js';
 import { ID_PROPERTY, IdentifiableAstNode } from './cross-model-naming.js';
+import { getLocalName } from './cross-model-scope.js';
 import {
    AttributeMapping,
    CrossModelAstType,
+   CrossModelRoot,
    IdentifiedObject,
    InheritanceEdge,
    isCrossModelRoot,
+   isIdentifiedObject,
    isLogicalEntity,
-   isMapping,
-   isSystemDiagram,
+   isNamedObject,
    LogicalAttribute,
    LogicalEntity,
    Mapping,
@@ -75,6 +77,7 @@ export function registerValidationChecks(services: CrossModelServices): void {
       SourceObjectDependency: validator.checkSourceObjectDependency,
       TargetObject: validator.checkTargetObject,
       NamedObject: validator.checkNamedObject,
+      CrossModelRoot: validator.checkCrossModelRoot,
       WithCustomProperties: validator.checkUniqueCustomerPropertyId
    };
    registry.register(checks, validator);
@@ -93,6 +96,9 @@ export class CrossModelValidator {
             property: 'name',
             data: { code: CrossModelValidationErrors.toMissing('name') }
          });
+      } else {
+         this.checkUniqueGlobalName(namedObject, accept);
+         this.checkUniqueLocalName(namedObject, accept);
       }
    }
 
@@ -150,9 +156,24 @@ export class CrossModelValidator {
          });
          return;
       }
-      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type));
-      const duplicates = allElements.filter(description => description.name === globalId);
-      if (duplicates.length > 1) {
+      const document = findDocument(identifiedObject);
+      const currentUri = document?.uri.toString().toLowerCase() ?? '';
+      const currentPath = this.services.workspace.AstNodeLocator.getAstNodePath(identifiedObject);
+
+      const allElements = this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type);
+      const distinctOrigins = new Set<string>();
+
+       for (const description of allElements) {
+         if (description.name !== globalId) {
+            continue;
+         }
+
+         distinctOrigins.add(`${description.documentUri.toString().toLowerCase()}#${description.path}`);
+      }
+
+      distinctOrigins.add(`${currentUri}#${currentPath}`);
+
+      if (distinctOrigins.size > 1) {
          accept('error', 'Must provide a unique id.', {
             node: identifiedObject,
             property: ID_PROPERTY,
@@ -161,20 +182,66 @@ export class CrossModelValidator {
       }
    }
 
-   // Check the uniqueness of ids of non-semantic root identified objects.
+   checkCrossModelRoot(node: CrossModelRoot, accept: ValidationAcceptor): void {
+      this.checkUniqueLocalId(node, accept);
+      this.checkUniqueLocalName(node, accept);
+   }
+
    protected checkUniqueLocalId(node: AstNode, accept: ValidationAcceptor): void {
       if (isLogicalEntity(node)) {
          this.markDuplicateIds(node.attributes, accept);
          this.markDuplicateIds(node.identifiers, accept);
-      }
-      if (isSystemDiagram(node)) {
-         this.markDuplicateIds(node.edges, accept);
-         this.markDuplicateIds(node.nodes, accept);
-      }
-      if (isMapping(node)) {
-         this.markDuplicateIds(node.sources, accept);
+      } else {
+      const elements = AstUtils.streamContents(node).filter(isIdentifiedObject).toArray();
+      this.markDuplicateIds(elements, accept);
       }
    }
+
+   protected checkUniqueGlobalName(namedObject: NamedObject, accept: ValidationAcceptor): void {
+      if (!isSemanticRoot(namedObject)) {
+         return;
+      }
+      const name = namedObject.name?.toLowerCase();
+      if (!name) {
+         return;
+      }
+      const document = findDocument(namedObject);
+      const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
+
+      const allElements = this.services.shared.workspace.IndexManager.allElements(namedObject.$type);
+
+      for (const description of allElements) {
+         if (this.isSameNode(namedObject, description)) {
+            continue;
+         }
+         const descDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(description.documentUri);
+         if (descDataModelId !== dataModelId) {
+            continue;
+         }
+
+         const descName = getLocalName(description)?.toLowerCase();
+         if (descName === name) {
+            const typeName = namedObject.$type.toLowerCase();
+            accept('warning', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+            return;
+         }
+      }
+   }
+
+  protected checkUniqueLocalName(node: AstNode, accept: ValidationAcceptor): void {
+   if (isLogicalEntity(node)) {
+      this.markDuplicateNames(node.attributes, accept);
+
+      this.markDuplicateNames(node.identifiers, accept);
+   } else {
+      const elements = AstUtils.streamContents(node).filter(isNamedObject).toArray();
+      this.markDuplicateNames(elements, accept);
+   }
+}
 
    checkUniqueCustomerPropertyId(node: WithCustomProperties, accept: ValidationAcceptor): void {
       this.markDuplicateIds(node.customProperties, accept);
@@ -233,6 +300,22 @@ export class CrossModelValidator {
             });
          } else if (node.id) {
             knownIds.push(node.id);
+         }
+      }
+   }
+
+   protected markDuplicateNames(nodes: (AstNode & { name?: string })[] = [], accept: ValidationAcceptor): void {
+      const knownNames: string[] = [];
+      for (const node of nodes) {
+         const name = node.name?.toLowerCase();
+         if (name && knownNames.includes(name)) {
+            accept('error', 'Must provide a unique name.', {
+               node,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+         } else if (name) {
+            knownNames.push(name);
          }
       }
    }
@@ -520,5 +603,12 @@ export class CrossModelValidator {
       if (right.$type === 'SourceObjectAttributeReference' && !checkReference(right.value)) {
          accept('error', 'Can only reference attributes from source objects that are listed as dependency.', { node: right });
       }
+   }
+
+   protected isSameNode(node: AstNode, description: import('langium').AstNodeDescription): boolean {
+      return (
+         UriUtils.equals(findDocument(node)?.uri, description.documentUri) &&
+         this.services.workspace.AstNodeLocator.getAstNodePath(node) === description.path
+      );
    }
 }
