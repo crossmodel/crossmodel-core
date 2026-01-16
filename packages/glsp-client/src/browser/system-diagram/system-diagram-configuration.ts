@@ -9,6 +9,8 @@ import {
    RELATIONSHIP_EDGE_TYPE
 } from '@crossmodel/protocol';
 import {
+   Action,
+   configureActionHandler,
    configureDefaultModelElements,
    configureModelElement,
    ContainerConfiguration,
@@ -17,18 +19,22 @@ import {
    GGraph,
    GLabelView,
    gridModule,
+   IActionHandler,
+   ICommand,
    initializeDiagramContainer,
    overrideModelElement,
+   RequestContextActions,
    withEditLabelFeature
 } from '@eclipse-glsp/client';
 import { GLSPDiagramConfiguration } from '@eclipse-glsp/theia-integration';
-import { Container } from '@theia/core/shared/inversify/index';
+import { Container, injectable } from '@theia/core/shared/inversify';
 import { SystemDiagramLanguage } from '../../common/crossmodel-diagram-language';
 import { createCrossModelDiagramModule } from '../crossmodel-diagram-module';
 import { libAvoidModule } from '../libavoid-module';
 import { DEFAULT_LIBAVOID_EDGE_ROUTER_CONFIG, LibavoidEdgeRouterConfiguration, LibavoidEdgeRouterOptions } from '../libavoid-options';
 import { AttributeCompartment } from '../model';
 import { AttributeCompartmentView } from '../views';
+import { systemContextMenuModule } from './context-menu/context-menu-module';
 import { systemEdgeCreationToolModule } from './edge-creation-tool/edge-creation-tool-module';
 import { systemHoverModule } from './hover/hover-module';
 import { EntityNode, GEditableLabel, InheritanceEdge, RelationshipEdge } from './model';
@@ -51,7 +57,8 @@ export class SystemDiagramConfiguration extends GLSPDiagramConfiguration {
          gridModule,
          systemDiagramModule,
          systemNodeCreationModule,
-         systemEdgeCreationToolModule
+         systemEdgeCreationToolModule,
+         systemContextMenuModule
       );
    }
 }
@@ -79,4 +86,15 @@ const systemDiagramModule = createCrossModelDiagramModule((bind, unbind, isBound
       shapeBufferDistance: 35,
       idealNudgingDistance: 25
    } as LibavoidEdgeRouterConfiguration);
+
+   configureActionHandler(context, RequestContextActions.KIND, ToolPaletteContextActionHandler);
 });
+
+@injectable()
+export class ToolPaletteContextActionHandler implements IActionHandler {
+   handle(action: Action): void | ICommand | Action {
+      if (RequestContextActions.is(action) && action.contextId === 'tool-palette') {
+         return;
+      }
+   }
+}
