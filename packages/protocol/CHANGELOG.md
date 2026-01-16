@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.21.0](https://github.com/crossmodel/crossmodel-core/compare/v0.20.6...v0.21.0) (2026-01-16)
+
+
+### Features
+
+* System diagram folder expand ([#250](https://github.com/crossmodel/crossmodel-core/issues/250)) ([4ae9f44](https://github.com/crossmodel/crossmodel-core/commit/4ae9f44f3dcd1fbb585c4c0abd58868a57b5e721))
+
+
+
+
+
 ## [0.20.6](https://github.com/crossmodel/crossmodel-core/compare/v0.20.5...v0.20.6) (2026-01-16)
 
 **Note:** Version bump only for package @crossmodel/protocol
