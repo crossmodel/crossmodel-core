@@ -1,7 +1,6 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
-import { CrossModelWidgetOptions } from '@crossmodel/core/lib/browser';
 import { FrontendApplicationContribution, OpenHandler, SaveableService, WidgetFactory } from '@theia/core/lib/browser';
 import { UndoRedoHandler } from '@theia/core/lib/browser/undo-redo-handler';
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -26,7 +25,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
       id: CompositeEditorOpenHandler.ID, // must match the id in the open handler
       createWidget: (options: CompositeEditorOptions) => {
          const container = context.container.createChild();
-         container.bind(CrossModelWidgetOptions).toConstantValue(options);
+         container.bind(CompositeEditorOptions).toConstantValue(options);
          return container.resolve(CompositeEditor);
       }
    }));

@@ -10,15 +10,10 @@ import {
    TARGET_OBJECT_NODE_TYPE
 } from '@crossmodel/protocol';
 import {
-   Action,
    ContainerConfiguration,
    DefaultTypes,
    GPort,
-   IActionHandler,
-   ICommand,
    RectangularNodeView,
-   RequestContextActions,
-   configureActionHandler,
    configureDefaultModelElements,
    configureModelElement,
    gridModule,
@@ -28,7 +23,7 @@ import {
    selectFeature
 } from '@eclipse-glsp/client';
 import { GLSPDiagramConfiguration } from '@eclipse-glsp/theia-integration';
-import { Container, injectable } from '@theia/core/shared/inversify/index';
+import { Container } from '@theia/core/shared/inversify/index';
 import { MappingDiagramLanguage } from '../../common/crossmodel-diagram-language';
 import { createCrossModelDiagramModule } from '../crossmodel-diagram-module';
 import { libAvoidModule } from '../libavoid-module';
@@ -69,15 +64,4 @@ const mappingDiagramModule = createCrossModelDiagramModule((bind, unbind, isBoun
    configureModelElement(context, ATTRIBUTE_COMPARTMENT_TYPE, AttributeCompartment, AttributeCompartmentView, {
       enable: [hoverFeedbackFeature, selectFeature]
    });
-
-   configureActionHandler(context, RequestContextActions.KIND, MappingToolPaletteContextActionHandler);
 });
-
-@injectable()
-export class MappingToolPaletteContextActionHandler implements IActionHandler {
-   handle(action: Action): void | ICommand | Action {
-      if (RequestContextActions.is(action) && action.contextId === 'tool-palette') {
-         return;
-      }
-   }
-}

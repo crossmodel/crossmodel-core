@@ -10,29 +10,23 @@ import {
    GLabel,
    GModelElement,
    GParentElement,
-   isEditableLabel,
-   isParent,
    ModelFilterPredicate,
    RectangularNode,
-   WithEditableLabel
+   WithEditableLabel,
+   isEditableLabel,
+   isParent
 } from '@eclipse-glsp/client';
 import { LibavoidEdge } from '../libavoid-model';
 
 export class EntityNode extends RectangularNode implements WithEditableLabel {
-   semanticUri?: string;
-
    get editableLabel(): (GChildElement & EditableLabel) | undefined {
       return findElementBy(this, isEditableLabel) as (GChildElement & EditableLabel) | undefined;
    }
 }
 
-export class RelationshipEdge extends LibavoidEdge {
-   semanticUri?: string;
-}
+export class RelationshipEdge extends LibavoidEdge {}
 
-export class InheritanceEdge extends LibavoidEdge {
-   semanticUri?: string;
-}
+export class InheritanceEdge extends LibavoidEdge {}
 
 export class GEditableLabel extends GLabel implements EditableLabel {
    editControlPositionCorrection = {

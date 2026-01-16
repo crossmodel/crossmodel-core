@@ -7,7 +7,8 @@ import {
    REFERENCE_CONTAINER_TYPE,
    REFERENCE_PROPERTY,
    REFERENCE_VALUE,
-   RELATIONSHIP_EDGE_TYPE
+   RELATIONSHIP_EDGE_TYPE,
+   SEMANTIC_URI
 } from '@crossmodel/protocol';
 import { ArgsUtil, GEdge, GEdgeBuilder } from '@eclipse-glsp/server';
 import { combineIds } from '../../../language-server/cross-model-naming.js';
@@ -35,15 +36,9 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
       this.addArg(REFERENCE_PROPERTY, 'relationship');
       this.addArg(REFERENCE_VALUE, edge.relationship.$refText);
 
-      if (edge.relationship?.ref?.$document?.uri) {
-         this.addArg('semanticUri', edge.relationship.ref.$document.uri.toString());
-      } else if (edge.relationship?.$refText) {
-         const description = index.services.shared.workspace.IndexManager.allElements(Relationship).find(
-            e => e.name === edge.relationship.$refText
-         );
-         if (description) {
-            this.addArg('semanticUri', description.documentUri.toString());
-         }
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.relationship, Relationship);
+      if (semanticUri) {
+         this.addArg(SEMANTIC_URI, semanticUri.toString());
       }
 
       // Add cardinality css classes
@@ -78,26 +73,9 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
       this.addCssClasses('diagram-edge', 'inheritance');
       this.addArg('edgePadding', 5);
 
-      const baseNode = edge.baseNode?.ref;
-      const baseEntity = baseNode?.entity?.ref;
-
-      let semanticUri: string | undefined;
-
-      if (baseEntity?.$document?.uri) {
-         semanticUri = baseEntity.$document.uri.toString();
-      } else {
-         if (baseNode?.entity?.$refText) {
-            const entityDescription = index.services.shared.workspace.IndexManager.allElements(LogicalEntity).find(
-               e => e.name === baseNode.entity.$refText
-            );
-            if (entityDescription) {
-               semanticUri = entityDescription.documentUri.toString();
-            }
-         }
-      }
-
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.baseNode.ref?.entity, LogicalEntity);
       if (semanticUri) {
-         this.addArg('semanticUri', semanticUri);
+         this.addArg(SEMANTIC_URI, semanticUri.toString());
       }
       this.routerKind('libavoid');
 

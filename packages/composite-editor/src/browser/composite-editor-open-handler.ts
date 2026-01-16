@@ -2,8 +2,9 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
+import { CompositeEditorOpenerOptions } from '@crossmodel/core/lib/browser';
 import { ModelFileExtensions, ModelFileType } from '@crossmodel/protocol';
-import { RecursivePartial, URI } from '@theia/core';
+import { URI } from '@theia/core';
 import {
    FrontendApplicationContribution,
    NavigatableWidgetOpenHandler,
@@ -12,14 +13,13 @@ import {
    OpenWithService
 } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Range } from '@theia/core/shared/vscode-languageserver-types';
 import { EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { CompositeEditor } from './composite-editor';
 
+export const CompositeEditorOptions = Symbol('CompositeEditorOptions');
 export interface CompositeEditorOptions extends NavigatableWidgetOptions {
-   selection?: RecursivePartial<Range>;
    fileType: Exclude<ModelFileType, 'Generic'>;
-   initialTab?: 'primary' | 'code';
+   perspective?: 'primary' | 'code';
 }
 
 @injectable()
@@ -46,18 +46,13 @@ export class CompositeEditorOpenHandler
       // ensure this class is instantiated early
    }
 
-   protected override createWidgetOptions(resourceUri: URI, options?: EditorOpenerOptions): CompositeEditorOptions {
+   protected override createWidgetOptions(resourceUri: URI, options?: CompositeEditorOpenerOptions): CompositeEditorOptions {
       const { kind, uri } = super.createWidgetOptions(resourceUri, options);
       const fileType = ModelFileExtensions.getFileType(uri);
       if (fileType === undefined || fileType === 'Generic') {
          throw new Error(`Cannot open a composite editor for the file type ${fileType}`);
       }
-      return {
-         kind,
-         uri,
-         fileType,
-         initialTab: (options as any)?.initialTab
-      };
+      return { kind, uri, fileType, perspective: options?.perspective };
    }
 
    override async open(uri: URI, options?: EditorOpenerOptions): Promise<CompositeEditor> {

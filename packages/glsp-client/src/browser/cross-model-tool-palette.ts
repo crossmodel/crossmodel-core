@@ -13,7 +13,6 @@ import {
    RequestContextActions,
    SetContextActions,
    SetModelAction,
-   SetUIExtensionVisibilityAction,
    ToolPalette,
    TriggerEdgeCreationAction,
    TriggerNodeCreationAction,
@@ -21,14 +20,6 @@ import {
    createIcon
 } from '@eclipse-glsp/client';
 import { injectable } from '@theia/core/shared/inversify';
-import { EntityCommandPalette, RelationshipCommandPalette } from './cross-model-command-palette';
-import {
-   CreateEntityAction,
-   CreateInheritanceAction,
-   CreateRelationshipAction,
-   ShowEntityAction,
-   ShowRelationshipAction
-} from './system-diagram/context-menu/context-menu-actions';
 const CLICKED_CSS_CLASS = 'clicked';
 
 @injectable()
@@ -157,23 +148,6 @@ export class CrossModelToolPalette extends ToolPalette {
          } else if (action.elementTypeId === INHERITANCE_EDGE_TYPE) {
             this.changeActiveButton(this.buttonMap.get('inheritance-create-tool'));
          }
-      } else if (action.kind === SetUIExtensionVisibilityAction.KIND) {
-         const setUIVisibilityAction = action as SetUIExtensionVisibilityAction;
-         if (setUIVisibilityAction.extensionId === EntityCommandPalette.PALETTE_ID && setUIVisibilityAction.visible) {
-            this.changeActiveButton(this.buttonMap.get('entity-show-tool'));
-         } else if (setUIVisibilityAction.extensionId === RelationshipCommandPalette.PALETTE_ID && setUIVisibilityAction.visible) {
-            this.changeActiveButton(this.buttonMap.get('relationship-show-tool'));
-         }
-      } else if (CreateEntityAction.is(action)) {
-         this.changeActiveButton(this.buttonMap.get('entity-create-tool'));
-      } else if (ShowEntityAction.is(action)) {
-         this.changeActiveButton(this.buttonMap.get('entity-show-tool'));
-      } else if (CreateRelationshipAction.is(action)) {
-         this.changeActiveButton(this.buttonMap.get('relationship-create-tool'));
-      } else if (ShowRelationshipAction.is(action)) {
-         this.changeActiveButton(this.buttonMap.get('relationship-show-tool'));
-      } else if (CreateInheritanceAction.is(action)) {
-         this.changeActiveButton(this.buttonMap.get('inheritance-create-tool'));
       }
    }
 

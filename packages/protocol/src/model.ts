@@ -156,6 +156,10 @@ export const ModelFileExtensions = {
       return ModelFileType.getFolder(this.getFileType(uri));
    },
 
+   isFormFile(uri: string): boolean {
+      return ['LogicalEntity', 'DataModel', 'Relationship'].includes(this.getFileType(uri) || '');
+   },
+
    detectFileType(content: string): ModelFileType | undefined {
       if (content.startsWith('entity')) {
          return 'LogicalEntity';

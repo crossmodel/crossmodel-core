@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
-import { AstNode, AstNodeDescription, DefaultIndexManager, URI } from 'langium';
+import { AstNode, AstNodeDescription, DefaultIndexManager, Reference, URI } from 'langium';
 import { CrossModelSharedServices } from './cross-model-module.js';
 import { SemanticRoot, findSemanticRoot } from './util/ast-util.js';
 
@@ -43,5 +43,9 @@ export class CrossModelIndexManager extends DefaultIndexManager {
    resolveSemanticElement(uri: URI): SemanticRoot | undefined {
       const document = this.services.workspace.LangiumDocuments.getDocument(uri);
       return document ? findSemanticRoot(document) : undefined;
+   }
+
+   findDocumentUri<T extends AstNode = AstNode>(reference?: Reference<T>, type?: string): URI | undefined {
+      return reference?.ref?.$document?.uri || reference ? this.getElementById(reference.$refText, type)?.documentUri : undefined;
    }
 }
