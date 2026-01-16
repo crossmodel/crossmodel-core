@@ -154,3 +154,28 @@ export function activateDefaultToolsAction(): Action {
 export function activateDeleteToolAction(): Action {
    return EnableToolsAction.create(['glsp.delete-mouse']);
 }
+
+/**
+ * Action emitted by the server after creating a new file so the client can expand the navigator.
+ */
+export interface ExpandNavigatorForNewFileAction extends Action {
+   kind: typeof ExpandNavigatorForNewFileAction.KIND;
+   parentUri: string;
+   uri: string;
+}
+
+export namespace ExpandNavigatorForNewFileAction {
+   export const KIND = 'expandNavigatorForNewFile';
+
+   export function is(object: unknown): object is ExpandNavigatorForNewFileAction {
+      return Action.hasKind(object, KIND);
+   }
+
+   export function create(options: { parentUri: string; uri: string }): ExpandNavigatorForNewFileAction {
+      return {
+         kind: KIND,
+         parentUri: options.parentUri,
+         uri: options.uri
+      };
+   }
+}
