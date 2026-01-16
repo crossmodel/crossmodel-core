@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { GRID, ShowPropertiesAction } from '@crossmodel/protocol';
+import { ExpandNavigatorForNewFileAction, GRID, ShowPropertiesAction } from '@crossmodel/protocol';
 import {
    ConsoleLogger,
    EnableDefaultToolsAction,
@@ -39,6 +39,7 @@ import { CrossModelDiagramStartup } from './cross-model-diagram-startup';
 import { CrossModelErrorExtension } from './cross-model-error-extension';
 import { CrossModelToolPalette } from './cross-model-tool-palette';
 import { CrossModelGLSPSelectionDataService } from './crossmodel-selection-data-service';
+import { ExpandNavigatorActionHandler } from './expand-navigator-action-handler';
 import { ShowPropertiesActionHandler } from './show-properties-action-handler';
 import {
    CreateEntityAction,
@@ -79,6 +80,7 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       rebind(GLSPHiddenBoundsUpdater).to(CrossModelHiddenBoundsUpdater).inSingletonScope();
 
       configureActionHandler(context, ShowPropertiesAction.KIND, ShowPropertiesActionHandler);
+      configureActionHandler(context, ExpandNavigatorForNewFileAction.KIND, ExpandNavigatorActionHandler);
       configureActionHandler(context, TriggerNodeCreationAction.KIND, ToolPalette);
       configureActionHandler(context, TriggerEdgeCreationAction.KIND, ToolPalette);
       configureActionHandler(context, CreateEntityAction.KIND, ToolPalette);
