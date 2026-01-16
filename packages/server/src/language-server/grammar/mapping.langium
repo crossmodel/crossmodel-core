@@ -52,20 +52,23 @@ SourceObject returns SourceObject:
     CustomPropertiesFragment?
 ;
 
-JoinType returns string: 'from' | 'inner-join' | 'cross-join' | 'left-join' | 'apply';
+JoinType returns string:
+    'from' | 'inner-join' | 'cross-join' | 'left-join' | 'apply';
 
 SourceObjectDependency:
     source=[SourceObject:IDReference]
 ;
 
-SourceObjectCondition: JoinCondition
+SourceObjectCondition:
+    JoinCondition
 ;
 
-JoinCondition: expression=BinaryExpression
+JoinCondition:
+    expression=BinaryExpression
 ;
 
 BinaryExpression:
-    left=PrimaryExpression op=('=' | '!=' | '<' | '<=' | '>' | '>=')? right=PrimaryExpression
+    left=PrimaryExpression op=('=' | '!=' | '<' | '<=' | '>' | '>=') right=PrimaryExpression
 ;
 
 PrimaryExpression infers BooleanExpression:

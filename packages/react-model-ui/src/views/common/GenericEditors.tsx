@@ -204,9 +204,14 @@ export function GenericAutoCompleteEditor({
    };
 
    const handleHide = (): void => {
-      // Refocus the property widget container after autocomplete dropdown closes
-      // to ensure undo/redo is available again
-      refocusPropertyWidget();
+      // Only refocus the property widget if we're NOT in a grid context.
+      // Grid editors (like in DataTable) need focus to stay in the grid for keyboard navigation.
+      // For form-based uses of GenericAutoCompleteEditor, refocus the property widget
+      // to ensure undo/redo is available again.
+      const isInGrid = document.activeElement?.closest('.p-datatable') !== undefined;
+      if (!isInGrid) {
+         refocusPropertyWidget();
+      }
    };
 
    return (

@@ -2744,8 +2744,7 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
                   "value": ">="
                 }
               ]
-            },
-            "cardinality": "?"
+            }
           },
           {
             "$type": "Assignment",

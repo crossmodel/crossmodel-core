@@ -18,6 +18,7 @@ import type { CrossModelServices } from './cross-model-module.js';
 import { ID_PROPERTY, IdentifiableAstNode } from './cross-model-naming.js';
 import {
    AttributeMapping,
+   BinaryExpression,
    CrossModelAstType,
    IdentifiedObject,
    InheritanceEdge,
@@ -75,7 +76,8 @@ export function registerValidationChecks(services: CrossModelServices): void {
       SourceObjectDependency: validator.checkSourceObjectDependency,
       TargetObject: validator.checkTargetObject,
       NamedObject: validator.checkNamedObject,
-      WithCustomProperties: validator.checkUniqueCustomerPropertyId
+      WithCustomProperties: validator.checkUniqueCustomerPropertyId,
+      BinaryExpression: validator.checkBinaryExpression
    };
    registry.register(checks, validator);
 }
@@ -501,13 +503,6 @@ export class CrossModelValidator {
    }
 
    checkSourceObjectCondition(condition: SourceObjectCondition, accept: ValidationAcceptor): void {
-      if (!condition.expression.op) {
-         accept('warning', 'An operator is required.', {
-            node: condition.expression,
-            property: 'op',
-            data: { code: CrossModelValidationErrors.toMissing('op') }
-         });
-      }
       const sourceObject = condition.$container;
       const left = condition.expression.left;
       const checkReference: (reference: Reference<SourceObjectAttribute>) => boolean = reference => {
@@ -526,6 +521,16 @@ export class CrossModelValidator {
       const right = condition.expression.right;
       if (right.$type === 'SourceObjectAttributeReference' && !checkReference(right.value)) {
          accept('error', 'Can only reference attributes from source objects that are listed as dependency.', { node: right });
+      }
+   }
+
+   checkBinaryExpression(expression: BinaryExpression, accept: ValidationAcceptor): void {
+      if (!expression.op || expression.op.trim() === '') {
+         accept('error', 'Operator must have a valid value.', {
+            node: expression,
+            property: 'op',
+            data: { code: CrossModelValidationErrors.toMalformed('operator') }
+         });
       }
    }
 }
