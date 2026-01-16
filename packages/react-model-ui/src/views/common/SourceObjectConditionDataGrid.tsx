@@ -235,21 +235,20 @@ const operatorOptions = ['=', '!=', '<', '<=', '>', '>='].map(op => ({ label: op
 
 function OperatorEditor(props: OperatorEditorProps): React.ReactElement {
    const { options } = props;
-   const { editorCallback } = options;
-
-   const [currentValue, setCurrentValue] = React.useState(options.value);
 
    return (
       <GenericAutoCompleteEditor
          options={{
-            value: currentValue,
-            editorCallback: (v: string) => {
-               setCurrentValue(v);
-               if (editorCallback) {
-                  editorCallback(v);
+            ...options,
+            editorCallback: (value: string) => {
+               // Only allow non-empty values
+               if (value && value.trim() !== '') {
+                  options.editorCallback(value);
+               } else {
+                  // Reject empty values - restore previous valid value
+                  options.editorCallback(options.value || '=');
                }
-            },
-            rowData: options.rowData
+            }
          }}
          basePath={['mapping']}
          field={'expression.op'}

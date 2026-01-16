@@ -154,7 +154,12 @@ function DataModelDependencyEditor(props: DataModelDependencyEditorProps): React
                dropdown
                className={`w-full ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''} ${error ? 'p-invalid' : ''}`}
                onDropdownClick={handleDropdownClick}
-               onChange={e => setCurrentValue(e.value)}
+               onChange={e => {
+                  setCurrentValue(e.value);
+                  if (editorCallback) {
+                     editorCallback(e.value);
+                  }
+               }}
                onSelect={onSelect}
                onShow={onShow}
                onHide={onHide}
@@ -323,8 +328,6 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
          } else {
             // This is an existing row being updated
             if (
-               !dependency.datamodel ||
-               dependency.datamodel.trim() === '' ||
                dependency.datamodel === '_' ||
                dependency.datamodel === '-'
             ) {
