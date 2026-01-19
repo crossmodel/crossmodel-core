@@ -13,7 +13,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
    const EMPTY_ENTITY_ID = 'AddEditDeleteCustomPropertiesEntity';
 
    test.beforeAll(async ({ browser, playwright }) => {
-      app = await CMApp.load({ browser, playwright, waitForServers: false });
+      app = await CMApp.load({ browser, playwright });
    });
    test.afterAll(async () => {
       await app.page.close();
@@ -144,11 +144,11 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       const entityEditor = await app.openCompositeEditor(ENTITY_PATH, 'Code Editor');
       expect(await entityEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');
       expect(await entityEditor.textContentOfLineByLineNumber(2)).toMatch(`id: ${EMPTY_ENTITY_ID}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(3)).toMatch(`name: \"${EMPTY_ENTITY_ID}\"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(3)).toMatch(`name: "${EMPTY_ENTITY_ID}"`);
       expect(await entityEditor.textContentOfLineByLineNumber(4)).toMatch('customProperties:');
       expect(await entityEditor.textContentOfLineByLineNumber(5)).toMatch(`- id: ${PROPERTY_NAME}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(6)).toMatch(`name: \"${PROPERTY_NAME}\"`);
-      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch(`value: \"${PROPERTY_VALUE}\"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(6)).toMatch(`name: "${PROPERTY_NAME}"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(7)).toMatch(`value: "${PROPERTY_VALUE}"`);
 
       await entityEditor.closeWithoutSave();
 
