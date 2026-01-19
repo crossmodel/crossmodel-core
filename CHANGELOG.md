@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.1](https://github.com/crossmodel/crossmodel-core/compare/v0.21.0...v0.21.1) (2026-01-19)
+
+
+### Bug Fixes
+
+* Autocomplete reset value ([#249](https://github.com/crossmodel/crossmodel-core/issues/249)) ([235d51b](https://github.com/crossmodel/crossmodel-core/commit/235d51ba2cf4ea9303a1949cc4965b4b7d3cc8a7))
+
+
+
+
+
 # [0.21.0](https://github.com/crossmodel/crossmodel-core/compare/v0.20.6...v0.21.0) (2026-01-16)
 
 
