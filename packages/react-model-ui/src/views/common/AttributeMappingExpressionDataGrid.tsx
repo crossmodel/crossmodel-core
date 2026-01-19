@@ -7,6 +7,7 @@ import * as React from 'react';
 import { useModelDispatch, useReadonly } from '../../ModelContext';
 import { GenericAutoCompleteEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface AttributeMappingExpressionRow {
    idx: number;
@@ -153,6 +154,23 @@ export function AttributeMappingExpressionDataGrid({
             } as any);
 
             setEditingRows({});
+
+            // If save was triggered by Enter, start a new uncommitted row
+            if (wasSaveTriggeredByEnter()) {
+               const newTempRow: AttributeMappingExpressionRow = {
+                  ...defaultEntry,
+                  id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+                  language: '',
+                  expression: '',
+                  _uncommitted: true,
+                  idx: -1
+               } as AttributeMappingExpressionRow;
+
+               setTimeout(() => {
+                  setGridData(current => [...current, newTempRow]);
+                  setEditingRows({ [newTempRow.id]: true });
+               }, 50);
+            }
             return;
          }
 
@@ -174,7 +192,7 @@ export function AttributeMappingExpressionDataGrid({
 
          setEditingRows({});
       },
-      [dispatch, mappingIdx, attributeMapping, deriveExpressionRowId]
+      [dispatch, mappingIdx, attributeMapping, deriveExpressionRowId, defaultEntry]
    );
 
    const onExpressionAdd = React.useCallback((): void => {
