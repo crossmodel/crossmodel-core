@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.cross-model",
-      "match": "\\b(0\\.\\.N|1\\.\\.N|TRUE|apply|attribute|attributes|baseNode|child|childCardinality|childRole|conceptual|conditions|cross-join|customProperties|datamodel|datatype|dependencies|description|diagram|edges|entity|expression|from|height|id|identifiers|inherits|inner-join|join|left-join|length|logical|mandatory|mapping|mappings|name|nodes|parent|parentCardinality|parentRole|precision|primary|relational|relationship|scale|sourceNode|sources|superNode|systemDiagram|target|targetNode|true|type|value|version|width|x|y)\\b"
+      "match": "\\b(0\\.\\.N|1\\.\\.N|TRUE|apply|attribute|attributes|baseNode|child|childCardinality|childRole|conceptual|conditions|cross-join|customProperties|datamodel|datatype|dependencies|description|diagram|edges|entity|expression|expressions|from|height|id|identifiers|inherits|inner-join|join|language|left-join|length|logical|mandatory|mapping|mappings|name|nodes|parent|parentCardinality|parentRole|precision|primary|relational|relationship|scale|sourceNode|sources|superNode|systemDiagram|target|targetNode|true|type|value|version|width|x|y)\\b"
     },
     {
       "name": "string.quoted.double.cross-model",

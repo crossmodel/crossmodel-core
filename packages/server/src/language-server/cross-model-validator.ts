@@ -4,15 +4,13 @@
 import {
    CrossModelValidationErrors,
    findAllExpressions,
-   getExpression,
-   getExpressionPosition,
    getExpressionText,
    getSemanticRoot,
    isMemberPermittedInModel,
    ModelFileExtensions,
    ModelMemberPermissions
 } from '@crossmodel/protocol';
-import { AstNode, GrammarUtils, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
+import { AstNode, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
 import { Diagnostic } from 'vscode-languageserver-protocol';
 import type { CrossModelServices } from './cross-model-module.js';
 import { ID_PROPERTY, IdentifiableAstNode } from './cross-model-naming.js';
@@ -438,26 +436,35 @@ export class CrossModelValidator {
    }
 
    checkAttributeMapping(mapping: AttributeMapping, accept: ValidationAcceptor): void {
-      const mappingExpression = GrammarUtils.findNodeForProperty(mapping.$cstNode, 'expression');
-      if (!mappingExpression) {
-         return;
-      }
-      const mappingExpressionRange = mappingExpression.range;
-      const expressions = findAllExpressions(mapping.expression);
-      const sources = mapping.sources.map(source => source.value.$refText);
-      for (const expression of expressions) {
-         const completeExpression = getExpression(expression);
-         const expressionPosition = getExpressionPosition(expression);
-         const expressionText = getExpressionText(expression);
-         if (!sources.includes(expressionText)) {
-            const startCharacter = mappingExpressionRange.start.character + expressionPosition + 1;
-            accept('error', 'Only sources can be referenced in an expression.', {
-               node: mapping,
-               range: {
-                  start: { line: mappingExpressionRange.start.line, character: startCharacter },
-                  end: { line: mappingExpressionRange.end.line, character: startCharacter + completeExpression.length }
-               }
+      // Check that each language appears only once
+      const languages = new Map<string, number>();
+      for (let i = 0; i < mapping.expressions.length; i++) {
+         const expr = mapping.expressions[i];
+         if (languages.has(expr.language)) {
+            accept('error', `Language '${expr.language}' appears more than once. Each language must be unique within the expressions.`, {
+               node: expr,
+               property: 'language'
             });
+         } else {
+            languages.set(expr.language, i);
+         }
+      }
+
+      // Validate each expression references only valid sources
+      const sources = mapping.sources.map(source => source.value.$refText);
+      for (const expr of mapping.expressions) {
+         if (!expr.expression) {
+            continue;
+         }
+         const expressionsInExpr = findAllExpressions(expr.expression);
+         for (const expressionMatch of expressionsInExpr) {
+            const expressionText = getExpressionText(expressionMatch);
+            if (!sources.includes(expressionText)) {
+               accept('error', 'Only sources can be referenced in an expression.', {
+                  node: expr,
+                  property: 'expression'
+               });
+            }
          }
       }
    }

@@ -212,6 +212,13 @@ export interface AttributeMapping extends CrossModelElement, WithCustomPropertie
    readonly $type: typeof AttributeMappingType;
    attribute?: AttributeMappingTarget;
    sources: Array<AttributeMappingSource>;
+   expressions: Array<AttributeMappingExpression>;
+}
+
+export const AttributeMappingExpressionType = 'AttributeMappingExpression';
+export interface AttributeMappingExpression extends CrossModelElement {
+   readonly $type: typeof AttributeMappingExpressionType;
+   language: string;
    expression?: string;
 }
 
