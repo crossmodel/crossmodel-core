@@ -1119,8 +1119,12 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          }
 
          const isInsideTable = tableElement.contains(target);
-         if (!isInsideTable) {
-            // Outside table → save & exit
+         // Also check if click is in wrapper (grid container) but outside the actual table body
+         const isInsideWrapper = wrapperRef.current && wrapperRef.current.contains(target);
+         const isInTableBody = target.closest('.p-datatable-tbody');
+
+         if (!isInsideTable || (isInsideWrapper && !isInTableBody)) {
+            // Outside table or in wrapper but not in table body → save & exit
             const rowEditorSaveButton = tableElement.querySelector('.p-row-editor-save');
             if (rowEditorSaveButton instanceof HTMLElement) {
                rowEditorSaveButton.click();
