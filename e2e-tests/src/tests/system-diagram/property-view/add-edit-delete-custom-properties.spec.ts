@@ -206,7 +206,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       expect(await entityEditor.numberOfLines()).toBe(3);
       expect(await entityEditor.textContentOfLineByLineNumber(1)).toMatch('entity:');
       expect(await entityEditor.textContentOfLineByLineNumber(2)).toMatch(`id: ${EMPTY_ENTITY_ID}`);
-      expect(await entityEditor.textContentOfLineByLineNumber(3)).toMatch(`name: \"${EMPTY_ENTITY_ID}\"`);
+      expect(await entityEditor.textContentOfLineByLineNumber(3)).toMatch(`name: "${EMPTY_ENTITY_ID}"`);
 
       await entityEditor.closeWithoutSave();
    });
