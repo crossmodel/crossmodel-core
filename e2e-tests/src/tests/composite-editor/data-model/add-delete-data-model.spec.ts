@@ -76,7 +76,7 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
       const expectedContextMenuItems = await Promise.all([
          menu.menuItemByNamePath('New Element', 'Entity...'),
          menu.menuItemByNamePath('New Element', 'Relationship...'),
-         menu.menuItemByNamePath('New Element', 'System Diagram...'),
+         menu.menuItemByNamePath('New Element', 'Diagram...'),
          menu.menuItemByNamePath('New Element', 'Mapping...')
       ]);
       expectedContextMenuItems.forEach(item => expect(item).toBeDefined());
@@ -124,7 +124,7 @@ test.describe.serial('Add/Edit/Delete data model from explorer', () => {
       const unexpectedContextMenuItems = await Promise.allSettled([
          menu.menuItemByNamePath('New Element', 'Entity...'),
          menu.menuItemByNamePath('New Element', 'Relationship...'),
-         menu.menuItemByNamePath('New Element', 'System Diagram...'),
+         menu.menuItemByNamePath('New Element', 'Diagram...'),
          menu.menuItemByNamePath('New Element', 'Mapping...')
       ]);
       unexpectedContextMenuItems.forEach(item => expect(item.status).toBe('rejected'));

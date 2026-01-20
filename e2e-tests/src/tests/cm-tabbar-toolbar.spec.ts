@@ -35,7 +35,7 @@ test.describe('CrossModel TabBar Toolbar', () => {
          // Wait for the New Entity dialog to popup.
          newDiagramDialog.waitForVisible();
          // Check the title of the dialog.
-         expect(await newDiagramDialog.title()).toBe('New System Diagram...');
+         expect(await newDiagramDialog.title()).toBe('New Diagram...');
          // Set the name for the new entity.
          await newDiagramDialog.enterSingleInput('diagram-created-from-tabbar-toolbar');
          // Wait until we can click the main button.
@@ -47,14 +47,10 @@ test.describe('CrossModel TabBar Toolbar', () => {
 
          explorer = await app.openView(CMExplorerView);
          const file = await explorer.fileStatNode(
-            'system-diagram' +
-               OSUtil.fileSeparator +
-               'diagrams' +
-               OSUtil.fileSeparator +
-               'diagram-created-from-tabbar-toolbar.system-diagram.cm'
+            'system-diagram' + OSUtil.fileSeparator + 'diagrams' + OSUtil.fileSeparator + 'diagram-created-from-tabbar-toolbar.diagram.cm'
          );
          expect(file).toBeDefined();
-         expect(await file!.label()).toBe('diagram-created-from-tabbar-toolbar.system-diagram.cm');
+         expect(await file!.label()).toBe('diagram-created-from-tabbar-toolbar.diagram.cm');
       }
    });
 });

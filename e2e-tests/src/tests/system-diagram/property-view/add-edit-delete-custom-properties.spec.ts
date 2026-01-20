@@ -8,7 +8,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 
 test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteCustomPropertiesDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteCustomPropertiesDiagram.diagram.cm';
    const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteCustomPropertiesEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'AddEditDeleteCustomPropertiesEntity';
 
@@ -24,7 +24,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       const PROPERTY_VALUE = 'MyValue';
 
       // Open the system diagram
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -53,7 +53,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       await entityCodeEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
 
@@ -71,7 +71,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       const NEW_DESC = 'NewDesc';
 
       // Add property
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -84,7 +84,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       await diagramEditor.saveAndClose();
 
       // Edit
-      const diagramEditorEdit = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorEdit = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewEdit = await diagramEditorEdit.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formEdit = await propertyViewEdit.form();
 
@@ -116,7 +116,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       await entityCodeEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
 
@@ -133,7 +133,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       const PROPERTY_VALUE = 'TestValue';
 
       // Open the system diagram and add a custom property
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
       const propertyInEdit = await form.customPropertiesSection.startAddProperty();
@@ -160,7 +160,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       const PROP_NAME = 'PropToDelete';
 
       // Clean up properties from previous tests if they exist
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       const props = await formForCleanup.customPropertiesSection.getAllProperties();
@@ -175,7 +175,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       await diagramEditorForCleanup.close();
 
       // Add property
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -187,7 +187,7 @@ test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram'
       await diagramEditor.saveAndClose();
 
       // Delete
-      const diagramEditorDelete = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorDelete = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewDelete = await diagramEditorDelete.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formDelete = await propertyViewDelete.form();
 

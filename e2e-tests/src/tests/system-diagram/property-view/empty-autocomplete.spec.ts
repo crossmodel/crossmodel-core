@@ -7,7 +7,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 
 test.describe('Empty autocomplete fields', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteAttributesDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteAttributesDiagram.diagram.cm';
    const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteAttributesEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'AddEditDeleteAttributesEntity';
 
@@ -22,7 +22,7 @@ test.describe('Empty autocomplete fields', () => {
       const ATTRIBUTE_NAME = 'AttributeForEmptyTest';
 
       // Open the system diagram
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -79,7 +79,7 @@ test.describe('Empty autocomplete fields', () => {
       await entityCodeEditor.saveAndClose();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
