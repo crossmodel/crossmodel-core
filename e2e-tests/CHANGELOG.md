@@ -3,6 +3,52 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.2](https://github.com/crossmodel/crossmodel-core/compare/v0.21.1...v0.21.2) (2026-01-19)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.21.1](https://github.com/crossmodel/crossmodel-core/compare/v0.21.0...v0.21.1) (2026-01-19)
+
+
+### Bug Fixes
+
+* Autocomplete reset value ([#249](https://github.com/crossmodel/crossmodel-core/issues/249)) ([235d51b](https://github.com/crossmodel/crossmodel-core/commit/235d51ba2cf4ea9303a1949cc4965b4b7d3cc8a7))
+
+
+
+
+
+# [0.21.0](https://github.com/crossmodel/crossmodel-core/compare/v0.20.6...v0.21.0) (2026-01-16)
+
+
+### Features
+
+* System diagram folder expand ([#250](https://github.com/crossmodel/crossmodel-core/issues/250)) ([4ae9f44](https://github.com/crossmodel/crossmodel-core/commit/4ae9f44f3dcd1fbb585c4c0abd58868a57b5e721))
+
+
+
+
+
+## [0.20.6](https://github.com/crossmodel/crossmodel-core/compare/v0.20.5...v0.20.6) (2026-01-16)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.20.5](https://github.com/crossmodel/crossmodel-core/compare/v0.20.4...v0.20.5) (2026-01-13)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
 ## [0.20.4](https://github.com/crossmodel/crossmodel-core/compare/v0.20.3...v0.20.4) (2026-01-11)
 
 **Note:** Version bump only for package crossmodel-e2e-tests

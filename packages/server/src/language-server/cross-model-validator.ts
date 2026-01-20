@@ -19,6 +19,7 @@ import { ID_PROPERTY, IdentifiableAstNode } from './cross-model-naming.js';
 import { getLocalName } from './cross-model-scope.js';
 import {
    AttributeMapping,
+   BinaryExpression,
    CrossModelAstType,
    CrossModelRoot,
    IdentifiedObject,
@@ -78,7 +79,8 @@ export function registerValidationChecks(services: CrossModelServices): void {
       TargetObject: validator.checkTargetObject,
       NamedObject: validator.checkNamedObject,
       CrossModelRoot: validator.checkCrossModelRoot,
-      WithCustomProperties: validator.checkUniqueCustomerPropertyId
+      WithCustomProperties: validator.checkUniqueCustomerPropertyId,
+      BinaryExpression: validator.checkBinaryExpression
    };
    registry.register(checks, validator);
 }
@@ -163,7 +165,7 @@ export class CrossModelValidator {
       const allElements = this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type);
       const distinctOrigins = new Set<string>();
 
-       for (const description of allElements) {
+      for (const description of allElements) {
          if (description.name !== globalId) {
             continue;
          }
@@ -192,8 +194,8 @@ export class CrossModelValidator {
          this.markDuplicateIds(node.attributes, accept);
          this.markDuplicateIds(node.identifiers, accept);
       } else {
-      const elements = AstUtils.streamContents(node).filter(isIdentifiedObject).toArray();
-      this.markDuplicateIds(elements, accept);
+         const elements = AstUtils.streamContents(node).filter(isIdentifiedObject).toArray();
+         this.markDuplicateIds(elements, accept);
       }
    }
 
@@ -232,16 +234,16 @@ export class CrossModelValidator {
       }
    }
 
-  protected checkUniqueLocalName(node: AstNode, accept: ValidationAcceptor): void {
-   if (isLogicalEntity(node)) {
-      this.markDuplicateNames(node.attributes, accept);
+   protected checkUniqueLocalName(node: AstNode, accept: ValidationAcceptor): void {
+      if (isLogicalEntity(node)) {
+         this.markDuplicateNames(node.attributes, accept);
 
-      this.markDuplicateNames(node.identifiers, accept);
-   } else {
-      const elements = AstUtils.streamContents(node).filter(isNamedObject).toArray();
-      this.markDuplicateNames(elements, accept);
+         this.markDuplicateNames(node.identifiers, accept);
+      } else {
+         const elements = AstUtils.streamContents(node).filter(isNamedObject).toArray();
+         this.markDuplicateNames(elements, accept);
+      }
    }
-}
 
    checkUniqueCustomerPropertyId(node: WithCustomProperties, accept: ValidationAcceptor): void {
       this.markDuplicateIds(node.customProperties, accept);
@@ -602,6 +604,16 @@ export class CrossModelValidator {
       const right = condition.expression.right;
       if (right.$type === 'SourceObjectAttributeReference' && !checkReference(right.value)) {
          accept('error', 'Can only reference attributes from source objects that are listed as dependency.', { node: right });
+      }
+   }
+
+   checkBinaryExpression(expression: BinaryExpression, accept: ValidationAcceptor): void {
+      if (!expression.op || expression.op.trim() === '') {
+         accept('error', 'Operator must have a valid value.', {
+            node: expression,
+            property: 'op',
+            data: { code: CrossModelValidationErrors.toMalformed('operator') }
+         });
       }
    }
 

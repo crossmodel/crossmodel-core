@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
-import { ENTITY_NODE_TYPE, ModelFileType, ModelStructure, toIdReference } from '@crossmodel/protocol';
+import { ENTITY_NODE_TYPE, ExpandNavigatorForNewFileAction, ModelFileType, ModelStructure, toIdReference } from '@crossmodel/protocol';
 import {
    Action,
    ActionDispatcher,
@@ -9,7 +9,8 @@ import {
    CreateNodeOperation,
    JsonCreateNodeOperationHandler,
    MaybePromise,
-   Point
+   Point,
+   SelectAction
 } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
 import { Utils as UriUtils } from 'vscode-uri';
@@ -51,10 +52,14 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
          height: 10
       };
       container.nodes.push(node);
+      const nodeId = this.modelState.index.createId(node);
+      // Dispatch EditLabel action to allow inline name editing
       this.actionDispatcher.dispatchAfterNextUpdate({
          kind: 'EditLabel',
-         labelId: `${this.modelState.index.createId(node)}_label`
+         labelId: `${nodeId}_label`
       } as Action);
+      // Select the node to trigger property widget loading
+      this.actionDispatcher.dispatchAfterNextUpdate(SelectAction.create({ selectedElementsIDs: [nodeId] }));
    }
 
    /**
@@ -91,6 +96,10 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       const text = this.modelState.semanticSerializer.serialize(entityRoot);
 
       await this.modelState.modelService.save({ uri: uri.toString(), model: text, clientId: this.modelState.clientId });
+      // Notify client to expand the navigator and reveal the newly created file
+      this.actionDispatcher.dispatchAfterNextUpdate(
+         ExpandNavigatorForNewFileAction.create({ parentUri: dirName.toString(), uri: uri.toString() })
+      );
       const document = await this.modelState.modelService.request(uri.toString());
       return document?.root?.entity;
    }

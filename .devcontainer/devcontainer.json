@@ -25,7 +25,10 @@
     }
   },
   // Allow port 3000 & 4873 to be forwarded.
-  "forwardPorts": [3000, 4873],
+  "forwardPorts": [
+    3000,
+    4873
+  ],
   "portsAttributes": {
     "3000": {
       "label": "Theia Backend"
@@ -38,18 +41,18 @@
   "postCreateCommand": "yarn && yarn playwright install --with-deps",
   // When we want to be able to run playwright headed within the Dev Container,
   // we need to setup the mounts and container environment variables like below.
-  "mounts": [
-    {
-      "source": "/run/desktop/mnt/host/wslg/.X11-unix",
-      "target": "/tmp/.X11-unix",
-      "type": "bind"
-    },
-    {
-      "source": "/run/desktop/mnt/host/wslg",
-      "target": "/mnt/wslg",
-      "type": "bind"
-    }
-  ],
+  //"mounts": [
+  // {
+  //    "source": "/run/desktop/mnt/host/wslg/.X11-unix",
+  //    "target": "/tmp/.X11-unix",
+  //    "type": "bind"
+  //  },
+  //  {
+  //    "source": "/run/desktop/mnt/host/wslg",
+  //    "target": "/mnt/wslg",
+  //    "type": "bind"
+  //  }
+  //],
   "containerEnv": {
     "DISPLAY": ":0",
     "WAYLAND_DISPLAY": "wayland-0",
