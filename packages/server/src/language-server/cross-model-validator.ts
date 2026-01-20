@@ -25,6 +25,7 @@ import {
    IdentifiedObject,
    InheritanceEdge,
    isCrossModelRoot,
+   isCustomProperty,
    isIdentifiedObject,
    isLogicalEntity,
    isNamedObject,
@@ -100,7 +101,10 @@ export class CrossModelValidator {
          });
       } else {
          this.checkUniqueGlobalName(namedObject, accept);
-         this.checkUniqueLocalName(namedObject, accept);
+         // Skip local name check for CustomProperty as it's validated through checkUniqueCustomerPropertyId
+         if (!isCustomProperty(namedObject)) {
+            this.checkUniqueLocalName(namedObject, accept);
+         }
       }
    }
 
@@ -186,7 +190,6 @@ export class CrossModelValidator {
 
    checkCrossModelRoot(node: CrossModelRoot, accept: ValidationAcceptor): void {
       this.checkUniqueLocalId(node, accept);
-      this.checkUniqueLocalName(node, accept);
    }
 
    protected checkUniqueLocalId(node: AstNode, accept: ValidationAcceptor): void {
@@ -237,7 +240,6 @@ export class CrossModelValidator {
    protected checkUniqueLocalName(node: AstNode, accept: ValidationAcceptor): void {
       if (isLogicalEntity(node)) {
          this.markDuplicateNames(node.attributes, accept);
-
          this.markDuplicateNames(node.identifiers, accept);
       } else {
          const elements = AstUtils.streamContents(node).filter(isNamedObject).toArray();
@@ -247,6 +249,7 @@ export class CrossModelValidator {
 
    checkUniqueCustomerPropertyId(node: WithCustomProperties, accept: ValidationAcceptor): void {
       this.markDuplicateIds(node.customProperties, accept);
+      this.markDuplicateNames(node.customProperties, accept);
    }
 
    checkLogicalAttribute(attribute: LogicalAttribute, accept: ValidationAcceptor): void {

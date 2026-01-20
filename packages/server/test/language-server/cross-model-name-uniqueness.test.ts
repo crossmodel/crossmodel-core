@@ -127,6 +127,199 @@ describe('CrossModel Name Uniqueness Validation', () => {
             expect(entity.$document.diagnostics![0].message).toContain('Must provide a unique name');
          });
       });
+
+      describe('LogicalEntity - Same Names Across Different Collections', () => {
+         test('Should NOT error when attribute, identifier, and custom property share the same name', async () => {
+            const entityWithSameNameInDifferentCollections = `entity:
+    id: CustomerLocal5
+    name: "Customer"
+    attributes:
+        - id: SharedName
+          name: "SharedName"
+          datatype: "Text"
+    identifiers:
+        - id: SharedNameIdentifier
+          name: "SharedName"
+          primary: true
+          attributes:
+              - SharedName
+    customProperties:
+        - id: SharedNameCustom
+          name: "SharedName"
+          value: "test"`;
+
+            const entity = await parseLogicalEntity({
+               services,
+               text: entityWithSameNameInDifferentCollections,
+               validation: true,
+               documentUri: testUri('CustomerLocal5' + ModelFileExtensions.LogicalEntity)
+            });
+
+            expect(entity.attributes).toHaveLength(1);
+            expect(entity.identifiers).toHaveLength(1);
+            expect(entity.customProperties).toHaveLength(1);
+            expect(entity.$document.diagnostics).toHaveLength(0);
+         });
+      });
+
+      describe('LogicalEntity - Duplicate Custom Property Names', () => {
+         test('Should error on duplicate custom property names', async () => {
+            const entityWithDuplicateCustomProperties = `entity:
+    id: CustomerLocal6
+    name: "Customer"
+    attributes:
+        - id: Id
+          name: "Id"
+          datatype: "Integer"
+    customProperties:
+        - id: Prop1
+          name: "Property"
+          value: "value1"
+        - id: Prop2
+          name: "Property"
+          value: "value2"`;
+
+            const entity = await parseLogicalEntity({
+               services,
+               text: entityWithDuplicateCustomProperties,
+               validation: true,
+               documentUri: testUri('CustomerLocal6' + ModelFileExtensions.LogicalEntity)
+            });
+
+            expect(entity.customProperties).toHaveLength(2);
+            expect(entity.$document.diagnostics).toHaveLength(1);
+            expect(entity.$document.diagnostics![0].message).toContain('Must provide a unique name');
+         });
+      });
+   });
+
+   describe('Name Uniqueness Across Multiple Entities', () => {
+      describe('Same Names in Different Entities Should NOT Error', () => {
+         test('Should NOT error when two entities have attributes with the same name', async () => {
+            const entity1 = `entity:
+    id: Entity1
+    name: "Entity1"
+    attributes:
+        - id: SharedAttr
+          name: "CommonName"
+          datatype: "Text"`;
+
+            const entity2 = `entity:
+    id: Entity2
+    name: "Entity2"
+    attributes:
+        - id: SharedAttr2
+          name: "CommonName"
+          datatype: "Integer"`;
+
+            const doc1 = await parseLogicalEntity({
+               services,
+               text: entity1,
+               validation: true,
+               documentUri: testUri('Entity1' + ModelFileExtensions.LogicalEntity)
+            });
+
+            const doc2 = await parseLogicalEntity({
+               services,
+               text: entity2,
+               validation: true,
+               documentUri: testUri('Entity2' + ModelFileExtensions.LogicalEntity)
+            });
+
+            expect(doc1.$document.diagnostics).toHaveLength(0);
+            expect(doc2.$document.diagnostics).toHaveLength(0);
+         });
+
+         test('Should NOT error when two entities have identifiers with the same name', async () => {
+            const entity1 = `entity:
+    id: Entity3
+    name: "Entity3"
+    attributes:
+        - id: Id1
+          name: "Id"
+          datatype: "Integer"
+    identifiers:
+        - id: PK1
+          name: "PrimaryKey"
+          primary: true
+          attributes:
+              - Id1`;
+
+            const entity2 = `entity:
+    id: Entity4
+    name: "Entity4"
+    attributes:
+        - id: Id2
+          name: "Id"
+          datatype: "Integer"
+    identifiers:
+        - id: PK2
+          name: "PrimaryKey"
+          primary: true
+          attributes:
+              - Id2`;
+
+            const doc1 = await parseLogicalEntity({
+               services,
+               text: entity1,
+               validation: true,
+               documentUri: testUri('Entity3' + ModelFileExtensions.LogicalEntity)
+            });
+
+            const doc2 = await parseLogicalEntity({
+               services,
+               text: entity2,
+               validation: true,
+               documentUri: testUri('Entity4' + ModelFileExtensions.LogicalEntity)
+            });
+
+            expect(doc1.$document.diagnostics).toHaveLength(0);
+            expect(doc2.$document.diagnostics).toHaveLength(0);
+         });
+
+         test('Should NOT error when two entities have custom properties with the same name', async () => {
+            const entity1 = `entity:
+    id: Entity5
+    name: "Entity5"
+    attributes:
+        - id: Attr1
+          name: "Attribute1"
+          datatype: "Text"
+    customProperties:
+        - id: CP1
+          name: "CustomProp"
+          value: "value1"`;
+
+            const entity2 = `entity:
+    id: Entity6
+    name: "Entity6"
+    attributes:
+        - id: Attr2
+          name: "Attribute2"
+          datatype: "Text"
+    customProperties:
+        - id: CP2
+          name: "CustomProp"
+          value: "value2"`;
+
+            const doc1 = await parseLogicalEntity({
+               services,
+               text: entity1,
+               validation: true,
+               documentUri: testUri('Entity5' + ModelFileExtensions.LogicalEntity)
+            });
+
+            const doc2 = await parseLogicalEntity({
+               services,
+               text: entity2,
+               validation: true,
+               documentUri: testUri('Entity6' + ModelFileExtensions.LogicalEntity)
+            });
+
+            expect(doc1.$document.diagnostics).toHaveLength(0);
+            expect(doc2.$document.diagnostics).toHaveLength(0);
+         });
+      });
    });
 
    describe('Global Name Uniqueness - Across Files in Same DataModel', () => {
@@ -136,10 +329,7 @@ describe('CrossModel Name Uniqueness Validation', () => {
             const e1Uri = testUri('TestDataModel', 'Customer' + ModelFileExtensions.LogicalEntity);
             const e2Uri = testUri('TestDataModel', 'CustomerDuplicate' + ModelFileExtensions.LogicalEntity);
 
-            await parseDocuments(
-               { services, text: dataModelA, documentUri: dmUri },
-               { services, text: customer, documentUri: e1Uri }
-            );
+            await parseDocuments({ services, text: dataModelA, documentUri: dmUri }, { services, text: customer, documentUri: e1Uri });
 
             await services.shared.workspace.DataModelManager.initialize([{ uri: dmUri, name: 'DataModelA' }]);
 
