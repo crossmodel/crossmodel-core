@@ -270,6 +270,7 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
                this.document.root.mapping.target.mappings.push({
                   $type: AttributeMappingType,
                   sources: [],
+                  expressions: [],
                   attribute: {
                      $type: AttributeMappingTargetType,
                      value: mappingProps.attributeId
