@@ -62,10 +62,10 @@ test.describe('CrossModel Explorer View', () => {
       expect(await file.label()).toBe('example-diagram.diagram.cm');
       const menu = await file.openContextMenu();
       expect(await menu.isOpen()).toBe(true);
-      // Expect the Code and Form editor to be in the Open With menu option.
+      // Expect the Code and Diagram editor to be in the Open With menu option.
       await menu.clickMenuItem('Open With...');
       expect(await checkOpenWithItem(explorer.page, 'Text Editor')).toBeTruthy();
-      expect(await checkOpenWithItem(explorer.page, 'Diagram')).toBeTruthy();
+      expect(await checkOpenWithItem(explorer.page, 'Diagram Editor')).toBeTruthy();
       await menu.close();
    });
 });

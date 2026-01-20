@@ -17,7 +17,7 @@ export interface ProblemMarkerOpenerOptions extends WidgetOpenerOptions {
 export class MappingDiagramManager extends GLSPDiagramManager implements OpenWithHandler {
    static readonly ID = 'mapping-diagram-manager';
    get label(): string {
-      return MappingDiagramLanguage.label;
+      return 'Mapping Editor';
    }
 
    override get iconClass(): string {
