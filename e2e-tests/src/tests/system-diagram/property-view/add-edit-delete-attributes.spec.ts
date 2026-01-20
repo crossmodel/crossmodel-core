@@ -253,4 +253,213 @@ test.describe('Add/Edit/Delete attributes to/from an entity in a diagram', () =>
       expect(await entityCodeEditor.textContentOfLineByLineNumber(3)).toMatch(`name: "${EMPTY_ENTITY_ID}"`);
       await entityCodeEditor.saveAndClose();
    });
+
+   test('Filter attributes by data type', async () => {
+      // Add an attribute and set its datatype
+      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForAdd = await propertyViewForAdd.form();
+
+      // Add first attribute
+      await diagramEditorForAdd.waitForModelUpdate(async () => {
+         const attr1 = await formForAdd.attributesSection.startAddAttribute();
+         await formForAdd.attributesSection.commitAttributeAdd(attr1, 'BooleanAttribute');
+         await formForAdd.waitForDirty();
+      });
+      await diagramEditorForAdd.saveAndClose();
+
+      // Reopen and set datatype for the first attribute
+      const diagramEditorForEdit = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForEdit = await diagramEditorForEdit.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForEdit = await propertyViewForEdit.form();
+      const boolAttr = await formForEdit.attributesSection.getAttribute('BooleanAttribute');
+
+      await diagramEditorForEdit.waitForModelUpdate(async () => {
+         await boolAttr.setDatatype('Boolean');
+         await formForEdit.waitForDirty();
+      });
+      await diagramEditorForEdit.saveAndClose();
+
+      // Add second attribute
+      const diagramEditorForAdd2 = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForAdd2 = await diagramEditorForAdd2.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForAdd2 = await propertyViewForAdd2.form();
+
+      await diagramEditorForAdd2.waitForModelUpdate(async () => {
+         const attr2 = await formForAdd2.attributesSection.startAddAttribute();
+         await formForAdd2.attributesSection.commitAttributeAdd(attr2, 'TextAttribute');
+         await formForAdd2.waitForDirty();
+      });
+      await diagramEditorForAdd2.saveAndClose();
+
+      const diagramEditorForFilter = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForFilter = await diagramEditorForFilter.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForFilter = await propertyViewForFilter.form();
+
+      // Ensure attributes section is expanded
+      const header = formForFilter.attributesSection.locator.locator('.p-accordion-header');
+      const isExpanded = (await header.getAttribute('class'))?.includes('p-highlight');
+      if (!isExpanded) {
+         await header.click();
+         await formForFilter.page.waitForTimeout(300);
+      }
+
+      // Verify all attributes are visible initially
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(2);
+
+      await formForFilter.attributesSection.setGlobalFilter('Boolean');
+
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(1);
+      const visibleAttr = await formForFilter.attributesSection.findAttribute('BooleanAttribute');
+      expect(visibleAttr).toBeDefined();
+
+      // Clear filters
+      await formForFilter.attributesSection.clickClearFilters();
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(2);
+
+      await diagramEditorForFilter.closeWithoutSave();
+
+      // Cleanup
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForCleanup = await propertyViewForCleanup.form();
+      await diagramEditorForCleanup.waitForModelUpdate(async () => {
+         await formForCleanup.attributesSection.deleteAttribute('BooleanAttribute');
+         await formForCleanup.attributesSection.deleteAttribute('TextAttribute');
+         await formForCleanup.waitForDirty();
+      });
+      await diagramEditorForCleanup.saveAndClose();
+   });
+
+   test('Filter attributes using text field', async () => {
+      // Add multiple attributes with different names
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const form = await propertyView.form();
+
+      // Add attributes with different names
+      await diagramEditor.waitForModelUpdate(async () => {
+         const attr1 = await form.attributesSection.startAddAttribute();
+         await form.attributesSection.commitAttributeAdd(attr1, 'CustomerName');
+         await form.waitForDirty();
+      });
+
+      await diagramEditor.waitForModelUpdate(async () => {
+         const attr2 = await form.attributesSection.startAddAttribute();
+         await form.attributesSection.commitAttributeAdd(attr2, 'CustomerEmail');
+         await form.waitForDirty();
+      });
+
+      await diagramEditor.waitForModelUpdate(async () => {
+         const attr3 = await form.attributesSection.startAddAttribute();
+         await form.attributesSection.commitAttributeAdd(attr3, 'OrderId');
+         await form.waitForDirty();
+      });
+
+      await diagramEditor.saveAndClose();
+
+      // Reopen to test filtering
+      const diagramEditorForFilter = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForFilter = await diagramEditorForFilter.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForFilter = await propertyViewForFilter.form();
+
+      // Verify all attributes are visible initially
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(3);
+
+      await formForFilter.attributesSection.setGlobalFilter('Customer');
+
+      // Verify only Customer attributes are visible
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(2);
+      expect(await formForFilter.attributesSection.findAttribute('CustomerName')).toBeDefined();
+      expect(await formForFilter.attributesSection.findAttribute('CustomerEmail')).toBeDefined();
+      expect(await formForFilter.attributesSection.findAttribute('OrderId')).toBeUndefined();
+
+      // Clear filters and verify all attributes are visible again
+      await formForFilter.attributesSection.clickClearFilters();
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(3);
+
+      await diagramEditorForFilter.closeWithoutSave();
+
+      // Cleanup
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForCleanup = await propertyViewForCleanup.form();
+      await diagramEditorForCleanup.waitForModelUpdate(async () => {
+         await formForCleanup.attributesSection.deleteAttribute('CustomerName');
+         await formForCleanup.attributesSection.deleteAttribute('CustomerEmail');
+         await formForCleanup.attributesSection.deleteAttribute('OrderId');
+         await formForCleanup.waitForDirty();
+      });
+      await diagramEditorForCleanup.saveAndClose();
+   });
+
+   test('Clear filters button clears all filters', async () => {
+      // Add multiple attributes
+      const diagramEditorForAdd = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForAdd = await diagramEditorForAdd.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForAdd = await propertyViewForAdd.form();
+
+      // Add attributes with distinct names to filter by
+      await diagramEditorForAdd.waitForModelUpdate(async () => {
+         const attr1 = await formForAdd.attributesSection.startAddAttribute();
+         await formForAdd.attributesSection.commitAttributeAdd(attr1, 'ProductName');
+         await formForAdd.waitForDirty();
+      });
+
+      await diagramEditorForAdd.waitForModelUpdate(async () => {
+         const attr2 = await formForAdd.attributesSection.startAddAttribute();
+         await formForAdd.attributesSection.commitAttributeAdd(attr2, 'ProductPrice');
+         await formForAdd.waitForDirty();
+      });
+
+      await diagramEditorForAdd.waitForModelUpdate(async () => {
+         const attr3 = await formForAdd.attributesSection.startAddAttribute();
+         await formForAdd.attributesSection.commitAttributeAdd(attr3, 'IsAvailable');
+         await formForAdd.waitForDirty();
+      });
+
+      await diagramEditorForAdd.saveAndClose();
+
+      // Reopen to test filtering
+      const diagramEditorForFilter = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForFilter = await diagramEditorForFilter.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForFilter = await propertyViewForFilter.form();
+
+      // Verify all attributes are visible initially
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(3);
+
+      // Apply global text filter
+      await formForFilter.attributesSection.setGlobalFilter('Product');
+
+      // Verify only matching attributes are visible
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(2);
+      const visibleAttr1 = await formForFilter.attributesSection.findAttribute('ProductName');
+      const visibleAttr2 = await formForFilter.attributesSection.findAttribute('ProductPrice');
+      expect(visibleAttr1).toBeDefined();
+      expect(visibleAttr2).toBeDefined();
+
+      // Click clear filters button
+      await formForFilter.attributesSection.clickClearFilters();
+
+      // Verify all filters are cleared and all attributes are visible again
+      expect(await formForFilter.attributesSection.getVisibleAttributeCount()).toBe(3);
+
+      // Verify the global filter input is empty
+      const filterInput = await formForFilter.attributesSection.getGlobalFilterInput();
+      expect(await filterInput.inputValue()).toBe('');
+
+      await diagramEditorForFilter.closeWithoutSave();
+
+      // Cleanup
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
+      const formForCleanup = await propertyViewForCleanup.form();
+      await diagramEditorForCleanup.waitForModelUpdate(async () => {
+         await formForCleanup.attributesSection.deleteAttribute('ProductName');
+         await formForCleanup.attributesSection.deleteAttribute('ProductPrice');
+         await formForCleanup.attributesSection.deleteAttribute('IsAvailable');
+         await formForCleanup.waitForDirty();
+      });
+      await diagramEditorForCleanup.saveAndClose();
+   });
 });
