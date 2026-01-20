@@ -9,7 +9,6 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
 import { useCanRedo, useCanUndo, useDiagnosticsManager, useReadonly, useRedo, useUndo } from '../../ModelContext';
-import { refocusPropertyWidget } from './focusManagement';
 import { handleGridEditorKeyDown, handleUndoRedoKeys } from './gridKeydownHandler';
 
 export interface EditorContainerProps {
@@ -204,12 +203,6 @@ export function GenericAutoCompleteEditor({
       }
    };
 
-   const handleHide = (): void => {
-      // Refocus the property widget container after autocomplete dropdown closes
-      // to ensure undo/redo is available again
-      refocusPropertyWidget();
-   };
-
    return (
       <EditorContainer basePath={basePath} field={field} rowIdx={rowIdx}>
          {({ invalid, error, className }) => (
@@ -225,7 +218,6 @@ export function GenericAutoCompleteEditor({
                      handleGridEditorKeyDown(e);
                      handleUndoRedoKeys(e, canUndo, canRedo, undo, redo);
                   }}
-                  onHide={handleHide}
                   disabled={readonly}
                   className={`w-full ${className}`}
                   autoFocus
