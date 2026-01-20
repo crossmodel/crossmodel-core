@@ -49,6 +49,11 @@ test.describe('Add/Edit/Delete relationship from explorer', () => {
       explorer.activate();
       expect(await explorer.existsFileNode(NEW_RELATIONSHIP_PATH)).toBeTruthy();
 
+      // Verify that the relationships folder is expanded after relationship creation
+      const relationshipsFolder = await explorer.findTreeNode(RELATIONSHIP_PARENT_PATH);
+      expect(relationshipsFolder).toBeDefined();
+      expect(await relationshipsFolder!.isCollapsed()).toBeFalsy();
+
       const editor = await app.openCompositeEditor(NEW_RELATIONSHIP_PATH, 'Code Editor');
       expect(await editor.textContentOfLineByLineNumber(1)).toBe('relationship:');
       expect(await editor.textContentOfLineByLineNumber(2)).toMatch('id: NewRelationship');

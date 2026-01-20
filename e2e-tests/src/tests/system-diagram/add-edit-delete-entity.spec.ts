@@ -57,6 +57,11 @@ test.describe.serial('Add/Edit/Delete entity in a diagram ', () => {
       const explorer = await app.openExplorerView();
       expect(await explorer.existsFileNode(NEW_ENTITY_PATH)).toBeTruthy();
 
+      // Verify that the entities folder is expanded after entity creation
+      const entitiesFolder = await explorer.findTreeNode('system-diagram/entities');
+      expect(entitiesFolder).toBeDefined();
+      expect(await entitiesFolder!.isCollapsed()).toBeFalsy();
+
       // Open the entity file in the code editor and check contents.
       const entityCodeEditor = await app.openCompositeEditor(NEW_ENTITY_PATH, 'Code Editor');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(1)).toBe('entity:');

@@ -191,23 +191,28 @@ export function GenericAutoCompleteEditor({
    };
 
    const onChange = (e: { value: { label: string; value: string } | string }): void => {
-      if (typeof e.value === 'object' && e.value !== undefined && 'value' in e.value) {
+      if (typeof e.value === 'object' && e.value && 'value' in e.value) {
          // user selected a suggestion
          setInputValue(e.value.label);
          options.editorCallback(e.value.value);
-      } else if (typeof e.value === 'string') {
-         // user is typing
-         setInputValue(e.value);
-         if (options.commitOnInput === true) {
-            options.editorCallback(e.value);
+      } else if (typeof e.value === 'string' || !e.value) {
+         const newValue = e.value || '';
+         setInputValue(newValue);
+         if (options.commitOnInput === true || newValue === '') {
+            options.editorCallback(newValue);
          }
       }
    };
 
    const handleHide = (): void => {
-      // Refocus the property widget container after autocomplete dropdown closes
-      // to ensure undo/redo is available again
-      refocusPropertyWidget();
+      // Only refocus the property widget if we're NOT in a grid context.
+      // Grid editors (like in DataTable) need focus to stay in the grid for keyboard navigation.
+      // For form-based uses of GenericAutoCompleteEditor, refocus the property widget
+      // to ensure undo/redo is available again.
+      const isInGrid = document.activeElement?.closest('.p-datatable') !== undefined;
+      if (!isInGrid) {
+         refocusPropertyWidget();
+      }
    };
 
    return (

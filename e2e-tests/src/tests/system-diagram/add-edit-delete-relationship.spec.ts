@@ -53,6 +53,11 @@ test.describe.serial('Add/Edit/Delete relationship in a diagram ', () => {
       const explorer = await app.openExplorerView();
       expect(await explorer.existsFileNode(NEW_RELATIONSHIP_PATH)).toBeTruthy();
 
+      // Verify that the relationships folder is expanded after relationship creation
+      const relationshipsFolder = await explorer.findTreeNode('system-diagram/relationships');
+      expect(relationshipsFolder).toBeDefined();
+      expect(await relationshipsFolder!.isCollapsed()).toBeFalsy();
+
       // Verify the relationship file contents is as expected
       const entityCodeEditor = await app.openCompositeEditor(NEW_RELATIONSHIP_PATH, 'Code Editor');
       expect(await entityCodeEditor.textContentOfLineByLineNumber(1)).toBe('relationship:');

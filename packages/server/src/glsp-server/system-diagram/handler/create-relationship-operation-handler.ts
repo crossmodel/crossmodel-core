@@ -2,7 +2,15 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { ModelFileType, ModelStructure, RELATIONSHIP_EDGE_TYPE, computeRelationshipName, toId, toIdReference } from '@crossmodel/protocol';
+import {
+   ExpandNavigatorForNewFileAction,
+   ModelFileType,
+   ModelStructure,
+   RELATIONSHIP_EDGE_TYPE,
+   computeRelationshipName,
+   toId,
+   toIdReference
+} from '@crossmodel/protocol';
 import { ActionDispatcher, Command, CreateEdgeOperation, JsonCreateEdgeOperationHandler, SelectAction } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
 import { Utils as UriUtils } from 'vscode-uri';
@@ -95,6 +103,10 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
       const text = this.modelState.semanticSerializer.serialize(relationshipRoot);
 
       await this.modelState.modelService.save({ uri: uri.toString(), model: text, clientId: this.modelState.clientId });
+      // Notify client to expand the navigator and reveal the newly created file
+      this.actionDispatcher.dispatchAfterNextUpdate(
+         ExpandNavigatorForNewFileAction.create({ parentUri: dirName.toString(), uri: uri.toString() })
+      );
       const document = await this.modelState.modelService.request(uri.toString());
       return document?.root.relationship;
    }
