@@ -1090,6 +1090,39 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       const handleClickOutside = (event: MouseEvent): void => {
          const target = event.target as HTMLElement;
 
+         // Check if click is on a scrollbar by comparing click position with element's client area
+         const isClickOnScrollbar = (element: HTMLElement): boolean => {
+            const rect = element.getBoundingClientRect();
+            const clickX = event.clientX;
+            const clickY = event.clientY;
+
+            // Check vertical scrollbar (right side)
+            const hasVerticalScrollbar = element.scrollHeight > element.clientHeight;
+            if (hasVerticalScrollbar && clickX >= rect.left + element.clientWidth && clickX <= rect.right) {
+               return true;
+            }
+
+            // Check horizontal scrollbar (bottom)
+            const hasHorizontalScrollbar = element.scrollWidth > element.clientWidth;
+            if (hasHorizontalScrollbar && clickY >= rect.top + element.clientHeight && clickY <= rect.bottom) {
+               return true;
+            }
+
+            return false;
+         };
+
+         // Check if click is on scrollbar of any parent element up to the table
+         let element: HTMLElement | null = target;
+         while (element && element !== tableElement) {
+            if (isClickOnScrollbar(element)) {
+               return;
+            }
+            element = element.parentElement;
+         }
+         if (tableElement && isClickOnScrollbar(tableElement)) {
+            return;
+         }
+
          // Allow clicks inside PrimeReact overlay panels
          const isInsideOverlay = target.closest(
             '.p-dropdown-panel, .p-multiselect-panel, .p-autocomplete-panel, .p-datepicker, .p-dialog, .p-overlaypanel'
