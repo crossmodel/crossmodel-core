@@ -8,7 +8,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 
 test.describe('Add/Edit/Delete custom properties to/from an entity in a diagram', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteCustomPropertiesDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteCustomPropertiesDiagram.diagram.cm';
    const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteCustomPropertiesEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'AddEditDeleteCustomPropertiesEntity';
 

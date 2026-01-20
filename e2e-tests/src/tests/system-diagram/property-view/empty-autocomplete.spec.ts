@@ -7,7 +7,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 
 test.describe('Empty autocomplete fields', () => {
    let app: CMApp;
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteAttributesDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteAttributesDiagram.diagram.cm';
    const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteAttributesEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'AddEditDeleteAttributesEntity';
 
