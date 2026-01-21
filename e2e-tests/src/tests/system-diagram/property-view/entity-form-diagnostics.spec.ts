@@ -38,10 +38,14 @@ test.describe('Entity Form Diagnostics', () => {
    test('Should show error when creating attribute without name', async () => {
       // Start adding attribute
       const attributeInEdit = await form.attributesSection.startAddAttribute();
-      
-      // Select datatype 'Text'
-      const dataTypeCell = attributeInEdit.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(1);
+
+       // Select datatype 'Text'
+      const dataTypeCell = attributeInEdit.locator
+         .locator('td:not(.p-selection-column):not(.p-reorder-column)')
+         .nth(1);
+
       await dataTypeCell.locator('.p-autocomplete-dropdown').click();
+
       const autocompletePanel = app.page.locator('.p-autocomplete-panel').first();
       await autocompletePanel.waitFor({ state: 'visible' });
       await autocompletePanel.getByRole('option', { name: 'Text' }).click();
@@ -54,7 +58,7 @@ test.describe('Entity Form Diagnostics', () => {
       // Verify validation error
       const invalidElement = form.attributesSection.locator.locator('.p-invalid');
       await expect(invalidElement.first()).toBeVisible({ timeout: 15000 });
-      
+
       const cancelButton = attributeInEdit.locator.locator('button.p-row-editor-cancel');
       if (await cancelButton.isVisible()) {
          await cancelButton.click();
@@ -65,10 +69,12 @@ test.describe('Entity Form Diagnostics', () => {
       // Start adding identifier
       const identifierInEdit = await form.identifiersSection.startAddIdentifier();
 
-      // Set name but no attributes 
+      // Set name but no attributes
       await identifierInEdit.setName('InvalidIdentifier');
 
-      await identifierInEdit.save().catch(() => {});
+      // Click save button directly to trigger validation without waiting for row to close
+      const saveButton = identifierInEdit.locator.locator('button.p-row-editor-save');
+      await saveButton.first().click();
 
       // Verify validation error on the identifiers section
       const invalidElement = form.identifiersSection.locator.locator('.p-invalid');
@@ -80,5 +86,4 @@ test.describe('Entity Form Diagnostics', () => {
          await cancelButton.click();
       }
    });
-
 });
