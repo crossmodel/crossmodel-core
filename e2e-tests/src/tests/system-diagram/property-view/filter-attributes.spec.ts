@@ -7,7 +7,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 
 test.describe('Filter attributes in entity property view', () => {
    let app: CMApp;
-   const FILTER_DIAGRAM_PATH = 'system-diagram/diagrams/FilterAttributesDiagram.system-diagram.cm';
+   const FILTER_DIAGRAM_PATH = 'system-diagram/diagrams/FilterAttributesDiagram.diagram.cm';
 
    test.beforeAll(async ({ browser, playwright }) => {
       app = await CMApp.load({ browser, playwright });
@@ -20,7 +20,7 @@ test.describe('Filter attributes in entity property view', () => {
       // Open the diagram with pre-created entity containing attributes for filtering
       const FILTER_ENTITY_ID = 'FilterByDataTypeEntity';
 
-      const diagramEditorForFilter = await app.openCompositeEditor(FILTER_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForFilter = await app.openCompositeEditor(FILTER_DIAGRAM_PATH, 'Diagram');
       const propertyViewForFilter = await diagramEditorForFilter.selectLogicalEntityAndOpenProperties(FILTER_ENTITY_ID);
       const formForFilter = await propertyViewForFilter.form();
 
@@ -51,7 +51,7 @@ test.describe('Filter attributes in entity property view', () => {
       // Open the diagram with pre-created entity containing attributes for filtering
       const FILTER_ENTITY_ID = 'FilterByTextEntity';
 
-      const diagramEditorForFilter = await app.openCompositeEditor(FILTER_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForFilter = await app.openCompositeEditor(FILTER_DIAGRAM_PATH, 'Diagram');
       const propertyViewForFilter = await diagramEditorForFilter.selectLogicalEntityAndOpenProperties(FILTER_ENTITY_ID);
       const formForFilter = await propertyViewForFilter.form();
 
@@ -86,7 +86,7 @@ test.describe('Filter attributes in entity property view', () => {
       // Open the diagram with pre-created entity containing attributes for filtering
       const FILTER_ENTITY_ID = 'FilterByTextEntity';
 
-      const diagramEditorForFilter = await app.openCompositeEditor(FILTER_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForFilter = await app.openCompositeEditor(FILTER_DIAGRAM_PATH, 'Diagram');
       const propertyViewForFilter = await diagramEditorForFilter.selectLogicalEntityAndOpenProperties(FILTER_ENTITY_ID);
       const formForFilter = await propertyViewForFilter.form();
 
