@@ -83,7 +83,7 @@ export class CMApp extends TheiaGLSPApp {
          integratedEditor = await editor.switchToCodeEditor();
       } else if (editorType === 'Form Editor') {
          integratedEditor = await editor.switchToFormEditor();
-      } else if (editorType === 'System Diagram') {
+      } else if (editorType === 'Diagram') {
          integratedEditor = await editor.switchToSystemDiagram();
       } else if (editorType === 'Mapping Diagram') {
          integratedEditor = await editor.switchToMappingDiagram();
