@@ -9,7 +9,7 @@ import { CompletionItemKind, InsertTextFormat, TextEdit } from 'vscode-languages
 import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
-import { AttributeMapping, RelationshipAttribute, isAttributeMapping, isAttributeMappingExpression } from './generated/ast.js';
+import { AttributeMapping, RelationshipAttribute, isAttributeMappingExpression } from './generated/ast.js';
 import { fixDocument, getOwner } from './util/ast-util.js';
 
 /**
@@ -62,9 +62,6 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
    ): MaybePromise<void> {
       if (assignment.feature === 'id') {
          return this.completionForId(context, assignment, acceptor);
-      }
-      if (isAttributeMapping(context.node) && assignment.feature === 'expression') {
-         return this.completeAttributeMappingExpression(context, context.node, acceptor);
       }
       if (isAttributeMappingExpression(context.node) && assignment.feature === 'expression') {
          const attributeMapping = getOwner(context.node) as AttributeMapping;

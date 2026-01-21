@@ -122,7 +122,7 @@ AttributeMapping returns AttributeMapping:
 
 AttributeMappingExpression returns AttributeMappingExpression:
     'language' ':' language=STRING
-    ('expression' ':' expression=STRING)?
+    'expression' ':' expression=STRING
 ;
 
 AttributeMappingTarget:

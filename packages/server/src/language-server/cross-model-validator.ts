@@ -39,6 +39,7 @@ import {
    WithCustomProperties
 } from './generated/ast.js';
 import { findDocument, getOwner, isSemanticRoot } from './util/ast-util.js';
+import { getAttributeMappingExpressionRefRange } from './util/expression-range.js';
 
 export interface FilenameNotMatchingDiagnostic extends Diagnostic {
    data: {
@@ -462,10 +463,20 @@ export class CrossModelValidator {
          for (const expressionMatch of expressionsInExpr) {
             const expressionText = getExpressionText(expressionMatch);
             if (!sources.includes(expressionText)) {
-               accept('error', 'Only sources can be referenced in an expression.', {
-                  node: expr,
-                  property: 'expression'
-               });
+               const range = getAttributeMappingExpressionRefRange(expr, expressionMatch);
+               if (range) {
+                  accept('error', 'Only sources can be referenced in an expression.', {
+                     node: expr,
+                     property: 'expression',
+                     range
+                  });
+               } else {
+                  // Fallback: highlight the expression property
+                  accept('error', 'Only sources can be referenced in an expression.', {
+                     node: expr,
+                     property: 'expression'
+                  });
+               }
             }
          }
       }
