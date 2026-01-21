@@ -39,10 +39,8 @@ test.describe('Entity Form Diagnostics', () => {
       // Start adding attribute
       const attributeInEdit = await form.attributesSection.startAddAttribute();
 
-       // Select datatype 'Text'
-      const dataTypeCell = attributeInEdit.locator
-         .locator('td:not(.p-selection-column):not(.p-reorder-column)')
-         .nth(1);
+      // Select datatype 'Text'
+      const dataTypeCell = attributeInEdit.locator.locator('td:not(.p-selection-column):not(.p-reorder-column)').nth(1);
 
       await dataTypeCell.locator('.p-autocomplete-dropdown').click();
 
@@ -55,9 +53,13 @@ test.describe('Entity Form Diagnostics', () => {
       const saveButton = attributeInEdit.locator.locator('button.p-row-editor-save');
       await saveButton.first().click();
 
-      // Verify validation error
-      const invalidElement = form.attributesSection.locator.locator('.p-invalid');
-      await expect(invalidElement.first()).toBeVisible({ timeout: 15000 });
+      // Verify validation error - find the p-invalid cell containing the error message
+      const invalidCell = form.attributesSection.locator.locator('div.p-invalid').first();
+      await expect(invalidCell).toBeVisible({ timeout: 5000 });
+
+      // Verify the error message is present inside the invalid cell
+      const errorMessage = invalidCell.locator('p.validation-error-message');
+      await expect(errorMessage).toContainText('The name cannot be empty');
 
       const cancelButton = attributeInEdit.locator.locator('button.p-row-editor-cancel');
       if (await cancelButton.isVisible()) {
@@ -76,9 +78,14 @@ test.describe('Entity Form Diagnostics', () => {
       const saveButton = identifierInEdit.locator.locator('button.p-row-editor-save');
       await saveButton.first().click();
 
-      // Verify validation error on the identifiers section
-      const invalidElement = form.identifiersSection.locator.locator('.p-invalid');
-      await expect(invalidElement.first()).toBeVisible({ timeout: 15000 });
+      // Verify validation error - find the p-invalid cell with the identifier validation error
+      // Use .last() since the newly added identifier row will be at the end of the section
+      const invalidCell = form.identifiersSection.locator.locator('div.p-invalid').last();
+      await expect(invalidCell).toBeVisible({ timeout: 5000 });
+
+      // Verify the error message is present inside the invalid cell
+      const errorMessage = invalidCell.locator('p.validation-error-message');
+      await expect(errorMessage).toContainText('Identifier must have at least one attribute');
 
       // Cancel edit if still in edit mode
       const cancelButton = identifierInEdit.locator.locator('button.p-row-editor-cancel');
