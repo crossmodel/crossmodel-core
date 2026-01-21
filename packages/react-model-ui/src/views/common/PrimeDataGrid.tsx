@@ -1087,8 +1087,26 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          return;
       }
 
+      // Track mousedown position to prevent false commits when releasing after scrollbar drag
+      let mouseDownTarget: EventTarget | undefined = undefined;
+
+      const handleMouseDown = (event: MouseEvent): void => {
+         mouseDownTarget = event.target ?? undefined;
+      };
+
       const handleClickOutside = (event: MouseEvent): void => {
          const target = event.target as HTMLElement;
+
+         // If mousedown was on the editing row, don't commit on mouseup
+         // This prevents commits when dragging scrollbar and releasing over the editing row
+         const editingRow = tableElement.querySelector('tr.p-row-editing');
+         if (editingRow && mouseDownTarget && editingRow.contains(mouseDownTarget as Node)) {
+            mouseDownTarget = undefined;
+            return;
+         }
+
+         // Reset mousedown tracking
+         mouseDownTarget = undefined;
 
          // Check if click is on a scrollbar by comparing click position with element's client area
          const isClickOnScrollbar = (element: HTMLElement): boolean => {
@@ -1112,12 +1130,12 @@ export function PrimeDataGrid<T extends Record<string, any>>({
          };
 
          // Check if click is on scrollbar of any parent element up to the table
-         let element: HTMLElement | null = target;
-         while (element && element !== tableElement) {
-            if (isClickOnScrollbar(element)) {
+         let currentElement: HTMLElement | undefined = target;
+         while (currentElement && currentElement !== tableElement) {
+            if (isClickOnScrollbar(currentElement)) {
                return;
             }
-            element = element.parentElement;
+            currentElement = currentElement.parentElement ?? undefined;
          }
          if (tableElement && isClickOnScrollbar(tableElement)) {
             return;
@@ -1134,7 +1152,6 @@ export function PrimeDataGrid<T extends Record<string, any>>({
 
          const isButton = target.tagName === 'BUTTON' || target.closest('button');
          if (isButton) {
-            const editingRow = tableElement.querySelector('tr.p-row-editing');
             const isInEditingRow = editingRow && editingRow.contains(target);
             const isEditorButton = target.closest(
                '.p-autocomplete, .p-dropdown, .p-multiselect, .p-datepicker, .p-cell-editing, .p-datatable-add-button'
@@ -1213,13 +1230,16 @@ export function PrimeDataGrid<T extends Record<string, any>>({
       // Attach event listeners for better scoping
       // focusout bubbles up from the table when focus leaves
       tableElement.addEventListener('focusout', handleFocusOut);
-      // mouseup attached to document to catch clicks both inside and outside the table
+      // mousedown to track where the mouse was initially pressed
+      document.addEventListener('mousedown', handleMouseDown);
+      // mousedown attached to document to catch clicks both inside and outside the table
       // The handler logic determines if the click should trigger a save
-      document.addEventListener('mouseup', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
 
       return () => {
          tableElement.removeEventListener('focusout', handleFocusOut);
-         document.removeEventListener('mouseup', handleClickOutside);
+         document.removeEventListener('mousedown', handleMouseDown);
+         document.removeEventListener('mousedown', handleClickOutside);
       };
    }, [activeRowKey]);
 
