@@ -166,6 +166,29 @@ export class LogicalEntityAttributesSection extends FormSection {
          await attribute.delete();
       }
    }
+
+   async getGlobalFilterInput(): Promise<Locator> {
+      return this.locator.locator('.datatable-global-filter input[placeholder="Keyword Search"]');
+   }
+
+   async setGlobalFilter(text: string): Promise<void> {
+      const filterInput = await this.getGlobalFilterInput();
+      await filterInput.waitFor({ state: 'visible' });
+      await filterInput.fill(text);
+      await this.page.waitForTimeout(300);
+   }
+
+   async clickClearFilters(): Promise<void> {
+      const clearButton = this.locator.locator('button:has-text("Clear Filters")');
+      await clearButton.waitFor({ state: 'visible' });
+      await clearButton.click();
+      await this.page.waitForTimeout(300);
+   }
+
+   async getVisibleAttributeCount(): Promise<number> {
+      const visibleRows = await this.locator.locator('tr[data-pc-section="bodyrow"]').all();
+      return visibleRows.length;
+   }
 }
 
 export interface LogicalAttributeProperties {

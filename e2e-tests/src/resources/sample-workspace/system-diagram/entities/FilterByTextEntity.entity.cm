@@ -1,0 +1,10 @@
+entity:
+    id: FilterByTextEntity
+    name: "FilterByTextEntity"
+    attributes:
+      - id: CustomerName
+        name: "CustomerName"
+      - id: CustomerEmail
+        name: "CustomerEmail"
+      - id: OrderId
+        name: "OrderId"
