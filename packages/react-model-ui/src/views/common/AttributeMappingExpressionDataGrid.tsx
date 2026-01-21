@@ -4,7 +4,7 @@
 import { AttributeMapping } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
-import { useModelDispatch, useReadonly } from '../../ModelContext';
+import { useDiagnosticsManager, useModelDispatch, useReadonly } from '../../ModelContext';
 import { GenericAutoCompleteEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
@@ -26,6 +26,54 @@ const languageOptions = [
    { label: 'SQL', value: 'SQL' },
    { label: 'Python', value: 'Python' }
 ];
+
+function ExpressionLanguageProperty({
+   rowData,
+   editingRows,
+   mappingIdx
+}: {
+   rowData: AttributeMappingExpressionRow;
+   editingRows: Record<string, boolean>;
+   mappingIdx: number;
+}): React.ReactNode {
+   const diagnostics = useDiagnosticsManager();
+   const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'expressions'];
+   const info = diagnostics.info(basePath, 'language', rowData.idx);
+   const error = info.empty ? undefined : info.text();
+
+   const showInvalid = Boolean(error && !editingRows[rowData.id]);
+
+   return (
+      <div className={`grid-cell-container ${showInvalid ? 'p-invalid' : ''}`} title={error || undefined}>
+         <span>{rowData.language || ''}</span>
+         {error && !editingRows[rowData.id] && <p className='p-error m-0'>{error}</p>}
+      </div>
+   );
+}
+
+function ExpressionValueProperty({
+   rowData,
+   editingRows,
+   mappingIdx
+}: {
+   rowData: AttributeMappingExpressionRow;
+   editingRows: Record<string, boolean>;
+   mappingIdx: number;
+}): React.ReactNode {
+   const diagnostics = useDiagnosticsManager();
+   const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'expressions'];
+   const info = diagnostics.info(basePath, 'expression', rowData.idx);
+   const error = info.empty ? undefined : info.text();
+
+   const showInvalid = Boolean(error && !editingRows[rowData.id]);
+
+   return (
+      <div className={`grid-cell-container ${showInvalid ? 'p-invalid' : ''}`} title={error || undefined}>
+         <span>{rowData.expression || ''}</span>
+         {error && !editingRows[rowData.id] && <p className='p-error m-0'>{error}</p>}
+      </div>
+   );
+}
 
 export function AttributeMappingExpressionDataGrid({
    attributeMapping,
@@ -219,7 +267,9 @@ export function AttributeMappingExpressionDataGrid({
          {
             field: 'language' as any,
             header: 'Language',
-            body: (rowData: AttributeMappingExpressionRow) => rowData.language || '',
+            body: (rowData: AttributeMappingExpressionRow) => (
+               <ExpressionLanguageProperty rowData={rowData} editingRows={editingRows} mappingIdx={mappingIdx} />
+            ),
             editor: (options: any) => (
                <GenericAutoCompleteEditor
                   options={options}
@@ -234,7 +284,9 @@ export function AttributeMappingExpressionDataGrid({
          {
             field: 'expression' as any,
             header: 'Expression',
-            body: (rowData: AttributeMappingExpressionRow) => rowData.expression || '',
+            body: (rowData: AttributeMappingExpressionRow) => (
+               <ExpressionValueProperty rowData={rowData} editingRows={editingRows} mappingIdx={mappingIdx} />
+            ),
             editor: (options: any) => (
                <GenericTextEditor
                   options={options}
@@ -245,7 +297,7 @@ export function AttributeMappingExpressionDataGrid({
             filterType: 'text' as any
          }
       ],
-      [mappingIdx]
+      [mappingIdx, editingRows]
    );
 
    if (!attributeMapping) {
