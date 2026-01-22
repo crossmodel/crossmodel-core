@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.23.0](https://github.com/crossmodel/crossmodel-core/compare/v0.22.0...v0.23.0) (2026-01-22)
+
+**Note:** Version bump only for package crossmodel-core-browser
+
+
+
+
+
 # [0.22.0](https://github.com/crossmodel/crossmodel-core/compare/v0.21.6...v0.22.0) (2026-01-22)
 
 **Note:** Version bump only for package crossmodel-core-browser

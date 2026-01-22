@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.23.0](https://github.com/crossmodel/crossmodel-core/compare/v0.22.0...v0.23.0) (2026-01-22)
+
+
+### Features
+
+* Context menu options in system diagram ([#235](https://github.com/crossmodel/crossmodel-core/issues/235)) ([0d66664](https://github.com/crossmodel/crossmodel-core/commit/0d66664745ee1b67afb7bce738689a368d46b616))
+
+
+
+
+
 # [0.22.0](https://github.com/crossmodel/crossmodel-core/compare/v0.21.6...v0.22.0) (2026-01-22)
 
 **Note:** Version bump only for package @crossmodel/composite-editor
