@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.6](https://github.com/crossmodel/crossmodel-core/compare/v0.21.5...v0.21.6) (2026-01-22)
+
+
+### Bug Fixes
+
+* set title caption to resource URI path in CompositeEditor ([#259](https://github.com/crossmodel/crossmodel-core/issues/259)) ([ae5684d](https://github.com/crossmodel/crossmodel-core/commit/ae5684d1a779b849a3e0e37270be1b19185f19db))
+
+
+
+
+
 ## [0.21.5](https://github.com/crossmodel/crossmodel-core/compare/v0.21.4...v0.21.5) (2026-01-22)
 
 **Note:** Version bump only for package @crossmodel/composite-editor
