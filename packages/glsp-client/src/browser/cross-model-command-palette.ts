@@ -76,11 +76,11 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
       } else {
          super.executeAction(input);
       }
-      this.actionDispatcher.dispatch(EnableDefaultToolsAction.create());
    }
 
    override hide(): void {
       super.hide();
+      this.actionDispatcher.dispatch(EnableDefaultToolsAction.create());
       this.creationPosition = undefined;
       this.visible = false;
    }

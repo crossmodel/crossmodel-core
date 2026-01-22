@@ -106,14 +106,12 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
          });
       } else if (this.triggerAction.args?.type === 'create') {
          this.queryEntityName(ctx, event, insert).then(name => {
-            if (name === undefined) {
-               // user cancelled the dialog
-               return;
+            const actions: Action[] = [];
+            if (name !== undefined) {
+               const action = super.getCreateOperation(ctx, event, insert) as CreateNodeOperation & { args: Args };
+               action.args.name = name;
+               actions.push(action);
             }
-            const action = super.getCreateOperation(ctx, event, insert) as CreateNodeOperation & { args: Args };
-            action.args.name = name;
-            const actions: Action[] = [action];
-
             if (this.triggerAction.args?.singleUse !== false) {
                actions.push(EnableDefaultToolsAction.create());
             }

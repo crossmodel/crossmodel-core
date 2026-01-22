@@ -10,8 +10,6 @@ import {
    FitToScreenAction,
    ICommand,
    PaletteItem,
-   RequestContextActions,
-   SetContextActions,
    SetModelAction,
    ToolPalette,
    TriggerEdgeCreationAction,
@@ -79,30 +77,6 @@ export class CrossModelToolPalette extends ToolPalette {
       fitToScreenButton.ariaLabel = fitToScreenButton.title;
       fitToScreenButton.tabIndex = 1;
       return fitToScreenButton;
-   }
-
-   protected override async setPaletteItems(): Promise<void> {
-      await super.setPaletteItems();
-      const requestAction = RequestContextActions.create({
-         contextId: ToolPalette.ID,
-         editorContext: {
-            selectedElementIds: []
-         }
-      });
-      const response = await this.actionDispatcher.request<SetContextActions>(requestAction);
-      this.paletteItems = response.actions.map(action => action as PaletteItem);
-      this.dynamic = this.paletteItems.some(item => this.hasDynamicAction(item));
-   }
-
-   override async reloadPaletteBody(): Promise<void> {
-      await this.setPaletteItems();
-      this.paletteItemsCopy = [];
-      this.requestFilterUpdate(this.searchField?.value || '');
-      if (this.lastActiveButton) {
-         this.changeActiveButton(this.lastActiveButton);
-      } else {
-         this.changeActiveButton(this.defaultToolsButton);
-      }
    }
 
    override changeActiveButton(button?: HTMLElement): void {

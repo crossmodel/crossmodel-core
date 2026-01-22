@@ -43,10 +43,10 @@ import {
    toAbsoluteBounds
 } from '@eclipse-glsp/client';
 
+import { TriggerSystemEdgeCreationAction } from '@crossmodel/protocol';
 import { animationFrame } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { RelationshipCommandPalette } from '../../cross-model-command-palette';
-import { TriggerSystemEdgeCreationAction } from '@crossmodel/protocol';
 
 const CSS_EDGE_CREATION = 'edge-creation';
 const CSS_SOURCE_HIGHLIGHT = 'source-highlight';
