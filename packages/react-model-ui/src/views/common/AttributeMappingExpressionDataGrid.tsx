@@ -187,12 +187,15 @@ export function AttributeMappingExpressionDataGrid({
    const onExpressionUpdate = React.useCallback(
       (expressionToUpdate: AttributeMappingExpressionRow) => {
          if (expressionToUpdate._uncommitted) {
-            if (!expressionToUpdate.language) {
+            const hasContent =
+               (expressionToUpdate.language && expressionToUpdate.language.trim() !== '') ||
+               (expressionToUpdate.expression && expressionToUpdate.expression.trim() !== '');
+            if (!hasContent) {
                return;
             }
             // Add new uncommitted expression as a new row
             const newExpression = {
-               language: expressionToUpdate.language,
+               language: expressionToUpdate.language ?? '',
                expression: expressionToUpdate.expression ?? ''
             };
             dispatch({
@@ -272,7 +275,7 @@ export function AttributeMappingExpressionDataGrid({
             ),
             editor: (options: any) => (
                <GenericAutoCompleteEditor
-                  options={options}
+                  options={{ ...options, commitOnInput: true }}
                   basePath={['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'expressions']}
                   field='language'
                   dropdownOptions={languageOptions}
