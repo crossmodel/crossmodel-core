@@ -10,7 +10,7 @@ import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
 import { AttributeMapping, RelationshipAttribute, isAttributeMappingExpression } from './generated/ast.js';
-import { fixDocument, getOwner } from './util/ast-util.js';
+import { fixDocument } from './util/ast-util.js';
 
 /**
  * Custom completion provider that only shows the short options to the user if a longer, fully-qualified version is also available.
@@ -64,7 +64,7 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
          return this.completionForId(context, assignment, acceptor);
       }
       if (isAttributeMappingExpression(context.node) && assignment.feature === 'expression') {
-         const attributeMapping = getOwner(context.node) as AttributeMapping;
+         const attributeMapping = (context.node as any).$container as AttributeMapping;
          return this.completeAttributeMappingExpression(context, attributeMapping, acceptor);
       }
       if (isAttributeMappingExpression(context.node) && assignment.feature === 'language') {
@@ -86,9 +86,12 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
 
    protected completeAttributeMappingExpression(
       context: CompletionContext,
-      mapping: AttributeMapping,
+      mapping: AttributeMapping | undefined,
       acceptor: CompletionAcceptor
    ): MaybePromise<void> {
+      if (!mapping) {
+         return;
+      }
       const text = context.textDocument.getText();
       const expressionUpToCursor = text.substring(context.tokenOffset, context.offset);
       const referenceStart = expressionUpToCursor.lastIndexOf('{{');

@@ -37,8 +37,8 @@ function ExpressionLanguageProperty({
    mappingIdx: number;
 }): React.ReactNode {
    const diagnostics = useDiagnosticsManager();
-   const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'expressions'];
-   const info = diagnostics.info(basePath, 'language', rowData.idx);
+   const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'expressions@' + rowData.idx.toString()];
+   const info = diagnostics.info(basePath, 'language');
    const error = info.empty ? undefined : info.text();
 
    const showInvalid = Boolean(error && !editingRows[rowData.id]);
@@ -61,8 +61,8 @@ function ExpressionValueProperty({
    mappingIdx: number;
 }): React.ReactNode {
    const diagnostics = useDiagnosticsManager();
-   const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'expressions'];
-   const info = diagnostics.info(basePath, 'expression', rowData.idx);
+   const basePath = ['mapping', 'target', 'mappings@' + mappingIdx.toString(), 'expressions@' + rowData.idx.toString()];
+   const info = diagnostics.info(basePath, 'expression');
    const error = info.empty ? undefined : info.text();
 
    const showInvalid = Boolean(error && !editingRows[rowData.id]);
@@ -279,7 +279,8 @@ export function AttributeMappingExpressionDataGrid({
                />
             ),
             filterType: 'text' as any,
-            style: { width: '30%' }
+            headerStyle: { width: '120px' },
+            style: { width: '120px' }
          },
          {
             field: 'expression' as any,
