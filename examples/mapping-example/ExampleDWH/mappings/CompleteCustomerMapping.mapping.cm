@@ -19,7 +19,7 @@ mapping:
               - CustomerSourceObject.Country
           - attribute: FixedNumber
             expressions:
-              - language: "Python"
+              - language: "SQL"
                 expression: "1"
           - attribute: FixedString
             expressions:
@@ -30,7 +30,7 @@ mapping:
               - CustomerSourceObject.First_Name
               - CustomerSourceObject.Last_Name
             expressions:
-              - language: "Python"
+              - language: "SQL"
                 expression: "CONCAT_WS({{CustomerSourceObject.First_Name}}, {{CustomerSourceObject.Last_Name}}, ' ')"
           - attribute: Age
             sources:
@@ -40,5 +40,5 @@ mapping:
                 expression: "DATEDIFF(YEAR, NOW(), {{CustomerSourceObject.Birth_Date}})"
           - attribute: Today
             expressions:
-              - language: "Python"
+              - language: "SQL"
                 expression: "GETDATE()"
