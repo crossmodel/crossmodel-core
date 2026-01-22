@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.22.0](https://github.com/crossmodel/crossmodel-core/compare/v0.21.6...v0.22.0) (2026-01-22)
+
+
+### Features
+
+* Mapping expression per language ([#255](https://github.com/crossmodel/crossmodel-core/issues/255)) ([3b1e010](https://github.com/crossmodel/crossmodel-core/commit/3b1e010ece80263f48f413960ead75a3fb8de3f7))
+
+
+
+
+
 ## [0.21.6](https://github.com/crossmodel/crossmodel-core/compare/v0.21.5...v0.21.6) (2026-01-22)
 
 
