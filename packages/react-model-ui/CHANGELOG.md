@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.5](https://github.com/crossmodel/crossmodel-core/compare/v0.21.4...v0.21.5) (2026-01-22)
+
+
+### Bug Fixes
+
+* commit row on outside click and inside wrapper ([#254](https://github.com/crossmodel/crossmodel-core/issues/254)) ([0f7d7a4](https://github.com/crossmodel/crossmodel-core/commit/0f7d7a4ba40733bb4efb4d9aad0a1a61d78d6818))
+
+
+
+
+
 ## [0.21.4](https://github.com/crossmodel/crossmodel-core/compare/v0.21.3...v0.21.4) (2026-01-21)
 
 **Note:** Version bump only for package @crossmodel/react-model-ui
