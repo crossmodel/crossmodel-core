@@ -92,7 +92,11 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
    }
 
    protected markExpression(node: TargetObject, attribute: TargetObjectAttribute, id: string): GLabel | undefined {
-      return node.mappings.some(mapping => mapping.attribute?.value.ref === attribute && !!mapping.expression)
+      const hasExpression = node.mappings.some(
+         mapping => mapping.attribute?.value.ref === attribute && (mapping as any).expressions?.some((expr: any) => !!expr?.expression)
+      );
+
+      return hasExpression
          ? GLabel.builder().id(`${id}_attribute_expression_marker`).text('𝑓ᵪ').addCssClasses('attribute_expression_marker').build()
          : undefined;
    }

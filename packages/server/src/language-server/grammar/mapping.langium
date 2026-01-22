@@ -97,6 +97,11 @@ TargetObject returns TargetObject:
 interface AttributeMapping extends WithCustomProperties {
     attribute?: AttributeMappingTarget;
     sources: AttributeMappingSource[];
+    expressions: AttributeMappingExpression[];
+}
+
+interface AttributeMappingExpression {
+    language: string;
     expression: string;
 }
 
@@ -107,8 +112,17 @@ AttributeMapping returns AttributeMapping:
             (LIST_ITEM sources+=AttributeMappingSource)+     
         DEDENT
     )?
-    ('expression' ':' expression=STRING)?
+    ('expressions' ':' 
+        INDENT 
+            (LIST_ITEM expressions+=AttributeMappingExpression)+     
+        DEDENT
+    )?
     CustomPropertiesFragment?
+;
+
+AttributeMappingExpression returns AttributeMappingExpression:
+    'language' ':' language=STRING
+    'expression' ':' expression=STRING
 ;
 
 AttributeMappingTarget:

@@ -9,7 +9,7 @@ import { CompletionItemKind, InsertTextFormat, TextEdit } from 'vscode-languages
 import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
-import { AttributeMapping, RelationshipAttribute, isAttributeMapping } from './generated/ast.js';
+import { AttributeMapping, RelationshipAttribute, isAttributeMappingExpression } from './generated/ast.js';
 import { fixDocument } from './util/ast-util.js';
 
 /**
@@ -63,8 +63,12 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
       if (assignment.feature === 'id') {
          return this.completionForId(context, assignment, acceptor);
       }
-      if (isAttributeMapping(context.node) && assignment.feature === 'expression') {
-         return this.completeAttributeMappingExpression(context, context.node, acceptor);
+      if (isAttributeMappingExpression(context.node) && assignment.feature === 'expression') {
+         const attributeMapping = (context.node as any).$container as AttributeMapping;
+         return this.completeAttributeMappingExpression(context, attributeMapping, acceptor);
+      }
+      if (isAttributeMappingExpression(context.node) && assignment.feature === 'language') {
+         return this.completeAttributeMappingLanguage(context, acceptor);
       }
       if (GrammarAST.isRuleCall(assignment.terminal) && assignment.terminal.rule.ref) {
          const type = this.getRuleType(assignment.terminal.rule.ref);
@@ -82,9 +86,12 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
 
    protected completeAttributeMappingExpression(
       context: CompletionContext,
-      mapping: AttributeMapping,
+      mapping: AttributeMapping | undefined,
       acceptor: CompletionAcceptor
    ): MaybePromise<void> {
+      if (!mapping) {
+         return;
+      }
       const text = context.textDocument.getText();
       const expressionUpToCursor = text.substring(context.tokenOffset, context.offset);
       const referenceStart = expressionUpToCursor.lastIndexOf('{{');
@@ -180,6 +187,20 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
          kind: CompletionItemKind.Snippet,
          sortText: '0'
       });
+   }
+
+   protected completeAttributeMappingLanguage(context: CompletionContext, acceptor: CompletionAcceptor): MaybePromise<void> {
+      const languages = ['SQL', 'Python'];
+      for (const language of languages) {
+         acceptor(context, {
+            label: language,
+            textEdit: {
+               newText: quote(language),
+               range: this.getCompletionRange(context)
+            },
+            kind: CompletionItemKind.Value
+         });
+      }
    }
 
    protected getCompletionRange(context: CompletionContext): Range {

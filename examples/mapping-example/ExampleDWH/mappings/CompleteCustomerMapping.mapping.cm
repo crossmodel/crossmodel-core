@@ -18,17 +18,27 @@ mapping:
             sources:
               - CustomerSourceObject.Country
           - attribute: FixedNumber
-            expression: "1"
+            expressions:
+              - language: "SQL"
+                expression: "1"
           - attribute: FixedString
-            expression: "Hoppa"
+            expressions:
+              - language: "SQL"
+                expression: "Hoppa"
           - attribute: Name
             sources:
               - CustomerSourceObject.First_Name
               - CustomerSourceObject.Last_Name
-            expression: "CONCAT_WS({{CustomerSourceObject.First_Name}}, {{CustomerSourceObject.Last_Name}}, ' ')"
+            expressions:
+              - language: "SQL"
+                expression: "CONCAT_WS({{CustomerSourceObject.First_Name}}, {{CustomerSourceObject.Last_Name}}, ' ')"
           - attribute: Age
             sources:
               - CustomerSourceObject.Birth_Date
-            expression: "DATEDIFF(YEAR, NOW(), {{CustomerSourceObject.Birth_Date}})"
+            expressions:
+              - language: "SQL"
+                expression: "DATEDIFF(YEAR, NOW(), {{CustomerSourceObject.Birth_Date}})"
           - attribute: Today
-            expression: "GETDATE()"
+            expressions:
+              - language: "SQL"
+                expression: "GETDATE()"

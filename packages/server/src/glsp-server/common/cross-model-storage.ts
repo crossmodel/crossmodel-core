@@ -93,10 +93,14 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
    protected async updateEditMode(document: AstCrossModelDocument): Promise<Action[]> {
       const actions = [];
       const prevEditMode = this.state.editMode;
-      this.state.editMode =
-         document.diagnostics.filter(diagnostic => diagnostic.severity === DiagnosticSeverity.Error).length > 0
-            ? EditMode.READONLY
-            : EditMode.EDITABLE;
+      // Only set readonly mode for parse/lexing errors, not validation errors
+      // Validation errors can be fixed in the form/diagram views
+      const hasParseErrors = document.diagnostics.some(
+         diagnostic =>
+            diagnostic.severity === DiagnosticSeverity.Error &&
+            (diagnostic.data?.code === 'lexing-error' || diagnostic.data?.code === 'parsing-error')
+      );
+      this.state.editMode = hasParseErrors ? EditMode.READONLY : EditMode.EDITABLE;
       if (prevEditMode !== this.state.editMode) {
          if (this.state.isReadonly) {
             actions.push(SetEditModeAction.create(EditMode.READONLY));

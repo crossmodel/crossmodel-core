@@ -1378,7 +1378,7 @@ export function PrimeDataGrid<T extends Record<string, any>>({
                   header='Actions'
                   rowEditor={editable && !readonly}
                   body={allActionsTemplate}
-                  style={{ width: '10rem' }}
+                  style={{ width: '85px' }}
                   bodyClassName={(rowData: T) => {
                      const rowKey = rowData[keyField];
                      return editingRows && rowKey !== undefined && editingRows[rowKey] ? 'p-cell-editing' : '';

@@ -54,6 +54,7 @@ export type CrossModelKeywordNames =
     | "edges"
     | "entity"
     | "expression"
+    | "expressions"
     | "from"
     | "height"
     | "id"
@@ -61,6 +62,7 @@ export type CrossModelKeywordNames =
     | "inherits"
     | "inner-join"
     | "join"
+    | "language"
     | "left-join"
     | "length"
     | "logical"
@@ -131,6 +133,19 @@ export const SourceObjectCondition = 'SourceObjectCondition';
 
 export function isSourceObjectCondition(item: unknown): item is SourceObjectCondition {
     return reflection.isInstance(item, SourceObjectCondition);
+}
+
+export interface AttributeMappingExpression extends langium.AstNode {
+    readonly $container: AttributeMapping;
+    readonly $type: 'AttributeMappingExpression';
+    expression: string;
+    language: string;
+}
+
+export const AttributeMappingExpression = 'AttributeMappingExpression';
+
+export function isAttributeMappingExpression(item: unknown): item is AttributeMappingExpression {
+    return reflection.isInstance(item, AttributeMappingExpression);
 }
 
 export interface AttributeMappingSource extends langium.AstNode {
@@ -368,7 +383,7 @@ export interface AttributeMapping extends WithCustomProperties {
     readonly $container: TargetObject;
     readonly $type: 'AttributeMapping';
     attribute?: AttributeMappingTarget;
-    expression: string;
+    expressions: Array<AttributeMappingExpression>;
     sources: Array<AttributeMappingSource>;
 }
 
@@ -607,6 +622,7 @@ export function isTargetObjectAttribute(item: unknown): item is TargetObjectAttr
 
 export type CrossModelAstType = {
     AttributeMapping: AttributeMapping
+    AttributeMappingExpression: AttributeMappingExpression
     AttributeMappingSource: AttributeMappingSource
     AttributeMappingTarget: AttributeMappingTarget
     BinaryExpression: BinaryExpression
@@ -651,7 +667,7 @@ export type CrossModelAstType = {
 export class CrossModelAstReflection extends langium.AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return [AttributeMapping, AttributeMappingSource, AttributeMappingTarget, BinaryExpression, BooleanExpression, CrossModelRoot, CustomProperty, DataElement, DataElementContainer, DataElementContainerLink, DataElementContainerMapping, DataElementMapping, DataModel, DataModelDependency, IdentifiedObject, InheritanceEdge, JoinCondition, LogicalAttribute, LogicalEntity, LogicalEntityNode, LogicalEntityNodeAttribute, LogicalIdentifier, Mapping, NamedObject, NumberLiteral, Relationship, RelationshipAttribute, RelationshipEdge, SourceDataElementContainer, SourceObject, SourceObjectAttribute, SourceObjectAttributeReference, SourceObjectCondition, SourceObjectDependency, StringLiteral, SystemDiagram, SystemDiagramEdge, TargetObject, TargetObjectAttribute, WithCustomProperties];
+        return [AttributeMapping, AttributeMappingExpression, AttributeMappingSource, AttributeMappingTarget, BinaryExpression, BooleanExpression, CrossModelRoot, CustomProperty, DataElement, DataElementContainer, DataElementContainerLink, DataElementContainerMapping, DataElementMapping, DataModel, DataModelDependency, IdentifiedObject, InheritanceEdge, JoinCondition, LogicalAttribute, LogicalEntity, LogicalEntityNode, LogicalEntityNodeAttribute, LogicalIdentifier, Mapping, NamedObject, NumberLiteral, Relationship, RelationshipAttribute, RelationshipEdge, SourceDataElementContainer, SourceObject, SourceObjectAttribute, SourceObjectAttributeReference, SourceObjectCondition, SourceObjectDependency, StringLiteral, SystemDiagram, SystemDiagramEdge, TargetObject, TargetObjectAttribute, WithCustomProperties];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -764,6 +780,15 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
 
     getTypeMetaData(type: string): langium.TypeMetaData {
         switch (type) {
+            case AttributeMappingExpression: {
+                return {
+                    name: AttributeMappingExpression,
+                    properties: [
+                        { name: 'expression' },
+                        { name: 'language' }
+                    ]
+                };
+            }
             case AttributeMappingSource: {
                 return {
                     name: AttributeMappingSource,
@@ -938,7 +963,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     properties: [
                         { name: 'attribute' },
                         { name: 'customProperties', defaultValue: [] },
-                        { name: 'expression' },
+                        { name: 'expressions', defaultValue: [] },
                         { name: 'sources', defaultValue: [] }
                     ]
                 };

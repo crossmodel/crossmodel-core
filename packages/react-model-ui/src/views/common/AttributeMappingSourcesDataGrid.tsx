@@ -234,8 +234,7 @@ export function AttributeMappingSourcesDataGrid({
 
    const deriveSourceRowId = React.useCallback((source: Partial<AttributeMappingSource>, idx: number): string => {
       const globalId = (source as { $globalId?: string })?.$globalId;
-      const value = source.value || 'source';
-      return globalId ?? `${value}-${idx}`;
+      return globalId ?? `source-${idx}`;
    }, []);
 
    const handleSelectionChange = React.useCallback((e: { value: AttributeMappingSourceRow[] }): void => {
@@ -270,12 +269,17 @@ export function AttributeMappingSourcesDataGrid({
    React.useEffect(() => {
       setGridData(current => {
          sourcesRef.current = attributeMapping.sources || [];
-         const committedData = (attributeMapping.sources || []).map((source: AttributeMappingSource, idx: number) => ({
-            ...source,
-            idx,
-            id: deriveSourceRowId(source, idx),
-            value: String(source.value || '')
-         })) as AttributeMappingSourceRow[];
+         const committedData = (attributeMapping.sources || []).map((source: AttributeMappingSource, idx: number) => {
+            const rowId = deriveSourceRowId(source, idx);
+            const existingRow = current.find(r => r.id === rowId);
+            return {
+               ...(existingRow || { ...source }),
+               ...source,
+               idx,
+               id: rowId,
+               value: String(source.value || '')
+            } as AttributeMappingSourceRow;
+         }) as AttributeMappingSourceRow[];
 
          const committedIds = new Set(committedData.map(row => row.id));
          pendingDeleteIdsRef.current.forEach(id => {

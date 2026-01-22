@@ -8,6 +8,7 @@ import { collectAst } from 'langium/grammar';
 import { Serializer } from '../model-server/serializer.js';
 import {
    AttributeMapping,
+   AttributeMappingExpression,
    BooleanExpression,
    CrossModelRoot,
    CustomProperty,
@@ -78,7 +79,8 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [Mapping, [...IDENTIFIED_PROPERTIES, 'sources', 'target', ...CUSTOM_PROPERTIES]],
    [SourceObject, [...IDENTIFIED_PROPERTIES, 'entity', 'join', 'dependencies', 'conditions', ...CUSTOM_PROPERTIES]],
    [TargetObject, ['entity', 'mappings', ...CUSTOM_PROPERTIES]],
-   [AttributeMapping, ['attribute', 'sources', 'expression', ...CUSTOM_PROPERTIES]],
+   [AttributeMapping, ['attribute', 'sources', 'expressions', ...CUSTOM_PROPERTIES]],
+   [AttributeMappingExpression, ['language', 'expression']],
    [CustomProperty, [...NAMED_OBJECT_PROPERTIES, 'value']],
    [LogicalIdentifier, [...NAMED_OBJECT_PROPERTIES, 'primary', 'attributes', ...CUSTOM_PROPERTIES]],
    [DataModel, [...NAMED_OBJECT_PROPERTIES, 'type', 'version', 'dependencies', ...CUSTOM_PROPERTIES]],
@@ -170,7 +172,6 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                   return undefined;
                }
                if (isLogicalAttribute(value) && prop === 'mandatory' && propValue === false) {
-
                   return undefined;
                }
                // arrays and objects start on a new line -- skip some objects that we do not actually serialize in object structure
