@@ -337,6 +337,7 @@ body[class*='dark'] {
 .p-datatable {
    background: var(--theia-editor-background);
    color: var(--theia-editor-foreground);
+   outline: none !important;
 }
 
 .p-datatable .p-datatable-tbody > tr {
