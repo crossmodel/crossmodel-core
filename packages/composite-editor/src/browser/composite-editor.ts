@@ -230,6 +230,7 @@ export class CompositeEditor
       this.addClass('cm-composite-editor');
       this.title.closable = true;
       this.title.label = this.labelProvider.getName(this.resourceUri);
+      this.title.caption = this.resourceUri.path.fsPath();
       this.title.iconClass = ModelFileType.getIconClass(this.fileType) ?? '';
       this.saveable = new ReverseCompositeSaveable(this, this.fileResourceResolver);
       this.initializeContent();
