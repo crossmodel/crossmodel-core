@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { CrossModelWidget, CrossModelWidgetOptions } from '@crossmodel/core/lib/browser';
+import { CrossModelWidget } from '@crossmodel/core/lib/browser';
 import { FormEditorOpenHandler, FormEditorWidget } from '@crossmodel/form-client/lib/browser';
 import { MappingDiagramManager, SystemDiagramManager } from '@crossmodel/glsp-client/lib/browser/';
 import { MappingDiagramLanguage, SystemDiagramLanguage } from '@crossmodel/glsp-client/lib/common';
@@ -189,7 +189,7 @@ export class CompositeEditor
    extends BaseWidget
    implements DefaultSaveAsSaveableSource, Navigatable, Partial<GLSPDiagramWidgetContainer>, StatefulWidget
 {
-   @inject(CrossModelWidgetOptions) protected options: CompositeEditorOptions;
+   @inject(CompositeEditorOptions) protected options: CompositeEditorOptions;
    @inject(LabelProvider) protected labelProvider: LabelProvider;
    @inject(WidgetManager) protected widgetManager: WidgetManager;
    @inject(CrossModelEditorManager) protected editorManager: CrossModelEditorManager;
@@ -252,6 +252,12 @@ export class CompositeEditor
 
       this.addWidget(primaryWidget);
       this.addWidget(codeWidget);
+
+      if (this.options.perspective === 'code') {
+         this.revealCodeTab();
+      } else {
+         this.tabPanel.currentWidget = primaryWidget;
+      }
 
       this.update();
       this.initialized.resolve();
@@ -441,7 +447,7 @@ export class CompositeEditor
       return this.getResourceUri().withPath(resourceUri.path);
    }
 
-   revealCodeTab(options: EditorOpenerOptions): void {
+   revealCodeTab(options?: EditorOpenerOptions): void {
       const codeWidget = this.getCodeWidget();
       if (codeWidget) {
          this.tabPanel.currentWidget = codeWidget;

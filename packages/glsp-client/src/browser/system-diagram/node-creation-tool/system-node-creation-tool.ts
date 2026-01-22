@@ -3,27 +3,30 @@
  ********************************************************************************/
 
 import { ModelService } from '@crossmodel/model-service/lib/common';
-import { RelationshipType, findNextUnique, identity } from '@crossmodel/protocol';
+import { RelationshipType, TriggerSystemNodeCreationAction, findNextUnique, identity } from '@crossmodel/protocol';
 import {
    Action,
    Args,
    CreateNodeOperation,
    Disposable,
    DisposableCollection,
+   EnableDefaultToolsAction,
    GModelElement,
    GhostElement,
    IDiagramOptions,
    MessageAction,
    NodeCreationTool,
    NodeCreationToolMouseListener,
+   NodeInsertTrackingListener,
    Point,
    SetUIExtensionVisibilityAction,
    TYPES,
    TrackedInsert,
    applyCssClasses,
-   deleteCssClasses
+   deleteCssClasses,
+   getTemplateElementId
 } from '@eclipse-glsp/client';
-import { Message, SingleTextInputDialog, SingleTextInputDialogProps } from '@theia/core/lib/browser';
+import { Message, SingleTextInputDialog, SingleTextInputDialogProps, animationFrame } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EntityCommandPalette } from '../../cross-model-command-palette';
 
@@ -32,14 +35,63 @@ export class SystemNodeCreationTool extends NodeCreationTool {
    @inject(ModelService) readonly modelService: ModelService;
    @inject(TYPES.IDiagramOptions) readonly diagramOptions: IDiagramOptions;
 
+   declare triggerAction: TriggerSystemNodeCreationAction;
+   protected nodeCreationListener?: SystemNodeCreationToolMouseListener;
+   protected ghostElementTracker?: NodeInsertTrackingListener;
+
    protected override createNodeCreationListener(ghostElement: GhostElement): Disposable {
       const toolListener = new SystemNodeCreationToolMouseListener(this.triggerAction, this, ghostElement);
+      this.nodeCreationListener = toolListener;
       return new DisposableCollection(toolListener, this.mouseTool.registerListener(toolListener));
+   }
+
+   protected override createGhostElementTracker(ghostElement: GhostElement, position: 'top-left' | 'middle'): Disposable {
+      const trackingListener = new NodeInsertTrackingListener(
+         getTemplateElementId(ghostElement.template),
+         this.triggerAction.elementTypeId,
+         this,
+         position,
+         this.editorContext
+      );
+      this.ghostElementTracker = trackingListener;
+      return new DisposableCollection(trackingListener, this.mouseTool.registerListener(trackingListener));
+   }
+
+   override doEnable(): void {
+      super.doEnable();
+      if (this.triggerAction.triggerLocation) {
+         animationFrame().then(() => this.triggerTool(this.triggerAction.triggerLocation!));
+      }
+   }
+
+   protected async triggerTool(position: Point): Promise<void> {
+      if (!this.nodeCreationListener || !this.ghostElementTracker) {
+         return;
+      }
+      await this.dispatchActions(
+         this.ghostElementTracker.mouseMove(
+            this.editorContext.modelRoot,
+            new MouseEvent('mousemove', { clientX: position.x, clientY: position.y, bubbles: true, cancelable: true })
+         )
+      );
+      await this.dispatchActions(
+         this.nodeCreationListener.mouseMove(
+            this.editorContext.modelRoot,
+            new MouseEvent('mousemove', { clientX: position.x, clientY: position.y, bubbles: true, cancelable: true })
+         )
+      );
+      await this.dispatchActions(
+         this.nodeCreationListener.mouseUp(
+            this.editorContext.modelRoot,
+            new MouseEvent('mouseup', { clientX: position.x, clientY: position.y, bubbles: true, cancelable: true })
+         )
+      );
    }
 }
 
 export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseListener {
    protected override tool: SystemNodeCreationTool;
+   declare triggerAction: TriggerSystemNodeCreationAction;
 
    protected override isContinuousMode(_ctx: GModelElement, _event: MouseEvent): boolean {
       return true;
@@ -50,21 +102,25 @@ export class SystemNodeCreationToolMouseListener extends NodeCreationToolMouseLi
          return SetUIExtensionVisibilityAction.create({
             extensionId: EntityCommandPalette.PALETTE_ID,
             visible: true,
-            contextElementsId: [this.ghostElementId]
+            contextElementsId: this.triggerAction.triggerLocation ? undefined : [this.ghostElementId]
          });
       } else if (this.triggerAction.args?.type === 'create') {
          this.queryEntityName(ctx, event, insert).then(name => {
-            if (name === undefined) {
-               // user cancelled the dialog
-               return;
+            const actions: Action[] = [];
+            if (name !== undefined) {
+               const action = super.getCreateOperation(ctx, event, insert) as CreateNodeOperation & { args: Args };
+               action.args.name = name;
+               actions.push(action);
             }
-            const action = super.getCreateOperation(ctx, event, insert) as CreateNodeOperation & { args: Args };
-            action.args.name = name;
-            this.tool.dispatchActions([action]);
+            if (this.triggerAction.args?.singleUse !== false) {
+               actions.push(EnableDefaultToolsAction.create());
+            }
+            this.tool.dispatchActions(actions);
          });
-         return MessageAction.create('', { severity: 'NONE' });
+      } else {
+         throw new Error('Invalid node creation type');
       }
-      throw new Error('Invalid node creation type');
+      return MessageAction.create('', { severity: 'NONE' });
    }
 
    protected async queryEntityName(ctx: GModelElement, event: MouseEvent, insert: TrackedInsert): Promise<string | undefined> {

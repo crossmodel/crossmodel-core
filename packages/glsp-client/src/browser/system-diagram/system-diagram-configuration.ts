@@ -9,26 +9,27 @@ import {
    RELATIONSHIP_EDGE_TYPE
 } from '@crossmodel/protocol';
 import {
-   configureDefaultModelElements,
-   configureModelElement,
    ContainerConfiguration,
    DefaultTypes,
-   editLabelFeature,
    GGraph,
    GLabelView,
+   configureDefaultModelElements,
+   configureModelElement,
+   editLabelFeature,
    gridModule,
    initializeDiagramContainer,
    overrideModelElement,
    withEditLabelFeature
 } from '@eclipse-glsp/client';
 import { GLSPDiagramConfiguration } from '@eclipse-glsp/theia-integration';
-import { Container } from '@theia/core/shared/inversify/index';
+import { Container } from '@theia/core/shared/inversify';
 import { SystemDiagramLanguage } from '../../common/crossmodel-diagram-language';
 import { createCrossModelDiagramModule } from '../crossmodel-diagram-module';
 import { libAvoidModule } from '../libavoid-module';
 import { DEFAULT_LIBAVOID_EDGE_ROUTER_CONFIG, LibavoidEdgeRouterConfiguration, LibavoidEdgeRouterOptions } from '../libavoid-options';
 import { AttributeCompartment } from '../model';
 import { AttributeCompartmentView } from '../views';
+import { systemContextMenuModule } from './context-menu/context-menu-module';
 import { systemEdgeCreationToolModule } from './edge-creation-tool/edge-creation-tool-module';
 import { systemHoverModule } from './hover/hover-module';
 import { EntityNode, GEditableLabel, InheritanceEdge, RelationshipEdge } from './model';
@@ -51,7 +52,8 @@ export class SystemDiagramConfiguration extends GLSPDiagramConfiguration {
          gridModule,
          systemDiagramModule,
          systemNodeCreationModule,
-         systemEdgeCreationToolModule
+         systemEdgeCreationToolModule,
+         systemContextMenuModule
       );
    }
 }

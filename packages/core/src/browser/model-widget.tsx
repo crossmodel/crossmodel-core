@@ -36,7 +36,7 @@ import * as React from '@theia/core/shared/react';
 // MonacoEditorModel import removed; we use duck-typing to clear dirty state
 import deepEqual from 'fast-deep-equal';
 
-export const CrossModelWidgetOptions = Symbol('FormEditorWidgetOptions');
+export const CrossModelWidgetOptions = Symbol('CrossModelWidgetOptions');
 export interface CrossModelWidgetOptions {
    clientId: string;
    widgetId: string;

@@ -6,6 +6,7 @@ import {
    Action,
    DeleteElementOperation,
    DeleteToolMouseListener,
+   EnableDefaultToolsAction,
    GModelElement,
    MouseDeleteTool,
    findParentByFeature,
@@ -30,6 +31,7 @@ export class CrossModelDeleteMouseListener extends DeleteToolMouseListener {
       }
       const result: Action[] = [];
       result.push(DeleteElementOperation.create([deletableParent.id]));
+      result.push(EnableDefaultToolsAction.create());
       return result;
    }
 }

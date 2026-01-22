@@ -49,3 +49,11 @@ export namespace RenderProps {
    export const SOURCE_OBJECT_IDX_NAME = 'sourceObjectIndex';
    export const SOURCE_OBJECT_IDX = RenderProps.key(SOURCE_OBJECT_IDX_NAME);
 }
+
+export const SEMANTIC_URI = 'semanticUri';
+
+export namespace SemanticUri {
+   export function read(args?: Args): string | undefined {
+      return args ? (args[SEMANTIC_URI] as string | undefined) : undefined;
+   }
+}

@@ -7,11 +7,12 @@ import {
    REFERENCE_CONTAINER_TYPE,
    REFERENCE_PROPERTY,
    REFERENCE_VALUE,
-   RELATIONSHIP_EDGE_TYPE
+   RELATIONSHIP_EDGE_TYPE,
+   SEMANTIC_URI
 } from '@crossmodel/protocol';
 import { ArgsUtil, GEdge, GEdgeBuilder } from '@eclipse-glsp/server';
 import { combineIds } from '../../../language-server/cross-model-naming.js';
-import { InheritanceEdge, RelationshipEdge } from '../../../language-server/generated/ast.js';
+import { InheritanceEdge, LogicalEntity, Relationship, RelationshipEdge } from '../../../language-server/generated/ast.js';
 import { SystemModelIndex } from './system-model-index.js';
 
 export class GRelationshipEdge extends GEdge {
@@ -34,6 +35,11 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
       this.addArg(REFERENCE_CONTAINER_TYPE, RelationshipEdge);
       this.addArg(REFERENCE_PROPERTY, 'relationship');
       this.addArg(REFERENCE_VALUE, edge.relationship.$refText);
+
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.relationship, Relationship);
+      if (semanticUri) {
+         this.addArg(SEMANTIC_URI, semanticUri.toString());
+      }
 
       // Add cardinality css classes
       if (edge.relationship.ref?.parentCardinality) {
@@ -66,6 +72,11 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
       this.id(index.createId(edge));
       this.addCssClasses('diagram-edge', 'inheritance');
       this.addArg('edgePadding', 5);
+
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.baseNode.ref?.entity, LogicalEntity);
+      if (semanticUri) {
+         this.addArg(SEMANTIC_URI, semanticUri.toString());
+      }
       this.routerKind('libavoid');
 
       const sourceId = index.findId(edge.baseNode?.ref, () => combineIds(index.assertId(edge.$container), edge.baseNode.$refText));
