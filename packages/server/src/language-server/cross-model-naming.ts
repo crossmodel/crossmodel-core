@@ -7,10 +7,11 @@ import { AstNode, AstUtils, CstNode, GrammarUtils, NameProvider } from 'langium'
 import { URI } from 'vscode-uri';
 import { UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
-import { isDataModel } from './generated/ast.js';
+import { IdentifiedObject, isDataModel } from './generated/ast.js';
 import { findDocument, getOwner } from './util/ast-util.js';
 
-export const ID_PROPERTY = 'id';
+/** Property name for the id field, derived from the generated AST. */
+export const ID_PROPERTY = IdentifiedObject.id;
 
 export type IdentifiableAstNode = AstNode & {
    id?: string;

@@ -107,7 +107,7 @@ export function createLogicalEntity(
 ): LogicalEntity {
    return {
       $container: container,
-      $type: 'LogicalEntity',
+      $type: LogicalEntity.$type,
       id,
       name,
       attributes: [],
@@ -126,7 +126,7 @@ export function createLogicalAttribute(
 ): LogicalAttribute {
    return {
       $container: container,
-      $type: 'LogicalAttribute',
+      $type: LogicalAttribute.$type,
       id,
       name,
       customProperties: [],
@@ -145,7 +145,7 @@ export function createRelationship(
 ): Relationship {
    return {
       $container: container,
-      $type: 'Relationship',
+      $type: Relationship.$type,
       id,
       name,
       parent,
@@ -163,7 +163,7 @@ export function createSystemDiagram(
 ): SystemDiagram {
    return {
       $container: container,
-      $type: 'SystemDiagram',
+      $type: SystemDiagram.$type,
       id,
       nodes: [],
       edges: [],
@@ -181,7 +181,7 @@ export function createEntityNode(
 ): LogicalEntityNode {
    return {
       $container: container,
-      $type: 'LogicalEntityNode',
+      $type: LogicalEntityNode.$type,
       id,
       entity,
       ...position,
@@ -200,7 +200,7 @@ export function createRelationshipEdge(
 ): RelationshipEdge {
    return {
       $container: container,
-      $type: 'RelationshipEdge',
+      $type: RelationshipEdge.$type,
       id,
       relationship,
       sourceNode,

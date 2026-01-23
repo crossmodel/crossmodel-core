@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { TypeGuard } from '@crossmodel/protocol';
-import { EmptyFileSystem, FileSystemNode, FileSystemProvider, LangiumDocument, URI } from 'langium';
+import { EmptyFileSystem, EmptyFileSystemProvider, FileSystemNode, FileSystemProvider, LangiumDocument, URI } from 'langium';
 import { DefaultSharedModuleContext, LangiumServices } from 'langium/lsp';
 import { ParseHelperOptions, parseDocument as langiumParseDocument } from 'langium/test';
 import path from 'path';
@@ -94,18 +94,110 @@ export const MockFileSystem: DefaultSharedModuleContext = {
 };
 
 export class MockFileSystemProvider implements FileSystemProvider {
+   protected delegate = new EmptyFileSystemProvider();
    protected fileContent = new Map<string, string>();
 
    setFile(uri: URI, content: string): void {
       this.fileContent.set(uri.toString(), content);
    }
 
-   async readFile(uri: URI): Promise<string> {
-      return this.fileContent.get(uri.toString()) ?? '';
+   deleteFile(uri: URI): void {
+      this.fileContent.delete(uri.toString());
    }
 
-   async readDirectory(uri: URI): Promise<FileSystemNode[]> {
-      return [];
+   protected hasFile(uri: URI): boolean {
+      return this.fileContent.has(uri.toString());
+   }
+
+   protected isDirectory(uri: URI): boolean {
+      const uriStr = uri.toString();
+      const prefix = uriStr.endsWith('/') ? uriStr : uriStr + '/';
+      for (const key of this.fileContent.keys()) {
+         if (key.startsWith(prefix)) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   protected createFileNode(uri: URI): FileSystemNode {
+      return { uri, isFile: true, isDirectory: false };
+   }
+
+   protected createDirectoryNode(uri: URI): FileSystemNode {
+      return { uri, isFile: false, isDirectory: true };
+   }
+
+   stat(uri: URI): Promise<FileSystemNode> {
+      return Promise.resolve(this.statSync(uri));
+   }
+
+   statSync(uri: URI): FileSystemNode {
+      if (this.hasFile(uri)) {
+         return this.createFileNode(uri);
+      }
+      if (this.isDirectory(uri)) {
+         return this.createDirectoryNode(uri);
+      }
+      return this.delegate.statSync(uri);
+   }
+
+   exists(uri: URI): Promise<boolean> {
+      return Promise.resolve(this.existsSync(uri));
+   }
+
+   existsSync(uri: URI): boolean {
+      return this.hasFile(uri) || this.isDirectory(uri);
+   }
+
+   readBinary(uri: URI): Promise<Uint8Array> {
+      return Promise.resolve(this.readBinarySync(uri));
+   }
+
+   readBinarySync(uri: URI): Uint8Array {
+      const content = this.fileContent.get(uri.toString());
+      if (content !== undefined) {
+         return new TextEncoder().encode(content);
+      }
+      return this.delegate.readBinarySync();
+   }
+
+   readFile(uri: URI): Promise<string> {
+      return Promise.resolve(this.readFileSync(uri));
+   }
+
+   readFileSync(uri: URI): string {
+      return this.fileContent.get(uri.toString()) ?? this.delegate.readFileSync();
+   }
+
+   readDirectory(uri: URI): Promise<FileSystemNode[]> {
+      return Promise.resolve(this.readDirectorySync(uri));
+   }
+
+   readDirectorySync(uri: URI): FileSystemNode[] {
+      const uriStr = uri.toString();
+      const prefix = uriStr.endsWith('/') ? uriStr : uriStr + '/';
+      const children = new Map<string, FileSystemNode>();
+
+      for (const key of this.fileContent.keys()) {
+         if (key.startsWith(prefix)) {
+            const relativePath = key.substring(prefix.length);
+            const firstSegment = relativePath.split('/')[0];
+            const childUri = URI.parse(prefix + firstSegment);
+            const childUriStr = childUri.toString();
+
+            if (!children.has(childUriStr)) {
+               const isFile = !relativePath.includes('/');
+               children.set(childUriStr, {
+                  uri: childUri,
+                  isFile,
+                  isDirectory: !isFile
+               });
+            }
+         }
+      }
+
+      return Array.from(children.values());
    }
 }
 
