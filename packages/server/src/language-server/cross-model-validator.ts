@@ -13,7 +13,7 @@ import {
 import { AstNode, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
 import { Diagnostic } from 'vscode-languageserver-protocol';
 import type { CrossModelServices } from './cross-model-module.js';
-import { ID_PROPERTY, IdentifiableAstNode } from './cross-model-naming.js';
+import { ID_PROPERTY } from './cross-model-naming.js';
 import {
    AttributeMapping,
    BinaryExpression,
@@ -21,9 +21,6 @@ import {
    IdentifiedObject,
    InheritanceEdge,
    isCrossModelRoot,
-   isLogicalEntity,
-   isMapping,
-   isSystemDiagram,
    LogicalAttribute,
    LogicalEntity,
    Mapping,
@@ -35,8 +32,7 @@ import {
    SourceObjectCondition,
    SourceObjectDependency,
    TargetObject,
-   TargetObjectAttribute,
-   WithCustomProperties
+   TargetObjectAttribute
 } from './generated/ast.js';
 import { findDocument, getOwner, isSemanticRoot } from './util/ast-util.js';
 import { getAttributeMappingExpressionRefRange } from './util/expression-range.js';
@@ -75,7 +71,6 @@ export function registerValidationChecks(services: CrossModelServices): void {
       SourceObjectDependency: validator.checkSourceObjectDependency,
       TargetObject: validator.checkTargetObject,
       NamedObject: validator.checkNamedObject,
-      WithCustomProperties: validator.checkUniqueCustomerPropertyId,
       BinaryExpression: validator.checkBinaryExpression
    };
    registry.register(checks, validator);
@@ -94,6 +89,9 @@ export class CrossModelValidator {
             property: 'name',
             data: { code: CrossModelValidationErrors.toMissing('name') }
          });
+      } else {
+         // Check name uniqueness at appropriate scope
+         this.checkNameUniqueness(namedObject, accept);
       }
    }
 
@@ -106,8 +104,7 @@ export class CrossModelValidator {
          });
       } else {
          // Only perform the following checks when the id is known
-         this.checkUniqueGlobalId(identifiedObject, accept);
-         this.checkUniqueLocalId(identifiedObject, accept);
+         this.checkIdUniqueness(identifiedObject, accept);
          this.checkMatchingFilename(identifiedObject, accept);
       }
    }
@@ -135,50 +132,6 @@ export class CrossModelValidator {
             data: { code: CrossModelValidationErrors.FilenameNotMatching }
          });
       }
-   }
-
-   // Check the uniqueness of ids of semantic root elements.
-   protected checkUniqueGlobalId(identifiedObject: IdentifiedObject, accept: ValidationAcceptor): void {
-      if (!isSemanticRoot(identifiedObject)) {
-         return;
-      }
-      const globalId = this.services.references.IdProvider.getGlobalId(identifiedObject);
-      if (!globalId) {
-         accept('error', 'Missing required id field', {
-            node: identifiedObject,
-            property: ID_PROPERTY,
-            data: { code: CrossModelValidationErrors.toMissing('id') }
-         });
-         return;
-      }
-      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type));
-      const duplicates = allElements.filter(description => description.name === globalId);
-      if (duplicates.length > 1) {
-         accept('error', 'Must provide a unique id.', {
-            node: identifiedObject,
-            property: ID_PROPERTY,
-            data: { code: CrossModelValidationErrors.toMalformed('id') }
-         });
-      }
-   }
-
-   // Check the uniqueness of ids of non-semantic root identified objects.
-   protected checkUniqueLocalId(node: AstNode, accept: ValidationAcceptor): void {
-      if (isLogicalEntity(node)) {
-         this.markDuplicateIds(node.attributes, accept);
-         this.markDuplicateIds(node.identifiers, accept);
-      }
-      if (isSystemDiagram(node)) {
-         this.markDuplicateIds(node.edges, accept);
-         this.markDuplicateIds(node.nodes, accept);
-      }
-      if (isMapping(node)) {
-         this.markDuplicateIds(node.sources, accept);
-      }
-   }
-
-   checkUniqueCustomerPropertyId(node: WithCustomProperties, accept: ValidationAcceptor): void {
-      this.markDuplicateIds(node.customProperties, accept);
    }
 
    checkLogicalAttribute(attribute: LogicalAttribute, accept: ValidationAcceptor): void {
@@ -219,21 +172,6 @@ export class CrossModelValidator {
                property: 'scale',
                data: { code: CrossModelValidationErrors.toMalformed('scale') }
             });
-         }
-      }
-   }
-
-   protected markDuplicateIds(nodes: IdentifiableAstNode[] = [], accept: ValidationAcceptor): void {
-      const knownIds: string[] = [];
-      for (const node of nodes) {
-         if (node.id && knownIds.includes(node.id)) {
-            accept('error', 'Must provide a unique id.', {
-               node,
-               property: ID_PROPERTY,
-               data: { code: CrossModelValidationErrors.toMalformed('id') }
-            });
-         } else if (node.id) {
-            knownIds.push(node.id);
          }
       }
    }
@@ -549,6 +487,350 @@ export class CrossModelValidator {
             property: 'op',
             data: { code: CrossModelValidationErrors.toMalformed('operator') }
          });
+      }
+   }
+
+   /**
+    * Validates that ID is unique within its appropriate scope.
+    * Scope determination:
+    * - Global: Workspace-wide (e.g., DataModels)
+    * - Local: Within a DataModel (e.g., entities, relationships)
+    * - Internal: Collections within a parent object (e.g., attributes within an entity)
+    */
+   protected checkIdUniqueness(identifiedObject: IdentifiedObject, accept: ValidationAcceptor): void {
+      // Semantic roots are checked at global scope
+      if (isSemanticRoot(identifiedObject)) {
+         this.checkIdUniquenessGlobal(identifiedObject, accept);
+         return;
+      }
+
+      // Check if this element belongs to a DataModel (entities, relationships, etc. in separate files)
+      const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(identifiedObject.$document);
+      if (dataModelId && dataModelId !== 'unknown') {
+         this.checkIdUniquenessLocal(identifiedObject, identifiedObject, accept);
+      }
+
+      // Internal scope: Check within parent collections
+      this.checkIdUniquenessInternal(identifiedObject, accept);
+   }
+
+   /**
+    * Checks for duplicate IDs at the global scope (workspace-wide).
+    * Currently applies to semantic root elements like DataModels.
+    */
+   protected checkIdUniquenessGlobal(identifiedObject: IdentifiedObject, accept: ValidationAcceptor): void {
+      const globalId = this.services.references.IdProvider.getGlobalId(identifiedObject);
+      if (!globalId) {
+         accept('error', 'Missing required id field', {
+            node: identifiedObject,
+            property: ID_PROPERTY,
+            data: { code: CrossModelValidationErrors.toMissing('id') }
+         });
+         return;
+      }
+      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type));
+      const duplicates = allElements.filter(description => description.name === globalId);
+      if (duplicates.length > 1) {
+         accept('error', 'Must provide a unique id.', {
+            node: identifiedObject,
+            property: ID_PROPERTY,
+            data: { code: CrossModelValidationErrors.toMalformed('id') }
+         });
+      }
+   }
+
+   /**
+    * Checks for duplicate IDs at the local scope (within a DataModel).
+    * Elements of the same type within a DataModel must have unique IDs.
+    */
+   protected checkIdUniquenessLocal(identifiedObject: IdentifiedObject, dataModel: AstNode, accept: ValidationAcceptor): void {
+      const myId = identifiedObject.id;
+      const myType = identifiedObject.$type;
+      if (!myId || !myType) {
+         return;
+      }
+
+      // Get the DataModel ID for this entity
+      const myDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(identifiedObject.$document);
+      if (!myDataModelId || myDataModelId === 'unknown') {
+         // Cannot validate local scope without knowing which DataModel we're in
+         return;
+      }
+
+      // Get all elements of the same type within the same DataModel from the index
+      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElementsInDataModelOfType(myDataModelId, myType));
+
+      // Filter to only elements in the same DataModel with the same id (case-sensitive)
+      const duplicatesInSameDataModel = allElements.filter(description => {
+         const theirDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(description.documentUri);
+         return (
+            theirDataModelId === myDataModelId &&
+            description.name === myId &&
+            description.documentUri.toString() !== identifiedObject.$document?.uri.toString()
+         );
+      });
+
+      // If there are any other elements with the same id in the same DataModel, it's a duplicate
+      if (duplicatesInSameDataModel.length > 0) {
+         accept('error', 'Must provide a unique id within this DataModel.', {
+            node: identifiedObject,
+            property: 'id',
+            data: { code: CrossModelValidationErrors.toMalformed('id') }
+         });
+      }
+   }
+
+   /**
+    * Checks for duplicate IDs at the internal scope (within parent collections).
+    */
+   protected checkIdUniquenessInternal(identifiedObject: IdentifiedObject, accept: ValidationAcceptor): void {
+      const parent = identifiedObject.$container;
+      if (parent && parent.$type) {
+         const siblings = this.getIdentifiableSiblings(identifiedObject, parent);
+         if (siblings.length > 1 && siblings[0] === identifiedObject) {
+            this.checkDuplicatesInList(siblings, 'id', accept);
+         }
+      }
+   }
+
+   /**
+    * Validates that name is unique within its appropriate scope.
+    * Scope determination:
+    * - Global: Workspace-wide (e.g., DataModels)
+    * - Local: Within a DataModel (e.g., entities, relationships)
+    * - Internal: Collections within a parent object (e.g., attributes within an entity)
+    */
+   protected checkNameUniqueness(namedObject: NamedObject, accept: ValidationAcceptor): void {
+      // Semantic roots (DataModel) are checked at global scope
+      if (isSemanticRoot(namedObject)) {
+         this.checkNameUniquenessGlobal(namedObject, accept);
+      }
+
+      // Only check local scope for top-level DataModel members (not nested children)
+      // Nested elements like attributes, identifiers, custom properties are only checked at internal scope
+      if (!this.isNestedElement(namedObject)) {
+         const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(namedObject.$document);
+         if (dataModelId && dataModelId !== 'unknown') {
+            this.checkNameUniquenessLocal(namedObject, namedObject, accept);
+         }
+      }
+
+      // Internal scope: Check within parent collections
+      this.checkNameUniquenessInternal(namedObject, accept);
+   }
+
+   /**
+    * Determines if a named element is nested (e.g., attribute within an entity).
+    * Nested elements are not checked for local/global scope uniqueness.
+    */
+   protected isNestedElement(element: NamedObject): boolean {
+      const parent = element.$container;
+      // Element is nested if its parent is also a NamedObject (like an entity containing attributes)
+      return !!(parent && 'name' in parent);
+   }
+
+   /**
+    * Checks for duplicate names at the global scope (workspace-wide).
+    * Currently applies to DataModels.
+    */
+   protected checkNameUniquenessGlobal(namedObject: NamedObject, accept: ValidationAcceptor): void {
+      if (!isSemanticRoot(namedObject)) {
+         return;
+      }
+
+      const myName = namedObject.name?.toLowerCase();
+      if (!myName) {
+         return;
+      }
+
+      const document = findDocument(namedObject);
+      const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
+
+      // Skip global uniqueness check for unknown DataModels
+      // Each document in an unknown DataModel is treated as isolated
+      if (!dataModelId || dataModelId === 'unknown') {
+         return;
+      }
+
+      const allElements = this.services.shared.workspace.IndexManager.allElements(namedObject.$type);
+
+      for (const description of allElements) {
+         if (this.isSameNode(namedObject, description)) {
+            continue;
+         }
+         const descDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(description.documentUri);
+         if (descDataModelId !== dataModelId) {
+            continue;
+         }
+
+         const descName = this.getDescriptionName(description)?.toLowerCase();
+         if (descName === myName) {
+            const typeName = namedObject.$type.toLowerCase();
+            accept('error', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+            return;
+         }
+      }
+   }
+
+   /**
+    * Checks for duplicate names at the local scope (within a DataModel).
+    * Elements of the same type within a DataModel must have unique names.
+    */
+   protected checkNameUniquenessLocal(namedObject: NamedObject, dataModel: AstNode, accept: ValidationAcceptor): void {
+      const myName = namedObject.name;
+      const myType = namedObject.$type;
+      if (!myName || !myType) {
+         return;
+      }
+
+      // Get the DataModel ID for this entity
+      const myDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(namedObject.$document);
+      if (!myDataModelId || myDataModelId === 'unknown') {
+         // Cannot validate local scope without knowing which DataModel we're in
+         return;
+      }
+
+      // Get all elements of the same type within the same DataModel from the index
+      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElementsInDataModelOfType(myDataModelId, myType));
+
+      // Filter to only elements in the same DataModel with the same name (case-insensitive)
+      const duplicatesInSameDataModel = allElements.filter(description => {
+         // Skip comparing against the same node
+         if (this.isSameNode(namedObject, description)) {
+            return false;
+         }
+         const theirName = this.getDescriptionName(description);
+         return theirName?.toLowerCase() === myName.toLowerCase();
+      });
+
+      // If there are any other elements with the same name in the same DataModel, it's a duplicate
+      if (duplicatesInSameDataModel.length > 0) {
+         const typeName = myType.toLowerCase();
+         accept('error', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
+            node: namedObject,
+            property: 'name',
+            data: { code: CrossModelValidationErrors.toMalformed('name') }
+         });
+      }
+   }
+
+   /**
+    * Compares a node to an indexed description to determine if they refer to the same element.
+    */
+   protected isSameNode(node: AstNode, description: import('langium').AstNodeDescription): boolean {
+      return (
+         UriUtils.equals(findDocument(node)?.uri, description.documentUri) &&
+         this.services.workspace.AstNodeLocator.getAstNodePath(node) === description.path
+      );
+   }
+
+   /**
+    * Retrieves the `name` property from a described node, ignoring id-based description names.
+    */
+   protected getDescriptionName(description: import('langium').AstNodeDescription): string | undefined {
+      const node = this.services.shared.workspace.IndexManager.resolveElement(description) as NamedObject | undefined;
+      return node?.name;
+   }
+
+   /**
+    * Checks for duplicate names at the internal scope (within parent collections).
+    */
+   protected checkNameUniquenessInternal(namedObject: NamedObject, accept: ValidationAcceptor): void {
+      const parent = namedObject.$container;
+      if (parent && parent.$type) {
+         const siblings = this.getNamedSiblings(namedObject, parent);
+         if (siblings.length > 1 && siblings[0] === namedObject) {
+            this.checkDuplicatesInList(siblings, 'name', accept);
+         }
+      }
+   }
+
+   /**
+    * Finds the DataModel container for a given node.
+    */
+   // Removed unused findDataModelContainer helper
+
+   /**
+    * Gets all identifiable siblings (same direct parent, same property).
+    */
+   protected getIdentifiableSiblings(node: IdentifiedObject, parent: AstNode): IdentifiedObject[] {
+      const siblings: IdentifiedObject[] = [];
+
+      // Determine which property of parent contains this node
+      for (const key in parent) {
+         if (Object.prototype.hasOwnProperty.call(parent, key)) {
+            const value = (parent as any)[key];
+            if (Array.isArray(value)) {
+               const containsNode = value.some(item => item === node);
+               if (containsNode) {
+                  // Collect all identifiable items in this array
+                  for (const item of value) {
+                     if (item && typeof item === 'object' && 'id' in item) {
+                        siblings.push(item as IdentifiedObject);
+                     }
+                  }
+                  break;
+               }
+            }
+         }
+      }
+
+      return siblings;
+   }
+
+   /**
+    * Gets all named siblings (same direct parent, same property).
+    */
+   protected getNamedSiblings(node: NamedObject, parent: AstNode): NamedObject[] {
+      const siblings: NamedObject[] = [];
+
+      // Determine which property of parent contains this node
+      for (const key in parent) {
+         if (Object.prototype.hasOwnProperty.call(parent, key)) {
+            const value = (parent as any)[key];
+            if (Array.isArray(value)) {
+               const containsNode = value.some(item => item === node);
+               if (containsNode) {
+                  // Collect all named items in this array
+                  for (const item of value) {
+                     if (item && typeof item === 'object' && 'name' in item) {
+                        siblings.push(item as NamedObject);
+                     }
+                  }
+                  break;
+               }
+            }
+         }
+      }
+
+      return siblings;
+   }
+
+   /**
+    * Generic method to check for duplicates in a list.
+    */
+   protected checkDuplicatesInList(list: AstNode[], property: 'id' | 'name', accept: ValidationAcceptor): void {
+      const seen = new Map<string, AstNode>();
+
+      for (const item of list) {
+         const value = (item as any)[property];
+         if (value) {
+            // Use case-insensitive comparison for names
+            const key = property === 'name' ? value.toLowerCase() : value;
+            if (seen.has(key)) {
+               accept('error', `Must provide a unique ${property}.`, {
+                  node: item,
+                  property,
+                  data: { code: CrossModelValidationErrors.toMalformed(property) }
+               });
+            } else {
+               seen.set(key, item);
+            }
+         }
       }
    }
 }
