@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode, AstNodeDescription, DefaultScopeComputation, LangiumDocument, Reference } from 'langium';
+import { AstNode, AstNodeDescription, AstUtils, DefaultScopeComputation, LangiumDocument, MultiMap, Reference } from 'langium';
 import { CrossModelDataModelManager, UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
 import { DefaultIdProvider, combineIds } from './cross-model-naming.js';
@@ -76,7 +76,15 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
       this.dataModelManager = services.shared.workspace.DataModelManager;
    }
 
-   protected exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument<AstNode>): void {
+   /**
+    * Override to export all nested nodes (like LogicalAttribute within LogicalEntity)
+    * so they can be referenced from other documents using qualified names.
+    */
+   override async collectExportedSymbols(document: LangiumDocument): Promise<AstNodeDescription[]> {
+      return this.collectExportedSymbolsForNode(document.parseResult.value, document, AstUtils.streamAllContents);
+   }
+
+   protected override addExportedSymbol(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
       const dataModelInfo = this.dataModelManager.getDataModelInfoByDocument(document);
       const dataModelId = dataModelInfo?.id ?? UNKNOWN_DATAMODEL_ID;
       const dataModelReference = dataModelInfo?.referenceName ?? UNKNOWN_DATAMODEL_REFERENCE;
@@ -98,9 +106,35 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
       }
    }
 
-   // Note: The processNode/processContents method has been removed in Langium 4.0
-   // The local scope computation now works differently
-   // TODO: May need to override computeLocalScopes if custom logic is needed
+   protected override addLocalSymbol(node: AstNode, document: LangiumDocument, symbols: MultiMap<AstNode, AstNodeDescription>): void {
+      super.addLocalSymbol(node, document, symbols);
+
+      const container = node.$container;
+      if (container) {
+         const id = this.idProvider.getNodeId(node);
+         if (id) {
+            symbols.add(container, this.descriptions.createDescription(node, id, document));
+
+            if (node.$type === LogicalEntityNode.$type) {
+               this.processEntityNode(node as LogicalEntityNode, id, document).forEach((description: AstNodeDescription) =>
+                  symbols.add(container, description)
+               );
+            } else if (node.$type === SourceObject.$type) {
+               this.processSourceObject(node as SourceObject, id, document).forEach((description: AstNodeDescription) =>
+                  symbols.add(container, description)
+               );
+            }
+         }
+         if (node.$type === TargetObject.$type) {
+            const entity = this.getLogicalEntity(node as TargetObject, document);
+            if (entity?.id) {
+               this.processTargetObject(node as TargetObject, entity.id, document).forEach((description: AstNodeDescription) =>
+                  symbols.add(container, description)
+               );
+            }
+         }
+      }
+   }
 
    protected processEntityNode(node: LogicalEntityNode, nodeId: string, document: LangiumDocument): AstNodeDescription[] {
       const entity = this.getLogicalEntity(node, document);

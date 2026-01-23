@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { quote, toId, toIdReference } from '@crossmodel/protocol';
-import { AstNode, GenericAstNode, Grammar, isAstNode, isReference } from 'langium';
+import { AstNode, GenericAstNode, Grammar, isAstNode } from 'langium';
 import { collectAst } from 'langium/grammar';
 import { Serializer } from '../model-server/serializer.js';
 import {
@@ -20,6 +20,7 @@ import {
 import { isImplicitProperty } from './util/ast-util.js';
 import {
    getPropertyKeyword,
+   getReferenceText,
    getReferenceWrapperProperty,
    isDefaultValue,
    isInlineSerializedType,
@@ -55,8 +56,10 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
       if (key.startsWith('$') || isImplicitProperty(key, parent)) {
          return undefined;
       }
-      if (isReference(value)) {
-         return toIdReference(value.$refText ?? value.$nodeDescription?.name);
+      // Handle reference objects (Langium Reference or plain objects with $refText)
+      const reference = getReferenceText(value);
+      if (reference !== undefined) {
+         return toIdReference(reference);
       }
       if (key === IdentifiedObject.id) {
          // ensure we properly serialize IDs
@@ -78,8 +81,9 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
          const refProperty = getReferenceWrapperProperty(value.$type);
          if (refProperty) {
             const refValue = (value as GenericAstNode)[refProperty];
-            if (isReference(refValue)) {
-               return toIdReference(refValue.$refText ?? '');
+            const propertyReference = getReferenceText(refValue);
+            if (propertyReference || typeof refValue === 'string') {
+               return toIdReference(propertyReference ?? (refValue as string));
             }
          }
       }
@@ -103,8 +107,7 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                   return undefined;
                }
                // arrays and objects start on a new line -- skip some objects that we do not actually serialize in object structure
-               const onNewLine =
-                  Array.isArray(propValue) || (isAstNode(propValue) && !isInlineSerializedType(propValue.$type));
+               const onNewLine = Array.isArray(propValue) || (isAstNode(propValue) && !isInlineSerializedType(propValue.$type));
                const serializedPropValue = this.toYaml(value, prop, propValue, onNewLine ? indentationLevel + 1 : 0);
                if (!serializedPropValue) {
                   return undefined;
@@ -180,7 +183,7 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
          return quote(obj.value);
       }
       if (isSourceObjectAttributeReference(obj)) {
-         return toIdReference(obj.value.$refText ?? '');
+         return getReferenceText(obj.value) ?? '_';
       }
       // NumberLiteral
       return obj.value.toString();

@@ -4,7 +4,14 @@
 import { describe, expect, test } from '@jest/globals';
 import { URI } from 'vscode-uri';
 import { LogicalEntity, LogicalEntityNode } from '../../src/language-server/generated/ast';
-import { MockFileSystem, createCrossModelTestServices, parseDocuments, parseSystemDiagram, testUri } from './test-utils/utils';
+import {
+   MockFileSystem,
+   createCrossModelTestServices,
+   entityDocumentUri,
+   parseDocuments,
+   parseSystemDiagram,
+   testUri
+} from './test-utils/utils';
 
 const services = createCrossModelTestServices();
 
@@ -142,8 +149,8 @@ describe('NameUtil', () => {
 
          const dmA = testUri('dmA', 'datamodel.cm');
          const dmB = testUri('dmB', 'datamodel.cm');
-         const entityA1 = testUri('dmA', 'entities', 'EntityA.entity.cm');
-         const entityA2 = testUri('dmB', 'entities', 'EntityA.entity.cm');
+         const entityA1 = entityDocumentUri('dmA', 'entities', 'EntityA');
+         const entityA2 = entityDocumentUri('dmB', 'entities', 'EntityA');
 
          await parseDocuments(
             {
@@ -185,8 +192,8 @@ describe('NameUtil', () => {
          const idProvider = services.references.IdProvider;
 
          const dmA = testUri('dmA', 'datamodel.cm');
-         const entityA1 = testUri('dmA', 'entities', 'EntityA.entity.cm');
-         const entityA2 = testUri('dmA', 'entities', 'EntityA_new.entity.cm');
+         const entityA1 = entityDocumentUri('dmA', 'entities', 'EntityA');
+         const entityA2 = entityDocumentUri('dmA', 'entities', 'EntityA_new');
 
          await parseDocuments(
             {

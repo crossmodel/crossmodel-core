@@ -2,7 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { TypeGuard } from '@crossmodel/protocol';
+import { ModelFileExtensions, TypeGuard } from '@crossmodel/protocol';
 import { EmptyFileSystem, EmptyFileSystemProvider, FileSystemNode, FileSystemProvider, LangiumDocument, URI } from 'langium';
 import { DefaultSharedModuleContext, LangiumServices } from 'langium/lsp';
 import { ParseHelperOptions, parseDocument as langiumParseDocument } from 'langium/test';
@@ -204,4 +204,24 @@ export class MockFileSystemProvider implements FileSystemProvider {
 export function testUri(...segments: string[]): string {
    // making sure the URI works on both Windows and Unix
    return 'test:///' + path.posix.join(...segments);
+}
+
+export function entityDocumentUri(...segments: string[]): string {
+   const last = segments.pop()!;
+   return testUri(...segments, last + ModelFileExtensions.LogicalEntity);
+}
+
+export function relationshipDocumentUri(...segments: string[]): string {
+   const last = segments.pop()!;
+   return testUri(...segments, last + ModelFileExtensions.Relationship);
+}
+
+export function diagramDocumentUri(...segments: string[]): string {
+   const last = segments.pop()!;
+   return testUri(...segments, last + ModelFileExtensions.SystemDiagram);
+}
+
+export function mappingDocumentUri(...segments: string[]): string {
+   const last = segments.pop()!;
+   return testUri(...segments, last + ModelFileExtensions.Mapping);
 }

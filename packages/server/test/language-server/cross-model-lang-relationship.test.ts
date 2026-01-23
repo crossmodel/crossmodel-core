@@ -23,7 +23,11 @@ const services = createCrossModelTestServices();
 
 describe('CrossModel language Relationship', () => {
    beforeAll(async () => {
-      await parseDocuments({ services, text: order }, { services, text: customer }, { services, text: address });
+      await parseDocuments(
+         { services, text: order, documentUri: testUri('Order' + ModelFileExtensions.LogicalEntity) },
+         { services, text: customer, documentUri: testUri('Customer' + ModelFileExtensions.LogicalEntity) },
+         { services, text: address, documentUri: testUri('Address' + ModelFileExtensions.LogicalEntity) }
+      );
    });
 
    test('Simple file for relationship', async () => {

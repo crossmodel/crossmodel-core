@@ -2,6 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
+import { isReference } from 'langium';
 import {
    AttributeMapping,
    AttributeMappingExpression,
@@ -19,7 +20,6 @@ import {
    LogicalIdentifier,
    Mapping,
    NamedObject,
-   reflection,
    Relationship,
    RelationshipAttribute,
    RelationshipEdge,
@@ -29,7 +29,8 @@ import {
    SystemDiagram,
    TargetObject,
    TargetObjectAttribute,
-   WithCustomProperties
+   WithCustomProperties,
+   reflection
 } from '../generated/ast.js';
 
 /**
@@ -111,7 +112,52 @@ export function getReferenceWrapperProperty(type: string): string | undefined {
    return REFERENCE_WRAPPER_TYPES.get(type);
 }
 
-// Reusable property groups for common interface inheritance patterns.
+interface RefTextObject {
+   $refText: string;
+}
+
+function isRefTextObject(value: unknown): value is RefTextObject {
+   // eslint-disable-next-line no-null/no-null
+   return typeof value === 'object' && value !== null && '$refText' in value && typeof value.$refText === 'string';
+}
+
+/**
+ * Gets the local qualified ID from a resolved reference target by traversing its parent chain.
+ */
+function getLocalIdFromNode(node: unknown): string | undefined {
+   // eslint-disable-next-line no-null/no-null
+   if (typeof node !== 'object' || node === null) {
+      return undefined;
+   }
+   const record = node as Record<string, unknown>;
+   if (typeof record.id !== 'string') {
+      return undefined;
+   }
+   let id = record.id;
+   let parent = record.$container;
+   while (parent && typeof parent === 'object') {
+      const parentRecord = parent as Record<string, unknown>;
+      if (typeof parentRecord.id === 'string') {
+         id = `${parentRecord.id}.${id}`;
+      }
+      parent = parentRecord.$container;
+   }
+   return id;
+}
+
+/**
+ * Extracts reference text from Langium References or plain objects with $refText.
+ */
+export function getReferenceText(value: unknown): string | undefined {
+   if (isReference(value)) {
+      return value.$refText ?? value.$nodeDescription?.name ?? getLocalIdFromNode(value.ref);
+   }
+   if (isRefTextObject(value)) {
+      return value.$refText;
+   }
+   return undefined;
+}
+
 const IDENTIFIED_PROPERTIES = [IdentifiedObject.id];
 const NAMED_OBJECT_PROPERTIES = [...IDENTIFIED_PROPERTIES, NamedObject.name, NamedObject.description];
 const CUSTOM_PROPERTIES = [WithCustomProperties.customProperties];
@@ -182,20 +228,11 @@ const PROPERTY_ORDER = new Map<string, string[]>([
       ]
    ],
    [TargetObject.$type, [TargetObject.entity, TargetObject.mappings, ...CUSTOM_PROPERTIES]],
-   [
-      AttributeMapping.$type,
-      [AttributeMapping.attribute, AttributeMapping.sources, AttributeMapping.expressions, ...CUSTOM_PROPERTIES]
-   ],
+   [AttributeMapping.$type, [AttributeMapping.attribute, AttributeMapping.sources, AttributeMapping.expressions, ...CUSTOM_PROPERTIES]],
    [AttributeMappingExpression.$type, [AttributeMappingExpression.language, AttributeMappingExpression.expression]],
    [CustomProperty.$type, [...NAMED_OBJECT_PROPERTIES, CustomProperty.value]],
-   [
-      LogicalIdentifier.$type,
-      [...NAMED_OBJECT_PROPERTIES, LogicalIdentifier.primary, LogicalIdentifier.attributes, ...CUSTOM_PROPERTIES]
-   ],
-   [
-      DataModel.$type,
-      [...NAMED_OBJECT_PROPERTIES, DataModel.type, DataModel.version, DataModel.dependencies, ...CUSTOM_PROPERTIES]
-   ],
+   [LogicalIdentifier.$type, [...NAMED_OBJECT_PROPERTIES, LogicalIdentifier.primary, LogicalIdentifier.attributes, ...CUSTOM_PROPERTIES]],
+   [DataModel.$type, [...NAMED_OBJECT_PROPERTIES, DataModel.type, DataModel.version, DataModel.dependencies, ...CUSTOM_PROPERTIES]],
    [DataModelDependency.$type, [DataModelDependency.datamodel, DataModelDependency.version]]
 ]);
 PROPERTY_ORDER.set(SourceObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
