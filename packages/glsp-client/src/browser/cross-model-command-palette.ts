@@ -5,13 +5,16 @@
 import { DropFilesOperation, ModelStructure } from '@crossmodel/protocol';
 import {
    Action,
+   EnableDefaultToolsAction,
    GLSPMousePositionTracker,
    GModelElement,
    GModelRoot,
    GlspCommandPalette,
+   IActionDispatcher,
    InsertIndicator,
    LabeledAction,
    Point,
+   TYPES,
    getAbsoluteClientBounds
 } from '@eclipse-glsp/client';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -23,7 +26,13 @@ export class CrossModelMousePositionTracker extends GLSPMousePositionTracker {
 
    override mouseMove(target: GModelElement, event: MouseEvent): (Action | Promise<Action>)[] {
       this.clientPosition = { x: event.clientX, y: event.clientY };
-      this.diagramOffset = { x: event.offsetX, y: event.offsetY };
+      const currentTarget = event.currentTarget as HTMLElement;
+      if (currentTarget) {
+         const rect = currentTarget.getBoundingClientRect();
+         this.diagramOffset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      } else {
+         this.diagramOffset = { x: event.offsetX, y: event.offsetY };
+      }
       return super.mouseMove(target, event);
    }
 }
@@ -34,6 +43,7 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
    protected creationPosition?: Point;
 
    @inject(CrossModelMousePositionTracker) protected positionTracker: CrossModelMousePositionTracker;
+   @inject(TYPES.IActionDispatcher) protected actionDispatcher: IActionDispatcher;
 
    protected override onBeforeShow(containerElement: HTMLElement, root: Readonly<GModelRoot>, ...contextElementIds: string[]): void {
       if (contextElementIds.length === 1) {
@@ -62,13 +72,15 @@ export class CrossModelCommandPalette extends GlspCommandPalette {
       if (this.creationPosition && LabeledAction.is(input) && DropFilesOperation.is(input.actions[0])) {
          const action = input.actions[0];
          action.position = this.creationPosition;
-         return super.executeAction(action);
+         super.executeAction(action);
+      } else {
+         super.executeAction(input);
       }
-      super.executeAction(input);
    }
 
    override hide(): void {
       super.hide();
+      this.actionDispatcher.dispatch(EnableDefaultToolsAction.create());
       this.creationPosition = undefined;
       this.visible = false;
    }

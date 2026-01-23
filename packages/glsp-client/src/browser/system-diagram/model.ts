@@ -10,11 +10,11 @@ import {
    GLabel,
    GModelElement,
    GParentElement,
-   isEditableLabel,
-   isParent,
    ModelFilterPredicate,
    RectangularNode,
-   WithEditableLabel
+   WithEditableLabel,
+   isEditableLabel,
+   isParent
 } from '@eclipse-glsp/client';
 import { LibavoidEdge } from '../libavoid-model';
 

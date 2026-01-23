@@ -13,6 +13,7 @@ import {
    DragAwareMouseListener,
    DrawFeedbackEdgeAction,
    EdgeCreationTool,
+   EnableDefaultToolsAction,
    FeedbackEdgeEnd,
    FeedbackEdgeEndMovingMouseListener,
    FeedbackEmitter,
@@ -42,6 +43,8 @@ import {
    toAbsoluteBounds
 } from '@eclipse-glsp/client';
 
+import { TriggerSystemEdgeCreationAction } from '@crossmodel/protocol';
+import { animationFrame } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { RelationshipCommandPalette } from '../../cross-model-command-palette';
 
@@ -50,6 +53,7 @@ const CSS_SOURCE_HIGHLIGHT = 'source-highlight';
 
 @injectable()
 export class SystemEdgeCreationTool extends EdgeCreationTool {
+   declare protected triggerAction: TriggerSystemEdgeCreationAction;
    protected creationMouseListener: SystemEdgeCreationToolMouseListener;
 
    protected override creationListener(): void {
@@ -72,6 +76,31 @@ export class SystemEdgeCreationTool extends EdgeCreationTool {
          .add(ModifyCSSFeedbackAction.create({ add: [CSS_EDGE_CREATION] }), ModifyCSSFeedbackAction.create({ remove: [CSS_EDGE_CREATION] }))
          .submit();
       this.toDisposeOnDisable.push(toolFeedback);
+   }
+
+   override doEnable(): void {
+      super.doEnable();
+      if (this.triggerAction.triggerLocation) {
+         animationFrame().then(() => this.triggerTool(this.triggerAction.triggerLocation!));
+      }
+   }
+
+   protected async triggerTool(position: Point): Promise<void> {
+      if (!this.creationMouseListener) {
+         return;
+      }
+      await this.dispatchActions(
+         this.creationMouseListener.mouseMove(
+            this.editorContext.modelRoot,
+            new MouseEvent('mousemove', { clientX: position.x, clientY: position.y, bubbles: true, cancelable: true })
+         )
+      );
+      await this.dispatchActions(
+         this.creationMouseListener.mouseUp(
+            this.editorContext.modelRoot,
+            new MouseEvent('mouseup', { clientX: position.x, clientY: position.y, bubbles: true, cancelable: true })
+         )
+      );
    }
 }
 
@@ -220,6 +249,9 @@ export class SystemEdgeCreationToolMouseListener extends DragAwareMouseListener 
                   args: this.triggerAction.args
                })
             );
+            if (this.triggerAction.args?.singleUse !== false) {
+               result.push(EnableDefaultToolsAction.create());
+            }
          }
       }
       this.dispose();
@@ -230,15 +262,16 @@ export class SystemEdgeCreationToolMouseListener extends DragAwareMouseListener 
    override nonDraggingMouseUp(element: GModelElement, event: MouseEvent): Action[] {
       this.dispose();
       this.updateFeedback(element);
+      const result: Action[] = [];
       if (this.triggerAction.args?.type === 'show') {
-         return [
+         result.push(
             SetUIExtensionVisibilityAction.create({
                extensionId: RelationshipCommandPalette.PALETTE_ID,
                visible: true
             })
-         ];
+         );
       }
-      return [];
+      return result;
    }
 
    protected canConnect(element: GModelElement | undefined, role: 'source' | 'target'): boolean {

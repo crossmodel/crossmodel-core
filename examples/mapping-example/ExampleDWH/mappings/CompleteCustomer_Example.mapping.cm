@@ -40,7 +40,13 @@ mapping:
             sources:
               - Customer.First_Name
               - Customer.Last_Name
-            expression: "CONCAT_WS({{Customer.First_Name}}, {{Customer.Last_Name}}, ' ')"
+            expressions:
+              - language: "SQL"
+                expression: "CONCAT_WS({{Customer.First_Name}}, {{Customer.Last_Name}}, ' ')"
+              - language: "Python"
+                expression: "{{Customer.First_Name}} + ' ' + {{Customer.Last_Name}}"
+              - language: "Java"
+                expression: "String.Format('{0} {1}', {{Customer.First_Name}}, {{Customer.Last_Name}}"
           - attribute: Country
             sources:
               - Country.Name
@@ -48,9 +54,13 @@ mapping:
             sources:
               - CalcAgeSourceObject.Age
           - attribute: FixedNumber
-            expression: "1337"
+            expressions:
+              - language: "SQL"
+                expression: "1337"
           - attribute: FixedString
-            expression: "Fixed String"
+            expressions:
+              - language: "SQL"
+                expression: "Fixed String"
           - attribute: Today
             customProperties:
               - id: author

@@ -2,9 +2,10 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { ExpandNavigatorForNewFileAction, GRID, ShowPropertiesAction } from '@crossmodel/protocol';
+import { ExpandNavigatorForNewFileAction, GRID, OpenCompositeEditorAction, ShowPropertiesAction } from '@crossmodel/protocol';
 import {
    ConsoleLogger,
+   EnableDefaultToolsAction,
    GLSPHiddenBoundsUpdater,
    GLSPMousePositionTracker,
    GModelElement,
@@ -12,9 +13,12 @@ import {
    LogLevel,
    MetadataPlacer,
    MouseDeleteTool,
+   RequestContextActions,
    TYPES,
    ToolManager,
    ToolPalette,
+   TriggerEdgeCreationAction,
+   TriggerNodeCreationAction,
    bindAsService,
    bindOrRebind,
    configureActionHandler,
@@ -36,7 +40,9 @@ import { CrossModelDiagramStartup } from './cross-model-diagram-startup';
 import { CrossModelErrorExtension } from './cross-model-error-extension';
 import { CrossModelToolPalette } from './cross-model-tool-palette';
 import { CrossModelGLSPSelectionDataService } from './crossmodel-selection-data-service';
+import { EmptyActionHandler } from './empty-action-handler';
 import { ExpandNavigatorActionHandler } from './expand-navigator-action-handler';
+import { OpenCompositeEditorActionHandler } from './open-editor-action-handler';
 import { ShowPropertiesActionHandler } from './show-properties-action-handler';
 
 export function createCrossModelDiagramModule(registry: interfaces.ContainerModuleCallBack): ContainerModule {
@@ -54,8 +60,8 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       registry(bind, unbind, isBound, rebind, unbindAsync, onActivation, onDeactivation);
       bind(CrossModelCommandPalette).toSelf().inSingletonScope();
       rebind(GlspCommandPalette).toService(CrossModelCommandPalette);
-      bindAsService(bind, TYPES.IUIExtension, EntityCommandPalette);
-      bindAsService(bind, TYPES.IUIExtension, RelationshipCommandPalette);
+      bindAsService(context, TYPES.IUIExtension, EntityCommandPalette);
+      bindAsService(context, TYPES.IUIExtension, RelationshipCommandPalette);
 
       bind(CrossModelMousePositionTracker).toSelf().inSingletonScope();
       bindOrRebind(context, GLSPMousePositionTracker).toService(CrossModelMousePositionTracker);
@@ -63,7 +69,7 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
       bind(CrossModelToolManager).toSelf().inSingletonScope();
       bindOrRebind(context, TYPES.IToolManager).toService(CrossModelToolManager);
 
-      bindAsService(bind, TYPES.IUIExtension, CrossModelErrorExtension);
+      bindAsService(context, TYPES.IUIExtension, CrossModelErrorExtension);
       rebind(MetadataPlacer).to(CmMetadataPlacer).inSingletonScope();
 
       bind(CrossModelHiddenBoundsUpdater).toSelf().inSingletonScope();
@@ -71,6 +77,12 @@ export function createCrossModelDiagramModule(registry: interfaces.ContainerModu
 
       configureActionHandler(context, ShowPropertiesAction.KIND, ShowPropertiesActionHandler);
       configureActionHandler(context, ExpandNavigatorForNewFileAction.KIND, ExpandNavigatorActionHandler);
+      configureActionHandler(context, TriggerNodeCreationAction.KIND, ToolPalette);
+      configureActionHandler(context, TriggerEdgeCreationAction.KIND, ToolPalette);
+      configureActionHandler(context, EnableDefaultToolsAction.KIND, ToolPalette);
+
+      configureActionHandler(context, RequestContextActions.KIND, EmptyActionHandler);
+      configureActionHandler(context, OpenCompositeEditorAction.KIND, OpenCompositeEditorActionHandler);
    });
 }
 

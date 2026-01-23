@@ -1,9 +1,16 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { ENTITY_NODE_TYPE, LABEL_ENTITY, REFERENCE_CONTAINER_TYPE, REFERENCE_PROPERTY, REFERENCE_VALUE } from '@crossmodel/protocol';
+import {
+   ENTITY_NODE_TYPE,
+   LABEL_ENTITY,
+   REFERENCE_CONTAINER_TYPE,
+   REFERENCE_PROPERTY,
+   REFERENCE_VALUE,
+   SEMANTIC_URI
+} from '@crossmodel/protocol';
 import { ArgsUtil, GNode, GNodeBuilder } from '@eclipse-glsp/server';
-import { LogicalEntityNode } from '../../../language-server/generated/ast.js';
+import { LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
 import { getAttributes } from '../../../language-server/util/ast-util.js';
 import { AttributeCompartment, AttributesCompartmentBuilder, createHeader } from '../../common/nodes.js';
 import { SystemModelIndex } from './system-model-index.js';
@@ -31,6 +38,11 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       this.addArg(REFERENCE_CONTAINER_TYPE, LogicalEntityNode.$type);
       this.addArg(REFERENCE_PROPERTY, 'entity');
       this.addArg(REFERENCE_VALUE, node.entity?.$refText);
+
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(node.entity, LogicalEntity.$type);
+      if (semanticUri) {
+         this.addArg(SEMANTIC_URI, semanticUri.toString());
+      }
 
       // Add the label/name of the node
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));

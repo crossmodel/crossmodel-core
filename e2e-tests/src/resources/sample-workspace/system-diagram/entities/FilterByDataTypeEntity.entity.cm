@@ -1,0 +1,9 @@
+entity:
+    id: FilterByDataTypeEntity
+    name: "FilterByDataTypeEntity"
+    attributes:
+      - id: BooleanAttribute
+        name: "BooleanAttribute"
+        datatype: "Boolean"
+      - id: TextAttribute
+        name: "TextAttribute"

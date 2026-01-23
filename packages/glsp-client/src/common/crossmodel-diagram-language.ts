@@ -10,8 +10,8 @@ export const CrossModelLanguageContributionId = 'crossmodel-contribution';
 
 export const SystemDiagramLanguage: GLSPDiagramLanguage = {
    contributionId: CrossModelLanguageContributionId,
-   label: 'System Diagram',
-   diagramType: 'system-diagram',
+   label: 'Diagram',
+   diagramType: 'diagram',
    fileExtensions: [ModelFileExtensions.Diagram, ModelFileExtensions.SystemDiagram]
 };
 

@@ -3,6 +3,57 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.23.0](https://github.com/crossmodel/crossmodel-core/compare/v0.22.0...v0.23.0) (2026-01-22)
+
+
+### Features
+
+* Context menu options in system diagram ([#235](https://github.com/crossmodel/crossmodel-core/issues/235)) ([0d66664](https://github.com/crossmodel/crossmodel-core/commit/0d66664745ee1b67afb7bce738689a368d46b616))
+
+
+
+
+
+# [0.22.0](https://github.com/crossmodel/crossmodel-core/compare/v0.21.6...v0.22.0) (2026-01-22)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
+## [0.21.6](https://github.com/crossmodel/crossmodel-core/compare/v0.21.5...v0.21.6) (2026-01-22)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
+## [0.21.5](https://github.com/crossmodel/crossmodel-core/compare/v0.21.4...v0.21.5) (2026-01-22)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
+## [0.21.4](https://github.com/crossmodel/crossmodel-core/compare/v0.21.3...v0.21.4) (2026-01-21)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
+## [0.21.3](https://github.com/crossmodel/crossmodel-core/compare/v0.21.2...v0.21.3) (2026-01-20)
+
+**Note:** Version bump only for package @crossmodel/glsp-client
+
+
+
+
+
 ## [0.21.2](https://github.com/crossmodel/crossmodel-core/compare/v0.21.1...v0.21.2) (2026-01-19)
 
 **Note:** Version bump only for package @crossmodel/glsp-client

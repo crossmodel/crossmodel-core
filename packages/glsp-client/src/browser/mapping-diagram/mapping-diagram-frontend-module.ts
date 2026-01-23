@@ -27,7 +27,7 @@ export class MappingDiagramModule extends GLSPTheiaFrontendModule {
    }
 
    override bindGLSPClientContribution(context: ContainerContext): void {
-      // DO NOT BIND ANOTHER GLSP CLIENT CONTRIBUTION, WE ONLY NEED ONE PER SERVER AND WE DO IT IN THE SYSTEM DIAGRAM LANGUAGE
+      // DO NOT BIND ANOTHER GLSP CLIENT CONTRIBUTION, WE ONLY NEED ONE PER SERVER AND WE DO IT IN THE DIAGRAM LANGUAGE
    }
 
    override bindDiagramWidgetFactory(context: ContainerContext): void {

@@ -123,6 +123,9 @@ export function MappingSourcesModelReducer(state: ModelState, action: MappingSou
    if (sourceObject === undefined) {
       throw Error('Model error: Mapping action applied on undefined source object');
    }
+
+   state.reason = action.type;
+
    switch (action.type) {
       case 'source-object:change-join':
          sourceObject.join = action.join;

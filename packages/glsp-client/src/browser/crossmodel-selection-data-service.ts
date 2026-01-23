@@ -1,7 +1,14 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { CrossReference, REFERENCE_CONTAINER_TYPE, REFERENCE_PROPERTY, REFERENCE_VALUE, RenderProps } from '@crossmodel/protocol';
+import {
+   CrossReference,
+   REFERENCE_CONTAINER_TYPE,
+   REFERENCE_PROPERTY,
+   REFERENCE_VALUE,
+   RenderProps,
+   SemanticUri
+} from '@crossmodel/protocol';
 import { GModelElement, GModelRoot, hasArgs } from '@eclipse-glsp/client';
 import { GlspSelectionDataService } from '@eclipse-glsp/theia-integration';
 import { isDefined } from '@theia/core';
@@ -17,7 +24,7 @@ export class CrossModelGLSPSelectionDataService extends GlspSelectionDataService
 
 export interface GModelElementInfo {
    type: string;
-   reference?: CrossReference;
+   reference?: CrossReference | string;
    renderProps?: Partial<RenderProps>;
 }
 
@@ -35,8 +42,13 @@ export function getElementInfo(element: GModelElement): GModelElementInfo {
    return { type: element.type, reference: getCrossReference(element), renderProps: getRenderProps(element) };
 }
 
-export function getCrossReference(element: GModelElement): CrossReference | undefined {
+export function getCrossReference(element: GModelElement): GModelElementInfo['reference'] | undefined {
    if (hasArgs(element)) {
+      const semanticUri = SemanticUri.read(element.args);
+      if (semanticUri) {
+         return semanticUri;
+      }
+
       const referenceContainerType = element.args[REFERENCE_CONTAINER_TYPE];
       const referenceProperty = element.args[REFERENCE_PROPERTY];
       const referenceValue = element.args[REFERENCE_VALUE];

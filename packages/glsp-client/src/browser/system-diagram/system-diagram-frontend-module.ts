@@ -21,6 +21,7 @@ import { SystemDiagramWidget } from './system-diagram-widget';
 
 export class SystemDiagramModule extends GLSPTheiaFrontendModule {
    readonly diagramLanguage = SystemDiagramLanguage;
+   protected override enableMarkerNavigationCommands = false;
 
    bindDiagramConfiguration(context: ContainerContext): void {
       context.bind(DiagramConfiguration).to(SystemDiagramConfiguration);

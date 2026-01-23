@@ -8,7 +8,7 @@ import { CMApp } from '../../../page-objects/cm-app';
 test.describe('Add/Edit/Delete inherits via properties view', () => {
    let app: CMApp;
 
-   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteInheritsDiagram.system-diagram.cm';
+   const SYSTEM_DIAGRAM_PATH = 'system-diagram/diagrams/AddEditDeleteInheritsDiagram.diagram.cm';
    const ENTITY_PATH = 'system-diagram/entities/AddEditDeleteInheritsEntity.entity.cm';
    const EMPTY_ENTITY_ID = 'AddEditDeleteInheritsEntity';
 
@@ -21,7 +21,7 @@ test.describe('Add/Edit/Delete inherits via properties view', () => {
    });
 
    test('Add multiple parents via properties view', async () => {
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -49,7 +49,7 @@ test.describe('Add/Edit/Delete inherits via properties view', () => {
       await entityEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -62,7 +62,7 @@ test.describe('Add/Edit/Delete inherits via properties view', () => {
    });
 
    test('Modify existing parent entry via properties view', async () => {
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 
@@ -87,7 +87,7 @@ test.describe('Add/Edit/Delete inherits via properties view', () => {
       await entityEditor.closeWithoutSave();
 
       // Cleanup
-      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditorForCleanup = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyViewForCleanup = await diagramEditorForCleanup.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const formForCleanup = await propertyViewForCleanup.form();
       await diagramEditorForCleanup.waitForModelUpdate(async () => {
@@ -99,7 +99,7 @@ test.describe('Add/Edit/Delete inherits via properties view', () => {
    });
 
    test('Remove parent via properties view', async () => {
-      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'System Diagram');
+      const diagramEditor = await app.openCompositeEditor(SYSTEM_DIAGRAM_PATH, 'Diagram');
       const propertyView = await diagramEditor.selectLogicalEntityAndOpenProperties(EMPTY_ENTITY_ID);
       const form = await propertyView.form();
 

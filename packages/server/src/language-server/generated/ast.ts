@@ -54,6 +54,7 @@ export type CrossModelKeywordNames =
     | "edges"
     | "entity"
     | "expression"
+    | "expressions"
     | "from"
     | "height"
     | "id"
@@ -61,6 +62,7 @@ export type CrossModelKeywordNames =
     | "inherits"
     | "inner-join"
     | "join"
+    | "language"
     | "left-join"
     | "length"
     | "logical"
@@ -97,7 +99,7 @@ export interface AttributeMapping extends WithCustomProperties {
     readonly $container: TargetObject;
     readonly $type: 'AttributeMapping';
     attribute?: AttributeMappingTarget;
-    expression: string;
+    expressions: Array<AttributeMappingExpression>;
     sources: Array<AttributeMappingSource>;
 }
 
@@ -105,12 +107,29 @@ export const AttributeMapping = {
     $type: 'AttributeMapping',
     attribute: 'attribute',
     customProperties: 'customProperties',
-    expression: 'expression',
+    expressions: 'expressions',
     sources: 'sources'
 } as const;
 
 export function isAttributeMapping(item: unknown): item is AttributeMapping {
     return reflection.isInstance(item, AttributeMapping.$type);
+}
+
+export interface AttributeMappingExpression extends langium.AstNode {
+    readonly $container: AttributeMapping;
+    readonly $type: 'AttributeMappingExpression';
+    expression: string;
+    language: string;
+}
+
+export const AttributeMappingExpression = {
+    $type: 'AttributeMappingExpression',
+    expression: 'expression',
+    language: 'language'
+} as const;
+
+export function isAttributeMappingExpression(item: unknown): item is AttributeMappingExpression {
+    return reflection.isInstance(item, AttributeMappingExpression.$type);
 }
 
 export interface AttributeMappingSource extends langium.AstNode {
@@ -830,6 +849,7 @@ export function isWithCustomProperties(item: unknown): item is WithCustomPropert
 
 export type CrossModelAstType = {
     AttributeMapping: AttributeMapping
+    AttributeMappingExpression: AttributeMappingExpression
     AttributeMappingSource: AttributeMappingSource
     AttributeMappingTarget: AttributeMappingTarget
     BinaryExpression: BinaryExpression
@@ -883,8 +903,9 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     name: AttributeMapping.customProperties,
                     defaultValue: []
                 },
-                expression: {
-                    name: AttributeMapping.expression
+                expressions: {
+                    name: AttributeMapping.expressions,
+                    defaultValue: []
                 },
                 sources: {
                     name: AttributeMapping.sources,
@@ -892,6 +913,18 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: [WithCustomProperties.$type]
+        },
+        AttributeMappingExpression: {
+            name: AttributeMappingExpression.$type,
+            properties: {
+                expression: {
+                    name: AttributeMappingExpression.expression
+                },
+                language: {
+                    name: AttributeMappingExpression.language
+                }
+            },
+            superTypes: []
         },
         AttributeMappingSource: {
             name: AttributeMappingSource.$type,

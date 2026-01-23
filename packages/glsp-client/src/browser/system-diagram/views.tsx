@@ -48,6 +48,11 @@ export class SystemGraphView extends GGraphView {
       return `${this.viewerOptions.baseDiv}__svg__def__${id}`;
    }
 
+   protected onContextMenu = (event: MouseEvent): void => {
+      event.preventDefault();
+      event.stopPropagation();
+   };
+
    override render(model: Readonly<GGraph>, context: RenderingContext): VNode {
       const edgeRouting = this.edgeRouterRegistry.routeAllChildren(model);
       const transform = `scale(${model.zoom}) translate(${-model.scroll.x},${-model.scroll.y})`;

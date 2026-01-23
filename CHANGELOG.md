@@ -3,6 +3,66 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.23.0](https://github.com/crossmodel/crossmodel-core/compare/v0.22.0...v0.23.0) (2026-01-22)
+
+
+### Features
+
+* Context menu options in system diagram ([#235](https://github.com/crossmodel/crossmodel-core/issues/235)) ([0d66664](https://github.com/crossmodel/crossmodel-core/commit/0d66664745ee1b67afb7bce738689a368d46b616))
+
+
+
+
+
+# [0.22.0](https://github.com/crossmodel/crossmodel-core/compare/v0.21.6...v0.22.0) (2026-01-22)
+
+
+### Features
+
+* Mapping expression per language ([#255](https://github.com/crossmodel/crossmodel-core/issues/255)) ([3b1e010](https://github.com/crossmodel/crossmodel-core/commit/3b1e010ece80263f48f413960ead75a3fb8de3f7))
+
+
+
+
+
+## [0.21.6](https://github.com/crossmodel/crossmodel-core/compare/v0.21.5...v0.21.6) (2026-01-22)
+
+
+### Bug Fixes
+
+* set title caption to resource URI path in CompositeEditor ([#259](https://github.com/crossmodel/crossmodel-core/issues/259)) ([ae5684d](https://github.com/crossmodel/crossmodel-core/commit/ae5684d1a779b849a3e0e37270be1b19185f19db))
+
+
+
+
+
+## [0.21.5](https://github.com/crossmodel/crossmodel-core/compare/v0.21.4...v0.21.5) (2026-01-22)
+
+
+### Bug Fixes
+
+* commit row on outside click and inside wrapper ([#254](https://github.com/crossmodel/crossmodel-core/issues/254)) ([0f7d7a4](https://github.com/crossmodel/crossmodel-core/commit/0f7d7a4ba40733bb4efb4d9aad0a1a61d78d6818))
+
+
+
+
+
+## [0.21.4](https://github.com/crossmodel/crossmodel-core/compare/v0.21.3...v0.21.4) (2026-01-21)
+
+**Note:** Version bump only for package crossmodel-core
+
+
+
+
+
+## [0.21.3](https://github.com/crossmodel/crossmodel-core/compare/v0.21.2...v0.21.3) (2026-01-20)
+
+**Note:** Version bump only for package crossmodel-core
+
+
+
+
+
 ## [0.21.2](https://github.com/crossmodel/crossmodel-core/compare/v0.21.1...v0.21.2) (2026-01-19)
 
 **Note:** Version bump only for package crossmodel-core
