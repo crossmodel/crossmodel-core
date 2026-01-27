@@ -31,9 +31,9 @@ test.describe('CrossModel Explorer View', () => {
    });
 
    test('code and form editor options available in the context menu on an entity', async () => {
-      const file = await explorer.getFileStatNodeByLabel('example-entity.entity.cm');
+      const file = await explorer.getFileStatNodeByLabel('ExampleEntity.entity.cm');
       expect(file).toBeDefined();
-      expect(await file.label()).toBe('example-entity.entity.cm');
+      expect(await file.label()).toBe('ExampleEntity.entity.cm');
       const menu = await file.openContextMenu();
       expect(await menu.isOpen()).toBe(true);
       // Expect the Code and Form editor to be in the Open With menu option.
@@ -44,9 +44,9 @@ test.describe('CrossModel Explorer View', () => {
    });
 
    test('code and form editor options available in the context menu on a relationship', async () => {
-      const file = await explorer.getFileStatNodeByLabel('example-relationship.relationship.cm');
+      const file = await explorer.getFileStatNodeByLabel('ExampleRelationship.relationship.cm');
       expect(file).toBeDefined();
-      expect(await file.label()).toBe('example-relationship.relationship.cm');
+      expect(await file.label()).toBe('ExampleRelationship.relationship.cm');
       const menu = await file.openContextMenu();
       expect(await menu.isOpen()).toBe(true);
       // Expect the Code and Form editor to be in the Open With menu option.
@@ -57,9 +57,9 @@ test.describe('CrossModel Explorer View', () => {
    });
 
    test('code and diagram editor options available in the context menu on a diagram', async () => {
-      const file = await explorer.getFileStatNodeByLabel('example-diagram.diagram.cm');
+      const file = await explorer.getFileStatNodeByLabel('ExampleDiagram.diagram.cm');
       expect(file).toBeDefined();
-      expect(await file.label()).toBe('example-diagram.diagram.cm');
+      expect(await file.label()).toBe('ExampleDiagram.diagram.cm');
       const menu = await file.openContextMenu();
       expect(await menu.isOpen()).toBe(true);
       // Expect the Code and Diagram editor to be in the Open With menu option.
