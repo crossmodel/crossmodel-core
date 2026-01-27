@@ -44,9 +44,9 @@ test.describe('CrossModel Explorer View', () => {
    });
 
    test('code and form editor options available in the context menu on a relationship', async () => {
-      const file = await explorer.getFileStatNodeByLabel('ExampleRelationship.relationship.cm');
+      const file = await explorer.getFileStatNodeByLabel('ExampleEntityToExampleEntity.relationship.cm');
       expect(file).toBeDefined();
-      expect(await file.label()).toBe('ExampleRelationship.relationship.cm');
+      expect(await file.label()).toBe('ExampleEntityToExampleEntity.relationship.cm');
       const menu = await file.openContextMenu();
       expect(await menu.isOpen()).toBe(true);
       // Expect the Code and Form editor to be in the Open With menu option.
