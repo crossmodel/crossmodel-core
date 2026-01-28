@@ -4,7 +4,7 @@
  * https://github.com/Aksem/sprotty-routing-libavoid
  ********************************************************************************/
 
-import { isLeftPortId } from '@crossmodel/protocol';
+import { GRID, isLeftPortId } from '@crossmodel/protocol';
 import {
    AbstractEdgeRouter,
    Action,
@@ -222,38 +222,107 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
             );
          }
       } else if (element instanceof GConnectableElement) {
+         // Create multiple pins along each edge at grid-aligned positions
+         // This allows libavoid to choose optimal connection points for straight lines
+         this.createGridAlignedPins(newShapeRef, bounds);
+      }
+   }
+
+   /**
+    * Creates multiple pins along each edge of the shape at grid-aligned positions.
+    * This enables libavoid to find optimal connection points, increasing the chance
+    * of straight horizontal or vertical lines when nodes are grid-snapped.
+    * Pins closer to the center have lower connection cost, making them preferred.
+    */
+   protected createGridAlignedPins(shapeRef: LibavoidShapeRef, bounds: { x: number; y: number; width: number; height: number }): void {
+      const gridX = GRID.x;
+      const gridY = GRID.y;
+
+      // Calculate pin positions for horizontal edges (top and bottom)
+      const horizontalPinPositions = this.calculateGridAlignedPinPositions(bounds.x, bounds.width, gridX);
+
+      // Calculate pin positions for vertical edges (left and right)
+      const verticalPinPositions = this.calculateGridAlignedPinPositions(bounds.y, bounds.height, gridY);
+
+      // Create pins along the top edge
+      for (const xPos of horizontalPinPositions) {
          this.createPin(
-            newShapeRef,
-            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
-            ShapeConnectionPin.ATTACH_POS_CENTRE,
-            ShapeConnectionPin.ATTACH_POS_TOP,
-            ShapeConnectionPin.DIRECTION_UP
+            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, xPos, ShapeConnectionPin.ATTACH_POS_TOP, ShapeConnectionPin.DIRECTION_UP
          );
+      }
+
+      // Create pins along the bottom edge
+      for (const xPos of horizontalPinPositions) {
          this.createPin(
-            newShapeRef,
-            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
-            ShapeConnectionPin.ATTACH_POS_LEFT,
-            ShapeConnectionPin.ATTACH_POS_MIDDLE,
-            ShapeConnectionPin.DIRECTION_LEFT
+            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, xPos, ShapeConnectionPin.ATTACH_POS_BOTTOM, ShapeConnectionPin.DIRECTION_DOWN
          );
+      }
+
+      // Create pins along the left edge
+      for (const yPos of verticalPinPositions) {
          this.createPin(
-            newShapeRef,
-            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
-            ShapeConnectionPin.ATTACH_POS_RIGHT,
-            ShapeConnectionPin.ATTACH_POS_MIDDLE,
-            ShapeConnectionPin.DIRECTION_RIGHT
+            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, ShapeConnectionPin.ATTACH_POS_LEFT, yPos, ShapeConnectionPin.DIRECTION_LEFT
          );
+      }
+
+      // Create pins along the right edge
+      for (const yPos of verticalPinPositions) {
          this.createPin(
-            newShapeRef,
-            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
-            ShapeConnectionPin.ATTACH_POS_CENTRE,
-            ShapeConnectionPin.ATTACH_POS_BOTTOM,
-            ShapeConnectionPin.DIRECTION_DOWN
+            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, ShapeConnectionPin.ATTACH_POS_RIGHT, yPos, ShapeConnectionPin.DIRECTION_RIGHT
          );
       }
    }
 
-   protected createPin(shape: LibavoidShapeRef, classId: number, x: number, y: number, direction: number): LibavoidShapeConnectionPin {
+   /**
+    * Calculates proportional pin positions (0.0 to 1.0) based on grid alignment.
+    * Pins are placed at grid-aligned absolute positions, then converted to proportional values.
+    * Pins are kept at least one grid unit away from corners to leave room for connector icons.
+    *
+    * @param start The absolute start position of the edge (x or y coordinate)
+    * @param size The size of the edge (width or height)
+    * @param gridSize The grid size to align pins to
+    * @returns Array of proportional positions (0.0 to 1.0) for pins
+    */
+   protected calculateGridAlignedPinPositions(start: number, size: number, gridSize: number): number[] {
+      const positions: number[] = [];
+
+      // Calculate minimum margin as proportional value (one grid unit from each edge)
+      const minMargin = gridSize / size;
+
+      // Define valid range: keep pins at least one grid unit from corners
+      const minProportional = minMargin;
+      const maxProportional = 1 - minMargin;
+
+      const end = start + size;
+
+      // Find the first grid line at or after the start
+      const firstGridLine = Math.ceil(start / gridSize) * gridSize;
+
+      // Add pins at each grid line within the bounds
+      for (let pos = firstGridLine; pos <= end; pos += gridSize) {
+         // Convert absolute position to proportional (0.0 to 1.0)
+         const proportional = (pos - start) / size;
+         // Only add if within valid range (keeping away from corners)
+         if (proportional >= minProportional && proportional <= maxProportional) {
+            positions.push(proportional);
+         }
+      }
+
+      // Ensure we always have at least the center pin if no grid lines fall within bounds
+      if (positions.length === 0) {
+         positions.push(0.5);
+      }
+
+      return positions;
+   }
+
+   protected createPin(
+      shape: LibavoidShapeRef,
+      classId: number,
+      x: number,
+      y: number,
+      direction: number
+   ): LibavoidShapeConnectionPin {
       const pin = new Libavoid.ShapeConnectionPin(shape, classId, x, y, true, 0, direction);
       pin.setExclusive(false);
       return pin;

@@ -1,11 +1,12 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
+import { GRID } from '@crossmodel/protocol';
 import { Point } from '@eclipse-glsp/server';
 
 export class Grid {
-   public static GRID_X = 5.0;
-   public static GRID_Y = 5.0;
+   public static GRID_X = GRID.x;
+   public static GRID_Y = GRID.y;
 
    public static snap(originalPoint: Point | undefined): Point | undefined {
       if (originalPoint) {
