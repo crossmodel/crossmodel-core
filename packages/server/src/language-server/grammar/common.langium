@@ -6,7 +6,7 @@ interface IdentifiedObject {
     id?: string;
 }
 
-fragment IdentifiedObjectFragment returns IdentifiedObject:
+fragment IdentifiedObjectFragment:
     'id' ':' (id=ID)?;
 
 interface NamedObject extends IdentifiedObject {
@@ -14,7 +14,7 @@ interface NamedObject extends IdentifiedObject {
     description?: string;
 }
 
-fragment NamedObjectFragment returns NamedObject:
+fragment NamedObjectFragment:
     IdentifiedObjectFragment
     ('name' ':' name=STRING)?
     ('description' ':' description=STRING)?
@@ -46,7 +46,7 @@ interface WithCustomProperties {
     customProperties: CustomProperty[];
 }
 
-fragment CustomPropertiesFragment returns WithCustomProperties:
+fragment CustomPropertiesFragment:
     'customProperties' ':'
         INDENT
             (LIST_ITEM customProperties+=CustomProperty)+
