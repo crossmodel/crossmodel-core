@@ -64,6 +64,7 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
    protected shapes: { [key: string]: ShapeInfo } = {};
    protected edgeRouting: EdgeRouting = new EdgeRouting();
    protected changedEdgeIds: string[] = [];
+   protected movedShapeIds: Set<string> = new Set();
 
    @postConstruct()
    protected init(): void {
@@ -197,6 +198,8 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       const shapeInfo = this.shapes[element.id];
       if (shapeInfo) {
          this.avoidRouter.moveShape(shapeInfo.ref, shape);
+         // Track that this shape moved so we can refresh connected connector endpoints
+         this.movedShapeIds.add(element.id);
          return;
       }
 
@@ -393,10 +396,50 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       return edgeById;
    }
 
+   /**
+    * Refreshes endpoints for connectors connected to moved shapes.
+    * This forces libavoid to reconsider pin selection on both ends of the connector,
+    * not just the end attached to the moved shape.
+    */
+   protected refreshConnectorEndpoints(edges: GEdge[]): void {
+      if (this.movedShapeIds.size === 0) {
+         return;
+      }
+
+      for (const edge of edges) {
+         const connRef = this.connectors[edge.id];
+         if (!connRef) {
+            continue;
+         }
+
+         // Check if either endpoint is connected to a moved shape
+         const sourceShape = this.shapes[edge.sourceId];
+         const targetShape = this.shapes[edge.targetId];
+         if (!sourceShape || !targetShape) {
+            continue;
+         }
+
+         if (this.movedShapeIds.has(edge.sourceId) || this.movedShapeIds.has(edge.targetId)) {
+            // Re-set endpoints to force libavoid to reconsider pin selection on both ends
+            const sourceConnEnd = new Libavoid.ConnEnd(sourceShape.ref, ShapeConnectionPin.ORTHOGONAL_PIN_ID);
+            const targetConnEnd = new Libavoid.ConnEnd(targetShape.ref, ShapeConnectionPin.ORTHOGONAL_PIN_ID);
+            connRef.setSourceEndpoint(sourceConnEnd);
+            connRef.setDestEndpoint(targetConnEnd);
+         }
+      }
+
+      this.movedShapeIds.clear();
+   }
+
    routeAll(edges: GEdge[], parent: GParentElement): EdgeRouting {
       // transform into libavoid shapes and connectors
       this.updateShapes(edges, parent);
       const edgeById = this.updateConnectors(edges, parent);
+
+      // Refresh endpoints for connectors connected to moved shapes
+      // This forces libavoid to reconsider pin selection on both ends
+      this.refreshConnectorEndpoints(edges);
+
       this.avoidRouter.processTransaction();
 
       // only collected changed edge ids during transaction as the edge may have changed in-between
