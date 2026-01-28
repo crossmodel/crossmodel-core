@@ -32,11 +32,11 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
       this.addCssClasses('diagram-edge', 'relationship');
       this.addArgs(ArgsUtil.edgePadding(5));
       this.routerKind('libavoid');
-      this.addArg(REFERENCE_CONTAINER_TYPE, RelationshipEdge);
+      this.addArg(REFERENCE_CONTAINER_TYPE, RelationshipEdge.$type);
       this.addArg(REFERENCE_PROPERTY, 'relationship');
       this.addArg(REFERENCE_VALUE, edge.relationship.$refText);
 
-      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.relationship, Relationship);
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.relationship, Relationship.$type);
       if (semanticUri) {
          this.addArg(SEMANTIC_URI, semanticUri.toString());
       }
@@ -73,7 +73,7 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
       this.addCssClasses('diagram-edge', 'inheritance');
       this.addArg('edgePadding', 5);
 
-      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.baseNode.ref?.entity, LogicalEntity);
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(edge.baseNode.ref?.entity, LogicalEntity.$type);
       if (semanticUri) {
          this.addArg(SEMANTIC_URI, semanticUri.toString());
       }

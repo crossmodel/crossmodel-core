@@ -9,7 +9,7 @@ import { CompletionItemKind, InsertTextFormat, TextEdit } from 'vscode-languages
 import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
-import { AttributeMapping, RelationshipAttribute, isAttributeMappingExpression } from './generated/ast.js';
+import { AttributeMapping, AttributeMappingExpression, IdentifiedObject, RelationshipAttribute, isAttributeMappingExpression } from './generated/ast.js';
 import { fixDocument } from './util/ast-util.js';
 
 /**
@@ -60,14 +60,14 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
       assignment: GrammarAST.Assignment,
       acceptor: CompletionAcceptor
    ): MaybePromise<void> {
-      if (assignment.feature === 'id') {
+      if (assignment.feature === IdentifiedObject.id) {
          return this.completionForId(context, assignment, acceptor);
       }
-      if (isAttributeMappingExpression(context.node) && assignment.feature === 'expression') {
+      if (isAttributeMappingExpression(context.node) && assignment.feature === AttributeMappingExpression.expression) {
          const attributeMapping = (context.node as any).$container as AttributeMapping;
          return this.completeAttributeMappingExpression(context, attributeMapping, acceptor);
       }
-      if (isAttributeMappingExpression(context.node) && assignment.feature === 'language') {
+      if (isAttributeMappingExpression(context.node) && assignment.feature === AttributeMappingExpression.language) {
          return this.completeAttributeMappingLanguage(context, acceptor);
       }
       if (GrammarAST.isRuleCall(assignment.terminal) && assignment.terminal.rule.ref) {
@@ -241,17 +241,21 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
 
    protected filterRelationshipAttribute(node: RelationshipAttribute, context: CompletionContext, desc: AstNodeDescription): boolean {
       // only show relevant attributes depending on the parent or child context
-      if (context.features.find(feature => feature.property === 'child')) {
+      if (context.features.find(feature => feature.property === RelationshipAttribute.child)) {
          return desc.name.startsWith(node.$container.child?.$refText + '.');
       }
-      if (context.features.find(feature => feature.property === 'parent')) {
+      if (context.features.find(feature => feature.property === RelationshipAttribute.parent)) {
          return desc.name.startsWith(node.$container.parent?.$refText + '.');
       }
       return true;
    }
 
-   protected override createReferenceCompletionItem(description: AstNodeDescription): CompletionValueItem {
-      const item = super.createReferenceCompletionItem(description);
+   protected override createReferenceCompletionItem(
+      description: AstNodeDescription,
+      refInfo: ReferenceInfo,
+      context: CompletionContext
+   ): CompletionValueItem {
+      const item = super.createReferenceCompletionItem(description, refInfo, context);
       return {
          ...item,
          sortText: this.scopeProvider.sortText(description),

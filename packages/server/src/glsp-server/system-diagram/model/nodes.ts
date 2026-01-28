@@ -35,11 +35,11 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
 
       // Options which are the same for every node
       this.addCssClasses('diagram-node', 'entity');
-      this.addArg(REFERENCE_CONTAINER_TYPE, LogicalEntityNode);
+      this.addArg(REFERENCE_CONTAINER_TYPE, LogicalEntityNode.$type);
       this.addArg(REFERENCE_PROPERTY, 'entity');
       this.addArg(REFERENCE_VALUE, node.entity?.$refText);
 
-      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(node.entity, LogicalEntity);
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(node.entity, LogicalEntity.$type);
       if (semanticUri) {
          this.addArg(SEMANTIC_URI, semanticUri.toString());
       }

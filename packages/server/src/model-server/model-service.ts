@@ -41,30 +41,28 @@ export class ModelService {
       protected fileSystemProvider = shared.workspace.FileSystemProvider
    ) {
       // sync updates with language client
-      this.documentBuilder.onBuildPhase(DocumentState.Validated, async (allChangedDocuments, _token) => {
-         for (const changedDocument of allChangedDocuments) {
-            const sourceClientId = this.documentManager.getAuthor(changedDocument);
-            if (sourceClientId === LANGUAGE_CLIENT_ID) {
-               continue;
-            }
-            const textDocument = changedDocument.textDocument;
-            if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
-               // we only want to apply a text edit if the editor is already open
-               // because opening and updating at the same time might cause problems as the open call resets the document to filesystem
-               shared.logger.ClientLogger.info(
-                  `[Documents][${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`
-               );
-               await this.shared.lsp.Connection?.workspace.applyEdit({
-                  label: 'Update Model',
-                  documentChanges: [
-                     // we use a null version to indicate that the version is known
-                     // eslint-disable-next-line no-null/no-null
-                     TextDocumentEdit.create(OptionalVersionedTextDocumentIdentifier.create(textDocument.uri, null), [
-                        TextEdit.replace(Range.create(0, 0, uinteger.MAX_VALUE, uinteger.MAX_VALUE), textDocument.getText())
-                     ])
-                  ]
-               });
-            }
+      this.documentBuilder.onDocumentPhase(DocumentState.Validated, async (changedDocument, _token) => {
+         const sourceClientId = this.documentManager.getAuthor(changedDocument);
+         if (sourceClientId === LANGUAGE_CLIENT_ID) {
+            return;
+         }
+         const textDocument = changedDocument.textDocument;
+         if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
+            // we only want to apply a text edit if the editor is already open
+            // because opening and updating at the same time might cause problems as the open call resets the document to filesystem
+            shared.logger.ClientLogger.info(
+               `[Documents][${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`
+            );
+            await this.shared.lsp.Connection?.workspace.applyEdit({
+               label: 'Update Model',
+               documentChanges: [
+                  // we use a null version to indicate that the version is known
+                  // eslint-disable-next-line no-null/no-null
+                  TextDocumentEdit.create(OptionalVersionedTextDocumentIdentifier.create(textDocument.uri, null), [
+                     TextEdit.replace(Range.create(0, 0, uinteger.MAX_VALUE, uinteger.MAX_VALUE), textDocument.getText())
+                  ])
+               ]
+            });
          }
       });
    }
@@ -117,9 +115,8 @@ export class ModelService {
     */
    async request(uri: string, state = DocumentState.Validated): Promise<AstCrossModelDocument | undefined> {
       const documentUri = URI.parse(uri);
-      const documentInCurrentState = this.documents.getDocument(documentUri);
-      // Workaround for https://github.com/eclipse-langium/langium/issues/1827
-      if (!documentInCurrentState || documentInCurrentState.state < state) {
+      await this.documentBuilder.waitUntil(state);
+      if (this.documents.hasDocument(documentUri)) {
          await this.documentBuilder.waitUntil(state, documentUri);
       }
       const document = await this.documents.getOrCreateDocument(documentUri);
@@ -155,14 +152,12 @@ export class ModelService {
       }
       const newVersion = textDocument.version + 1;
       const pendingUpdate = new Deferred<AstCrossModelDocument>();
-      const listener = this.documentBuilder.onBuildPhase(DocumentState.Validated, (allChangedDocuments, _token) => {
-         const updatedDocument = allChangedDocuments.find(
-            doc => doc.uri.toString() === documentUri.toString() && doc.textDocument.version === newVersion
-         ) as CrossModelLangiumDocument | undefined;
-         if (updatedDocument) {
+      const listener = this.documentBuilder.onDocumentPhase(DocumentState.Validated, (updatedDocument, _token) => {
+         if (updatedDocument.uri.toString() === documentUri.toString() && updatedDocument.textDocument.version === newVersion) {
+            const crossModelDocument = updatedDocument as CrossModelLangiumDocument;
             pendingUpdate.resolve({
-               diagnostics: updatedDocument.diagnostics ?? [],
-               root: updatedDocument.parseResult.value,
+               diagnostics: crossModelDocument.diagnostics ?? [],
+               root: crossModelDocument.parseResult.value,
                uri: args.uri
             });
             listener.dispose();
@@ -194,11 +189,13 @@ export class ModelService {
     */
    async save(args: SaveModelArgs<CrossModelRoot>): Promise<void> {
       // sync: implicit update of internal data structure to match file system (similar to workspace initialization)
-      const text = typeof args.model === 'string' ? args.model : this.serialize(URI.parse(args.uri), args.model);
-      if (this.documents.hasDocument(URI.parse(args.uri))) {
+      const documentUri = URI.parse(args.uri);
+      const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
+      if (this.documents.hasDocument(documentUri)) {
          await this.update(args);
       } else {
-         this.documents.createDocument(URI.parse(args.uri), text);
+         this.documents.createDocument(documentUri, text);
+         await this.documentBuilder.update([documentUri], []);
       }
       return this.documentManager.save(args.uri, text, args.clientId);
    }

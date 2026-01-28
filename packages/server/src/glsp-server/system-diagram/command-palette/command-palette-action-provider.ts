@@ -21,7 +21,7 @@ export class SystemDiagramCommandPaletteActionProvider implements ContextActions
    async getActions(editorContext: EditorContext): Promise<LabeledAction[]> {
       const entityItems = this.state.services.language.references.ScopeProvider.complete({
          container: { globalId: this.state.systemDiagram.id! },
-         syntheticElements: [{ property: 'nodes', type: LogicalEntityNode }],
+         syntheticElements: [{ property: 'nodes', type: LogicalEntityNode.$type }],
          property: 'entity'
       }).map<LabeledAction>(item => ({
          label: item.label,
@@ -31,7 +31,7 @@ export class SystemDiagramCommandPaletteActionProvider implements ContextActions
 
       const relationshipItems = this.state.services.language.references.ScopeProvider.complete({
          container: { globalId: this.state.systemDiagram.id! },
-         syntheticElements: [{ property: 'edges', type: RelationshipEdge }],
+         syntheticElements: [{ property: 'edges', type: RelationshipEdge.$type }],
          property: 'relationship'
       }).map<LabeledAction>(item => ({
          label: item.label,

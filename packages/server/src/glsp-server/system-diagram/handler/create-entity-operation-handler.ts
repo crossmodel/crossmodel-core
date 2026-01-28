@@ -39,9 +39,9 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       const container = this.modelState.systemDiagram;
       const location = this.getLocation(operation) ?? Point.ORIGIN;
       const node: LogicalEntityNode = {
-         $type: LogicalEntityNode,
+         $type: LogicalEntityNode.$type,
          $container: container,
-         id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode, entity.name + 'Node', container),
+         id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode.$type, entity.name + 'Node', container),
          entity: {
             $refText: toIdReference(this.modelState.idProvider.getNodeId(entity) || entity.id || ''),
             ref: entity
@@ -75,7 +75,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       const entityRoot: CrossModelRoot = { $type: 'CrossModelRoot' };
       const name = operation.args?.name?.toString() ?? 'NewEntity';
 
-      const id = this.modelState.idProvider.findNextLocalId(LogicalEntity, name, dataModel.uri);
+      const id = this.modelState.idProvider.findNextLocalId(LogicalEntity.$type, name, dataModel.uri);
 
       const entity: LogicalEntity = {
          $type: 'LogicalEntity',

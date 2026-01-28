@@ -35,7 +35,9 @@ import {
    isRelationshipAttribute,
    isSourceObject,
    isSourceObjectAttributeReference,
-   isSourceObjectDependency
+   isSourceObjectDependency,
+   RelationshipAttribute,
+   SourceObject
 } from './generated/ast.js';
 import { findDocument, fixDocument } from './util/ast-util.js';
 
@@ -74,7 +76,7 @@ export class DataModelScopeProvider extends DefaultScopeProvider {
       const globalScope = this.getDefaultGlobalScope(referenceType, context);
 
       // if we are referencing from a datamodel, all elements are visible
-      if (context.container.$type === DataModelDependency) {
+      if (context.container.$type === DataModelDependency.$type) {
          return globalScope;
       }
 
@@ -156,7 +158,7 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
          };
       }
       const referenceInfo: ReferenceInfo = {
-         reference: { $refText: '' },
+         reference: { $refText: '', ref: undefined },
          container: container,
          property: ctx.property
       };
@@ -223,16 +225,16 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
    filterCompletion(description: AstNodeDescription, reference: DataModelScopedReferenceInfo, options: CompletionScopeOptions): boolean {
       if (isRelationshipAttribute(reference.container)) {
          // only show relevant attributes depending on the parent or child context
-         if (reference.property === 'child') {
+         if (reference.property === RelationshipAttribute.child) {
             return description.name.startsWith(reference.container.$container.child?.$refText + '.');
          }
-         if (reference.property === 'parent') {
+         if (reference.property === RelationshipAttribute.parent) {
             return description.name.startsWith(reference.container.$container.parent?.$refText + '.');
          }
       }
       if (
          isSourceObject(reference.container) &&
-         reference.property === 'entity' &&
+         reference.property === SourceObject.entity &&
          reference.container.$container.target.entity &&
          reference.container.$container.target.entity.ref
       ) {
@@ -242,7 +244,7 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
          }
          return description.name !== this.idProvider.getLocalId(targetEntity);
       }
-      if (isSourceObjectDependency(reference.container) || (isSourceObject(reference.container) && reference.property === 'dependencies')) {
+      if (isSourceObjectDependency(reference.container) || (isSourceObject(reference.container) && reference.property === SourceObject.dependencies)) {
          const sourceObject = isSourceObjectDependency(reference.container) ? reference.container.$container : reference.container;
          return (
             !(description instanceof GlobalAstNodeDescription) &&

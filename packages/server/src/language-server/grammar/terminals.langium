@@ -2,7 +2,7 @@
 
 // Scalar values
 terminal STRING: /"[^"]*"|'[^']*'/;
-terminal INT returns number: ('0'..'9')+;
+terminal INT returns number: /[0-9]+/;
 terminal VERSION returns string: ('^' | '~')? INT '.' INT '.' INT;
 terminal NUMBER returns number: '-'? INT ('.' INT)?;
 terminal ID: /\^?[_a-zA-Z][\w_\-~$#@/\d]*/;
