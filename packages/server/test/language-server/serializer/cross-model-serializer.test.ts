@@ -20,7 +20,15 @@ import { customer } from '../test-utils/test-documents/entity/customer';
 import { sub_customer } from '../test-utils/test-documents/entity/sub_customer';
 import { sub_customer_cycle } from '../test-utils/test-documents/entity/sub_customer_cycle';
 import { sub_customer_multi } from '../test-utils/test-documents/entity/sub_customer_multi';
-import { createCrossModelTestServices, parseDocuments, parseLogicalEntity, testUri } from '../test-utils/utils';
+import { test_mapping } from '../test-utils/test-documents/mappings/test_mapping';
+import {
+   createCrossModelTestServices,
+   entityDocumentUri,
+   mappingDocumentUri,
+   parseDocuments,
+   parseLogicalEntity,
+   parseMapping
+} from '../test-utils/utils';
 
 const services = createCrossModelTestServices();
 
@@ -145,7 +153,13 @@ describe('CrossModelLexer', () => {
          ];
 
          crossModelRoot.systemDiagram.edges = [
-            createRelationshipEdge(crossModelRoot.systemDiagram, 'Edge1', ref3, { $refText: 'A' }, { $refText: 'B' })
+            createRelationshipEdge(
+               crossModelRoot.systemDiagram,
+               'Edge1',
+               ref3,
+               { $refText: 'A', ref: undefined },
+               { $refText: 'B', ref: undefined }
+            )
          ];
       });
 
@@ -155,21 +169,46 @@ describe('CrossModelLexer', () => {
       });
    });
 
+   describe('Serialize mapping', () => {
+      test('serialize mapping with sources, dependencies, conditions, and attribute mappings', async () => {
+         const mapping = await parseMapping({
+            services,
+            text: test_mapping,
+            documentUri: mappingDocumentUri('test_mapping')
+         });
+         const root = mapping.$document.parseResult.value;
+         const parseResult = serializer.serialize(root);
+         expect(parseResult).toBe(test_mapping);
+      });
+   });
+
    describe('Serialize entity with inheritance', () => {
-      const customerDocumentUri = testUri('customer');
+      const customerDocumentUri = entityDocumentUri('customer');
+      const subCustomerDocumentUri = entityDocumentUri('sub_customer');
 
       beforeAll(async () => {
-         await parseDocuments({ services, text: customer, documentUri: customerDocumentUri });
+         await parseDocuments(
+            { services, text: customer, documentUri: customerDocumentUri },
+            { services, text: sub_customer, documentUri: subCustomerDocumentUri }
+         );
       });
 
       test('Single inheritance', async () => {
-         const subCustomer = await parseLogicalEntity({ services, text: sub_customer });
-         expect(subCustomer.superEntities).toHaveLength(1);
-         expect(subCustomer.superEntities[0].$refText).toBe('Customer');
+         const document = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(subCustomerDocumentUri));
+         expect(document).toBeDefined();
+         const root = document!.parseResult.value as CrossModelRoot;
+         const subCustomer = root.entity;
+         expect(subCustomer).toBeDefined();
+         expect(subCustomer!.superEntities).toHaveLength(1);
+         expect(subCustomer!.superEntities[0].$refText).toBe('Customer');
       });
 
       test('Multiple inheritance', async () => {
-         const subCustomer = await parseLogicalEntity({ services, text: sub_customer_multi });
+         const subCustomer = await parseLogicalEntity({
+            services,
+            text: sub_customer_multi,
+            documentUri: entityDocumentUri('sub_customer_multi')
+         });
          expect(subCustomer.superEntities).toHaveLength(2);
          expect(subCustomer.superEntities[0].$refText).toBe('Customer');
          expect(subCustomer.superEntities[1].$refText).toBe('SubCustomer');
@@ -177,7 +216,12 @@ describe('CrossModelLexer', () => {
 
       test('Inheritance Cycle', async () => {
          services.shared.workspace.LangiumDocuments.deleteDocument(URI.parse(customerDocumentUri));
-         const newCustomer = await parseLogicalEntity({ services, text: sub_customer_cycle, documentUri: 'customer', validation: true });
+         const newCustomer = await parseLogicalEntity({
+            services,
+            text: sub_customer_cycle,
+            documentUri: customerDocumentUri,
+            validation: true
+         });
          expect(newCustomer.$document.diagnostics).toBeDefined();
          expect(newCustomer.$document.diagnostics).toEqual(
             expect.arrayContaining([

@@ -40,9 +40,13 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
          const relationship = await this.createAndSaveRelationship(sourceNode, targetNode);
          if (relationship) {
             const edge: RelationshipEdge = {
-               $type: RelationshipEdge,
+               $type: RelationshipEdge.$type,
                $container: this.modelState.systemDiagram,
-               id: this.modelState.idProvider.findNextInternalId(RelationshipEdge, relationship.id + 'Edge', this.modelState.systemDiagram),
+               id: this.modelState.idProvider.findNextInternalId(
+                  RelationshipEdge.$type,
+                  relationship.id + 'Edge',
+                  this.modelState.systemDiagram
+               ),
                relationship: {
                   ref: relationship,
                   $refText: toIdReference(this.modelState.idProvider.getGlobalId(relationship) || relationship.id || '')
@@ -81,15 +85,15 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
       // create relationship, serialize and re-read to ensure everything is up to date and linked properly
       const relationshipRoot: CrossModelRoot = { $type: 'CrossModelRoot' };
       const name = computeRelationshipName(source, target);
-      const id = this.modelState.idProvider.findNextLocalId(Relationship, toId(name), dataModel.uri);
+      const id = this.modelState.idProvider.findNextLocalId(Relationship.$type, toId(name), dataModel.uri);
       const relationship: Relationship = {
-         $type: Relationship,
+         $type: Relationship.$type,
          $container: relationshipRoot,
          id,
          name,
          attributes: [],
-         parent: { $refText: toIdReference(sourceNode.entity?.$refText || '') },
-         child: { $refText: toIdReference(targetNode.entity?.$refText || '') },
+         parent: { $refText: toIdReference(sourceNode.entity?.$refText || ''), ref: undefined },
+         child: { $refText: toIdReference(targetNode.entity?.$refText || ''), ref: undefined },
          customProperties: []
       };
 

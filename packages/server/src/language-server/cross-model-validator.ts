@@ -16,16 +16,20 @@ import type { CrossModelServices } from './cross-model-module.js';
 import { ID_PROPERTY } from './cross-model-naming.js';
 import {
    AttributeMapping,
+   AttributeMappingExpression,
    BinaryExpression,
    CrossModelAstType,
    IdentifiedObject,
    InheritanceEdge,
    isCrossModelRoot,
+   isSourceObjectAttributeReference,
    LogicalAttribute,
    LogicalEntity,
+   LogicalIdentifier,
    Mapping,
    NamedObject,
    Relationship,
+   RelationshipAttribute,
    RelationshipEdge,
    SourceObject,
    SourceObjectAttribute,
@@ -86,8 +90,8 @@ export class CrossModelValidator {
       if (namedObject.name === undefined || namedObject.name.length === 0) {
          accept('error', 'The name cannot be empty', {
             node: namedObject,
-            property: 'name',
-            data: { code: CrossModelValidationErrors.toMissing('name') }
+            property: NamedObject.name,
+            data: { code: CrossModelValidationErrors.toMissing(NamedObject.name) }
          });
       } else {
          // Check name uniqueness at appropriate scope
@@ -99,8 +103,8 @@ export class CrossModelValidator {
       if (identifiedObject.id === undefined || identifiedObject.id.length === 0) {
          accept('error', 'The id cannot be empty', {
             node: identifiedObject,
-            property: 'id',
-            data: { code: CrossModelValidationErrors.toMissing('id') }
+            property: IdentifiedObject.id,
+            data: { code: CrossModelValidationErrors.toMissing(IdentifiedObject.id) }
          });
       } else {
          // Only perform the following checks when the id is known
@@ -128,7 +132,7 @@ export class CrossModelValidator {
       if (basenameWithoutExt.toLowerCase() !== identifiedObject.id?.toLocaleLowerCase()) {
          accept('warning', `Filename should match element id: ${identifiedObject.id}`, {
             node: identifiedObject,
-            property: ID_PROPERTY,
+            property: IdentifiedObject.id,
             data: { code: CrossModelValidationErrors.FilenameNotMatching }
          });
       }
@@ -141,8 +145,8 @@ export class CrossModelValidator {
       if (attribute.length !== undefined && datatype !== 'text' && datatype !== 'binary') {
          accept('error', 'Length is only applicable to Text or Binary datatypes.', {
             node: attribute,
-            property: 'length',
-            data: { code: CrossModelValidationErrors.toMalformed('length') }
+            property: LogicalAttribute.length,
+            data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.length) }
          });
       }
 
@@ -150,8 +154,8 @@ export class CrossModelValidator {
       if (attribute.precision !== undefined && datatype !== 'decimal' && datatype !== 'integer') {
          accept('error', 'Precision is only applicable to Decimal or Integer datatypes.', {
             node: attribute,
-            property: 'precision',
-            data: { code: CrossModelValidationErrors.toMalformed('precision') }
+            property: LogicalAttribute.precision,
+            data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.precision) }
          });
       }
 
@@ -159,8 +163,8 @@ export class CrossModelValidator {
       if (attribute.scale !== undefined && datatype !== 'decimal' && datatype !== 'datetime' && datatype !== 'time') {
          accept('error', 'Scale is only applicable to Decimal, DateTime, or Time datatypes.', {
             node: attribute,
-            property: 'scale',
-            data: { code: CrossModelValidationErrors.toMalformed('scale') }
+            property: LogicalAttribute.scale,
+            data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.scale) }
          });
       }
 
@@ -169,8 +173,8 @@ export class CrossModelValidator {
          if (attribute.scale > attribute.precision) {
             accept('error', 'Scale cannot be larger than Precision.', {
                node: attribute,
-               property: 'scale',
-               data: { code: CrossModelValidationErrors.toMalformed('scale') }
+               property: LogicalAttribute.scale,
+               data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.scale) }
             });
          }
       }
@@ -199,14 +203,14 @@ export class CrossModelValidator {
       if (primaryIdentifiers.length > 1) {
          accept('error', `${primaryIdentifiers.length} primary identifiers defined, there should only be 1.`, {
             node: entity,
-            property: 'identifiers'
+            property: LogicalEntity.identifiers
          });
       }
 
       // Check each identifier has at least one attribute
       const identifiersWithoutAttributes = entity.identifiers.filter(identifier => identifier.attributes.length === 0);
       for (const identifier of identifiersWithoutAttributes) {
-         accept('error', 'Identifier must have at least one attribute.', { node: identifier, property: 'attributes' });
+         accept('error', 'Identifier must have at least one attribute.', { node: identifier, property: LogicalIdentifier.attributes });
       }
 
       const cycle = this.findInheritanceCycle(entity);
@@ -220,7 +224,7 @@ export class CrossModelValidator {
                // may include an index for elements in lists; our CrossModelDocumentValidator
                // will use that index to construct the element path. This avoids trying to
                // cast the reference object to an AstNode.
-               accept('error', message, { node: entity, property: 'superEntities', index: idx });
+               accept('error', message, { node: entity, property: LogicalEntity.superEntities, index: idx });
             }
          }
       }
@@ -284,15 +288,15 @@ export class CrossModelValidator {
       if (!relationship.child) {
          accept('error', 'Child entity is required.', {
             node: relationship,
-            property: 'child',
-            data: { code: CrossModelValidationErrors.toMissing('child') }
+            property: Relationship.child,
+            data: { code: CrossModelValidationErrors.toMissing(Relationship.child) }
          });
       }
       if (!relationship.parent) {
          accept('error', 'Parent entity is required.', {
             node: relationship,
-            property: 'parent',
-            data: { code: CrossModelValidationErrors.toMissing('parent') }
+            property: Relationship.parent,
+            data: { code: CrossModelValidationErrors.toMissing(Relationship.parent) }
          });
       }
 
@@ -300,21 +304,27 @@ export class CrossModelValidator {
          if (!attribute.parent) {
             accept('error', 'Parent attribute is required.', {
                node: attribute,
-               property: 'parent',
-               data: { code: CrossModelValidationErrors.toMalformed(`attributes[${index}].parent`) }
+               property: RelationshipAttribute.parent,
+               data: {
+                  code: CrossModelValidationErrors.toMalformed(`${Relationship.attributes}[${index}].${RelationshipAttribute.parent}`)
+               }
             });
          } else if (attribute.parent.ref) {
             if (attribute.parent?.ref?.$container !== relationship.parent?.ref) {
                accept('error', 'Not a valid parent attribute.', {
                   node: attribute,
-                  property: 'parent',
-                  data: { code: CrossModelValidationErrors.toMalformed(`attributes[${index}].parent`) }
+                  property: RelationshipAttribute.parent,
+                  data: {
+                     code: CrossModelValidationErrors.toMalformed(`${Relationship.attributes}[${index}].${RelationshipAttribute.parent}`)
+                  }
                });
             } else if (usedParentAttributes.includes(attribute.parent.ref)) {
                accept('error', 'Each parent attribute can only be referenced once.', {
                   node: attribute,
-                  property: 'parent',
-                  data: { code: CrossModelValidationErrors.toMalformed(`attributes[${index}].parent`) }
+                  property: RelationshipAttribute.parent,
+                  data: {
+                     code: CrossModelValidationErrors.toMalformed(`${Relationship.attributes}[${index}].${RelationshipAttribute.parent}`)
+                  }
                });
             } else {
                usedParentAttributes.push(attribute.parent.ref);
@@ -323,21 +333,25 @@ export class CrossModelValidator {
          if (!attribute.child) {
             accept('error', 'Child attribute is required.', {
                node: attribute,
-               property: 'child',
-               data: { code: CrossModelValidationErrors.toMalformed(`attributes[${index}].child`) }
+               property: RelationshipAttribute.child,
+               data: { code: CrossModelValidationErrors.toMalformed(`${Relationship.attributes}[${index}].${RelationshipAttribute.child}`) }
             });
          } else if (attribute.child.ref) {
             if (attribute.child?.ref?.$container !== relationship.child?.ref) {
                accept('error', 'Not a valid child attribute.', {
                   node: attribute,
-                  property: 'child',
-                  data: { code: CrossModelValidationErrors.toMalformed(`attributes[${index}].child`) }
+                  property: RelationshipAttribute.child,
+                  data: {
+                     code: CrossModelValidationErrors.toMalformed(`${Relationship.attributes}[${index}].${RelationshipAttribute.child}`)
+                  }
                });
             } else if (usedChildAttributes.includes(attribute.child.ref)) {
                accept('error', 'Each child attribute can only be referenced once.', {
                   node: attribute,
-                  property: 'child',
-                  data: { code: CrossModelValidationErrors.toMalformed(`attributes[${index}].child`) }
+                  property: RelationshipAttribute.child,
+                  data: {
+                     code: CrossModelValidationErrors.toMalformed(`${Relationship.attributes}[${index}].${RelationshipAttribute.child}`)
+                  }
                });
             } else {
                usedChildAttributes.push(attribute.child.ref);
@@ -348,23 +362,26 @@ export class CrossModelValidator {
 
    checkRelationshipEdge(edge: RelationshipEdge, accept: ValidationAcceptor): void {
       if (edge.sourceNode?.ref?.entity?.ref?.$type !== edge.relationship?.ref?.parent?.ref?.$type) {
-         accept('error', 'Source must match type of parent.', { node: edge, property: 'sourceNode' });
+         accept('error', 'Source must match type of parent.', { node: edge, property: RelationshipEdge.sourceNode });
       }
       if (edge.targetNode?.ref?.entity?.ref?.$type !== edge.relationship?.ref?.child?.ref?.$type) {
-         accept('error', 'Target must match type of child.', { node: edge, property: 'targetNode' });
+         accept('error', 'Target must match type of child.', { node: edge, property: RelationshipEdge.targetNode });
       }
    }
 
    checkInheritanceEdge(edge: InheritanceEdge, accept: ValidationAcceptor): void {
       const superEntities = edge.baseNode.ref?.entity.ref?.superEntities ?? [];
       if (!superEntities.some(entity => entity.ref === edge.superNode.ref?.entity.ref)) {
-         accept('error', 'Base entity must inherit from super entity', { node: edge, property: 'superNode' });
+         accept('error', 'Base entity must inherit from super entity', { node: edge, property: InheritanceEdge.superNode });
       }
    }
 
    checkSourceObject(obj: SourceObject, accept: ValidationAcceptor): void {
       if (obj.join === 'from' && obj.dependencies.length > 0) {
-         accept('error', 'Source objects with join type "from" cannot have dependencies.', { node: obj, property: 'dependencies' });
+         accept('error', 'Source objects with join type "from" cannot have dependencies.', {
+            node: obj,
+            property: SourceObject.dependencies
+         });
       }
       const knownRefs: string[] = [];
       for (const dependency of obj.dependencies) {
@@ -384,7 +401,7 @@ export class CrossModelValidator {
          if (languages.has(expr.language)) {
             accept('error', `Language '${expr.language}' appears more than once. Each language must be unique within the expressions.`, {
                node: expr,
-               property: 'language'
+               property: AttributeMappingExpression.language
             });
          } else {
             languages.set(expr.language, i);
@@ -405,14 +422,14 @@ export class CrossModelValidator {
                if (range) {
                   accept('error', 'Only sources can be referenced in an expression.', {
                      node: expr,
-                     property: 'expression',
+                     property: AttributeMappingExpression.expression,
                      range
                   });
                } else {
                   // Fallback: highlight the expression property
                   accept('error', 'Only sources can be referenced in an expression.', {
                      node: expr,
-                     property: 'expression'
+                     property: AttributeMappingExpression.expression
                   });
                }
             }
@@ -442,7 +459,7 @@ export class CrossModelValidator {
             } else {
                accept('error', 'Only one source object with join type "from" is allowed per mapping.', {
                   node: sourceObject,
-                  property: 'join'
+                  property: SourceObject.join
                });
             }
          }
@@ -471,11 +488,11 @@ export class CrossModelValidator {
             !!sourceObject.dependencies.find(dependency => dependency.source.ref === referencedSourceObject)
          );
       };
-      if (left.$type === 'SourceObjectAttributeReference' && !checkReference(left.value)) {
+      if (isSourceObjectAttributeReference(left) && !checkReference(left.value)) {
          accept('error', 'Can only reference attributes from source objects that are listed as dependency.', { node: left });
       }
       const right = condition.expression.right;
-      if (right.$type === 'SourceObjectAttributeReference' && !checkReference(right.value)) {
+      if (isSourceObjectAttributeReference(right) && !checkReference(right.value)) {
          accept('error', 'Can only reference attributes from source objects that are listed as dependency.', { node: right });
       }
    }
@@ -484,8 +501,8 @@ export class CrossModelValidator {
       if (!expression.op || expression.op.trim() === '') {
          accept('error', 'Operator must have a valid value.', {
             node: expression,
-            property: 'op',
-            data: { code: CrossModelValidationErrors.toMalformed('operator') }
+            property: BinaryExpression.op,
+            data: { code: CrossModelValidationErrors.toMalformed(BinaryExpression.op) }
          });
       }
    }

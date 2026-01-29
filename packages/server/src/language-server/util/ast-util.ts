@@ -7,29 +7,29 @@ import { AstNode, AstNodeDescription, AstUtils, LangiumDocument, Reference, isAs
 import { ID_PROPERTY, IdProvider } from '../cross-model-naming.js';
 import { getLocalName } from '../cross-model-scope.js';
 import {
-    AttributeMapping,
-    AttributeMappingSource,
-    AttributeMappingTarget,
-    CrossModelRoot,
-    DataModel,
-    LogicalAttribute,
-    LogicalEntity,
-    LogicalEntityNode,
-    LogicalEntityNodeAttribute,
-    Mapping,
-    Relationship,
-    RelationshipEdge,
-    SourceObject,
-    SourceObjectAttribute,
-    SystemDiagram,
-    TargetObject,
-    TargetObjectAttribute,
-    isCrossModelRoot,
-    isDataModel,
-    isLogicalEntity,
-    isMapping,
-    isRelationship,
-    isSystemDiagram
+   AttributeMapping,
+   AttributeMappingSource,
+   AttributeMappingTarget,
+   CrossModelRoot,
+   DataModel,
+   LogicalAttribute,
+   LogicalEntity,
+   LogicalEntityNode,
+   LogicalEntityNodeAttribute,
+   Mapping,
+   Relationship,
+   RelationshipEdge,
+   SourceObject,
+   SourceObjectAttribute,
+   SystemDiagram,
+   TargetObject,
+   TargetObjectAttribute,
+   isCrossModelRoot,
+   isDataModel,
+   isLogicalEntity,
+   isMapping,
+   isRelationship,
+   isSystemDiagram
 } from '../generated/ast.js';
 
 export type RootContainer = {
@@ -107,7 +107,7 @@ export function createLogicalEntity(
 ): LogicalEntity {
    return {
       $container: container,
-      $type: 'LogicalEntity',
+      $type: LogicalEntity.$type,
       id,
       name,
       attributes: [],
@@ -126,7 +126,7 @@ export function createLogicalAttribute(
 ): LogicalAttribute {
    return {
       $container: container,
-      $type: 'LogicalAttribute',
+      $type: LogicalAttribute.$type,
       id,
       name,
       customProperties: [],
@@ -145,7 +145,7 @@ export function createRelationship(
 ): Relationship {
    return {
       $container: container,
-      $type: 'Relationship',
+      $type: Relationship.$type,
       id,
       name,
       parent,
@@ -163,7 +163,7 @@ export function createSystemDiagram(
 ): SystemDiagram {
    return {
       $container: container,
-      $type: 'SystemDiagram',
+      $type: SystemDiagram.$type,
       id,
       nodes: [],
       edges: [],
@@ -181,7 +181,7 @@ export function createEntityNode(
 ): LogicalEntityNode {
    return {
       $container: container,
-      $type: 'LogicalEntityNode',
+      $type: LogicalEntityNode.$type,
       id,
       entity,
       ...position,
@@ -200,7 +200,7 @@ export function createRelationshipEdge(
 ): RelationshipEdge {
    return {
       $container: container,
-      $type: 'RelationshipEdge',
+      $type: RelationshipEdge.$type,
       id,
       relationship,
       sourceNode,
@@ -219,9 +219,9 @@ export function createSourceObject(entity: LogicalEntity | AstNodeDescription, c
    const hasFromJoin = container.sources.some(source => source.join === 'from');
    const joinType = hasFromJoin ? 'left-join' : 'from';
    return {
-      $type: SourceObject,
+      $type: SourceObject.$type,
       $container: container,
-      id: idProvider.findNextInternalId(SourceObject, entityId + 'SourceObject', container),
+      id: idProvider.findNextInternalId(SourceObject.$type, entityId + 'SourceObject', container),
       entity: { $refText, ref },
       join: joinType,
       dependencies: [],
@@ -232,7 +232,7 @@ export function createSourceObject(entity: LogicalEntity | AstNodeDescription, c
 
 export function createAttributeMapping(container: TargetObject, source: string | undefined, targetId: string): AttributeMapping {
    const mapping = {
-      $type: AttributeMapping,
+      $type: AttributeMapping.$type,
       $container: container
    } as AttributeMapping;
    mapping.sources = source ? [createAttributeMappingSource(mapping, source)] : [];
@@ -244,15 +244,15 @@ export function createAttributeMappingSource(container: AttributeMapping, source
    return {
       $container: container,
       $type: AttributeMappingSourceType,
-      value: { $refText: toIdReference(sourceId) }
+      value: { $refText: toIdReference(sourceId), ref: undefined }
    };
 }
 
 export function createAttributeMappingTarget(container: AttributeMapping, targetId: string): AttributeMappingTarget {
    return {
       $container: container,
-      $type: AttributeMappingTarget,
-      value: { $refText: toIdReference(targetId) }
+      $type: AttributeMappingTarget.$type,
+      value: { $refText: toIdReference(targetId), ref: undefined }
    };
 }
 

@@ -3,7 +3,7 @@ relationship:
     name: "Address - Customer"
     parent: Customer
     parentCardinality: 0..N
-    child: ExampleCRM.Address
+    child: Address
     childCardinality: 1..1
     attributes:
       - parent: Customer.Customer_ID
