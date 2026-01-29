@@ -25,8 +25,7 @@ import { GLSPDiagramConfiguration } from '@eclipse-glsp/theia-integration';
 import { Container } from '@theia/core/shared/inversify';
 import { SystemDiagramLanguage } from '../../common/crossmodel-diagram-language';
 import { createCrossModelDiagramModule } from '../crossmodel-diagram-module';
-import { libAvoidModule } from '../libavoid-module';
-import { DEFAULT_LIBAVOID_EDGE_ROUTER_CONFIG, LibavoidEdgeRouterConfiguration, LibavoidEdgeRouterOptions } from '../libavoid-options';
+import { libAvoidModule } from '../libavoid';
 import { AttributeCompartment } from '../model';
 import { AttributeCompartmentView } from '../views';
 import { systemContextMenuModule } from './context-menu/context-menu-module';
@@ -75,10 +74,4 @@ const systemDiagramModule = createCrossModelDiagramModule((bind, unbind, isBound
    configureModelElement(context, ATTRIBUTE_COMPARTMENT_TYPE, AttributeCompartment, AttributeCompartmentView);
    configureModelElement(context, LABEL_ENTITY, GEditableLabel, GLabelView, { enable: [editLabelFeature] });
    configureModelElement(context, INHERITANCE_EDGE_TYPE, InheritanceEdge, InheritanceEdgeView);
-
-   rebind(LibavoidEdgeRouterOptions).toConstantValue({
-      ...DEFAULT_LIBAVOID_EDGE_ROUTER_CONFIG,
-      shapeBufferDistance: 35,
-      idealNudgingDistance: 25
-   } as LibavoidEdgeRouterConfiguration);
 });
