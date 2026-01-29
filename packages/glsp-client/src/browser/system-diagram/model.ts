@@ -16,7 +16,7 @@ import {
    isEditableLabel,
    isParent
 } from '@eclipse-glsp/client';
-import { LibavoidEdge } from '../libavoid-model';
+import { LibavoidEdge } from '../libavoid';
 
 export class EntityNode extends RectangularNode implements WithEditableLabel {
    get editableLabel(): (GChildElement & EditableLabel) | undefined {
