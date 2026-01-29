@@ -207,6 +207,7 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       const newShapeRef = new Libavoid.ShapeRef(this.avoidRouter, shape);
       this.shapes[element.id] = { ref: newShapeRef };
       if (element instanceof GPort) {
+         // Ports are fixed connection points (e.g. mapping diagram attribute ports)
          if (isLeftPortId(element.id)) {
             this.createPin(
                newShapeRef,
@@ -345,6 +346,22 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       }
    }
 
+   /**
+    * Resolves the node ID for an edge endpoint. If the endpoint is a port, returns the parent node's ID
+    * since ports are not registered as separate obstacles.
+    */
+   protected resolveEndpointNodeId(endpointId: string, parent: GParentElement): string | undefined {
+      if (this.shapes[endpointId]) {
+         return endpointId;
+      }
+      // Endpoint might be a port - resolve to parent node
+      const element = parent.index.getById(endpointId);
+      if (element instanceof GPort && element.parent) {
+         return element.parent.id;
+      }
+      return undefined;
+   }
+
    protected updateConnector(edge: GEdge, parent: GParentElement): LibavoidConnRef | undefined {
       const connectionRef = this.connectors[edge.id];
       if (connectionRef) {
@@ -352,11 +369,13 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
          return connectionRef;
       }
 
-      const sourceShape = this.shapes[edge.sourceId];
+      const sourceNodeId = this.resolveEndpointNodeId(edge.sourceId, parent);
+      const sourceShape = sourceNodeId ? this.shapes[sourceNodeId] : undefined;
       if (!sourceShape) {
          return undefined;
       }
-      const targetShape = this.shapes[edge.targetId];
+      const targetNodeId = this.resolveEndpointNodeId(edge.targetId, parent);
+      const targetShape = targetNodeId ? this.shapes[targetNodeId] : undefined;
       if (!targetShape) {
          return undefined;
       }
@@ -401,7 +420,7 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
     * This forces libavoid to reconsider pin selection on both ends of the connector,
     * not just the end attached to the moved shape.
     */
-   protected refreshConnectorEndpoints(edges: GEdge[]): void {
+   protected refreshConnectorEndpoints(edges: GEdge[], parent: GParentElement): void {
       if (this.movedShapeIds.size === 0) {
          return;
       }
@@ -412,14 +431,16 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
             continue;
          }
 
-         // Check if either endpoint is connected to a moved shape
-         const sourceShape = this.shapes[edge.sourceId];
-         const targetShape = this.shapes[edge.targetId];
+         // Resolve endpoint node IDs (ports resolve to parent node)
+         const sourceNodeId = this.resolveEndpointNodeId(edge.sourceId, parent);
+         const targetNodeId = this.resolveEndpointNodeId(edge.targetId, parent);
+         const sourceShape = sourceNodeId ? this.shapes[sourceNodeId] : undefined;
+         const targetShape = targetNodeId ? this.shapes[targetNodeId] : undefined;
          if (!sourceShape || !targetShape) {
             continue;
          }
 
-         if (this.movedShapeIds.has(edge.sourceId) || this.movedShapeIds.has(edge.targetId)) {
+         if ((sourceNodeId && this.movedShapeIds.has(sourceNodeId)) || (targetNodeId && this.movedShapeIds.has(targetNodeId))) {
             // Re-set endpoints to force libavoid to reconsider pin selection on both ends
             const sourceConnEnd = new Libavoid.ConnEnd(sourceShape.ref, ShapeConnectionPin.ORTHOGONAL_PIN_ID);
             const targetConnEnd = new Libavoid.ConnEnd(targetShape.ref, ShapeConnectionPin.ORTHOGONAL_PIN_ID);
@@ -438,7 +459,7 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
 
       // Refresh endpoints for connectors connected to moved shapes
       // This forces libavoid to reconsider pin selection on both ends
-      this.refreshConnectorEndpoints(edges);
+      this.refreshConnectorEndpoints(edges, parent);
 
       this.avoidRouter.processTransaction();
 
