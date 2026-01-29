@@ -4,6 +4,7 @@
  * https://github.com/Aksem/sprotty-routing-libavoid
  ********************************************************************************/
 
+import { GRID } from '@crossmodel/protocol';
 import { LibavoidRouteType } from './libavoid';
 
 export const LibavoidEdgeRouterOptions = Symbol('LibavoidEdgeRouterOptions');
@@ -204,16 +205,26 @@ export interface LibavoidEdgeRouterConfiguration extends LibavoidRouterOptions, 
 export const DEFAULT_LIBAVOID_EDGE_ROUTER_CONFIG: LibavoidEdgeRouterConfiguration = {
    // Manhattan style routing
    routingType: LibavoidRouteType.Orthogonal,
+
+   // Core penalties - these help produce clean routes
    crossingPenalty: 100,
    reverseDirectionPenalty: 100,
-   portDirectionPenalty: 100,
    segmentPenalty: 10,
-   shapeBufferDistance: 100,
-   fixedSharedPathPenalty: 100,
+
+   // Grid-aligned spacing for consistent visual appearance
+   shapeBufferDistance: GRID.x, // Keep edges at least 1 grid unit from shapes
+   idealNudgingDistance: GRID.x, // Align nudging distance to grid
+
+   // Disable experimental features - multi-pin approach handles pin selection naturally
+   portDirectionPenalty: 0,
+   fixedSharedPathPenalty: 0,
+   penaliseOrthogonalSharedPathsAtConnEnds: false,
+
+   // Nudging options for clean edge separation
    performUnifyingNudgingPreprocessingStep: true,
    nudgeSharedPathsWithCommonEndPoint: true,
-   penaliseOrthogonalSharedPathsAtConnEnds: true,
-   // do not nudge on the ports as this might nudge out of the visual representation of the ports
-   nudgeOrthogonalSegmentsConnectedToShapes: false,
-   nudgeOrthogonalTouchingColinearSegments: true
+   nudgeOrthogonalTouchingColinearSegments: true,
+
+   // Allow nudging final segments - with multiple grid-aligned pins, this helps optimize connections
+   nudgeOrthogonalSegmentsConnectedToShapes: true
 };
