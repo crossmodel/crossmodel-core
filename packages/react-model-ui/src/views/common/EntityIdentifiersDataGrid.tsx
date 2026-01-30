@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { findNextUnique, LogicalIdentifier, toId } from '@crossmodel/protocol';
+import { CustomProperty, findNextUnique, LogicalIdentifier, toId } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import * as React from 'react';
@@ -18,6 +18,7 @@ export interface EntityIdentifierRow {
    primary: boolean;
    attributeIds: string[];
    description?: string;
+   customProperties?: CustomProperty[];
    $type?: 'LogicalIdentifier';
    $globalId?: string;
    _uncommitted?: boolean;
@@ -40,7 +41,8 @@ function convertIdentifierToRow(identifier: LogicalIdentifier, idx: number): Ent
       name: identifier.name || '',
       primary: Boolean(identifier.primary),
       attributeIds,
-      description: identifier.description || ''
+      description: identifier.description || '',
+      ...((identifier as any).customProperties ? { customProperties: (identifier as any).customProperties } : {})
    };
 }
 function convertRowToIdentifier(row: EntityIdentifierRow): LogicalIdentifier {
@@ -51,7 +53,8 @@ function convertRowToIdentifier(row: EntityIdentifierRow): LogicalIdentifier {
       attributes: row.attributeIds as any,
       description: row.description,
       $type: 'LogicalIdentifier',
-      $globalId: row.id
+      $globalId: row.id,
+      ...(row.customProperties ? { customProperties: row.customProperties } : {})
    };
 }
 

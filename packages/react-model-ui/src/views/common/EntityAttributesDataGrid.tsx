@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
+import { CustomProperty, findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
@@ -17,6 +17,7 @@ export interface EntityAttributeRow extends LogicalAttribute {
    name: string;
    datatype: string;
    description?: string;
+   customProperties?: CustomProperty[];
    _uncommitted?: boolean;
 }
 
@@ -531,7 +532,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted: _, id: __, description, identifier, mandatory, length, precision, scale, ...attributeData } = attribute;
+            const { _uncommitted, id, description, identifier, mandatory, length, precision, scale, customProperties, ...attributeData } =
+               attribute;
             const isLength = isLengthApplicable(attribute.datatype);
             const isPrecision = isPrecisionApplicable(attribute.datatype);
             const isScale = isScaleApplicable(attribute.datatype);
@@ -544,7 +546,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                ...(mandatory ? { mandatory } : {}),
                ...(isLength && length !== undefined ? { length } : {}),
                ...(isPrecision && precision !== undefined ? { precision } : {}),
-               ...(isScale && scale !== undefined ? { scale } : {})
+               ...(isScale && scale !== undefined ? { scale } : {}),
+               ...(customProperties ? { customProperties } : {})
             };
 
             // Add the new attribute through dispatch
@@ -573,7 +576,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             // This is an existing row being updated
             // Remove empty and non-model fields before updating
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { description, identifier: _ignored, mandatory, length, precision, scale, ...rest } = attribute;
+            const { description, identifier: _ignored, mandatory, length, precision, scale, customProperties, ...rest } = attribute;
             const isLength = isLengthApplicable(attribute.datatype);
             const isPrecision = isPrecisionApplicable(attribute.datatype);
             const isScale = isScaleApplicable(attribute.datatype);
@@ -584,7 +587,13 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                ...(mandatory ? { mandatory } : {}),
                ...(isLength && length !== undefined ? { length } : {}),
                ...(isPrecision && precision !== undefined ? { precision } : {}),
-               ...(isScale && scale !== undefined ? { scale } : {})
+               ...(isScale && scale !== undefined ? { scale } : {}),
+               // Preserve customProperties from the attribute or old attribute
+               ...(customProperties
+                  ? { customProperties }
+                  : (oldAttribute as any)?.customProperties
+                    ? { customProperties: (oldAttribute as any).customProperties }
+                    : {})
             };
 
             dispatch({

@@ -160,6 +160,7 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          // Filter out identifier property and update required fields
          const cleanAttribute = { ...action.attribute };
          delete cleanAttribute.identifier;
+         const existingAttribute = entity.attributes[action.attributeIdx];
          entity.attributes[action.attributeIdx] = {
             ...action.attribute,
             name: undefinedIfEmpty(action.attribute.name),
@@ -167,7 +168,13 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
             datatype: undefinedIfEmpty(action.attribute.datatype),
             ...(action.attribute.length !== undefined ? { length: action.attribute.length } : {}),
             ...(action.attribute.precision !== undefined ? { precision: action.attribute.precision } : {}),
-            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {})
+            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {}),
+            // Preserve customProperties from either the action or existing attribute
+            ...((action.attribute as any).customProperties
+               ? { customProperties: (action.attribute as any).customProperties }
+               : (existingAttribute as any)?.customProperties
+                 ? { customProperties: (existingAttribute as any).customProperties }
+                 : {})
          };
          break;
       }
@@ -180,7 +187,9 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
             datatype: undefinedIfEmpty(action.attribute.datatype),
             ...(action.attribute.length !== undefined ? { length: action.attribute.length } : {}),
             ...(action.attribute.precision !== undefined ? { precision: action.attribute.precision } : {}),
-            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {})
+            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {}),
+            // Preserve customProperties if they exist
+            ...((action.attribute as any).customProperties ? { customProperties: (action.attribute as any).customProperties } : {})
          });
          break;
 

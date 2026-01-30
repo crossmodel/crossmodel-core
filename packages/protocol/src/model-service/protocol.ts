@@ -118,7 +118,7 @@ export interface AbstractLogicalAttribute extends CrossModelElement, NamedObject
 }
 
 export const LogicalAttributeType = 'LogicalAttribute';
-export interface LogicalAttribute extends CrossModelElement, AbstractLogicalAttribute {
+export interface LogicalAttribute extends CrossModelElement, AbstractLogicalAttribute, WithCustomProperties {
    readonly $type: typeof LogicalAttributeType;
 }
 
