@@ -22,6 +22,7 @@ import {
    IdentifiedObject,
    InheritanceEdge,
    isCrossModelRoot,
+   isDataModel,
    isSourceObjectAttributeReference,
    LogicalAttribute,
    LogicalEntity,
@@ -515,16 +516,19 @@ export class CrossModelValidator {
     * - Internal: Collections within a parent object (e.g., attributes within an entity)
     */
    protected checkIdUniqueness(identifiedObject: IdentifiedObject, accept: ValidationAcceptor): void {
-      // Semantic roots are checked at global scope
-      if (isSemanticRoot(identifiedObject)) {
+      // Only DataModel semantic roots are checked at global scope
+      if (isDataModel(identifiedObject)) {
          this.checkIdUniquenessGlobal(identifiedObject, accept);
          return;
       }
 
-      // Check if this element belongs to a DataModel (entities, relationships, etc. in separate files)
-      const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(identifiedObject.$document);
-      if (dataModelId && dataModelId !== 'unknown') {
-         this.checkIdUniquenessLocal(identifiedObject, identifiedObject, accept);
+      // Other semantic roots (entities, relationships, etc.) and non-root elements are checked at local/internal scope
+      const document = findDocument(identifiedObject);
+      if (document) {
+         const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
+         if (dataModelId && dataModelId !== 'unknown') {
+            this.checkIdUniquenessLocal(identifiedObject, identifiedObject, accept);
+         }
       }
 
       // Internal scope: Check within parent collections
@@ -546,8 +550,14 @@ export class CrossModelValidator {
          return;
       }
       const allElements = Array.from(this.services.shared.workspace.IndexManager.allElements(identifiedObject.$type));
-      const duplicates = allElements.filter(description => description.name === globalId);
-      if (duplicates.length > 1) {
+      const duplicates = allElements.filter(description => {
+         // Skip comparing the element against itself
+         if (this.isSameNode(identifiedObject, description)) {
+            return false;
+         }
+         return description.name === globalId;
+      });
+      if (duplicates.length > 0) {
          accept('error', 'Must provide a unique id.', {
             node: identifiedObject,
             property: ID_PROPERTY,
@@ -567,27 +577,62 @@ export class CrossModelValidator {
          return;
       }
 
-      // Get the DataModel ID for this entity
-      const myDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(identifiedObject.$document);
-      if (!myDataModelId || myDataModelId === 'unknown') {
-         // Cannot validate local scope without knowing which DataModel we're in
+      const document = findDocument(identifiedObject);
+      if (!document) {
          return;
       }
 
-      // Get all elements of the same type within the same DataModel from the index
-      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElementsInDataModelOfType(myDataModelId, myType));
+      // Get the DataModel ID for this entity
+      const myDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
 
-      // Filter to only elements in the same DataModel with the same id (case-sensitive)
+      // Get all elements of the same type from the index
+      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElements(myType));
+
+      // Determine if we should use directory-based scope (when DataModel is unknown)
+      const useDirectoryScope = !myDataModelId || myDataModelId === 'unknown';
+      const myDirectory = useDirectoryScope ? UriUtils.dirname(document.uri) : undefined;
+
+      // For directory scope, only check if there's a datamodel.cm file in that directory
+      if (useDirectoryScope && myDirectory) {
+         const dataModelUri = UriUtils.joinPath(myDirectory, 'datamodel.cm');
+         const hasDataModel = this.services.shared.workspace.LangiumDocuments.hasDocument(dataModelUri);
+         if (!hasDataModel) {
+            // No datamodel.cm in directory, skip local scope check
+            return;
+         }
+      }
+
+      // Filter to only elements in the same DataModel (or directory) with the same ID (case-sensitive)
       const duplicatesInSameDataModel = allElements.filter(description => {
-         const theirDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(description.documentUri);
-         return (
-            theirDataModelId === myDataModelId &&
-            description.name === myId &&
-            description.documentUri.toString() !== identifiedObject.$document?.uri.toString()
-         );
+         // Skip comparing against the same node
+         if (this.isSameNode(identifiedObject, description)) {
+            return false;
+         }
+
+         // Check if in same scope (DataModel or directory)
+         if (useDirectoryScope) {
+            // Use directory-based scope for unknown DataModels
+            // Only check across different files in the SAME directory
+            if (!myDirectory || UriUtils.equals(document.uri, description.documentUri)) {
+               return false;
+            }
+            const theirDirectory = UriUtils.dirname(description.documentUri);
+            if (!UriUtils.equals(myDirectory, theirDirectory)) {
+               return false;
+            }
+         } else {
+            // Use DataModel-based scope for known DataModels
+            const theirDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(description.documentUri);
+            if (theirDataModelId !== myDataModelId) {
+               return false;
+            }
+         }
+
+         // Check if IDs match (case-sensitive)
+         return description.name === myId;
       });
 
-      // If there are any other elements with the same id in the same DataModel, it's a duplicate
+      // If there are any other elements with the same ID in the same scope, it's a duplicate
       if (duplicatesInSameDataModel.length > 0) {
          accept('error', 'Must provide a unique id within this DataModel.', {
             node: identifiedObject,
@@ -618,18 +663,16 @@ export class CrossModelValidator {
     * - Internal: Collections within a parent object (e.g., attributes within an entity)
     */
    protected checkNameUniqueness(namedObject: NamedObject, accept: ValidationAcceptor): void {
-      // Semantic roots (DataModel) are checked at global scope
-      if (isSemanticRoot(namedObject)) {
+      // Only DataModel semantic roots are checked at global scope
+      if (isDataModel(namedObject)) {
          this.checkNameUniquenessGlobal(namedObject, accept);
+         return;
       }
 
       // Only check local scope for top-level DataModel members (not nested children)
       // Nested elements like attributes, identifiers, custom properties are only checked at internal scope
       if (!this.isNestedElement(namedObject)) {
-         const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(namedObject.$document);
-         if (dataModelId && dataModelId !== 'unknown') {
-            this.checkNameUniquenessLocal(namedObject, namedObject, accept);
-         }
+         this.checkNameUniquenessLocal(namedObject, namedObject, accept);
       }
 
       // Internal scope: Check within parent collections
@@ -639,11 +682,13 @@ export class CrossModelValidator {
    /**
     * Determines if a named element is nested (e.g., attribute within an entity).
     * Nested elements are not checked for local/global scope uniqueness.
+    * Only semantic roots (Entity, Relationship, Mapping, SystemDiagram) are checked at local scope.
+    * Everything else (attributes, identifiers, custom properties, source/target objects, etc.) is nested.
     */
    protected isNestedElement(element: NamedObject): boolean {
-      const parent = element.$container;
-      // Element is nested if its parent is also a NamedObject (like an entity containing attributes)
-      return !!(parent && 'name' in parent);
+      // If it's a semantic root (but not DataModel), it's not nested - check at local scope
+      // DataModel is already handled separately in checkNameUniqueness
+      return !isSemanticRoot(element);
    }
 
    /**
@@ -682,7 +727,7 @@ export class CrossModelValidator {
 
          const descName = this.getDescriptionName(description)?.toLowerCase();
          if (descName === myName) {
-            const typeName = namedObject.$type.toLowerCase();
+            const typeName = this.getUserFriendlyTypeName(namedObject.$type);
             accept('error', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
                node: namedObject,
                property: 'name',
@@ -704,29 +749,64 @@ export class CrossModelValidator {
          return;
       }
 
-      // Get the DataModel ID for this entity
-      const myDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(namedObject.$document);
-      if (!myDataModelId || myDataModelId === 'unknown') {
-         // Cannot validate local scope without knowing which DataModel we're in
+      const document = findDocument(namedObject);
+      if (!document) {
          return;
       }
 
-      // Get all elements of the same type within the same DataModel from the index
-      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElementsInDataModelOfType(myDataModelId, myType));
+      // Get the DataModel ID for this entity
+      const myDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
 
-      // Filter to only elements in the same DataModel with the same name (case-insensitive)
+      // Get all elements of the same type from the index
+      const allElements = Array.from(this.services.shared.workspace.IndexManager.allElements(myType));
+
+      // Determine if we should use directory-based scope (when DataModel is unknown)
+      const useDirectoryScope = !myDataModelId || myDataModelId === 'unknown';
+      const myDirectory = useDirectoryScope ? UriUtils.dirname(document.uri) : undefined;
+
+      // For directory scope, only check if there's a datamodel.cm file in that directory
+      if (useDirectoryScope && myDirectory) {
+         const dataModelUri = UriUtils.joinPath(myDirectory, 'datamodel.cm');
+         const hasDataModel = this.services.shared.workspace.LangiumDocuments.hasDocument(dataModelUri);
+         if (!hasDataModel) {
+            // No datamodel.cm in directory, skip local scope check
+            return;
+         }
+      }
+
+      // Filter to only elements in the same DataModel (or directory) with the same name (case-insensitive)
       const duplicatesInSameDataModel = allElements.filter(description => {
          // Skip comparing against the same node
          if (this.isSameNode(namedObject, description)) {
             return false;
          }
+
+         // Check if in same scope (DataModel or directory)
+         if (useDirectoryScope) {
+            // Use directory-based scope for unknown DataModels
+            // Only check across different files in the SAME directory
+            if (!myDirectory || UriUtils.equals(document.uri, description.documentUri)) {
+               return false;
+            }
+            const theirDirectory = UriUtils.dirname(description.documentUri);
+            if (!UriUtils.equals(myDirectory, theirDirectory)) {
+               return false;
+            }
+         } else {
+            // Use DataModel-based scope for known DataModels
+            const theirDataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByUri(description.documentUri);
+            if (theirDataModelId !== myDataModelId) {
+               return false;
+            }
+         }
+
          const theirName = this.getDescriptionName(description);
          return theirName?.toLowerCase() === myName.toLowerCase();
       });
 
-      // If there are any other elements with the same name in the same DataModel, it's a duplicate
+      // If there are any other elements with the same name in the same scope, it's a duplicate
       if (duplicatesInSameDataModel.length > 0) {
-         const typeName = myType.toLowerCase();
+         const typeName = this.getUserFriendlyTypeName(myType);
          accept('error', `The ${typeName} name '${namedObject.name}' must be unique within the data model.`, {
             node: namedObject,
             property: 'name',
@@ -746,11 +826,29 @@ export class CrossModelValidator {
    }
 
    /**
+    * Converts AST type names to user-friendly display names.
+    */
+   protected getUserFriendlyTypeName(astType: string): string {
+      const typeMap: Record<string, string> = {
+         LogicalEntity: 'entity',
+         Relationship: 'relationship',
+         Mapping: 'mapping',
+         SystemDiagram: 'system diagram',
+         DataModel: 'data model'
+      };
+      return typeMap[astType] || astType.toLowerCase();
+   }
+
+   /**
     * Retrieves the `name` property from a described node, ignoring id-based description names.
     */
    protected getDescriptionName(description: import('langium').AstNodeDescription): string | undefined {
-      const node = this.services.shared.workspace.IndexManager.resolveElement(description) as NamedObject | undefined;
-      return node?.name;
+      const directNode = description.node as NamedObject | undefined;
+      if (directNode?.name) {
+         return directNode.name;
+      }
+      const resolvedNode = this.services.shared.workspace.IndexManager.resolveElement(description) as NamedObject | undefined;
+      return resolvedNode?.name;
    }
 
    /**
