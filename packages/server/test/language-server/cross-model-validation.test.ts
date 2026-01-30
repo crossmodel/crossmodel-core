@@ -3,11 +3,118 @@
  ********************************************************************************/
 
 import { describe, expect, test } from '@jest/globals';
-import { createCrossModelTestServices, MockFileSystem, parseDocument, testUri } from './test-utils/utils';
+import { URI } from 'langium';
+import { createCrossModelTestServices, MockFileSystem, parseDocument, parseDocuments, testUri } from './test-utils/utils';
 
 const services = createCrossModelTestServices(MockFileSystem);
 
 describe('CrossModel Validation - ID and Name Uniqueness', () => {
+   describe('DataModel Global Uniqueness', () => {
+      test('should error on duplicate DataModel IDs across workspace', async () => {
+         const dm1Uri = testUri('dm1', 'datamodel.cm');
+         const dm2Uri = testUri('dm2', 'datamodel.cm');
+
+         // Parse both documents first
+         await parseDocuments(
+            {
+               services,
+               text: `datamodel:
+    id: DuplicateID
+    name: "DataModel One"
+    type: logical
+    version: 1.0.0`,
+               documentUri: dm1Uri
+            },
+            {
+               services,
+               text: `datamodel:
+    id: DuplicateID
+    name: "DataModel Two"
+    type: logical
+    version: 1.0.0`,
+               documentUri: dm2Uri
+            }
+         );
+
+         // Initialize DataModelManager with both folders
+         await services.shared.workspace.DataModelManager.initialize([
+            { uri: dm1Uri, name: 'dm1' },
+            { uri: dm2Uri, name: 'dm2' }
+         ]);
+
+         // Get the documents and trigger validation
+         const doc1 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm1Uri));
+         const doc2 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm2Uri));
+
+         if (!doc1 || !doc2) {
+            throw new Error('Documents not found');
+         }
+
+         // Rebuild with validation
+         await services.shared.workspace.DocumentBuilder.build([doc1, doc2], { validation: true });
+
+         const diagnostics1 = doc1.diagnostics ?? [];
+         const diagnostics2 = doc2.diagnostics ?? [];
+
+         // Should have duplicate ID error in at least one document (global scope validation)
+         const idDuplicateErrors1 = diagnostics1.filter(d => d.message.includes('Must provide a unique id'));
+         const idDuplicateErrors2 = diagnostics2.filter(d => d.message.includes('Must provide a unique id'));
+         expect(idDuplicateErrors1.length + idDuplicateErrors2.length).toBeGreaterThan(0);
+      });
+
+      test('should NOT error on unique DataModel IDs', async () => {
+         const dm1Uri = testUri('dm3', 'datamodel.cm');
+         const dm2Uri = testUri('dm4', 'datamodel.cm');
+
+         // Parse both documents first
+         await parseDocuments(
+            {
+               services,
+               text: `datamodel:
+    id: UniqueOne
+    name: "DataModel One"
+    type: logical
+    version: 1.0.0`,
+               documentUri: dm1Uri
+            },
+            {
+               services,
+               text: `datamodel:
+    id: UniqueTwo
+    name: "DataModel Two"
+    type: logical
+    version: 1.0.0`,
+               documentUri: dm2Uri
+            }
+         );
+
+         // Initialize DataModelManager with both folders
+         await services.shared.workspace.DataModelManager.initialize([
+            { uri: dm1Uri, name: 'dm3' },
+            { uri: dm2Uri, name: 'dm4' }
+         ]);
+
+         // Get the documents and trigger validation
+         const doc1 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm1Uri));
+         const doc2 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm2Uri));
+
+         if (!doc1 || !doc2) {
+            throw new Error('Documents not found');
+         }
+
+         // Rebuild with validation
+         await services.shared.workspace.DocumentBuilder.build([doc1, doc2], { validation: true });
+
+         const diagnostics1 = doc1.diagnostics ?? [];
+         const diagnostics2 = doc2.diagnostics ?? [];
+         const idErrors1 = diagnostics1.filter(d => d.message.includes('Must provide a unique id'));
+         const idErrors2 = diagnostics2.filter(d => d.message.includes('Must provide a unique id'));
+
+         // No duplicate ID errors when IDs are different
+         expect(idErrors1.length + idErrors2.length).toBe(0);
+      });
+   });
+
    describe('Positive Tests - Valid Models', () => {
       test('should allow different attribute names within an entity', async () => {
          const text = `
