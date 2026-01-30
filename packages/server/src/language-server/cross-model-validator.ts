@@ -522,17 +522,19 @@ export class CrossModelValidator {
          return;
       }
 
-      // Other semantic roots (entities, relationships, etc.) and non-root elements are checked at local/internal scope
-      const document = findDocument(identifiedObject);
-      if (document) {
-         const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
-         if (dataModelId && dataModelId !== 'unknown') {
-            this.checkIdUniquenessLocal(identifiedObject, identifiedObject, accept);
+      // Semantic root elements are checked at local scope (within DataModel)
+      if (isSemanticRoot(identifiedObject)) {
+         const document = findDocument(identifiedObject);
+         if (document) {
+            const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
+            if (dataModelId && dataModelId !== 'unknown') {
+               this.checkIdUniquenessLocal(identifiedObject, identifiedObject, accept);
+            }
          }
+      } else {
+         // Non-semantic-root elements are checked at internal scope (within parent collections)
+         this.checkIdUniquenessInternal(identifiedObject, accept);
       }
-
-      // Internal scope: Check within parent collections
-      this.checkIdUniquenessInternal(identifiedObject, accept);
    }
 
    /**
@@ -669,26 +671,13 @@ export class CrossModelValidator {
          return;
       }
 
-      // Only check local scope for top-level DataModel members (not nested children)
-      // Nested elements like attributes, identifiers, custom properties are only checked at internal scope
-      if (!this.isNestedElement(namedObject)) {
+      // Semantic root elements are checked at local scope (within DataModel)
+      if (isSemanticRoot(namedObject)) {
          this.checkNameUniquenessLocal(namedObject, namedObject, accept);
+      } else {
+         // Nested elements are checked at internal scope (within parent collections)
+         this.checkNameUniquenessInternal(namedObject, accept);
       }
-
-      // Internal scope: Check within parent collections
-      this.checkNameUniquenessInternal(namedObject, accept);
-   }
-
-   /**
-    * Determines if a named element is nested (e.g., attribute within an entity).
-    * Nested elements are not checked for local/global scope uniqueness.
-    * Only semantic roots (Entity, Relationship, Mapping, SystemDiagram) are checked at local scope.
-    * Everything else (attributes, identifiers, custom properties, source/target objects, etc.) is nested.
-    */
-   protected isNestedElement(element: NamedObject): boolean {
-      // If it's a semantic root (but not DataModel), it's not nested - check at local scope
-      // DataModel is already handled separately in checkNameUniqueness
-      return !isSemanticRoot(element);
    }
 
    /**
