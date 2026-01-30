@@ -1,0 +1,5 @@
+objectDefinition:
+    id: Identifier
+    name: "Identifier"
+    description: "Root definition for all identifier types"
+    abstract: TRUE

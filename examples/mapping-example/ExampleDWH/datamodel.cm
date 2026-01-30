@@ -2,7 +2,7 @@ datamodel:
     id: ExampleDWH
     name: "Example DWH"
     description: "Example Data Warehouse Logical Data Model"
-    type: logical
+    type: LogicalDataModel
     version: 1.0.0
     dependencies:
       - datamodel: ExampleCRM

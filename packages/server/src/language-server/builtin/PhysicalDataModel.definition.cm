@@ -1,0 +1,6 @@
+objectDefinition:
+    id: PhysicalDataModel
+    name: "Physical Data Model"
+    description: "A physical data model"
+    abstract: TRUE
+    extends: DataModel

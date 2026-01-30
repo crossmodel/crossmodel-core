@@ -27,11 +27,13 @@ import {
 } from 'langium';
 import { CrossModelServices } from './cross-model-module.js';
 import { QUALIFIED_ID_SEPARATOR } from './cross-model-naming.js';
-import { DataModelScopedAstNodeDescription, GlobalAstNodeDescription, isGlobalDescriptionForDataModel } from './cross-model-scope.js';
+import { DataModelScopedAstNodeDescription, GlobalAstNodeDescription, LocalAstNodeDescription, isGlobalDescriptionForDataModel } from './cross-model-scope.js';
+import { isUnknownDataModel } from './cross-model-datamodel-manager.js';
 import {
    DataModelDependency,
    isAttributeMapping,
    isDataModelDependency,
+   isObjectDefinition,
    isRelationshipAttribute,
    isSourceObject,
    isSourceObjectAttributeReference,
@@ -97,8 +99,17 @@ export class DataModelScopeProvider extends DefaultScopeProvider {
 
       // create a package-local scope that is considered first with the dependency scope being considered second
       // i.e., we build a hierarchy of scopes
+      // Also include local descriptions from built-in definitions (unknown data model) so they are
+      // available by their short names (e.g., 'Entity', 'LogicalDataModel') from any data model.
       const packageScope = new StreamScope(
-         globalScope.getAllElements().filter(description => sourceDataModel === this.getDataModelId(description)),
+         globalScope.getAllElements().filter(description => {
+            const descDataModel = this.getDataModelId(description);
+            if (sourceDataModel === descDataModel) {
+               return true;
+            }
+            // Built-in definitions are available by local name from all data models
+            return description instanceof LocalAstNodeDescription && isUnknownDataModel(descDataModel);
+         }),
          dependencyScope
       );
 
@@ -223,6 +234,18 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
    }
 
    filterCompletion(description: AstNodeDescription, reference: DataModelScopedReferenceInfo, options: CompletionScopeOptions): boolean {
+      // Suppress global ID form (e.g., 'unknown.Entity') for built-in definitions;
+      // they are only reachable by their local name (e.g., 'Entity').
+      if (description instanceof GlobalAstNodeDescription && isUnknownDataModel(description.dataModelId)) {
+         return false;
+      }
+      // Suppress abstract ObjectDefinitions from type completion — users should pick concrete subtypes.
+      if (description.type === 'ObjectDefinition') {
+         const node = this.services.shared.workspace.IndexManager.resolveElement(description);
+         if (isObjectDefinition(node) && node.abstract) {
+            return false;
+         }
+      }
       if (isRelationshipAttribute(reference.container)) {
          // only show relevant attributes depending on the parent or child context
          if (reference.property === RelationshipAttribute.child) {

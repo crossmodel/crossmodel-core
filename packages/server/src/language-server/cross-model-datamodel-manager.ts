@@ -74,8 +74,8 @@ export class DataModelInfo {
       readonly id = createDataModelId(dataModel.id, dataModel.version),
       /** Data model name used in references and serialization. */
       readonly referenceName = createDataModelReferenceName(dataModel),
-      /** Data model type used to determine member eligibility. */
-      readonly type = dataModel.type,
+      /** Data model type reference (ObjectDefinition ID). */
+      readonly type = dataModel.type?.$refText ?? 'unknown',
       /** A list of all direct dependencies of this data model. */
       readonly dependencies = dataModel.dependencies.map((dep: DataModelDependency) =>
          // data models always live in the global scope, so we can use the $refText as id and avoid reference resolution here
@@ -184,7 +184,11 @@ export class CrossModelDataModelManager {
    }
 
    isVisible(sourceDataModelId: string, targetDataModelId: string, includeSource = false): boolean {
-      // an unknown data model cannot see anything
+      // built-in definitions (unknown data model) are always visible from any data model
+      if (isUnknownDataModel(targetDataModelId)) {
+         return !isUnknownDataModel(sourceDataModelId);
+      }
+      // an unknown data model cannot see anything else
       return (
          !isUnknownDataModel(sourceDataModelId) && this.getVisibleDataModelIds(sourceDataModelId, includeSource).includes(targetDataModelId)
       );
@@ -329,7 +333,7 @@ export class CrossModelDataModelManager {
       return {
          id: dataModelInfo.id,
          name: dataModelInfo.dataModel?.name ?? UriUtils.basename(directory) ?? 'Unknown',
-         type: dataModelInfo.dataModel?.type ?? 'unknown',
+         type: dataModelInfo.dataModel?.type?.$refText ?? 'unknown',
          directory: directory.fsPath,
          dataModelFilePath: dataModelInfo.uri.fsPath,
          modelFilePaths: this.shared.workspace.IndexManager.allElementsInDataModel(dataModelId)

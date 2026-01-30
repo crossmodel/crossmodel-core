@@ -2,15 +2,7 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { AllDataModelTypeInfos, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
-import { debounce } from 'lodash';
-import {
-   AutoComplete,
-   AutoCompleteChangeEvent,
-   AutoCompleteCompleteEvent,
-   AutoCompleteDropdownClickEvent,
-   AutoCompleteSelectEvent
-} from 'primereact/autocomplete';
+import { CrossReferenceContext, ModelStructure, ReferenceableElement, toId } from '@crossmodel/protocol';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
@@ -26,6 +18,7 @@ import {
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
+import AsyncAutoComplete from '../common/AsyncAutoComplete';
 import { DataModelCustomPropertiesDataGrid } from '../common/DataModelCustomPropertiesDataGrid';
 import { DataModelDependenciesDataGrid } from '../common/DataModelDependenciesDataGrid';
 import { ErrorInfo } from './ErrorInfo';
@@ -39,19 +32,6 @@ export function DataModelForm(): React.ReactElement {
    const uri = useUri();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
-
-   const [filteredTypes, setFilteredTypes] = React.useState<DataModelTypeInfo[]>([]);
-   const [currentTypeValue, setCurrentTypeValue] = React.useState<DataModelTypeInfo | undefined>(
-      AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]
-   );
-   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-   // eslint-disable-next-line no-null/no-null
-   const autoCompleteRef = React.useRef<AutoComplete>(null);
-   const dropdownJustOpened = React.useRef(false);
-
-   React.useEffect(() => {
-      setCurrentTypeValue(AllDataModelTypeInfos.find(t => t.value === dataModel.type) ?? AllDataModelTypeInfos[0]);
-   }, [dataModel.type]);
 
    const handleNameChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,28 +52,24 @@ export function DataModelForm(): React.ReactElement {
       [dispatch]
    );
 
-   const handleTypeChange = React.useCallback((e: AutoCompleteChangeEvent) => {
-      setCurrentTypeValue(e.value as DataModelTypeInfo);
-   }, []);
-
-   const debounceRef = React.useRef(
-      debounce((value: string) => {
-         dispatch({ type: 'datamodel:change-type', dataModelType: value });
-      }, 300)
+   const typeReferenceCtx: CrossReferenceContext = React.useMemo(
+      () => ({
+         container: { globalId: dataModel.$globalId ?? dataModel.id ?? '' },
+         property: 'type'
+      }),
+      [dataModel.$globalId, dataModel.id]
    );
 
-   const debouncedDispatch = React.useCallback((value: string) => {
-      debounceRef.current(value);
-   }, []);
+   const typeOptionLoader = React.useCallback(
+      () => api.findReferenceableElements(typeReferenceCtx).then(elements => elements.map((e: ReferenceableElement) => e.label)),
+      [api, typeReferenceCtx]
+   );
 
-   const handleTypeSelect = React.useCallback(
-      (e: AutoCompleteSelectEvent) => {
-         if (e.value) {
-            debouncedDispatch(e.value.value);
-         }
-         setIsDropdownOpen(false);
+   const handleTypeChange = React.useCallback(
+      (event: { value: string }) => {
+         dispatch({ type: 'datamodel:change-type', objectDefinitionType: event.value });
       },
-      [debouncedDispatch]
+      [dispatch]
    );
 
    const handleVersionChange = React.useCallback(
@@ -102,60 +78,6 @@ export function DataModelForm(): React.ReactElement {
       },
       [dispatch]
    );
-
-   const searchType = (event: AutoCompleteCompleteEvent): void => {
-      let _filteredTypes;
-      if (!event.query.trim()) {
-         _filteredTypes = [...AllDataModelTypeInfos];
-      } else {
-         _filteredTypes = AllDataModelTypeInfos.filter(type => type.label.toLowerCase().startsWith(event.query.toLowerCase()));
-      }
-      setFilteredTypes(_filteredTypes);
-   };
-
-   const handleDropdownClick = (event: AutoCompleteDropdownClickEvent): void => {
-      if (isDropdownOpen && !dropdownJustOpened.current) {
-         // If dropdown is open and wasn't just opened, close it
-         setTimeout(() => {
-            autoCompleteRef.current?.hide();
-            setIsDropdownOpen(false);
-         }, 10);
-      }
-      // Reset the flag after a short delay
-      setTimeout(() => {
-         dropdownJustOpened.current = false;
-      }, 100);
-   };
-
-   const onShow = (): void => {
-      setIsDropdownOpen(true);
-      dropdownJustOpened.current = true;
-   };
-
-   const onHide = (): void => {
-      setIsDropdownOpen(false);
-      dropdownJustOpened.current = false;
-   };
-
-   // Handle click outside to close dropdown
-   React.useEffect(() => {
-      const handleClickOutside = (event: MouseEvent): void => {
-         if (autoCompleteRef.current && !autoCompleteRef.current.getElement()?.contains(event.target as Node)) {
-            setTimeout(() => {
-               const panel = autoCompleteRef.current?.getOverlay();
-               if (panel && panel.style.display !== 'none') {
-                  autoCompleteRef.current?.hide();
-                  setIsDropdownOpen(false);
-               }
-            }, 100);
-         }
-      };
-
-      document.addEventListener('mouseup', handleClickOutside);
-      return () => {
-         document.removeEventListener('mouseup', handleClickOutside);
-      };
-   }, []);
 
    if (!dataModel) {
       return <div>No data model found</div>;
@@ -198,29 +120,16 @@ export function DataModelForm(): React.ReactElement {
                </div>
                <ErrorInfo diagnostic={descriptionDiagnostics} />
             </div>
-            <div className='p-field p-fluid'>
-               <div>
-                  <label htmlFor='type'>Type</label>
-                  <AutoComplete<DataModelTypeInfo>
-                     ref={autoCompleteRef}
-                     id='type'
-                     value={currentTypeValue}
-                     suggestions={filteredTypes}
-                     completeMethod={searchType}
-                     field='label'
-                     onChange={handleTypeChange}
-                     onSelect={handleTypeSelect}
-                     disabled={readonly}
-                     required={true}
-                     className={`${typeDiagnostics.inputClasses()} ${isDropdownOpen ? 'autocomplete-dropdown-open' : ''}`}
-                     dropdown
-                     onDropdownClick={handleDropdownClick}
-                     onShow={onShow}
-                     onHide={onHide}
-                  />
-               </div>
-               <ErrorInfo diagnostic={typeDiagnostics} />
-            </div>
+            <AsyncAutoComplete
+               label='Type'
+               optionLoader={typeOptionLoader}
+               value={dataModel.type ?? ''}
+               onChange={handleTypeChange}
+               disabled={readonly}
+               className={typeDiagnostics.inputClasses()}
+               error={!typeDiagnostics.empty}
+               helperText={typeDiagnostics.text()}
+            />
             <div className='p-field p-fluid'>
                <div>
                   <label htmlFor='version'>Version</label>

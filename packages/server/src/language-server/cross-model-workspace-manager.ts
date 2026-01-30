@@ -4,6 +4,7 @@
 import { AstNode, DefaultWorkspaceManager, Deferred, DocumentState, LangiumDocument, UriUtils } from 'langium';
 import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { BUILTIN_DEFINITIONS, BUILTIN_SCHEME } from './builtin/builtin-definitions.js';
 import { CrossModelSharedServices } from './cross-model-module.js';
 
 /**
@@ -64,8 +65,18 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
 
    protected override async loadAdditionalDocuments(
       folders: WorkspaceFolder[],
-      _collector: (document: LangiumDocument<AstNode>) => void
+      collector: (document: LangiumDocument<AstNode>) => void
    ): Promise<void> {
+      // Load built-in ObjectDefinition documents so they are globally available
+      this.logger.info('[Workspace] Loading built-in ObjectDefinitions...');
+      const factory = this.services.workspace.LangiumDocumentFactory;
+      for (const def of BUILTIN_DEFINITIONS) {
+         const uri = URI.parse(`${BUILTIN_SCHEME}:///${def.id}.definition.cm`);
+         const document = factory.fromString(def.content, uri);
+         collector(document);
+      }
+      this.logger.info(`[Workspace] Loaded ${BUILTIN_DEFINITIONS.length} built-in ObjectDefinitions.`);
+
       // build up datamodel-system based on the workspace
       this.logger.info('[Workspace] Initialize DataModels...');
       return this.services.workspace.DataModelManager.initialize(folders);

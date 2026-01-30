@@ -32,14 +32,58 @@ export interface NamedObject extends IdentifiedObject {
    description?: string;
 }
 
+export interface TypedObject extends NamedObject {
+   type?: Reference<ObjectDefinition>;
+}
+
 export interface WithCustomProperties {
    customProperties?: Array<CustomProperty>;
 }
 
 export const CustomPropertyType = 'CustomProperty';
-export interface CustomProperty extends CrossModelElement, NamedObject {
+export interface CustomProperty extends CrossModelElement, TypedObject {
    readonly $type: typeof CustomPropertyType;
    value?: string;
+}
+
+export const ObjectDefinitionType = 'ObjectDefinition';
+export interface ObjectDefinition extends CrossModelElement, NamedObject, WithCustomProperties {
+   readonly $type: typeof ObjectDefinitionType;
+   abstract?: boolean;
+   extends?: Reference<ObjectDefinition>;
+   propertyDefinitions: Array<CustomPropertyDefinition>;
+}
+
+export const CustomPropertyDefinitionType = 'CustomPropertyDefinition';
+export interface CustomPropertyDefinition extends CrossModelElement, NamedObject {
+   readonly $type: typeof CustomPropertyDefinitionType;
+   datatype?: string;
+   length?: number;
+   precision?: number;
+   scale?: number;
+   mandatory?: boolean;
+   defaultValue?: CustomPropertyValue;
+   values: Array<CustomPropertyValue>;
+}
+
+export type CustomPropertyValue = StringValue | NumberValue | BooleanValue;
+
+export const StringValueType = 'StringValue';
+export interface StringValue extends CrossModelElement {
+   readonly $type: typeof StringValueType;
+   value: string;
+}
+
+export const NumberValueType = 'NumberValue';
+export interface NumberValue extends CrossModelElement {
+   readonly $type: typeof NumberValueType;
+   value: number;
+}
+
+export const BooleanValueType = 'BooleanValue';
+export interface BooleanValue extends CrossModelElement {
+   readonly $type: typeof BooleanValueType;
+   value: string;
 }
 
 export interface CrossModelDocument<T = CrossModelRoot, D = ModelDiagnostic> {
@@ -55,6 +99,7 @@ export interface CrossModelRoot extends CrossModelElement {
    relationship?: Relationship;
    mapping?: Mapping;
    systemDiagram?: SystemDiagram;
+   objectDefinition?: ObjectDefinition;
 }
 export type TypeGuard<T> = (item: unknown) => item is T;
 export type RootContainer = {
@@ -66,7 +111,7 @@ type AllKeys<T, ArrayMembers extends any[] = []> = {
    [Key in keyof T]: Exclude<keyof T, Key> extends never ? readonly [...ArrayMembers, Key] : AllKeys<Omit<T, Key>, [...ArrayMembers, Key]>;
 }[keyof T];
 
-export const ROOT_KEYS = ['datamodel', 'entity', 'mapping', 'relationship', 'systemDiagram'] as const satisfies AllKeys<RootContainer>;
+export const ROOT_KEYS = ['datamodel', 'entity', 'mapping', 'objectDefinition', 'relationship', 'systemDiagram'] as const satisfies AllKeys<RootContainer>;
 
 export function getSemanticRoot<T extends Partial<{ [key in keyof RootContainer]: any }>, U extends T[keyof RootContainer]>(
    root: T,
@@ -89,7 +134,7 @@ export function isCrossModelRoot(model?: any): model is CrossModelRoot {
 }
 
 export const LogicalEntityType = 'LogicalEntity';
-export interface LogicalEntity extends CrossModelElement, NamedObject, WithCustomProperties {
+export interface LogicalEntity extends CrossModelElement, TypedObject, WithCustomProperties {
    readonly $type: typeof LogicalEntityType;
    attributes: Array<LogicalAttribute>;
    identifiers: Array<LogicalIdentifier>;
@@ -123,7 +168,7 @@ export interface LogicalAttribute extends CrossModelElement, AbstractLogicalAttr
 }
 
 export const RelationshipType = 'Relationship';
-export interface Relationship extends CrossModelElement, NamedObject, WithCustomProperties {
+export interface Relationship extends CrossModelElement, TypedObject, WithCustomProperties {
    readonly $type: typeof RelationshipType;
    attributes: Array<RelationshipAttribute>;
    parent?: Reference<LogicalEntity>;
@@ -273,10 +318,8 @@ export interface RelationshipEdge extends CrossModelElement, IdentifiedObject, W
 }
 
 export const DataModelType = 'DataModel';
-export type DataModelType = 'conceptual' | 'logical' | 'relational';
-export interface DataModel extends CrossModelElement, NamedObject, WithCustomProperties {
+export interface DataModel extends CrossModelElement, TypedObject, WithCustomProperties {
    readonly $type: typeof DataModelType;
-   type: DataModelType;
    version?: string;
    dependencies: Array<DataModelDependency>;
 }
@@ -501,27 +544,10 @@ export const RequestDataModelInfos = new rpc.RequestType1<void, DataModelInfo[],
 export const RequestDataModelInfo = new rpc.RequestType1<DataModelInfoArgs, DataModelInfo | undefined, void>('server/dataModel');
 export const OnDataModelsUpdated = new rpc.NotificationType1<DataModelUpdatedEvent>('server/onDataModelsUpdated');
 
-export interface DataModelTypeInfo {
-   value: DataModelType;
-   label: string;
-   description: string;
-}
+export const ModelMemberPermissions: readonly RootObjectTypeName[] = [
+   'LogicalEntity', 'Mapping', 'ObjectDefinition', 'Relationship', 'SystemDiagram', 'DataModel'
+] as const;
 
-export const DataModelTypeInfos = {
-   conceptual: { value: 'conceptual', label: 'Conceptual', description: 'High-level conceptual data model' },
-   logical: { value: 'logical', label: 'Logical', description: 'Logical data model with entities and relationships' },
-   relational: { value: 'relational', label: 'Relational', description: 'Physical relational database model' }
-} as const satisfies Record<DataModelType, DataModelTypeInfo>;
-
-export const AllDataModelTypeInfos = Object.values(DataModelTypeInfos) as DataModelTypeInfo[];
-
-export const ModelMemberPermissions = {
-   logical: ['LogicalEntity', 'Mapping', 'Relationship', 'SystemDiagram', 'DataModel'],
-   relational: ['DataModel'],
-   conceptual: ['DataModel']
-} as const satisfies Record<DataModelType, readonly RootObjectTypeName[]>;
-
-export function isMemberPermittedInModel(packageType: string, memberType: string): boolean {
-   const permittedTypes = ModelMemberPermissions[packageType as keyof typeof ModelMemberPermissions] as readonly string[] | undefined;
-   return !!permittedTypes?.includes(memberType);
+export function isMemberPermittedInModel(_packageType: string, memberType: string): boolean {
+   return (ModelMemberPermissions as readonly string[]).includes(memberType);
 }

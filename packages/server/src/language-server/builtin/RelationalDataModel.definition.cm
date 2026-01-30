@@ -1,0 +1,5 @@
+objectDefinition:
+    id: RelationalDataModel
+    name: "Relational Data Model"
+    description: "A relational data model"
+    extends: PhysicalDataModel

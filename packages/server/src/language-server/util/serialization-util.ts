@@ -8,7 +8,9 @@ import {
    AttributeMappingExpression,
    AttributeMappingSource,
    AttributeMappingTarget,
+   BooleanValue,
    CustomProperty,
+   CustomPropertyDefinition,
    DataModel,
    DataModelDependency,
    IdentifiedObject,
@@ -20,15 +22,19 @@ import {
    LogicalIdentifier,
    Mapping,
    NamedObject,
+   NumberValue,
+   ObjectDefinition,
    Relationship,
    RelationshipAttribute,
    RelationshipEdge,
    SourceObject,
    SourceObjectAttribute,
    SourceObjectDependency,
+   StringValue,
    SystemDiagram,
    TargetObject,
    TargetObjectAttribute,
+   TypedObject,
    WithCustomProperties,
    reflection
 } from '../generated/ast.js';
@@ -37,7 +43,10 @@ import {
  * Map of property names to their corresponding keywords in the serialized output.
  * Required because the grammar uses different keywords than the AST property names (e.g., 'inherits' vs 'superEntities').
  */
-const PROPERTY_KEYWORDS = new Map<string, string>([[LogicalEntity.superEntities, 'inherits']]);
+const PROPERTY_KEYWORDS = new Map<string, string>([
+   [LogicalEntity.superEntities, 'inherits'],
+   [ObjectDefinition.propertyDefinitions, 'properties']
+]);
 
 /**
  * Get the keyword for a property, or the property name itself if no keyword mapping exists.
@@ -48,15 +57,15 @@ export function getPropertyKeyword(property: string): string {
 
 /**
  * Properties whose values should not be quoted during serialization.
- * Required for enum-like values (cardinalities, join types, data model types) and version strings.
+ * Required for enum-like values (cardinalities, join types) and version strings.
  */
 const UNQUOTED_PROPERTIES = new Set<string>([
    `${Relationship.$type}.${Relationship.parentCardinality}`,
    `${Relationship.$type}.${Relationship.childCardinality}`,
    `${SourceObject.$type}.${SourceObject.join}`,
-   `${DataModel.$type}.${DataModel.type}`,
    `${DataModel.$type}.${DataModel.version}`,
-   `${DataModelDependency.$type}.${DataModelDependency.version}`
+   `${DataModelDependency.$type}.${DataModelDependency.version}`,
+   `${BooleanValue.$type}.${BooleanValue.value}`
 ]);
 
 /**
@@ -85,7 +94,10 @@ const INLINE_SERIALIZED_TYPES = new Set<string>([
    AttributeMappingSource.$type,
    AttributeMappingTarget.$type,
    SourceObjectDependency.$type,
-   JoinCondition.$type
+   JoinCondition.$type,
+   StringValue.$type,
+   NumberValue.$type,
+   BooleanValue.$type
 ]);
 
 /**
@@ -110,6 +122,23 @@ const REFERENCE_WRAPPER_TYPES = new Map<string, string>([
  */
 export function getReferenceWrapperProperty(type: string): string | undefined {
    return REFERENCE_WRAPPER_TYPES.get(type);
+}
+
+/**
+ * AST types that exist only to wrap a single primitive value (string, number, boolean).
+ * Maps type name to the property containing the value. Used for CustomPropertyValue serialization.
+ */
+const VALUE_WRAPPER_TYPES = new Map<string, string>([
+   [StringValue.$type, StringValue.value],
+   [NumberValue.$type, NumberValue.value],
+   [BooleanValue.$type, BooleanValue.value]
+]);
+
+/**
+ * Get the value property for a value wrapper type, or undefined if not a value wrapper type.
+ */
+export function getValueWrapperProperty(type: string): string | undefined {
+   return VALUE_WRAPPER_TYPES.get(type);
 }
 
 interface RefTextObject {
@@ -160,6 +189,7 @@ export function getReferenceText(value: unknown): string | undefined {
 
 const IDENTIFIED_PROPERTIES = [IdentifiedObject.id];
 const NAMED_OBJECT_PROPERTIES = [...IDENTIFIED_PROPERTIES, NamedObject.name, NamedObject.description];
+const TYPED_OBJECT_PROPERTIES = [...NAMED_OBJECT_PROPERTIES, TypedObject.type];
 const CUSTOM_PROPERTIES = [WithCustomProperties.customProperties];
 
 /**
@@ -169,12 +199,12 @@ const CUSTOM_PROPERTIES = [WithCustomProperties.customProperties];
 const PROPERTY_ORDER = new Map<string, string[]>([
    [
       LogicalEntity.$type,
-      [...NAMED_OBJECT_PROPERTIES, LogicalEntity.superEntities, LogicalEntity.attributes, LogicalEntity.identifiers, ...CUSTOM_PROPERTIES]
+      [...TYPED_OBJECT_PROPERTIES, LogicalEntity.superEntities, LogicalEntity.attributes, LogicalEntity.identifiers, ...CUSTOM_PROPERTIES]
    ],
    [
       LogicalAttribute.$type,
       [
-         ...NAMED_OBJECT_PROPERTIES,
+         ...TYPED_OBJECT_PROPERTIES,
          LogicalAttribute.datatype,
          LogicalAttribute.length,
          LogicalAttribute.precision,
@@ -186,7 +216,7 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [
       Relationship.$type,
       [
-         ...NAMED_OBJECT_PROPERTIES,
+         ...TYPED_OBJECT_PROPERTIES,
          Relationship.parent,
          Relationship.parentRole,
          Relationship.parentCardinality,
@@ -230,10 +260,36 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [TargetObject.$type, [TargetObject.entity, TargetObject.mappings, ...CUSTOM_PROPERTIES]],
    [AttributeMapping.$type, [AttributeMapping.attribute, AttributeMapping.sources, AttributeMapping.expressions, ...CUSTOM_PROPERTIES]],
    [AttributeMappingExpression.$type, [AttributeMappingExpression.language, AttributeMappingExpression.expression]],
-   [CustomProperty.$type, [...NAMED_OBJECT_PROPERTIES, CustomProperty.value]],
-   [LogicalIdentifier.$type, [...NAMED_OBJECT_PROPERTIES, LogicalIdentifier.primary, LogicalIdentifier.attributes, ...CUSTOM_PROPERTIES]],
-   [DataModel.$type, [...NAMED_OBJECT_PROPERTIES, DataModel.type, DataModel.version, DataModel.dependencies, ...CUSTOM_PROPERTIES]],
-   [DataModelDependency.$type, [DataModelDependency.datamodel, DataModelDependency.version]]
+   [CustomProperty.$type, [...TYPED_OBJECT_PROPERTIES, CustomProperty.value]],
+   [LogicalIdentifier.$type, [...TYPED_OBJECT_PROPERTIES, LogicalIdentifier.primary, LogicalIdentifier.attributes, ...CUSTOM_PROPERTIES]],
+   [
+      DataModel.$type,
+      [...TYPED_OBJECT_PROPERTIES, DataModel.version, DataModel.dependencies, ...CUSTOM_PROPERTIES]
+   ],
+   [DataModelDependency.$type, [DataModelDependency.datamodel, DataModelDependency.version]],
+   [
+      ObjectDefinition.$type,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         ObjectDefinition.abstract,
+         ObjectDefinition.extends,
+         ObjectDefinition.propertyDefinitions,
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [
+      CustomPropertyDefinition.$type,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         CustomPropertyDefinition.datatype,
+         CustomPropertyDefinition.length,
+         CustomPropertyDefinition.precision,
+         CustomPropertyDefinition.scale,
+         CustomPropertyDefinition.mandatory,
+         CustomPropertyDefinition.defaultValue,
+         CustomPropertyDefinition.values
+      ]
+   ]
 ]);
 PROPERTY_ORDER.set(SourceObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
 PROPERTY_ORDER.set(TargetObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);

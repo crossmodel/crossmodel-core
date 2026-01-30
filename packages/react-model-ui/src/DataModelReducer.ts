@@ -22,7 +22,7 @@ export interface DataModelChangeDescriptionAction extends ModelAction {
 
 export interface DataModelChangeTypeAction extends ModelAction {
    type: 'datamodel:change-type';
-   dataModelType: string;
+   objectDefinitionType: string;
 }
 
 export interface DataModelChangeVersionAction extends ModelAction {
@@ -110,7 +110,7 @@ export function DataModelReducer(state: ModelState, action: DataModelDispatchAct
          dataModel.description = undefinedIfEmpty(action.description);
          break;
       case 'datamodel:change-type':
-         dataModel.type = action.dataModelType;
+         dataModel.type = action.objectDefinitionType;
          break;
       case 'datamodel:change-version':
          dataModel.version = undefinedIfEmpty(action.version);

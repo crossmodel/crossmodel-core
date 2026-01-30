@@ -398,6 +398,8 @@ export class CompositeEditor
             return this.createSystemDiagramWidget();
          case 'Mapping':
             return this.createMappingDiagramWidget();
+         default:
+            return this.createCodeWidget(options);
       }
    }
 

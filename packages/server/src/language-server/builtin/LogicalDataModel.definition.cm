@@ -1,0 +1,5 @@
+objectDefinition:
+    id: LogicalDataModel
+    name: "Logical Data Model"
+    description: "A logical data model"
+    extends: DataModel

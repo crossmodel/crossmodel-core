@@ -7,11 +7,11 @@ interface LogicalEntity extends DataElementContainer, WithCustomProperties {
     identifiers: LogicalIdentifier[];
 }
 
-// LogicalEntity definition 
+// LogicalEntity definition
 LogicalEntity returns LogicalEntity:
     'entity' ':'
         INDENT
-            NamedObjectFragment
+            TypedObjectFragment
             ('inherits' ':'
                 INDENT
                     (LIST_ITEM superEntities+=[LogicalEntity:IDReference])+
@@ -39,7 +39,7 @@ interface LogicalAttribute extends DataElement, WithCustomProperties {
 }
 
 LogicalAttribute returns LogicalAttribute:
-    NamedObjectFragment
+    TypedObjectFragment
     ('datatype' ':' datatype=STRING)?
     ('length' ':' length=NUMBER)?
     ('precision' ':' precision=NUMBER)?
@@ -49,12 +49,13 @@ LogicalAttribute returns LogicalAttribute:
 ;
 
 interface LogicalIdentifier extends NamedObject, WithCustomProperties {
+    type?: @ObjectDefinition;
     primary?: boolean;
     attributes: @LogicalAttribute[];
 }
 
 LogicalIdentifier returns LogicalIdentifier:
-    NamedObjectFragment
+    TypedObjectFragment
     (primary?='primary' ':' ('TRUE' | 'true'))?
     ('attributes' ':'
         INDENT

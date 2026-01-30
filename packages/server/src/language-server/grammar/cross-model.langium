@@ -5,10 +5,12 @@ import 'entity'
 import 'relationship'
 import 'system-diagram'
 import 'mapping'
+import 'objectdefinition'
 
 entry CrossModelRoot:
-    (datamodel=DataModel | 
-    entity=LogicalEntity | 
-    relationship=Relationship | 
+    (datamodel=DataModel |
+    entity=LogicalEntity |
+    relationship=Relationship |
     systemDiagram=SystemDiagram |
-    mapping=Mapping)?;
+    mapping=Mapping |
+    objectDefinition=ObjectDefinition)?;

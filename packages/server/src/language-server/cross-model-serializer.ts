@@ -22,6 +22,7 @@ import {
    getPropertyKeyword,
    getReferenceText,
    getReferenceWrapperProperty,
+   getValueWrapperProperty,
    isDefaultValue,
    isInlineSerializedType,
    isUnquotedProperty,
@@ -85,6 +86,14 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
             if (propertyReference || typeof refValue === 'string') {
                return toIdReference(propertyReference ?? (refValue as string));
             }
+         }
+         const valueProperty = getValueWrapperProperty(value.$type);
+         if (valueProperty) {
+            const innerValue = (value as GenericAstNode)[valueProperty];
+            if (isUnquotedProperty(value.$type, valueProperty)) {
+               return String(innerValue);
+            }
+            return JSON.stringify(innerValue);
          }
       }
       if (isJoinCondition(value)) {

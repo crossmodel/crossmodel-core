@@ -8,6 +8,7 @@ const ModelFileTypeValues = {
    Generic: 'Generic',
    DataModel: 'DataModel',
    LogicalEntity: 'LogicalEntity',
+   ObjectDefinition: 'ObjectDefinition',
    Relationship: 'Relationship',
    Mapping: 'Mapping',
    SystemDiagram: 'SystemDiagram'
@@ -21,6 +22,8 @@ export const ModelFileType = {
             return ModelStructure.DataModel.ICON_CLASS;
          case 'LogicalEntity':
             return ModelStructure.LogicalEntity.ICON_CLASS;
+         case 'ObjectDefinition':
+            return ModelStructure.ObjectDefinition.ICON_CLASS;
          case 'Relationship':
             return ModelStructure.Relationship.ICON_CLASS;
          case 'SystemDiagram':
@@ -35,6 +38,8 @@ export const ModelFileType = {
       switch (fileType) {
          case 'LogicalEntity':
             return ModelStructure.LogicalEntity.FOLDER;
+         case 'ObjectDefinition':
+            return ModelStructure.ObjectDefinition.FOLDER;
          case 'Relationship':
             return ModelStructure.Relationship.FOLDER;
          case 'SystemDiagram':
@@ -55,6 +60,8 @@ export const ModelFileType = {
             return ModelFileExtensions.Generic;
          case 'Mapping':
             return ModelFileExtensions.Mapping;
+         case 'ObjectDefinition':
+            return ModelFileExtensions.ObjectDefinition;
          case 'Relationship':
             return ModelFileExtensions.Relationship;
          case 'SystemDiagram':
@@ -70,6 +77,7 @@ export const ModelFileExtensions = {
    Generic: '.cm',
    DataModel: '.cm',
    LogicalEntity: '.entity.cm',
+   ObjectDefinition: '.definition.cm',
    Relationship: '.relationship.cm',
    Mapping: '.mapping.cm',
    SystemDiagram: '.diagram.cm',
@@ -96,6 +104,10 @@ export const ModelFileExtensions = {
       return uri.endsWith(this.Mapping);
    },
 
+   isObjectDefinitionFile(uri: string): boolean {
+      return uri.endsWith(this.ObjectDefinition);
+   },
+
    isSystemDiagramFile(uri: string): boolean {
       return uri.endsWith(this.SystemDiagram) || uri.endsWith(this.Diagram);
    },
@@ -104,6 +116,9 @@ export const ModelFileExtensions = {
       // since we have file extensions with two '.', we cannot use the default implementation that only works for one '.'
       if (uri.endsWith(this.LogicalEntity)) {
          return uri.substring(0, uri.length - this.LogicalEntity.length);
+      }
+      if (uri.endsWith(this.ObjectDefinition)) {
+         return uri.substring(0, uri.length - this.ObjectDefinition.length);
       }
       if (uri.endsWith(this.Relationship)) {
          return uri.substring(0, uri.length - this.Relationship.length);
@@ -134,6 +149,9 @@ export const ModelFileExtensions = {
       }
       if (this.isRelationshipFile(uri)) {
          return 'Relationship';
+      }
+      if (this.isObjectDefinitionFile(uri)) {
+         return 'ObjectDefinition';
       }
       if (this.isEntityFile(uri)) {
          return 'LogicalEntity';
@@ -173,6 +191,9 @@ export const ModelFileExtensions = {
       if (content.startsWith('mapping')) {
          return 'Mapping';
       }
+      if (content.startsWith('objectDefinition')) {
+         return 'ObjectDefinition';
+      }
       return undefined;
    },
 
@@ -206,6 +227,12 @@ export const ModelStructure = {
       ICON_CLASS: 'codicon codicon-group-by-ref-type',
       ICON: 'group-by-ref-type'
    },
+   ObjectDefinition: {
+      FOLDER: 'definitions',
+      ICON_CLASS: 'codicon codicon-symbol-class',
+      ICON: 'symbol-class'
+   },
+
    DataModel: {
       FILE: DATAMODEL_FILE,
       ICON_CLASS: 'codicon codicon-globe',

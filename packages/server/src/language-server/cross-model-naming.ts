@@ -5,7 +5,7 @@
 import { findNextUnique, identity, toIdReference } from '@crossmodel/protocol';
 import { AstNode, AstUtils, CstNode, GrammarUtils, NameProvider } from 'langium';
 import { URI } from 'vscode-uri';
-import { UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
+import { UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE, isUnknownDataModel } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
 import { IdentifiedObject, isDataModel } from './generated/ast.js';
 import { findDocument, getOwner } from './util/ast-util.js';
@@ -124,7 +124,11 @@ export class DefaultIdProvider implements IdProvider {
       if (!this.dataModelManager.isVisible(sourceDataModel, targetDataModel, true)) {
          return undefined;
       }
-      const id = sourceDataModel === targetDataModel ? this.getLocalId(target) : this.getGlobalId(target);
+      // Built-in definitions (unknown data model) are always referenced by local name
+      const id =
+         sourceDataModel === targetDataModel || isUnknownDataModel(targetDataModel)
+            ? this.getLocalId(target)
+            : this.getGlobalId(target);
       return id ? toIdReference(id) : undefined;
    }
 

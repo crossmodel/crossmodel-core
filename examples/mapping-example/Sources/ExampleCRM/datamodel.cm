@@ -1,5 +1,5 @@
 datamodel:
     id: ExampleCRM
     name: "Example CRM"
-    type: logical
+    type: LogicalDataModel
     version: 1.0.0

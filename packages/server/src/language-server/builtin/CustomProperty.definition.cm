@@ -1,0 +1,5 @@
+objectDefinition:
+    id: CustomProperty
+    name: "Custom Property"
+    description: "Root definition for custom property types"
+    abstract: TRUE

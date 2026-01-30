@@ -17,6 +17,7 @@ import {
    LogicalEntityNode,
    LogicalEntityNodeAttribute,
    Mapping,
+   ObjectDefinition,
    Relationship,
    RelationshipEdge,
    SourceObject,
@@ -28,6 +29,7 @@ import {
    isDataModel,
    isLogicalEntity,
    isMapping,
+   isObjectDefinition,
    isRelationship,
    isSystemDiagram
 } from '../generated/ast.js';
@@ -297,7 +299,7 @@ export type WithDocument<T> = T & { $document: LangiumDocument<CrossModelRoot> }
 export type DocumentContent = LangiumDocument | AstNode;
 
 export function isSemanticRoot(element: unknown): element is SemanticRoot {
-   return isLogicalEntity(element) || isMapping(element) || isRelationship(element) || isSystemDiagram(element);
+   return isLogicalEntity(element) || isMapping(element) || isRelationship(element) || isSystemDiagram(element) || isObjectDefinition(element);
 }
 
 export function findSemanticRoot(input: DocumentContent): SemanticRoot | undefined;
@@ -328,6 +330,10 @@ export function findMapping(input: DocumentContent): Mapping | undefined {
 
 export function findDataModel(input: DocumentContent): DataModel | undefined {
    return findSemanticRoot(input, isDataModel);
+}
+
+export function findObjectDefinition(input: DocumentContent): ObjectDefinition | undefined {
+   return findSemanticRoot(input, isObjectDefinition);
 }
 
 export function hasSemanticRoot<T extends SemanticRoot>(document: LangiumDocument<any>, guard: (item: unknown) => item is T): boolean {

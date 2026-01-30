@@ -5,7 +5,6 @@ import { ModelService } from '@crossmodel/model-service/lib/common';
 import {
    DATAMODEL_FILE,
    DataModelType,
-   DataModelTypeInfos,
    ID_REGEX,
    LogicalEntityType,
    MappingType,
@@ -60,7 +59,6 @@ interface NewElementTemplate<T extends readonly InputOptions[] = readonly InputO
 const INITIAL_DATAMODEL_CONTENT = `datamodel:
     id: _
     name: ""
-    type: ${DataModelTypeInfos.logical.value}
     version: 1.0.0
 `;
 

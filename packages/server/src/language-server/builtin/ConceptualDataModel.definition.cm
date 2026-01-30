@@ -1,0 +1,5 @@
+objectDefinition:
+    id: ConceptualDataModel
+    name: "Conceptual Data Model"
+    description: "A conceptual data model"
+    extends: DataModel

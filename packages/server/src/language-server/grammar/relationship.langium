@@ -17,9 +17,9 @@ Cardinality returns string:
     '0..1' | '1..1' | '0..N' | '1..N';
 
 Relationship returns Relationship:
-    'relationship' ':' 
+    'relationship' ':'
         INDENT
-            NamedObjectFragment
+            TypedObjectFragment
             ('parent' ':' parent=[LogicalEntity:IDReference])?
             ('parentRole' ':' parentRole=STRING)?
             ('parentCardinality' ':' parentCardinality=Cardinality)?
@@ -27,7 +27,7 @@ Relationship returns Relationship:
             ('childRole' ':' childRole=STRING)?
             ('childCardinality' ':' childCardinality=Cardinality)?
             ('attributes' ':'
-                INDENT 
+                INDENT
                     (LIST_ITEM attributes+=RelationshipAttribute)+
                 DEDENT
             )?

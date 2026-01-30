@@ -2,7 +2,7 @@ import 'terminals'
 import 'common'
 
 interface DataModel extends NamedObject, WithCustomProperties {
-    type: string;
+    type?: @ObjectDefinition;
     version?: string;
     dependencies: DataModelDependency[];
 }
@@ -10,8 +10,7 @@ interface DataModel extends NamedObject, WithCustomProperties {
 DataModel returns DataModel:
     'datamodel' ':'
         INDENT
-            NamedObjectFragment
-            'type' ':' type=DataModelType
+            TypedObjectFragment
             ('version' ':' version=VERSION)?
             ('dependencies' ':'
                 INDENT
@@ -21,8 +20,6 @@ DataModel returns DataModel:
             CustomPropertiesFragment?
         DEDENT
 ;
-
-DataModelType returns string: 'conceptual' | 'logical' | 'relational';
 
 interface DataModelDependency {
     datamodel: @DataModel;

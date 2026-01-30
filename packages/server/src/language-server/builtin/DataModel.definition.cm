@@ -1,0 +1,5 @@
+objectDefinition:
+    id: DataModel
+    name: "Data Model"
+    description: "Root definition for all data model types"
+    abstract: TRUE
