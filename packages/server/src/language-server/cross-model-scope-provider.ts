@@ -30,14 +30,14 @@ import { QUALIFIED_ID_SEPARATOR } from './cross-model-naming.js';
 import { DataModelScopedAstNodeDescription, GlobalAstNodeDescription, isGlobalDescriptionForDataModel } from './cross-model-scope.js';
 import {
    DataModelDependency,
+   RelationshipAttribute,
+   SourceObject,
    isAttributeMapping,
    isDataModelDependency,
    isRelationshipAttribute,
    isSourceObject,
    isSourceObjectAttributeReference,
-   isSourceObjectDependency,
-   RelationshipAttribute,
-   SourceObject
+   isSourceObjectDependency
 } from './generated/ast.js';
 import { findDocument, fixDocument } from './util/ast-util.js';
 
@@ -244,7 +244,10 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
          }
          return description.name !== this.idProvider.getLocalId(targetEntity);
       }
-      if (isSourceObjectDependency(reference.container) || (isSourceObject(reference.container) && reference.property === SourceObject.dependencies)) {
+      if (
+         isSourceObjectDependency(reference.container) ||
+         (isSourceObject(reference.container) && reference.property === SourceObject.dependencies)
+      ) {
          const sourceObject = isSourceObjectDependency(reference.container) ? reference.container.$container : reference.container;
          return (
             !(description instanceof GlobalAstNodeDescription) &&

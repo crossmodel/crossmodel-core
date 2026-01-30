@@ -9,7 +9,13 @@ import { CompletionItemKind, InsertTextFormat, TextEdit } from 'vscode-languages
 import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
-import { AttributeMapping, AttributeMappingExpression, IdentifiedObject, RelationshipAttribute, isAttributeMappingExpression } from './generated/ast.js';
+import {
+   AttributeMapping,
+   AttributeMappingExpression,
+   IdentifiedObject,
+   RelationshipAttribute,
+   isAttributeMappingExpression
+} from './generated/ast.js';
 import { fixDocument } from './util/ast-util.js';
 
 /**
