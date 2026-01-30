@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { CrossReferenceContext, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
+import { CrossReferenceContext, CustomProperty, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
@@ -33,6 +33,7 @@ export function AttributeProperty({ field, row, value }: AttributePropertyProps)
 export interface RelationshipAttributeRow extends RelationshipAttribute {
    idx: number;
    id: string;
+   customProperties?: CustomProperty[];
    _uncommitted?: boolean;
 }
 
@@ -256,12 +257,17 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
             // Create the final attribute without temporary fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: _id, ...attributeData } = attribute;
+            const { _uncommitted, id: _id, customProperties, ...attributeData } = attribute;
+
+            const finalAttribute = {
+               ...attributeData,
+               ...(customProperties ? { customProperties } : {})
+            };
 
             // Add the new attribute through dispatch
             dispatch({
                type: 'relationship:attribute:add',
-               attribute: attributeData
+               attribute: finalAttribute
             });
 
             if (wasSaveTriggeredByEnter()) {
