@@ -31,6 +31,7 @@ import { DataModelScopedAstNodeDescription, GlobalAstNodeDescription, LocalAstNo
 import { isUnknownDataModel } from './cross-model-datamodel-manager.js';
 import {
    DataModelDependency,
+   ObjectDefinition,
    isAttributeMapping,
    isDataModelDependency,
    isObjectDefinition,
@@ -42,6 +43,35 @@ import {
    SourceObject
 } from './generated/ast.js';
 import { findDocument, fixDocument } from './util/ast-util.js';
+
+/**
+ * Maps container AST types to the root ObjectDefinition domain they belong to.
+ * When a TypedObject's `type` property is completed, only ObjectDefinitions
+ * whose `extends` chain leads to the matching root are shown.
+ */
+const TYPE_DOMAIN_MAP: Record<string, string> = {
+   DataModel: 'DataModel',
+   LogicalEntity: 'Entity',
+   Relationship: 'Relationship',
+   LogicalAttribute: 'Attribute',
+   LogicalEntityNodeAttribute: 'Attribute',
+   SourceObjectAttribute: 'Attribute',
+   TargetObjectAttribute: 'Attribute',
+   LogicalIdentifier: 'Identifier',
+   CustomProperty: 'CustomProperty'
+};
+
+/**
+ * Walks the `extends` chain of an ObjectDefinition to find its root ancestor ID.
+ * Returns the definition's own ID if it has no parent.
+ */
+function getRootDefinitionId(def: ObjectDefinition): string | undefined {
+   let current: ObjectDefinition | undefined = def;
+   while (current?.extends?.ref) {
+      current = current.extends.ref;
+   }
+   return current?.id ?? def.id;
+}
 
 /**
  * A custom scope provider that considers the dependencies between packages to indicate which elements form the global scope
@@ -239,11 +269,25 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
       if (description instanceof GlobalAstNodeDescription && isUnknownDataModel(description.dataModelId)) {
          return false;
       }
-      // Suppress abstract ObjectDefinitions from type completion — users should pick concrete subtypes.
+      // Filter ObjectDefinitions: suppress abstract ones and restrict to the correct domain
+      // based on the container type (e.g., Entity containers only see Entity-rooted definitions).
       if (description.type === 'ObjectDefinition') {
          const node = this.services.shared.workspace.IndexManager.resolveElement(description);
-         if (isObjectDefinition(node) && node.abstract) {
-            return false;
+         if (isObjectDefinition(node)) {
+            if (node.abstract) {
+               return false;
+            }
+            // When completing the 'type' property, only show definitions whose inheritance
+            // chain leads to the root definition matching the container's domain.
+            if (reference.property === ObjectDefinition.extends || reference.property === 'type') {
+               const expectedRoot = TYPE_DOMAIN_MAP[reference.container.$type];
+               if (expectedRoot) {
+                  const actualRoot = getRootDefinitionId(node);
+                  if (actualRoot !== expectedRoot) {
+                     return false;
+                  }
+               }
+            }
          }
       }
       if (isRelationshipAttribute(reference.container)) {

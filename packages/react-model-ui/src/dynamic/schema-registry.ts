@@ -115,7 +115,8 @@ const logicalEntitySchema: DynamicFormSchema = {
          fields: [
             { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
             { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
-            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true }
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'type', label: 'Type', fieldType: 'reference', referenceProperty: 'type' }
          ]
       }
    ],
@@ -342,6 +343,7 @@ const relationshipSchema: DynamicFormSchema = {
             { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
             { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
             { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'type', label: 'Type', fieldType: 'reference', referenceProperty: 'type' },
             { property: 'parent', label: 'Parent', fieldType: 'reference', referenceProperty: 'parent' },
             { property: 'child', label: 'Child', fieldType: 'reference', referenceProperty: 'child' },
             { property: 'parentRole', label: 'Parent Role', fieldType: 'text', undefinedIfEmpty: true },
@@ -450,19 +452,15 @@ const logicalAttributeItemSchema: DynamicFormSchema = {
    displayName: 'Attribute',
    iconClass: 'codicon codicon-symbol-field',
    diagnosticPath: ITEM_ROOT_KEY,
-   hasTypeProperty: false,
+   hasTypeProperty: true,
    sections: [
       {
          label: 'General',
          fields: [
             { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
             { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
-            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true }
-         ]
-      },
-      {
-         label: 'Specific Properties',
-         fields: [
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'type', label: 'Type', fieldType: 'reference', referenceProperty: 'type' },
             {
                property: 'datatype',
                label: 'Data Type',
@@ -518,19 +516,15 @@ const logicalIdentifierItemSchema: DynamicFormSchema = {
    displayName: 'Identifier',
    iconClass: 'codicon codicon-key',
    diagnosticPath: ITEM_ROOT_KEY,
-   hasTypeProperty: false,
+   hasTypeProperty: true,
    sections: [
       {
          label: 'General',
          fields: [
             { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
             { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
-            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true }
-         ]
-      },
-      {
-         label: 'Specific Properties',
-         fields: [
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'type', label: 'Type', fieldType: 'reference', referenceProperty: 'type' },
             { property: 'primary', label: 'Primary', fieldType: 'boolean' }
          ]
       }
