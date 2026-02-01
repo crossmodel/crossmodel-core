@@ -3,9 +3,11 @@
  ********************************************************************************/
 import { CrossModelRoot } from '@crossmodel/protocol';
 import { DataModelDispatchAction, DataModelReducer, isDataModelDispatchAction } from './DataModelReducer';
+import { DynamicFormDispatchAction, DynamicFormReducer, isDynamicFormDispatchAction } from './DynamicFormReducer';
 import { EntityDispatchAction, EntityModelReducer, isEntityDispatchAction } from './EntityModelReducer';
 import { MappingSourcesDispatchAction, MappingSourcesModelReducer, isMappingSourcesDispatchAction } from './MappingSourcesReducer';
 import { MappingTargetDispatchAction, MappingTargetModelReducer, isMappingTargetDispatchAction } from './MappingTargetReducer';
+import { ObjectDefinitionDispatchAction, ObjectDefinitionReducer, isObjectDefinitionDispatchAction } from './ObjectDefinitionReducer';
 import { RelationshipDispatchAction, RelationshipModelReducer, isRelationshipDispatchAction } from './RelationshipModelReducer';
 
 export interface ModelAction {
@@ -23,7 +25,9 @@ export type DispatchAction =
    | EntityDispatchAction
    | RelationshipDispatchAction
    | MappingTargetDispatchAction
-   | MappingSourcesDispatchAction;
+   | MappingSourcesDispatchAction
+   | ObjectDefinitionDispatchAction
+   | DynamicFormDispatchAction;
 
 export type ModelStateReason = DispatchAction['type'] | 'model:initial';
 
@@ -56,6 +60,12 @@ export function ModelReducer(state: ModelState, action: DispatchAction): ModelSt
    }
    if (isMappingSourcesDispatchAction(action)) {
       return MappingSourcesModelReducer(state, action);
+   }
+   if (isObjectDefinitionDispatchAction(action)) {
+      return ObjectDefinitionReducer(state, action);
+   }
+   if (isDynamicFormDispatchAction(action)) {
+      return DynamicFormReducer(state, action);
    }
    throw Error('Unknown ModelReducer action');
 }

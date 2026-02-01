@@ -94,6 +94,8 @@ export interface PrimeDataGridProps<T> {
    metaKeySelection?: boolean;
    resizableColumns?: boolean;
    columnResizeMode?: 'fit' | 'expand';
+   /** Optional custom action buttons rendered before the standard edit/delete buttons. */
+   customActions?: (rowData: T) => React.ReactElement[];
 }
 
 const pluralize = (word: string, count?: number): string => {
@@ -714,10 +716,16 @@ function renderActionsColumn<T>(
    editable: boolean,
    readonly: boolean,
    onRowDelete?: (row: T) => void,
-   tableRef?: React.RefObject<DataTable<any>>
+   tableRef?: React.RefObject<DataTable<any>>,
+   customActions?: (rowData: T) => React.ReactElement[]
 ): React.JSX.Element {
    const isEditing = editable && !readonly && props.rowEditor && props.rowEditor.editing; // eslint-disable-line react/prop-types
    const buttons: React.ReactElement[] = [];
+
+   // Add custom action buttons (shown in non-editing state only)
+   if (!isEditing && customActions) {
+      buttons.push(...customActions(rowData));
+   }
 
    if (isEditing && !readonly) {
       buttons.push(
@@ -823,7 +831,8 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    globalFilterFields,
    metaKeySelection = true,
    resizableColumns,
-   columnResizeMode
+   columnResizeMode,
+   customActions
 }: PrimeDataGridProps<T>): React.ReactElement {
    // eslint-disable-next-line no-null/no-null
    const tableRef = React.useRef<DataTable<T[]>>(null);
@@ -1248,8 +1257,9 @@ export function PrimeDataGrid<T extends Record<string, any>>({
    const cellEditor = undefined;
 
    const allActionsTemplate = React.useCallback(
-      (rowData: T, props: any): React.JSX.Element => renderActionsColumn(rowData, props, editable, readonly, onRowDelete, tableRef),
-      [editable, readonly, onRowDelete]
+      (rowData: T, props: any): React.JSX.Element =>
+         renderActionsColumn(rowData, props, editable, readonly, onRowDelete, tableRef, customActions),
+      [editable, readonly, onRowDelete, customActions]
    );
 
    const DataTableComponent = DataTable as any;

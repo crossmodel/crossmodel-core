@@ -23,8 +23,8 @@ export interface CustomPropertyRow extends CustomProperty {
 }
 
 export interface CustomPropertiesDataGridProps {
-   /** The context type (e.g., 'entity', 'relationship', 'datamodel') */
-   contextType: 'entity' | 'relationship' | 'datamodel';
+   /** The context type used as prefix for dispatch action types and diagnostic paths. */
+   contextType: string;
    /** The custom properties array from the current context */
    customProperties?: CustomProperty[];
    /** Error message to show when no context is available */
@@ -45,7 +45,8 @@ export function CustomPropertiesDataGrid({
    errorMessage,
    propertyDefinitions
 }: CustomPropertiesDataGridProps): React.ReactElement {
-   const dispatch = useModelDispatch();
+   // Cast dispatch since this component constructs action types dynamically from contextType
+   const dispatch = useModelDispatch() as (action: Record<string, any>) => void;
    const readonly = useReadonly();
    const [editingRows, setEditingRows] = React.useState<Record<string, boolean>>({});
    const [gridData, setGridData] = React.useState<CustomPropertyRow[]>([]);

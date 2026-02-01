@@ -745,3 +745,69 @@ table[style*='position: fixed'] * {
    font-size: 0.75rem;
    white-space: normal;
 }
+
+/* --- Row Detail Dialog --- */
+
+.p-dialog-mask {
+   background: rgba(0, 0, 0, 0.4);
+}
+
+.row-detail-dialog {
+   max-height: 80vh;
+}
+
+.row-detail-dialog .p-dialog-header {
+   background: var(--surface-section);
+   color: var(--text-color);
+   border-bottom: 1px solid var(--surface-border);
+   padding: 1rem 1.5rem;
+   font-size: var(--theia-ui-font-size1);
+}
+
+.row-detail-dialog .p-dialog-header .p-dialog-title {
+   font-weight: 600;
+}
+
+.row-detail-dialog .p-dialog-content {
+   background: var(--surface-card);
+   color: var(--text-color);
+   padding: 1.5rem;
+   overflow-y: auto;
+}
+
+.row-detail-dialog .p-dialog-footer {
+   background: var(--surface-section);
+   border-top: 1px solid var(--surface-border);
+   padding: 0.75rem 1.5rem;
+   display: flex;
+   justify-content: flex-end;
+   gap: 0.5rem;
+}
+
+.row-detail-dialog-content .p-field {
+   margin-bottom: 1rem;
+}
+
+.row-detail-dialog-content .p-field > label {
+   display: block;
+   margin-bottom: 0.25rem;
+   font-weight: 500;
+   font-size: var(--theia-ui-font-size1);
+   color: var(--text-color-secondary);
+}
+
+.row-detail-dialog-content .p-field .p-inputtext,
+.row-detail-dialog-content .p-field .p-inputnumber,
+.row-detail-dialog-content .p-field .p-autocomplete,
+.row-detail-dialog-content .p-field .p-multiselect {
+   width: 100%;
+}
+
+.row-detail-dialog .p-dialog-header-icons .p-dialog-header-close {
+   color: var(--text-color-secondary);
+}
+
+.row-detail-dialog .p-dialog-header-icons .p-dialog-header-close:hover {
+   color: var(--text-color);
+   background: var(--surface-hover);
+}
