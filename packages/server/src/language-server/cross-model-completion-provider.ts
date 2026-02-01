@@ -9,8 +9,17 @@ import { CompletionItemKind, InsertTextFormat, TextEdit } from 'vscode-languages
 import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
-import { AttributeMapping, AttributeMappingExpression, IdentifiedObject, RelationshipAttribute, isAttributeMappingExpression } from './generated/ast.js';
-import { fixDocument } from './util/ast-util.js';
+import {
+   AttributeMapping,
+   AttributeMappingExpression,
+   CustomProperty,
+   IdentifiedObject,
+   isCustomProperty,
+   isObjectDefinition,
+   RelationshipAttribute,
+   isAttributeMappingExpression
+} from './generated/ast.js';
+import { fixDocument, resolveAllPropertyDefinitions } from './util/ast-util.js';
 
 /**
  * Custom completion provider that only shows the short options to the user if a longer, fully-qualified version is also available.
@@ -126,6 +135,11 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
       _assignment: GrammarAST.Assignment,
       acceptor: CompletionAcceptor
    ): MaybePromise<void> {
+      // For CustomProperty nodes, suggest property ids from the container's type definition
+      if (isCustomProperty(context.node) || this.isCustomPropertyIdContext(context)) {
+         this.completionForCustomPropertyId(context, acceptor);
+      }
+
       const generatedId = 'id_' + uuid();
       acceptor(context, {
          label: 'Generated ID: ' + generatedId,
@@ -134,8 +148,60 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
             range: this.getCompletionRange(context)
          },
          kind: CompletionItemKind.Value,
-         sortText: '0'
+         sortText: '1'
       });
+   }
+
+   protected isCustomPropertyIdContext(context: CompletionContext): boolean {
+      // When first entering a CustomProperty (before parsing produces a CustomProperty node),
+      // the context node may be the container. Check if we're inside a customProperties list.
+      return context.features.some(f => f.type === CustomProperty.$type);
+   }
+
+   protected completionForCustomPropertyId(context: CompletionContext, acceptor: CompletionAcceptor): void {
+      // Find the container that has the type reference to ObjectDefinition
+      const container = isCustomProperty(context.node) ? context.node.$container : context.node;
+      if (!container) {
+         return;
+      }
+
+      // The container should have a 'type' property referencing an ObjectDefinition
+      const typeRef = (container as any).type;
+      if (!typeRef?.ref || !isObjectDefinition(typeRef.ref)) {
+         return;
+      }
+
+      const objectDef = typeRef.ref;
+      const allProps = resolveAllPropertyDefinitions(objectDef);
+
+      // Collect existing custom property ids to avoid suggesting duplicates
+      const existingIds = new Set<string>();
+      const customProperties = (container as any).customProperties;
+      if (Array.isArray(customProperties)) {
+         for (const cp of customProperties) {
+            if (cp.id) {
+               existingIds.add(cp.id);
+            }
+         }
+      }
+
+      for (const prop of allProps) {
+         const propId = prop.definition.id ?? prop.definition.name;
+         if (!propId || existingIds.has(propId)) {
+            continue;
+         }
+         const detail = prop.inherited ? `(from ${prop.sourceDefinitionId})` : undefined;
+         acceptor(context, {
+            label: propId,
+            detail,
+            textEdit: {
+               newText: propId,
+               range: this.getCompletionRange(context)
+            },
+            kind: CompletionItemKind.Property,
+            sortText: '0'
+         });
+      }
    }
 
    protected completionForString(

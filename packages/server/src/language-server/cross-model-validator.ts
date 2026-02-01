@@ -19,8 +19,10 @@ import {
    AttributeMappingExpression,
    BinaryExpression,
    CrossModelAstType,
+   CustomProperty,
    IdentifiedObject,
    InheritanceEdge,
+   isCustomProperty,
    isCrossModelRoot,
    isLogicalEntity,
    isMapping,
@@ -79,6 +81,7 @@ export function registerValidationChecks(services: CrossModelServices): void {
       SourceObjectDependency: validator.checkSourceObjectDependency,
       TargetObject: validator.checkTargetObject,
       NamedObject: validator.checkNamedObject,
+      CustomProperty: validator.checkCustomProperty,
       WithCustomProperties: validator.checkUniqueCustomerPropertyId,
       BinaryExpression: validator.checkBinaryExpression
    };
@@ -92,6 +95,10 @@ export class CrossModelValidator {
    constructor(protected services: CrossModelServices) {}
 
    checkNamedObject(namedObject: NamedObject, accept: ValidationAcceptor): void {
+      // CustomProperty has its own validation; name is not required there
+      if (isCustomProperty(namedObject)) {
+         return;
+      }
       if (namedObject.name === undefined || namedObject.name.length === 0) {
          accept('error', 'The name cannot be empty', {
             node: namedObject,
@@ -101,7 +108,21 @@ export class CrossModelValidator {
       }
    }
 
+   checkCustomProperty(customProperty: CustomProperty, accept: ValidationAcceptor): void {
+      if (customProperty.id === undefined || customProperty.id.length === 0) {
+         accept('error', 'The id cannot be empty', {
+            node: customProperty,
+            property: CustomProperty.id,
+            data: { code: CrossModelValidationErrors.toMissing(CustomProperty.id) }
+         });
+      }
+   }
+
    checkIdentifiedObject(identifiedObject: IdentifiedObject, accept: ValidationAcceptor): void {
+      // CustomProperty has its own validation; id is validated there
+      if (isCustomProperty(identifiedObject)) {
+         return;
+      }
       if (identifiedObject.id === undefined || identifiedObject.id.length === 0) {
          accept('error', 'The id cannot be empty', {
             node: identifiedObject,

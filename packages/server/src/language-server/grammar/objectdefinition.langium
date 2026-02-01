@@ -6,17 +6,14 @@ import 'common'
 // The `extends` field references a parent ObjectDefinition, forming the definition
 // inheritance chain. Walking the `extends` chain up to a built-in root determines
 // what domain concept this ObjectDefinition applies to.
+// The customProperties on an ObjectDefinition serve as property definitions for instances
+// of this type. Instance custom properties with matching ids inherit the definition's metadata.
 ObjectDefinition returns ObjectDefinition:
     'objectDefinition' ':'
         INDENT
             NamedObjectFragment
             (abstract?='abstract' ':' ('TRUE' | 'true'))?
             ('extends' ':' extends=[ObjectDefinition:IDReference])?
-            ('properties' ':'
-                INDENT
-                    (LIST_ITEM propertyDefinitions+=CustomPropertyDefinition)+
-                DEDENT
-            )?
             CustomPropertiesFragment?
         DEDENT
 ;

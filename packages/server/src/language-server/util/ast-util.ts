@@ -11,6 +11,7 @@ import {
    AttributeMappingSource,
    AttributeMappingTarget,
    CrossModelRoot,
+   CustomProperty,
    DataModel,
    LogicalAttribute,
    LogicalEntity,
@@ -338,4 +339,62 @@ export function findObjectDefinition(input: DocumentContent): ObjectDefinition |
 
 export function hasSemanticRoot<T extends SemanticRoot>(document: LangiumDocument<any>, guard: (item: unknown) => item is T): boolean {
    return guard(findSemanticRoot(document));
+}
+
+/**
+ * A resolved custom property tagged with its source ObjectDefinition.
+ */
+export interface ResolvedPropertyDefinition {
+   definition: CustomProperty;
+   sourceDefinitionId: string;
+   inherited: boolean;
+}
+
+/**
+ * Collects all custom properties from an ObjectDefinition and its
+ * extends chain, from root ancestor down to the given definition.
+ * Each entry is tagged with the source definition ID and whether it is inherited.
+ * Uses a visited set to prevent infinite loops from circular extends chains.
+ */
+export function resolveAllPropertyDefinitions(
+   objectDef: ObjectDefinition,
+   visited?: Set<string>
+): ResolvedPropertyDefinition[] {
+   const _visited = visited ?? new Set<string>();
+   const defId = objectDef.id ?? objectDef.name ?? '';
+   if (_visited.has(defId)) {
+      return [];
+   }
+   _visited.add(defId);
+
+   const result: ResolvedPropertyDefinition[] = [];
+
+   // Recursively collect parent definitions first (so parent properties come first)
+   const parentDef = objectDef.extends?.ref;
+   if (parentDef) {
+      const parentProps = resolveAllPropertyDefinitions(parentDef, _visited);
+      result.push(...parentProps);
+   }
+
+   // Add this definition's own custom properties (marked as not inherited)
+   for (const propDef of objectDef.customProperties) {
+      result.push({
+         definition: propDef,
+         sourceDefinitionId: defId,
+         inherited: false
+      });
+   }
+
+   // Mark all properties from ancestors as inherited relative to the original caller
+   // Only the properties directly from objectDef are not inherited
+   if (!visited) {
+      // This is the top-level call; mark parent properties as inherited
+      for (const prop of result) {
+         if (prop.sourceDefinitionId !== defId) {
+            prop.inherited = true;
+         }
+      }
+   }
+
+   return result;
 }

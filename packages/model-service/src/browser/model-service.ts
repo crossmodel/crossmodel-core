@@ -14,7 +14,9 @@ import {
    ModelUpdatedEvent,
    OpenModelArgs,
    ReferenceableElement,
+   ResolveObjectDefinitionArgs,
    ResolvedElement,
+   ResolvedObjectDefinition,
    SaveModelArgs,
    UpdateModelArgs
 } from '@crossmodel/protocol';
@@ -102,6 +104,10 @@ export class ModelServiceImpl implements ModelService {
 
    getDataModelInfo(args: DataModelInfoArgs): Promise<DataModelInfo | undefined> {
       return this.server.getDataModelInfo(args);
+   }
+
+   resolveObjectDefinition(args: ResolveObjectDefinitionArgs): Promise<ResolvedObjectDefinition | undefined> {
+      return this.server.resolveObjectDefinition(args);
    }
 
    get onModelUpdate(): Event<ModelUpdatedEvent> {

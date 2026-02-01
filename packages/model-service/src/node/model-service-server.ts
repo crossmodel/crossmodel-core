@@ -24,8 +24,11 @@ import {
    RequestDataModelInfo,
    RequestDataModelInfos,
    RequestModel,
+   ResolveObjectDefinition,
+   ResolveObjectDefinitionArgs,
    ResolveReference,
    ResolvedElement,
+   ResolvedObjectDefinition,
    SaveModel,
    SaveModelArgs,
    UpdateModel,
@@ -194,6 +197,11 @@ export class ModelServiceServerImpl implements ModelServiceServer {
    async getDataModelInfo(args: DataModelInfoArgs): Promise<DataModelInfo | undefined> {
       await this.initializeServerConnection();
       return this.connection.sendRequest(RequestDataModelInfo, args);
+   }
+
+   async resolveObjectDefinition(args: ResolveObjectDefinitionArgs): Promise<ResolvedObjectDefinition | undefined> {
+      await this.initializeServerConnection();
+      return this.connection.sendRequest(ResolveObjectDefinition, args);
    }
 
    protected setUpListeners(): void {

@@ -10,7 +10,6 @@ import {
    AttributeMappingTarget,
    BooleanValue,
    CustomProperty,
-   CustomPropertyDefinition,
    DataModel,
    DataModelDependency,
    IdentifiedObject,
@@ -44,8 +43,7 @@ import {
  * Required because the grammar uses different keywords than the AST property names (e.g., 'inherits' vs 'superEntities').
  */
 const PROPERTY_KEYWORDS = new Map<string, string>([
-   [LogicalEntity.superEntities, 'inherits'],
-   [ObjectDefinition.propertyDefinitions, 'properties']
+   [LogicalEntity.superEntities, 'inherits']
 ]);
 
 /**
@@ -260,7 +258,20 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [TargetObject.$type, [TargetObject.entity, TargetObject.mappings, ...CUSTOM_PROPERTIES]],
    [AttributeMapping.$type, [AttributeMapping.attribute, AttributeMapping.sources, AttributeMapping.expressions, ...CUSTOM_PROPERTIES]],
    [AttributeMappingExpression.$type, [AttributeMappingExpression.language, AttributeMappingExpression.expression]],
-   [CustomProperty.$type, [...TYPED_OBJECT_PROPERTIES, CustomProperty.value]],
+   [
+      CustomProperty.$type,
+      [
+         ...TYPED_OBJECT_PROPERTIES,
+         CustomProperty.datatype,
+         CustomProperty.length,
+         CustomProperty.precision,
+         CustomProperty.scale,
+         CustomProperty.mandatory,
+         CustomProperty.defaultValue,
+         CustomProperty.values,
+         CustomProperty.value
+      ]
+   ],
    [LogicalIdentifier.$type, [...TYPED_OBJECT_PROPERTIES, LogicalIdentifier.primary, LogicalIdentifier.attributes, ...CUSTOM_PROPERTIES]],
    [
       DataModel.$type,
@@ -273,21 +284,7 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          ...NAMED_OBJECT_PROPERTIES,
          ObjectDefinition.abstract,
          ObjectDefinition.extends,
-         ObjectDefinition.propertyDefinitions,
          ...CUSTOM_PROPERTIES
-      ]
-   ],
-   [
-      CustomPropertyDefinition.$type,
-      [
-         ...NAMED_OBJECT_PROPERTIES,
-         CustomPropertyDefinition.datatype,
-         CustomPropertyDefinition.length,
-         CustomPropertyDefinition.precision,
-         CustomPropertyDefinition.scale,
-         CustomPropertyDefinition.mandatory,
-         CustomPropertyDefinition.defaultValue,
-         CustomPropertyDefinition.values
       ]
    ]
 ]);

@@ -6,6 +6,7 @@ import { ModelFileType, ModelStructure, ReferenceableElement, computeRelationshi
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
+import { useTypeProperties } from '../../hooks/useTypeProperties';
 import {
    useDiagnosticsManager,
    useModelDispatch,
@@ -33,6 +34,7 @@ export function RelationshipForm(): React.ReactElement {
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
    const untitled = useUntitled();
+   const { propertyDefinitions } = useTypeProperties(relationship.type);
    const uri = useUri();
 
    const usingDefaultName = React.useMemo(
@@ -233,8 +235,8 @@ export function RelationshipForm(): React.ReactElement {
          <FormSection label='Attributes'>
             <RelationshipAttributesDataGrid />
          </FormSection>
-         <FormSection label='Custom properties' defaultCollapsed={true}>
-            <RelationshipCustomPropertiesDataGrid />
+         <FormSection label='Custom properties'>
+            <RelationshipCustomPropertiesDataGrid propertyDefinitions={propertyDefinitions} />
          </FormSection>
       </Form>
    );

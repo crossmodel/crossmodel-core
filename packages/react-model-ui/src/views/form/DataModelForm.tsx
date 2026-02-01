@@ -6,6 +6,7 @@ import { CrossReferenceContext, ModelStructure, ReferenceableElement, toId } fro
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
+import { useTypeProperties } from '../../hooks/useTypeProperties';
 import {
    useDataModel,
    useDiagnosticsManager,
@@ -32,6 +33,7 @@ export function DataModelForm(): React.ReactElement {
    const uri = useUri();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
+   const { propertyDefinitions } = useTypeProperties(dataModel.type);
 
    const handleNameChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,8 +149,8 @@ export function DataModelForm(): React.ReactElement {
          <FormSection label='Dependencies'>
             <DataModelDependenciesDataGrid />
          </FormSection>
-         <FormSection label='Custom properties' defaultCollapsed={true}>
-            <DataModelCustomPropertiesDataGrid />
+         <FormSection label='Custom properties'>
+            <DataModelCustomPropertiesDataGrid propertyDefinitions={propertyDefinitions} />
          </FormSection>
       </Form>
    );

@@ -10,7 +10,9 @@ import {
    Mapping,
    ModelDiagnostic,
    ReferenceableElement,
-   Relationship
+   Relationship,
+   ResolveObjectDefinitionArgs,
+   ResolvedObjectDefinition
 } from '@crossmodel/protocol';
 import * as React from 'react';
 import { DispatchAction, ModelReducer } from './ModelReducer';
@@ -21,6 +23,7 @@ export type OpenCallback = () => void;
 export interface ModelQueryApi {
    findReferenceableElements(args: CrossReferenceContext): Promise<ReferenceableElement[]>;
    findNextId(args: FindIdArgs): Promise<string>;
+   resolveObjectDefinition(args: ResolveObjectDefinitionArgs): Promise<ResolvedObjectDefinition | undefined>;
 }
 
 export interface DiagnosticInfo {
@@ -131,7 +134,11 @@ export const OpenModelContext = React.createContext<OpenCallback | undefined>(un
 export const DEFAULT_SAVE_CALLBACK = (): void => console.log('Saving this model is not supported.');
 export const SaveModelContext = React.createContext<SaveCallback | undefined>(undefined);
 
-export const DEFAULT_QUERY_API: ModelQueryApi = { findReferenceableElements: async () => [], findNextId: () => Promise.resolve('') };
+export const DEFAULT_QUERY_API: ModelQueryApi = {
+   findReferenceableElements: async () => [],
+   findNextId: () => Promise.resolve(''),
+   resolveObjectDefinition: async () => undefined
+};
 export const ModelQueryApiContext = React.createContext<ModelQueryApi>(DEFAULT_QUERY_API);
 
 export const ModelDirtyContext = React.createContext<boolean>(false);

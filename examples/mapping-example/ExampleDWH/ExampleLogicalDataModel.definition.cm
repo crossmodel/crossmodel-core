@@ -1,0 +1,11 @@
+objectDefinition:
+    id: ExampleLogicalDataModel
+    name: "Exampe Logical Data Model"
+    extends: LogicalDataModel
+    customProperties:
+        - id: ExampleCustomPropertyFromDefinition
+          name: "From Definition"
+          description: "Example Custom Property From Definition"
+        - id: AnotherExample
+          name: "Another CP"
+          value: "Default value from definition"

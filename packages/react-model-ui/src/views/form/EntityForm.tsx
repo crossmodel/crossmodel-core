@@ -6,6 +6,7 @@ import { ModelFileType, ModelStructure, toId } from '@crossmodel/protocol';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
+import { useTypeProperties } from '../../hooks/useTypeProperties';
 import { useDiagnosticsManager, useEntity, useModelDispatch, useModelQueryApi, useReadonly, useUntitled, useUri } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
@@ -25,6 +26,7 @@ export function EntityForm(): React.ReactElement {
    const uri = useUri();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
+   const { propertyDefinitions } = useTypeProperties(entity.type);
 
    const handleNameChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +89,7 @@ export function EntityForm(): React.ReactElement {
             <EntityIdentifiersDataGrid />
          </FormSection>
          <FormSection label='Custom properties'>
-            <EntityCustomPropertiesDataGrid />
+            <EntityCustomPropertiesDataGrid propertyDefinitions={propertyDefinitions} />
          </FormSection>
       </Form>
    );

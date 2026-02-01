@@ -14,7 +14,9 @@ import {
    ModelUpdatedEvent,
    OpenModelArgs,
    ReferenceableElement,
+   ResolveObjectDefinitionArgs,
    ResolvedElement,
+   ResolvedObjectDefinition,
    SaveModelArgs,
    UpdateModelArgs
 } from '@crossmodel/protocol';
@@ -50,6 +52,9 @@ export interface ModelServiceServer extends RpcServer<ModelServiceClient> {
    // DataModel API
    getDataModelInfos(): Promise<DataModelInfo[]>;
    getDataModelInfo(args: DataModelInfoArgs): Promise<DataModelInfo | undefined>;
+
+   // ObjectDefinition API
+   resolveObjectDefinition(args: ResolveObjectDefinitionArgs): Promise<ResolvedObjectDefinition | undefined>;
 }
 
 export const ModelServiceClient = Symbol('ModelServiceClient');

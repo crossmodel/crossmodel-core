@@ -14,6 +14,9 @@ import {
    ModelUpdatedEvent,
    OpenModelArgs,
    ReferenceableElement,
+   ResolveObjectDefinitionArgs,
+   ResolvedObjectDefinition,
+   ResolvedPropertyDefinition,
    SaveModelArgs,
    UpdateModelArgs
 } from '@crossmodel/protocol';
@@ -23,8 +26,8 @@ import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumen
 import { URI } from 'vscode-uri';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
-import { CrossModelRoot, isCrossModelRoot } from '../language-server/generated/ast.js';
-import { findDocument } from '../language-server/util/ast-util.js';
+import { CrossModelRoot, isCrossModelRoot, isObjectDefinition } from '../language-server/generated/ast.js';
+import { findDocument, resolveAllPropertyDefinitions } from '../language-server/util/ast-util.js';
 import { AstCrossModelDocument } from './open-text-document-manager.js';
 import { LANGUAGE_CLIENT_ID } from './openable-text-documents.js';
 
@@ -260,5 +263,64 @@ export class ModelService {
 
    onDataModelUpdated(listener: (event: DataModelUpdatedEvent) => void): Disposable {
       return this.shared.workspace.DataModelManager.onUpdate(listener);
+   }
+
+   async resolveObjectDefinition(args: ResolveObjectDefinitionArgs): Promise<ResolvedObjectDefinition | undefined> {
+      const indexManager = this.shared.workspace.IndexManager;
+      const description = indexManager.getElementById(args.type, 'ObjectDefinition');
+      if (!description) {
+         return undefined;
+      }
+      const node = indexManager.resolveElement(description);
+      if (!isObjectDefinition(node)) {
+         return undefined;
+      }
+
+      const allProps = resolveAllPropertyDefinitions(node);
+
+      // Build a map of property id → resolved default value text.
+      // Properties are ordered root ancestor → leaf, so later entries override earlier ones.
+      // The effective default is: defaultValue (rich typed) > value (plain text), most specific wins.
+      const resolvedDefaults = new Map<string, string>();
+      for (const p of allProps) {
+         const propId = p.definition.id ?? p.definition.name ?? '';
+         const defaultText = p.definition.defaultValue
+            ? String(p.definition.defaultValue.value)
+            : p.definition.value;
+         if (propId && defaultText !== undefined) {
+            resolvedDefaults.set(propId, defaultText);
+         }
+      }
+
+      const propertyDefinitions: ResolvedPropertyDefinition[] = allProps.map(p => {
+         const propId = p.definition.id ?? p.definition.name ?? '';
+         return {
+            id: p.definition.id,
+            name: p.definition.name,
+            description: p.definition.description,
+            datatype: p.definition.datatype,
+            length: p.definition.length,
+            precision: p.definition.precision,
+            scale: p.definition.scale,
+            mandatory: p.definition.mandatory || false,
+            defaultValue: p.definition.defaultValue ? this.serializePropertyValue(p.definition.defaultValue) : undefined,
+            resolvedDefaultValue: resolvedDefaults.get(propId),
+            values: p.definition.values.map(v => this.serializePropertyValue(v)),
+            sourceDefinitionId: p.sourceDefinitionId,
+            inherited: p.inherited
+         };
+      });
+
+      return {
+         id: node.id ?? '',
+         name: node.name,
+         abstract: node.abstract || undefined,
+         extends: node.extends?.$refText,
+         propertyDefinitions
+      };
+   }
+
+   private serializePropertyValue(value: any): any {
+      return { $type: value.$type, value: value.value };
    }
 }

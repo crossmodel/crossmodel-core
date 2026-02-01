@@ -24,8 +24,11 @@ import {
    RequestDataModelInfo,
    RequestDataModelInfos,
    RequestModel,
+   ResolveObjectDefinition,
+   ResolveObjectDefinitionArgs,
    ResolveReference,
    ResolvedElement,
+   ResolvedObjectDefinition,
    SaveModel,
    SaveModelArgs,
    UpdateModel,
@@ -67,6 +70,7 @@ export class ModelServer implements Disposable {
       this.toDispose.push(connection.onRequest(SaveModel, args => this.saveModel(args)));
       this.toDispose.push(connection.onRequest(RequestDataModelInfo, args => this.dataModelInfo(args)));
       this.toDispose.push(connection.onRequest(RequestDataModelInfos, () => this.dataModelInfos()));
+      this.toDispose.push(connection.onRequest(ResolveObjectDefinition, args => this.resolveObjectDefinition(args)));
       this.toDispose.push(this.modelService.onDataModelUpdated(event => this.connection.sendNotification(OnDataModelsUpdated, event)));
    }
 
@@ -76,6 +80,10 @@ export class ModelServer implements Disposable {
 
    protected dataModelInfos(): Promise<DataModelInfo[]> {
       return this.modelService.getDataModelInfos();
+   }
+
+   protected resolveObjectDefinition(args: ResolveObjectDefinitionArgs): Promise<ResolvedObjectDefinition | undefined> {
+      return this.modelService.resolveObjectDefinition(args);
    }
 
    protected complete(args: CrossReferenceContext): Promise<ReferenceableElement[]> {

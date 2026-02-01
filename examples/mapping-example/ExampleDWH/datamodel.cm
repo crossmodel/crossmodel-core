@@ -2,7 +2,7 @@ datamodel:
     id: ExampleDWH
     name: "Example DWH"
     description: "Example Data Warehouse Logical Data Model"
-    type: LogicalDataModel
+    type: ExampleLogicalDataModel
     version: 1.0.0
     dependencies:
       - datamodel: ExampleCRM
@@ -11,3 +11,6 @@ datamodel:
         version: 1.0.0
       - datamodel: ExampleOtherModel
         version: 1.0.0
+    customProperties:
+      - id: ExampleCustomPropertyFromDefinition
+        value: "asadadads"

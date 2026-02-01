@@ -43,6 +43,13 @@ export interface WithCustomProperties {
 export const CustomPropertyType = 'CustomProperty';
 export interface CustomProperty extends CrossModelElement, TypedObject {
    readonly $type: typeof CustomPropertyType;
+   datatype?: string;
+   length?: number;
+   precision?: number;
+   scale?: number;
+   mandatory?: boolean;
+   defaultValue?: CustomPropertyValue;
+   values?: Array<CustomPropertyValue>;
    value?: string;
 }
 
@@ -51,19 +58,6 @@ export interface ObjectDefinition extends CrossModelElement, NamedObject, WithCu
    readonly $type: typeof ObjectDefinitionType;
    abstract?: boolean;
    extends?: Reference<ObjectDefinition>;
-   propertyDefinitions: Array<CustomPropertyDefinition>;
-}
-
-export const CustomPropertyDefinitionType = 'CustomPropertyDefinition';
-export interface CustomPropertyDefinition extends CrossModelElement, NamedObject {
-   readonly $type: typeof CustomPropertyDefinitionType;
-   datatype?: string;
-   length?: number;
-   precision?: number;
-   scale?: number;
-   mandatory?: boolean;
-   defaultValue?: CustomPropertyValue;
-   values: Array<CustomPropertyValue>;
 }
 
 export type CustomPropertyValue = StringValue | NumberValue | BooleanValue;
@@ -543,6 +537,41 @@ export const OnModelUpdated = new rpc.NotificationType1<ModelUpdatedEvent>('serv
 export const RequestDataModelInfos = new rpc.RequestType1<void, DataModelInfo[], void>('server/dataModels');
 export const RequestDataModelInfo = new rpc.RequestType1<DataModelInfoArgs, DataModelInfo | undefined, void>('server/dataModel');
 export const OnDataModelsUpdated = new rpc.NotificationType1<DataModelUpdatedEvent>('server/onDataModelsUpdated');
+
+// ObjectDefinition resolution API
+export interface ResolvedPropertyDefinition {
+   id?: string;
+   name?: string;
+   description?: string;
+   datatype?: string;
+   length?: number;
+   precision?: number;
+   scale?: number;
+   mandatory?: boolean;
+   defaultValue?: CustomPropertyValue;
+   /** The effective default value text, resolved through the type hierarchy (lowest-set wins). */
+   resolvedDefaultValue?: string;
+   values: CustomPropertyValue[];
+   sourceDefinitionId: string;
+   inherited: boolean;
+}
+
+export interface ResolvedObjectDefinition {
+   id: string;
+   name?: string;
+   abstract?: boolean;
+   extends?: string;
+   propertyDefinitions: ResolvedPropertyDefinition[];
+}
+
+export interface ResolveObjectDefinitionArgs {
+   type: string;
+   contextUri: string;
+}
+
+export const ResolveObjectDefinition = new rpc.RequestType1<ResolveObjectDefinitionArgs, ResolvedObjectDefinition | undefined, void>(
+   'server/resolveObjectDefinition'
+);
 
 export const ModelMemberPermissions: readonly RootObjectTypeName[] = [
    'LogicalEntity', 'Mapping', 'ObjectDefinition', 'Relationship', 'SystemDiagram', 'DataModel'

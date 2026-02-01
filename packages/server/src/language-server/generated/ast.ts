@@ -80,7 +80,6 @@ export type CrossModelKeywordNames =
     | "parentRole"
     | "precision"
     | "primary"
-    | "properties"
     | "relationship"
     | "scale"
     | "sourceNode"
@@ -203,7 +202,7 @@ export function isBooleanExpression(item: unknown): item is BooleanExpression {
 }
 
 export interface BooleanValue extends langium.AstNode {
-    readonly $container: CustomPropertyDefinition;
+    readonly $container: CustomProperty;
     readonly $type: 'BooleanValue';
     value: BOOLEAN_VALUE;
 }
@@ -250,40 +249,19 @@ export function isCrossModelRoot(item: unknown): item is CrossModelRoot {
 export interface CustomProperty extends NamedObject {
     readonly $container: WithCustomProperties;
     readonly $type: 'CustomProperty';
+    datatype?: string;
+    defaultValue?: CustomPropertyValue;
+    length?: number;
+    mandatory: boolean;
+    precision?: number;
+    scale?: number;
     type?: langium.Reference<ObjectDefinition>;
     value?: string;
+    values: Array<CustomPropertyValue>;
 }
 
 export const CustomProperty = {
     $type: 'CustomProperty',
-    description: 'description',
-    id: 'id',
-    name: 'name',
-    type: 'type',
-    value: 'value'
-} as const;
-
-export function isCustomProperty(item: unknown): item is CustomProperty {
-    return reflection.isInstance(item, CustomProperty.$type);
-}
-
-export interface CustomPropertyDefinition extends langium.AstNode {
-    readonly $container: ObjectDefinition;
-    readonly $type: 'CustomPropertyDefinition';
-    datatype?: string;
-    defaultValue?: CustomPropertyValue;
-    description?: string;
-    id?: string;
-    length?: number;
-    mandatory: boolean;
-    name?: string;
-    precision?: number;
-    scale?: number;
-    values: Array<CustomPropertyValue>;
-}
-
-export const CustomPropertyDefinition = {
-    $type: 'CustomPropertyDefinition',
     datatype: 'datatype',
     defaultValue: 'defaultValue',
     description: 'description',
@@ -293,11 +271,13 @@ export const CustomPropertyDefinition = {
     name: 'name',
     precision: 'precision',
     scale: 'scale',
+    type: 'type',
+    value: 'value',
     values: 'values'
 } as const;
 
-export function isCustomPropertyDefinition(item: unknown): item is CustomPropertyDefinition {
-    return reflection.isInstance(item, CustomPropertyDefinition.$type);
+export function isCustomProperty(item: unknown): item is CustomProperty {
+    return reflection.isInstance(item, CustomProperty.$type);
 }
 
 export type CustomPropertyValue = BooleanValue | NumberValue | StringValue;
@@ -661,7 +641,7 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
 }
 
 export interface NumberValue extends langium.AstNode {
-    readonly $container: CustomPropertyDefinition;
+    readonly $container: CustomProperty;
     readonly $type: 'NumberValue';
     value: number;
 }
@@ -680,7 +660,6 @@ export interface ObjectDefinition extends NamedObject, WithCustomProperties {
     readonly $type: 'ObjectDefinition';
     abstract: boolean;
     extends?: langium.Reference<ObjectDefinition>;
-    propertyDefinitions: Array<CustomPropertyDefinition>;
 }
 
 export const ObjectDefinition = {
@@ -690,8 +669,7 @@ export const ObjectDefinition = {
     description: 'description',
     extends: 'extends',
     id: 'id',
-    name: 'name',
-    propertyDefinitions: 'propertyDefinitions'
+    name: 'name'
 } as const;
 
 export function isObjectDefinition(item: unknown): item is ObjectDefinition {
@@ -882,7 +860,7 @@ export function isStringLiteral(item: unknown): item is StringLiteral {
 }
 
 export interface StringValue extends langium.AstNode {
-    readonly $container: CustomPropertyDefinition;
+    readonly $container: CustomProperty;
     readonly $type: 'StringValue';
     value: string;
 }
@@ -1008,7 +986,6 @@ export type CrossModelAstType = {
     BooleanValue: BooleanValue
     CrossModelRoot: CrossModelRoot
     CustomProperty: CustomProperty
-    CustomPropertyDefinition: CustomPropertyDefinition
     CustomPropertyValue: CustomPropertyValue
     DataElement: DataElement
     DataElementContainer: DataElementContainer
@@ -1161,14 +1138,33 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
         CustomProperty: {
             name: CustomProperty.$type,
             properties: {
+                datatype: {
+                    name: CustomProperty.datatype
+                },
+                defaultValue: {
+                    name: CustomProperty.defaultValue
+                },
                 description: {
                     name: CustomProperty.description
                 },
                 id: {
                     name: CustomProperty.id
                 },
+                length: {
+                    name: CustomProperty.length
+                },
+                mandatory: {
+                    name: CustomProperty.mandatory,
+                    defaultValue: false
+                },
                 name: {
                     name: CustomProperty.name
+                },
+                precision: {
+                    name: CustomProperty.precision
+                },
+                scale: {
+                    name: CustomProperty.scale
                 },
                 type: {
                     name: CustomProperty.type,
@@ -1176,47 +1172,13 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 },
                 value: {
                     name: CustomProperty.value
-                }
-            },
-            superTypes: [NamedObject.$type]
-        },
-        CustomPropertyDefinition: {
-            name: CustomPropertyDefinition.$type,
-            properties: {
-                datatype: {
-                    name: CustomPropertyDefinition.datatype
-                },
-                defaultValue: {
-                    name: CustomPropertyDefinition.defaultValue
-                },
-                description: {
-                    name: CustomPropertyDefinition.description
-                },
-                id: {
-                    name: CustomPropertyDefinition.id
-                },
-                length: {
-                    name: CustomPropertyDefinition.length
-                },
-                mandatory: {
-                    name: CustomPropertyDefinition.mandatory,
-                    defaultValue: false
-                },
-                name: {
-                    name: CustomPropertyDefinition.name
-                },
-                precision: {
-                    name: CustomPropertyDefinition.precision
-                },
-                scale: {
-                    name: CustomPropertyDefinition.scale
                 },
                 values: {
-                    name: CustomPropertyDefinition.values,
+                    name: CustomProperty.values,
                     defaultValue: []
                 }
             },
-            superTypes: []
+            superTypes: [NamedObject.$type]
         },
         CustomPropertyValue: {
             name: CustomPropertyValue.$type,
@@ -1627,10 +1589,6 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 },
                 name: {
                     name: ObjectDefinition.name
-                },
-                propertyDefinitions: {
-                    name: ObjectDefinition.propertyDefinitions,
-                    defaultValue: []
                 }
             },
             superTypes: [NamedObject.$type, WithCustomProperties.$type]

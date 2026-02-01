@@ -67,28 +67,6 @@ fragment CustomPropertiesFragment:
 
 interface CustomProperty extends NamedObject {
     type?: @ObjectDefinition;
-    value?: string;
-}
-
-CustomProperty returns CustomProperty:
-    NamedObjectFragment
-    ('type' ':' type=[ObjectDefinition:IDReference])?
-    ('value' ':' value=STRING)?;
-
-// Forward declaration of ObjectDefinition (parser rule in objectdefinition.langium)
-interface ObjectDefinition extends NamedObject, WithCustomProperties {
-    abstract?: boolean;
-    extends?: @ObjectDefinition;
-    propertyDefinitions: CustomPropertyDefinition[];
-}
-
-// Custom property definitions for ObjectDefinition.
-// Does NOT extend NamedObject to avoid polluting NamedObject's $container type union,
-// which would cause TypeScript interface conflicts in generated AST code.
-interface CustomPropertyDefinition {
-    id?: string;
-    name?: string;
-    description?: string;
     datatype?: string;
     length?: number;
     precision?: number;
@@ -96,12 +74,12 @@ interface CustomPropertyDefinition {
     mandatory?: boolean;
     defaultValue?: CustomPropertyValue;
     values: CustomPropertyValue[];
+    value?: string;
 }
 
-CustomPropertyDefinition returns CustomPropertyDefinition:
-    IdentifiedObjectFragment
-    ('name' ':' name=STRING)?
-    ('description' ':' description=STRING)?
+CustomProperty returns CustomProperty:
+    NamedObjectFragment
+    ('type' ':' type=[ObjectDefinition:IDReference])?
     ('datatype' ':' datatype=STRING)?
     ('length' ':' length=NUMBER)?
     ('precision' ':' precision=NUMBER)?
@@ -113,7 +91,13 @@ CustomPropertyDefinition returns CustomPropertyDefinition:
             (LIST_ITEM values+=CustomPropertyValue)+
         DEDENT
     )?
-;
+    ('value' ':' value=STRING)?;
+
+// Forward declaration of ObjectDefinition (parser rule in objectdefinition.langium)
+interface ObjectDefinition extends NamedObject, WithCustomProperties {
+    abstract?: boolean;
+    extends?: @ObjectDefinition;
+}
 
 CustomPropertyValue:
     {infer StringValue} value=STRING |
