@@ -1,0 +1,67 @@
+systemDiagram:
+    id: ColorExample
+    nodes:
+      - id: ProductNode
+        entity: ExampleDWH.Product
+        x: 260
+        y: 40
+        width: 200
+        height: 150
+        backgroundColor: "#E8F5E9"
+        borderColor: "#4CAF50"
+        borderWeight: 3
+        fontColor: "#1B5E20"
+      - id: PhysicalProductNode
+        entity: ExampleDWH.PhysicalProduct
+        x: -20
+        y: 110
+        width: 200
+        height: 150
+        backgroundColor: "#E3F2FD"
+        borderColor: "#2196F3"
+        borderWeight: 2
+        borderStyle: "dashed"
+        fontColor: "#0D47A1"
+      - id: DigitalProductNode
+        entity: ExampleDWH.DigitalProduct
+        x: 550
+        y: 130
+        width: 200
+        height: 150
+        backgroundColor: "#FFF3E0"
+        borderColor: "#FF9800"
+        borderWeight: 2
+        borderStyle: "dotted"
+        fontColor: "#E65100"
+      - id: PerishableProductNode
+        entity: ExampleDWH.PerishableProduct
+        x: -10
+        y: 360
+        width: 200
+        height: 150
+        backgroundColor: "#FCE4EC"
+        borderColor: "#E91E63"
+        borderWeight: 2
+    edges:
+      - id: PhysicalToProductEdge
+        baseNode: PhysicalProductNode
+        superNode: ProductNode
+        borderColor: "#2196F3"
+        borderWeight: 3
+      - id: DigitalToProductEdge
+        baseNode: DigitalProductNode
+        superNode: ProductNode
+        borderColor: "#FF9800"
+        borderWeight: 2
+        borderStyle: "dashed"
+      - id: PerishableToPhysicalEdge
+        baseNode: PerishableProductNode
+        superNode: PhysicalProductNode
+        borderColor: "#E91E63"
+        borderWeight: 2
+        borderStyle: "dotted"
+      - id: Product_to_PerishableProductEdge
+        relationship: ExampleDWH.Product_to_PerishableProduct
+        sourceNode: ProductNode
+        targetNode: PerishableProductNode
+        borderColor: "#999CCC"

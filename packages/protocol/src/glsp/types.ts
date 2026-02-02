@@ -23,6 +23,13 @@ export const REFERENCE_CONTAINER_TYPE = 'reference-container-type';
 export const REFERENCE_PROPERTY = 'reference-property';
 export const REFERENCE_VALUE = 'reference-value';
 
+// Styling Args
+export const BACKGROUND_COLOR = 'backgroundColor';
+export const BORDER_COLOR = 'borderColor';
+export const BORDER_WEIGHT = 'borderWeight';
+export const BORDER_STYLE = 'borderStyle';
+export const FONT_COLOR = 'fontColor';
+
 export type RenderProps = Record<string, string | number | boolean | undefined> & {
    theme: 'light' | 'dark' | 'hc' | 'hcLight'; // supported ThemeType of Theia
 };
