@@ -348,6 +348,8 @@ export interface ResolvedPropertyDefinition {
    definition: CustomProperty;
    sourceDefinitionId: string;
    inherited: boolean;
+   /** When a child overrides a parent's property (same ID), this holds the ancestor's definition for metadata fallback. */
+   baseDefinition?: CustomProperty;
 }
 
 /**
@@ -355,6 +357,9 @@ export interface ResolvedPropertyDefinition {
  * extends chain, from root ancestor down to the given definition.
  * Each entry is tagged with the source definition ID and whether it is inherited.
  * Uses a visited set to prevent infinite loops from circular extends chains.
+ *
+ * When a child definition declares a custom property with the same ID as one
+ * from an ancestor, the child's entry replaces the ancestor's (most-specific wins).
  */
 export function resolveAllPropertyDefinitions(
    objectDef: ObjectDefinition,
@@ -367,28 +372,52 @@ export function resolveAllPropertyDefinitions(
    }
    _visited.add(defId);
 
-   const result: ResolvedPropertyDefinition[] = [];
+   // Collect all properties in order: root ancestor → leaf definition.
+   // We use a Map keyed by property ID to deduplicate: later entries (more specific) override earlier ones.
+   const propsById = new Map<string, ResolvedPropertyDefinition>();
+   // Track insertion order separately so the final array preserves the order
+   // in which each property ID was first introduced.
+   const insertionOrder: string[] = [];
 
-   // Recursively collect parent definitions first (so parent properties come first)
+   // Recursively collect parent definitions first
    const parentDef = objectDef.extends?.ref;
    if (parentDef) {
       const parentProps = resolveAllPropertyDefinitions(parentDef, _visited);
-      result.push(...parentProps);
+      for (const prop of parentProps) {
+         const propId = prop.definition.id ?? prop.definition.name ?? '';
+         if (propId) {
+            if (!propsById.has(propId)) {
+               insertionOrder.push(propId);
+            }
+            propsById.set(propId, prop);
+         }
+      }
    }
 
-   // Add this definition's own custom properties (marked as not inherited)
+   // Add this definition's own custom properties (override any parent with the same ID)
    for (const propDef of objectDef.customProperties) {
-      result.push({
+      const propId = propDef.id ?? propDef.name ?? '';
+      const existing = propsById.get(propId);
+      if (!existing) {
+         insertionOrder.push(propId);
+      }
+      propsById.set(propId, {
          definition: propDef,
          sourceDefinitionId: defId,
-         inherited: false
+         inherited: false,
+         // Preserve the ancestor's definition for metadata fallback (name, description, etc.)
+         baseDefinition: existing?.baseDefinition ?? existing?.definition
       });
    }
+
+   // Build result in insertion order
+   const result = insertionOrder
+      .map(id => propsById.get(id))
+      .filter((p): p is ResolvedPropertyDefinition => p !== undefined);
 
    // Mark all properties from ancestors as inherited relative to the original caller
    // Only the properties directly from objectDef are not inherited
    if (!visited) {
-      // This is the top-level call; mark parent properties as inherited
       for (const prop of result) {
          if (prop.sourceDefinitionId !== defId) {
             prop.inherited = true;

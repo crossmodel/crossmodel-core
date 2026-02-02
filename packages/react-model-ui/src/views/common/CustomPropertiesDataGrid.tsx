@@ -2,12 +2,13 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 import { CustomProperty, CustomPropertyType, ResolvedPropertyDefinition, findNextUnique, toId } from '@crossmodel/protocol';
+import { Checkbox } from 'primereact/checkbox';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { Tag } from 'primereact/tag';
 import * as React from 'react';
 import { useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { EditorProperty, GenericTextEditor } from './GenericEditors';
+import { EditorProperty, GenericCheckboxEditor, GenericDropdownEditor, GenericNumberEditor, GenericTextEditor } from './GenericEditors';
 import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -32,6 +33,23 @@ export interface CustomPropertiesDataGridProps {
    /** Property definitions from the type's ObjectDefinition (resolved from the extends chain) */
    propertyDefinitions?: ResolvedPropertyDefinition[];
 }
+
+// --- Datatype applicability helpers (matching entity attributes grid behavior) ---
+
+const isLengthApplicable = (datatype: string | undefined): boolean => {
+   const dt = datatype?.toLowerCase();
+   return dt === 'text' || dt === 'binary';
+};
+
+const isPrecisionApplicable = (datatype: string | undefined): boolean => {
+   const dt = datatype?.toLowerCase();
+   return dt === 'decimal' || dt === 'integer';
+};
+
+const isScaleApplicable = (datatype: string | undefined): boolean => {
+   const dt = datatype?.toLowerCase();
+   return dt === 'decimal' || dt === 'time' || dt === 'datetime';
+};
 
 const deriveCustomPropertyRowId = (prop: Partial<CustomProperty>, idx: number): string => {
    const persistedId = prop.id as string | undefined;
@@ -96,7 +114,12 @@ export function CustomPropertiesDataGrid({
                        _typeProperty: true,
                        // Fill in display-only fields from definition when not set locally
                        name: prop.name || pd.name || rowId,
-                       description: prop.description || pd.description || ''
+                       description: prop.description || pd.description || '',
+                       datatype: prop.datatype || pd.datatype,
+                       length: prop.length ?? pd.length,
+                       precision: prop.precision ?? pd.precision,
+                       scale: prop.scale ?? pd.scale,
+                       mandatory: prop.mandatory ?? pd.mandatory
                     }
                   : {})
             };
@@ -123,6 +146,11 @@ export function CustomPropertiesDataGrid({
                      id: defId,
                      name: pd.name ?? defId,
                      description: pd.description ?? '',
+                     datatype: pd.datatype,
+                     length: pd.length,
+                     precision: pd.precision,
+                     scale: pd.scale,
+                     mandatory: pd.mandatory,
                      value: '',
                      idx: -1,
                      _source: pd.sourceDefinitionId,
@@ -201,7 +229,12 @@ export function CustomPropertiesDataGrid({
             const hasChanges =
                customProperty.name !== defaultEntry.name ||
                customProperty.value !== defaultEntry.value ||
-               customProperty.description !== defaultEntry.description;
+               customProperty.description !== defaultEntry.description ||
+               customProperty.datatype !== defaultEntry.datatype ||
+               customProperty.mandatory !== defaultEntry.mandatory ||
+               customProperty.length !== defaultEntry.length ||
+               customProperty.precision !== defaultEntry.precision ||
+               customProperty.scale !== defaultEntry.scale;
 
             if (!hasChanges) {
                // Remove the row if no changes
@@ -216,12 +249,18 @@ export function CustomPropertiesDataGrid({
 
             // Create the final property without temporary fields and empty fields
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { _uncommitted, id: tempId, description, value, _source, _inherited, _typeProperty, ...propertyData } = customProperty;
+            const { _uncommitted, id: tempId, description, value, datatype, length, precision, scale, mandatory,
+               _source, _inherited, _typeProperty, ...propertyData } = customProperty;
             const finalProperty = {
                ...propertyData,
                id: newId,
                ...(description ? { description } : {}),
-               ...(value ? { value } : {})
+               ...(value ? { value } : {}),
+               ...(datatype ? { datatype } : {}),
+               ...(length !== undefined && length !== null && isLengthApplicable(datatype) ? { length } : {}),
+               ...(precision !== undefined && precision !== null && isPrecisionApplicable(datatype) ? { precision } : {}),
+               ...(scale !== undefined && scale !== null && isScaleApplicable(datatype) ? { scale } : {}),
+               ...(mandatory ? { mandatory } : {})
             };
 
             // Add the new property through dispatch
@@ -246,11 +285,17 @@ export function CustomPropertiesDataGrid({
             // This is an existing row being updated
             // Remove empty fields and internal fields before updating
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { description, value, _source, _inherited, _typeProperty, ...rest } = customProperty;
+            const { description, value, datatype, length: len, precision: prec, scale: sc, mandatory: mand,
+               _source, _inherited, _typeProperty, ...rest } = customProperty;
             const updatedProperty = {
                ...rest,
                ...(description ? { description } : {}),
-               ...(value ? { value } : {})
+               ...(value ? { value } : {}),
+               ...(datatype ? { datatype } : {}),
+               ...(len !== undefined && len !== null && isLengthApplicable(datatype) ? { length: len } : {}),
+               ...(prec !== undefined && prec !== null && isPrecisionApplicable(datatype) ? { precision: prec } : {}),
+               ...(sc !== undefined && sc !== null && isScaleApplicable(datatype) ? { scale: sc } : {}),
+               ...(mand ? { mandatory: mand } : {})
             };
 
             dispatch({
@@ -405,6 +450,181 @@ export function CustomPropertiesDataGrid({
       [basePath, propertyDefMap]
    );
 
+   // --- Definition-level column renderers (datatype, mandatory, length, precision, scale) ---
+
+   const datatypeOptions = React.useMemo(
+      () => ['Text', 'Boolean', 'Integer', 'Decimal', 'Date', 'Time', 'DateTime', 'Guid', 'Binary', 'Location'],
+      []
+   );
+
+   const datatypeBody = React.useCallback(
+      (rowData: CustomPropertyRow) => <span>{rowData.datatype || ''}</span>,
+      []
+   );
+
+   const datatypeEditor = React.useCallback(
+      (options: any) => {
+         const rowData = options.rowData as CustomPropertyRow;
+         if (rowData._typeProperty) {
+            return <span>{rowData.datatype || ''}</span>;
+         }
+         // Wrap editorCallback to clear dependent fields when datatype changes
+         const wrappedOptions = {
+            ...options,
+            editorCallback: (value: any) => {
+               options.editorCallback(value);
+               setGridData(current =>
+                  current.map(row => {
+                     if (row.id === rowData.id) {
+                        const updates: Record<string, any> = { datatype: value };
+                        if (!isLengthApplicable(value)) {
+                           updates.length = undefined;
+                        }
+                        if (!isPrecisionApplicable(value)) {
+                           updates.precision = undefined;
+                        }
+                        if (!isScaleApplicable(value)) {
+                           updates.scale = undefined;
+                        }
+                        return { ...row, ...updates };
+                     }
+                     return row;
+                  })
+               );
+            }
+         };
+         return <GenericDropdownEditor options={wrappedOptions} basePath={basePath} field='datatype' dropdownOptions={datatypeOptions} />;
+      },
+      [basePath, datatypeOptions]
+   );
+
+   const mandatoryBody = React.useCallback(
+      (rowData: CustomPropertyRow) => (
+         <div className='flex align-items-center justify-content-center'>
+            <Checkbox checked={rowData.mandatory ?? false} disabled />
+         </div>
+      ),
+      []
+   );
+
+   const mandatoryEditor = React.useCallback(
+      (options: any) => {
+         const rowData = options.rowData as CustomPropertyRow;
+         if (rowData._typeProperty) {
+            return (
+               <div className='flex align-items-center justify-content-center'>
+                  <Checkbox checked={rowData.mandatory ?? false} disabled />
+               </div>
+            );
+         }
+         return <GenericCheckboxEditor options={options} basePath={basePath} field='mandatory' />;
+      },
+      [basePath]
+   );
+
+   const lengthBody = React.useCallback(
+      (rowData: CustomPropertyRow) => (
+         <div style={{ opacity: isLengthApplicable(rowData.datatype) ? 1 : 0.4 }}>
+            <span>{rowData.length ?? ''}</span>
+         </div>
+      ),
+      []
+   );
+
+   const lengthEditor = React.useCallback(
+      (options: any) => {
+         const rowData = options.rowData as CustomPropertyRow;
+         // Look up the current row from gridData to get the latest datatype after in-row edits
+         const currentRow = gridData.find(r => r.id === rowData.id);
+         const datatype = currentRow?.datatype ?? rowData.datatype;
+         if (rowData._typeProperty) {
+            return <span style={{ opacity: isLengthApplicable(datatype) ? 1 : 0.4 }}>{rowData.length ?? ''}</span>;
+         }
+         const applicable = isLengthApplicable(datatype);
+         return (
+            <GenericNumberEditor
+               options={options}
+               basePath={basePath}
+               field='length'
+               disabled={!applicable}
+               value={applicable ? options.value : undefined}
+               showButtons={applicable}
+               tooltip={!applicable ? 'Length is applicable only for Text and Binary datatypes' : undefined}
+               forceClear={!applicable}
+            />
+         );
+      },
+      [basePath, gridData]
+   );
+
+   const precisionBody = React.useCallback(
+      (rowData: CustomPropertyRow) => (
+         <div style={{ opacity: isPrecisionApplicable(rowData.datatype) ? 1 : 0.4 }}>
+            <span>{rowData.precision ?? ''}</span>
+         </div>
+      ),
+      []
+   );
+
+   const precisionEditor = React.useCallback(
+      (options: any) => {
+         const rowData = options.rowData as CustomPropertyRow;
+         const currentRow = gridData.find(r => r.id === rowData.id);
+         const datatype = currentRow?.datatype ?? rowData.datatype;
+         if (rowData._typeProperty) {
+            return <span style={{ opacity: isPrecisionApplicable(datatype) ? 1 : 0.4 }}>{rowData.precision ?? ''}</span>;
+         }
+         const applicable = isPrecisionApplicable(datatype);
+         return (
+            <GenericNumberEditor
+               options={options}
+               basePath={basePath}
+               field='precision'
+               disabled={!applicable}
+               value={applicable ? options.value : undefined}
+               showButtons={applicable}
+               tooltip={!applicable ? 'Precision is applicable only for Decimal and Integer datatypes' : undefined}
+               forceClear={!applicable}
+            />
+         );
+      },
+      [basePath, gridData]
+   );
+
+   const scaleBody = React.useCallback(
+      (rowData: CustomPropertyRow) => (
+         <div style={{ opacity: isScaleApplicable(rowData.datatype) ? 1 : 0.4 }}>
+            <span>{rowData.scale ?? ''}</span>
+         </div>
+      ),
+      []
+   );
+
+   const scaleEditor = React.useCallback(
+      (options: any) => {
+         const rowData = options.rowData as CustomPropertyRow;
+         const currentRow = gridData.find(r => r.id === rowData.id);
+         const datatype = currentRow?.datatype ?? rowData.datatype;
+         if (rowData._typeProperty) {
+            return <span style={{ opacity: isScaleApplicable(datatype) ? 1 : 0.4 }}>{rowData.scale ?? ''}</span>;
+         }
+         const applicable = isScaleApplicable(datatype);
+         return (
+            <GenericNumberEditor
+               options={options}
+               basePath={basePath}
+               field='scale'
+               disabled={!applicable}
+               value={applicable ? options.value : undefined}
+               showButtons={applicable}
+               tooltip={!applicable ? 'Scale is applicable only for Decimal, Time and DateTime datatypes' : undefined}
+               forceClear={!applicable}
+            />
+         );
+      },
+      [basePath, gridData]
+   );
+
    const sourceBody = React.useCallback(
       (rowData: CustomPropertyRow) => {
          if (!rowData._source) {
@@ -428,15 +648,7 @@ export function CustomPropertiesDataGrid({
             header: 'Name',
             editor: nameEditor,
             body: nameBody,
-            style: { width: '20%' },
-            filterType: 'text'
-         },
-         {
-            field: 'value',
-            header: 'Value',
-            editor: (options: any) => <GenericTextEditor options={options} basePath={basePath} field='value' />,
-            body: valueBody,
-            style: { width: '20%' },
+            style: { width: '15%' },
             filterType: 'text'
          },
          {
@@ -444,6 +656,55 @@ export function CustomPropertiesDataGrid({
             header: 'Description',
             editor: descriptionEditor,
             body: descriptionBody,
+            style: { width: '15%' },
+            filterType: 'text'
+         },
+         {
+            field: 'datatype',
+            header: 'Datatype',
+            editor: datatypeEditor,
+            body: datatypeBody,
+            style: { width: '10%' },
+            filterType: 'text'
+         },
+         {
+            field: 'length',
+            header: 'Length',
+            editor: lengthEditor,
+            body: lengthBody,
+            headerStyle: { width: '70px' },
+            style: { width: '70px' }
+         },
+         {
+            field: 'precision',
+            header: 'Precision',
+            editor: precisionEditor,
+            body: precisionBody,
+            headerStyle: { width: '70px' },
+            style: { width: '70px' }
+         },
+         {
+            field: 'scale',
+            header: 'Scale',
+            editor: scaleEditor,
+            body: scaleBody,
+            headerStyle: { width: '70px' },
+            style: { width: '70px' }
+         },
+         {
+            field: 'mandatory',
+            header: 'Mandatory',
+            editor: mandatoryEditor,
+            body: mandatoryBody,
+            headerStyle: { width: '50px', textAlign: 'center' },
+            style: { width: '50px', textAlign: 'center' }
+         },
+         {
+            field: 'value',
+            header: 'Value',
+            editor: (options: any) => <GenericTextEditor options={options} basePath={basePath} field='value' />,
+            body: valueBody,
+            style: { width: '15%' },
             filterType: 'text'
          }
       ];
@@ -452,12 +713,14 @@ export function CustomPropertiesDataGrid({
             field: '_source' as keyof CustomPropertyRow,
             header: 'Source',
             body: sourceBody,
-            style: { width: '15%' },
+            style: { width: '10%' },
             filterType: 'text'
          });
       }
       return cols;
-   }, [basePath, nameEditor, nameBody, valueBody, descriptionEditor, descriptionBody, sourceBody, hasTypeProperties]);
+   }, [basePath, nameEditor, nameBody, descriptionEditor, descriptionBody, datatypeEditor, datatypeBody,
+      lengthEditor, lengthBody, precisionEditor, precisionBody, scaleEditor, scaleBody,
+      mandatoryEditor, mandatoryBody, valueBody, sourceBody, hasTypeProperties]);
 
    if (!customProperties) {
       return <ErrorView errorMessage={errorMessage} />;

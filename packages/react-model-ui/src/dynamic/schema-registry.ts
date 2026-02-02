@@ -53,7 +53,7 @@ const dataModelSchema: DynamicFormSchema = {
    displayName: 'Data Model',
    iconClass: ModelStructure.DataModel.ICON_CLASS,
    diagnosticPath: 'datamodel',
-   hasTypeProperty: true,
+   typeProperty: 'type',
    sections: [
       {
          label: 'General',
@@ -108,7 +108,7 @@ const logicalEntitySchema: DynamicFormSchema = {
    displayName: 'Entity',
    iconClass: ModelStructure.LogicalEntity.ICON_CLASS,
    diagnosticPath: 'entity',
-   hasTypeProperty: true,
+   typeProperty: 'type',
    sections: [
       {
          label: 'General',
@@ -335,7 +335,7 @@ const relationshipSchema: DynamicFormSchema = {
    displayName: 'Relationship',
    iconClass: ModelStructure.Relationship.ICON_CLASS,
    diagnosticPath: 'relationship',
-   hasTypeProperty: true,
+   typeProperty: 'type',
    sections: [
       {
          label: 'General',
@@ -419,7 +419,7 @@ const objectDefinitionSchema: DynamicFormSchema = {
    displayName: 'Object Definition',
    iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
    diagnosticPath: 'objectDefinition',
-   hasTypeProperty: false,
+   typeProperty: 'extends',
    sections: [
       {
          label: 'General',
@@ -452,7 +452,7 @@ const logicalAttributeItemSchema: DynamicFormSchema = {
    displayName: 'Attribute',
    iconClass: 'codicon codicon-symbol-field',
    diagnosticPath: ITEM_ROOT_KEY,
-   hasTypeProperty: true,
+   typeProperty: 'type',
    sections: [
       {
          label: 'General',
@@ -516,7 +516,7 @@ const logicalIdentifierItemSchema: DynamicFormSchema = {
    displayName: 'Identifier',
    iconClass: 'codicon codicon-key',
    diagnosticPath: ITEM_ROOT_KEY,
-   hasTypeProperty: true,
+   typeProperty: 'type',
    sections: [
       {
          label: 'General',

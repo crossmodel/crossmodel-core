@@ -210,8 +210,13 @@ export interface DynamicFormSchema {
    iconClass: string;
    /** Diagnostic element path prefix (e.g., 'datamodel', 'entity'). */
    diagnosticPath: string;
-   /** Whether this type supports TypedObject (has a 'type' reference field resolved via useTypeProperties). */
-   hasTypeProperty: boolean;
+   /**
+    * The property on rootObj whose value is an ObjectDefinition reference used to resolve
+    * inherited property definitions (via useTypeProperties). For instance forms (Entity, DataModel,
+    * Relationship) this is 'type'; for ObjectDefinition forms this is 'extends'.
+    * Omit or set to undefined if no type-based property inheritance applies.
+    */
+   typeProperty?: string;
    /** Top-level field sections. */
    sections: FormSectionDescriptor[];
    /** Collection/array properties. */

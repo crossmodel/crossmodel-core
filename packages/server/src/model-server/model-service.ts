@@ -294,18 +294,27 @@ export class ModelService {
 
       const propertyDefinitions: ResolvedPropertyDefinition[] = allProps.map(p => {
          const propId = p.definition.id ?? p.definition.name ?? '';
+         const base = p.baseDefinition;
          return {
-            id: p.definition.id,
-            name: p.definition.name,
-            description: p.definition.description,
-            datatype: p.definition.datatype,
-            length: p.definition.length,
-            precision: p.definition.precision,
-            scale: p.definition.scale,
-            mandatory: p.definition.mandatory || false,
-            defaultValue: p.definition.defaultValue ? this.serializePropertyValue(p.definition.defaultValue) : undefined,
+            id: p.definition.id ?? base?.id,
+            name: p.definition.name ?? base?.name,
+            description: p.definition.description ?? base?.description,
+            datatype: p.definition.datatype ?? base?.datatype,
+            length: p.definition.length ?? base?.length,
+            precision: p.definition.precision ?? base?.precision,
+            scale: p.definition.scale ?? base?.scale,
+            mandatory: p.definition.mandatory || base?.mandatory || false,
+            defaultValue: p.definition.defaultValue
+               ? this.serializePropertyValue(p.definition.defaultValue)
+               : base?.defaultValue
+                  ? this.serializePropertyValue(base.defaultValue)
+                  : undefined,
             resolvedDefaultValue: resolvedDefaults.get(propId),
-            values: p.definition.values.map(v => this.serializePropertyValue(v)),
+            values: p.definition.values.length > 0
+               ? p.definition.values.map(v => this.serializePropertyValue(v))
+               : base?.values
+                  ? base.values.map(v => this.serializePropertyValue(v))
+                  : [],
             sourceDefinitionId: p.sourceDefinitionId,
             inherited: p.inherited
          };

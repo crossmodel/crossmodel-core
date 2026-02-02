@@ -15,7 +15,7 @@ export interface DynamicCollectionProps {
 }
 
 export function DynamicCollection({ collection, schema, rootObj }: DynamicCollectionProps): React.ReactElement {
-   const { propertyDefinitions } = useTypeProperties(schema.hasTypeProperty ? rootObj.type : undefined);
+   const { propertyDefinitions } = useTypeProperties(schema.typeProperty ? rootObj[schema.typeProperty] : undefined);
 
    return (
       <FormSection label={collection.label} defaultCollapsed={collection.defaultCollapsed}>
