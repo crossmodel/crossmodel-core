@@ -239,7 +239,6 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          {
             field: 'description',
             header: 'Description',
-            headerStyle: { width: '20%' },
             body: (rowData: EntityIdentifierRow) => (
                <EditorProperty basePath={['entity', 'identifiers']} field='description' row={rowData} value={rowData.description || ''} />
             ),
