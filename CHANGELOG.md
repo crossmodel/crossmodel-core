@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.24.0](https://github.com/crossmodel/crossmodel-core/compare/v0.23.2...v0.24.0) (2026-02-02)
+
+
+### Features
+
+* Add custom properties support to logical attributes and related components ([#263](https://github.com/crossmodel/crossmodel-core/issues/263)) ([0c3f06b](https://github.com/crossmodel/crossmodel-core/commit/0c3f06b55375e0d26d56a9ad370787abe9e88250))
+
+
+
+
+
 ## [0.23.2](https://github.com/crossmodel/crossmodel-core/compare/v0.23.1...v0.23.2) (2026-01-29)
 
 **Note:** Version bump only for package crossmodel-core

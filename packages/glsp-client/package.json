@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/glsp-client",
-  "version": "0.23.2",
+  "version": "0.24.0",
   "description": "CrossModel Viewer Contribution",
   "keywords": [
     "theia-extension"
@@ -28,10 +28,10 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/core": "0.23.2",
-    "@crossmodel/model-service": "0.23.2",
-    "@crossmodel/protocol": "0.23.2",
-    "@crossmodel/react-model-ui": "0.23.2",
+    "@crossmodel/core": "0.24.0",
+    "@crossmodel/model-service": "0.24.0",
+    "@crossmodel/protocol": "0.24.0",
+    "@crossmodel/react-model-ui": "0.24.0",
     "@eclipse-glsp/client": "2.5.0",
     "@eclipse-glsp/theia-integration": "2.5.0-theia1.65.0",
     "@theia/core": "1.67.0",
