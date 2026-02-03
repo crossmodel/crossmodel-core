@@ -5,6 +5,7 @@
 import { describe, expect, test } from '@jest/globals';
 
 import { ModelFileExtensions } from '@crossmodel/protocol';
+import { URI } from 'langium';
 import { customer } from './test-utils/test-documents/entity/customer';
 import { dataModelA, dataModelB } from './test-utils/test-documents/entity/datamodels';
 import { createCrossModelTestServices, MockFileSystem, parseDocuments, parseLogicalEntity, testUri } from './test-utils/utils';
@@ -12,7 +13,7 @@ import { createCrossModelTestServices, MockFileSystem, parseDocuments, parseLogi
 const services = createCrossModelTestServices(MockFileSystem);
 
 describe('CrossModel Name Uniqueness Validation', () => {
-   describe('Local Name Uniqueness - Within a Single File', () => {
+   describe('Internal Name Uniqueness - Within a Single File', () => {
       describe('LogicalEntity - Duplicate Attribute Names', () => {
          test('Should error on duplicate attribute names', async () => {
             const entityWithDuplicateAttributes = `entity:
@@ -193,7 +194,7 @@ describe('CrossModel Name Uniqueness Validation', () => {
       });
    });
 
-   describe('Name Uniqueness Across Multiple Entities', () => {
+   describe('Local Name Uniqueness - Across Entities in Same DataModel', () => {
       describe('Same Names in Different Entities Should NOT Error', () => {
          test('Should NOT error when two entities have attributes with the same name', async () => {
             const entity1 = `entity:
@@ -322,7 +323,7 @@ describe('CrossModel Name Uniqueness Validation', () => {
       });
    });
 
-   describe('Global Name Uniqueness - Across Files in Same DataModel', () => {
+   describe('Local Name Uniqueness - Across Files in Same DataModel', () => {
       describe('Duplicate Entity Names', () => {
          test('Should warn on duplicate entity names in same data model', async () => {
             const dmUri = testUri('TestDataModel', 'datamodel.cm');
@@ -379,6 +380,114 @@ describe('CrossModel Name Uniqueness Validation', () => {
             });
 
             expect(entity2.$document.diagnostics).toHaveLength(0);
+         });
+      });
+   });
+
+   describe('Global Name Uniqueness - DataModels in Workspace', () => {
+      describe('Duplicate DataModel Names', () => {
+         test('should error on duplicate DataModel names across workspace', async () => {
+            const dm1Uri = testUri('dmnm1', 'datamodel.cm');
+            const dm2Uri = testUri('dmnm2', 'datamodel.cm');
+
+            // Parse both documents first
+            await parseDocuments(
+               {
+                  services,
+                  text: `datamodel:
+    id: DataModelName1
+    name: "DuplicateName"
+    type: logical
+    version: 1.0.0`,
+                  documentUri: dm1Uri
+               },
+               {
+                  services,
+                  text: `datamodel:
+    id: DataModelName2
+    name: "DuplicateName"
+    type: logical
+    version: 1.0.0`,
+                  documentUri: dm2Uri
+               }
+            );
+
+            // Initialize DataModelManager with both folders
+            await services.shared.workspace.DataModelManager.initialize([
+               { uri: dm1Uri, name: 'dmnm1' },
+               { uri: dm2Uri, name: 'dmnm2' }
+            ]);
+
+            // Get the documents and trigger validation
+            const doc1 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm1Uri));
+            const doc2 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm2Uri));
+
+            if (!doc1 || !doc2) {
+               throw new Error('Documents not found');
+            }
+
+            // Rebuild with validation
+            await services.shared.workspace.DocumentBuilder.build([doc1, doc2], { validation: true });
+
+            const diagnostics1 = doc1.diagnostics ?? [];
+            const diagnostics2 = doc2.diagnostics ?? [];
+
+            // Should have duplicate name error in at least one document (global scope validation)
+            const nameDuplicateErrors1 = diagnostics1.filter(d => d.message.includes('must be unique within the workspace'));
+            const nameDuplicateErrors2 = diagnostics2.filter(d => d.message.includes('must be unique within the workspace'));
+            expect(nameDuplicateErrors1.length + nameDuplicateErrors2.length).toBeGreaterThan(0);
+         });
+
+         test('Should NOT error on unique DataModel names in workspace', async () => {
+            const dm1Uri = testUri('dm-unique-1', 'datamodel.cm');
+            const dm2Uri = testUri('dm-unique-2', 'datamodel.cm');
+
+            // Parse both documents with different DataModel names
+            await parseDocuments(
+               {
+                  services,
+                  text: `datamodel:
+    id: DataModelUnique1
+    name: "UniqueDataModelOne"
+    type: logical
+    version: 1.0.0`,
+                  documentUri: dm1Uri
+               },
+               {
+                  services,
+                  text: `datamodel:
+    id: DataModelUnique2
+    name: "UniqueDataModelTwo"
+    type: logical
+    version: 1.0.0`,
+                  documentUri: dm2Uri
+               }
+            );
+
+            // Initialize DataModelManager
+            await services.shared.workspace.DataModelManager.initialize([
+               { uri: dm1Uri, name: 'dm-unique-1' },
+               { uri: dm2Uri, name: 'dm-unique-2' }
+            ]);
+
+            const doc1 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm1Uri));
+            const doc2 = services.shared.workspace.LangiumDocuments.getDocument(URI.parse(dm2Uri));
+
+            if (!doc1 || !doc2) {
+               throw new Error('Documents not found');
+            }
+
+            // Rebuild with validation
+            await services.shared.workspace.DocumentBuilder.build([doc1, doc2], { validation: true });
+
+            const diagnostics1 = doc1.diagnostics ?? [];
+            const diagnostics2 = doc2.diagnostics ?? [];
+
+            // Should not have duplicate name errors
+            const nameErrors1 = diagnostics1.filter(d => d.message.includes('must be unique within the workspace'));
+            const nameErrors2 = diagnostics2.filter(d => d.message.includes('must be unique within the workspace'));
+
+            expect(nameErrors1.length + nameErrors2.length).toBe(0);
          });
       });
    });

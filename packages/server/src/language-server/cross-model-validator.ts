@@ -654,23 +654,42 @@ export class CrossModelValidator {
 
    /**
     * Checks for duplicate names at the global scope (workspace-wide).
-    * Currently applies to DataModels.
+    * For DataModels: checks workspace-wide uniqueness.
+    * For other semantic roots: checks within-DataModel uniqueness.
     */
    protected checkNameUniquenessGlobal(namedObject: NamedObject, accept: ValidationAcceptor): void {
-      if (!isSemanticRoot(namedObject)) {
-         return;
-      }
-
       const myName = namedObject.name?.toLowerCase();
       if (!myName) {
          return;
       }
 
       const document = findDocument(namedObject);
+
+      // For DataModels, check workspace-wide uniqueness
+      if (isDataModel(namedObject)) {
+         const dataModelElements = Array.from(this.services.shared.workspace.IndexManager.allElements(namedObject.$type));
+         const duplicates = dataModelElements.filter(description => {
+            if (this.isSameNode(namedObject, description)) {
+               return false;
+            }
+            const descName = this.getDescriptionName(description)?.toLowerCase();
+            return descName === myName;
+         });
+
+         if (duplicates.length > 0) {
+            accept('error', `The data model name '${namedObject.name}' must be unique within the workspace.`, {
+               node: namedObject,
+               property: 'name',
+               data: { code: CrossModelValidationErrors.toMalformed('name') }
+            });
+         }
+         return;
+      }
+
+      // For other semantic roots, check within-DataModel uniqueness
       const dataModelId = this.services.shared.workspace.DataModelManager.getDataModelIdByDocument(document);
 
       // Skip global uniqueness check for unknown DataModels
-      // Each document in an unknown DataModel is treated as isolated
       if (!dataModelId || dataModelId === 'unknown') {
          return;
       }
