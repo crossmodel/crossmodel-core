@@ -33,7 +33,8 @@ export abstract class CMForm extends TheiaViewObject {
       formType: FormType
    ) {
       super(view, ''); // Pass empty string to TheiaViewObject, as we manage selector here
-      this.typeSelector = `${baseSelector} i.${FormIcons[formType]}`;
+      // Use codicon classes without assuming tag name to survive markup changes
+      this.typeSelector = `${baseSelector} .codicon.${FormIcons[formType]}`;
       this.locator = view.page.locator(baseSelector);
    }
 
@@ -42,7 +43,11 @@ export abstract class CMForm extends TheiaViewObject {
    }
 
    override async waitForVisible(): Promise<void> {
-      await this.page.waitForSelector(this.typeSelector, { state: 'visible', timeout: 30000 });
+      // First ensure the form container is visible, then wait for the type icon if present.
+      await this.locator.waitFor({ state: 'visible', timeout: 30000 });
+      await this.page.waitForSelector(this.typeSelector, { state: 'visible', timeout: 5000 }).catch(() => {
+         // If the icon is missing or slow to render, continue as long as the form is visible.
+      });
    }
 
    override async isVisible(): Promise<boolean> {

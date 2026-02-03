@@ -1,5 +1,5 @@
 diagram:
-    id: Example-diagram
+    id: ExampleDiagram
     nodes:
       - id: ExampleEntityNode
         entity: ExampleEntity
