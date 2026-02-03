@@ -7,7 +7,6 @@
 
 import { BACKGROUND_COLOR, BORDER_COLOR, BORDER_STYLE, BORDER_WEIGHT, FONT_COLOR } from '@crossmodel/protocol';
 import {
-   Args,
    ArgsAware,
    EdgePadding,
    GCompartmentView,
@@ -44,97 +43,40 @@ export class DiagramNodeView extends RoundedCornerNodeView {
          view.data.class.selected = node.selected;
       }
 
-      // Apply custom styling from node args if defined
+      // Apply custom styling CSS classes from node args if defined
       const argsAwareNode = node as GNode & Hoverable & Selectable & ArgsAware;
       if (view && isArgsAware(node) && argsAwareNode.args) {
-         // Apply styles to the path element (the actual shape)
-         if (view.children) {
-            this.applyNodeStyling(
-               view.children.filter((c): c is VNode => typeof c !== 'string'),
-               argsAwareNode.args,
-               node.selected,
-               node.hoverFeedback
-            );
+         if (!view.data) {
+            view.data = {};
+         }
+         if (!view.data.style) {
+            view.data.style = {};
+         }
+
+         // Set CSS custom properties for styling
+         if (argsAwareNode.args[BACKGROUND_COLOR]) {
+            view.data.style['--node-background-color'] = argsAwareNode.args[BACKGROUND_COLOR] as string;
+         }
+         if (argsAwareNode.args[BORDER_COLOR]) {
+            view.data.style['--node-border-color'] = argsAwareNode.args[BORDER_COLOR] as string;
+         }
+         if (argsAwareNode.args[BORDER_WEIGHT] !== undefined) {
+            view.data.style['--node-border-weight'] = String(argsAwareNode.args[BORDER_WEIGHT]) + 'px';
+         }
+         if (argsAwareNode.args[BORDER_STYLE]) {
+            const borderStyle = argsAwareNode.args[BORDER_STYLE] as string;
+            if (borderStyle === 'dashed') {
+               view.data.style['--node-border-style'] = '8 4';
+            } else if (borderStyle === 'dotted') {
+               view.data.style['--node-border-style'] = '2 2';
+            }
+         }
+         if (argsAwareNode.args[FONT_COLOR]) {
+            view.data.style['--node-font-color'] = argsAwareNode.args[FONT_COLOR] as string;
          }
       }
 
       return view;
-   }
-
-   protected applyNodeStyling(children: VNode[], args: Args, selected: boolean, hoverFeedback: boolean): void {
-      children.forEach(child => {
-         // Apply styles to path elements (the actual node shape)
-         if (child.sel === 'path') {
-            if (!child.data) {
-               child.data = {};
-            }
-            if (!child.data.style) {
-               child.data.style = {};
-            }
-
-            // Apply background color
-            if (args[BACKGROUND_COLOR] && !selected && !hoverFeedback) {
-               child.data.style.fill = args[BACKGROUND_COLOR] as string;
-            }
-
-            // Apply border color
-            if (args[BORDER_COLOR]) {
-               child.data.style.stroke = args[BORDER_COLOR] as string;
-            }
-
-            // Apply border weight
-            if (args[BORDER_WEIGHT] !== undefined) {
-               child.data.style['stroke-width'] = String(args[BORDER_WEIGHT]);
-            }
-
-            // Apply border style
-            if (args[BORDER_STYLE]) {
-               const borderStyle = args[BORDER_STYLE] as string;
-               if (borderStyle === 'dashed') {
-                  child.data.style['stroke-dasharray'] = '8 4';
-               } else if (borderStyle === 'dotted') {
-                  child.data.style['stroke-dasharray'] = '2 2';
-               }
-            }
-         }
-
-         // Apply font color to text elements recursively
-         if (args[FONT_COLOR] && (child.sel === 'text' || child.sel === 'g')) {
-            this.applyFontColorToChildren([child], args[FONT_COLOR] as string);
-         }
-
-         // Recurse into children
-         if (child.children) {
-            this.applyNodeStyling(
-               child.children.filter((c): c is VNode => typeof c !== 'string'),
-               args,
-               selected,
-               hoverFeedback
-            );
-         }
-      });
-   }
-
-   protected applyFontColorToChildren(children: VNode[], color: string): void {
-      children.forEach(child => {
-         if (child.sel === 'text' || child.sel === 'g') {
-            if (!child.data) {
-               child.data = {};
-            }
-            if (!child.data.style) {
-               child.data.style = {};
-            }
-            if (child.sel === 'text') {
-               child.data.style.fill = color;
-            }
-            if (child.children) {
-               this.applyFontColorToChildren(
-                  child.children.filter((c): c is VNode => typeof c !== 'string'),
-                  color
-               );
-            }
-         }
-      });
    }
 }
 
@@ -182,7 +124,7 @@ export class CrossModelEdgeView extends PolylineEdgeViewWithGapsOnIntersections 
    override render(edge: Readonly<GEdge>, context: RenderingContext): VNode | undefined {
       const view = super.render(edge, context);
 
-      // Apply custom styling from edge args if defined
+      // Apply custom styling CSS custom properties from edge args if defined
       const argsAwareEdge = edge as GEdge & ArgsAware;
       if (view && isArgsAware(edge) && argsAwareEdge.args) {
          if (!view.data) {
@@ -192,27 +134,19 @@ export class CrossModelEdgeView extends PolylineEdgeViewWithGapsOnIntersections 
             view.data.style = {};
          }
 
-         // Apply border color (stroke for edges)
+         // Set CSS custom properties for styling
          if (argsAwareEdge.args[BORDER_COLOR]) {
-            const borderColor = argsAwareEdge.args[BORDER_COLOR] as string;
-            // Apply custom color only when not selected/hovered (CSS handles those states)
-            if (!edge.selected && !edge.hoverFeedback) {
-               view.data.style.stroke = borderColor;
-            }
+            view.data.style['--edge-border-color'] = argsAwareEdge.args[BORDER_COLOR] as string;
          }
-
-         // Apply border weight (stroke-width for edges)
          if (argsAwareEdge.args[BORDER_WEIGHT] !== undefined) {
-            view.data.style['stroke-width'] = String(argsAwareEdge.args[BORDER_WEIGHT]);
+            view.data.style['--edge-border-weight'] = String(argsAwareEdge.args[BORDER_WEIGHT]) + 'px';
          }
-
-         // Apply border style (stroke-dasharray for edges)
          if (argsAwareEdge.args[BORDER_STYLE]) {
             const borderStyle = argsAwareEdge.args[BORDER_STYLE] as string;
             if (borderStyle === 'dashed') {
-               view.data.style['stroke-dasharray'] = '8 4';
+               view.data.style['--edge-border-style'] = '8 4';
             } else if (borderStyle === 'dotted') {
-               view.data.style['stroke-dasharray'] = '2 2';
+               view.data.style['--edge-border-style'] = '2 2';
             }
          }
       }

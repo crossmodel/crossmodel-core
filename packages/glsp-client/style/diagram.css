@@ -44,20 +44,31 @@
 }
 
 .sprotty-edge {
-   stroke: var(--sprotty-edge);
-   stroke-width: 2px;
+   stroke-width: var(--edge-border-weight, 2px);
 }
 
-.sprotty-edge.selected {
+.sprotty-edge:not(.selected, .mouseover) {
+   stroke: var(--edge-border-color, var(--sprotty-edge));
+   stroke-dasharray: var(--edge-border-style, none);
+}
+
+.sprotty-edge.selected,
+.sprotty-edge.mouseover {
    stroke: var(--sprotty-edge-selected);
+   stroke-dasharray: none;
 }
 
 /* Nodes */
 .sprotty-node:not(.selected, .mouseover) {
-   fill: #fbfaff;
-   stroke: #a8a1c5;
-   stroke-width: 2px;
+   fill: var(--node-background-color, #fbfaff);
+   stroke: var(--node-border-color, #a8a1c5);
+   stroke-width: var(--node-border-weight, 2px);
+   stroke-dasharray: var(--node-border-style, none);
    /* filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.8)); */
+}
+
+.sprotty-node:not(.selected, .mouseover) text {
+   fill: var(--node-font-color, inherit);
 }
 
 .source-object .sprotty-node:not(.selected, .mouseover) {
