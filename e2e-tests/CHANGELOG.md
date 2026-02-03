@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.25.0](https://github.com/crossmodel/crossmodel-core/compare/v0.24.1...v0.25.0) (2026-02-03)
+
+
+### Features
+
+* implement name and ID uniqueness validation checks ([#260](https://github.com/crossmodel/crossmodel-core/issues/260)) ([5ef170b](https://github.com/crossmodel/crossmodel-core/commit/5ef170baf00d9fb23bb2c24063a85805a8fc069a))
+
+
+
+
+
 ## [0.24.1](https://github.com/crossmodel/crossmodel-core/compare/v0.24.0...v0.24.1) (2026-02-02)
 
 **Note:** Version bump only for package crossmodel-e2e-tests
