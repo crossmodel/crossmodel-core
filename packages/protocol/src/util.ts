@@ -28,6 +28,7 @@ export const RESERVED_KEYWORDS = [
    'childRole',
    'conceptual',
    'conditions',
+   'crossmodel',
    'cross-join',
    'customProperties',
    'datamodel',

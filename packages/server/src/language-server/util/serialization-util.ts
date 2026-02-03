@@ -8,6 +8,7 @@ import {
    AttributeMappingExpression,
    AttributeMappingSource,
    AttributeMappingTarget,
+   CrossModelEditionInfo,
    CustomProperty,
    DataModel,
    DataModelDependency,
@@ -56,6 +57,8 @@ const UNQUOTED_PROPERTIES = new Set<string>([
    `${SourceObject.$type}.${SourceObject.join}`,
    `${DataModel.$type}.${DataModel.type}`,
    `${DataModel.$type}.${DataModel.version}`,
+   `${CrossModelEditionInfo.$type}.${CrossModelEditionInfo.edition}`,
+   `${CrossModelEditionInfo.$type}.${CrossModelEditionInfo.version}`,
    `${DataModelDependency.$type}.${DataModelDependency.version}`
 ]);
 
@@ -232,8 +235,12 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [AttributeMappingExpression.$type, [AttributeMappingExpression.language, AttributeMappingExpression.expression]],
    [CustomProperty.$type, [...NAMED_OBJECT_PROPERTIES, CustomProperty.value]],
    [LogicalIdentifier.$type, [...NAMED_OBJECT_PROPERTIES, LogicalIdentifier.primary, LogicalIdentifier.attributes, ...CUSTOM_PROPERTIES]],
-   [DataModel.$type, [...NAMED_OBJECT_PROPERTIES, DataModel.type, DataModel.version, DataModel.dependencies, ...CUSTOM_PROPERTIES]],
-   [DataModelDependency.$type, [DataModelDependency.datamodel, DataModelDependency.version]]
+   [
+      DataModel.$type,
+      [...NAMED_OBJECT_PROPERTIES, DataModel.type, DataModel.version, DataModel.crossmodel, DataModel.dependencies, ...CUSTOM_PROPERTIES]
+   ],
+   [DataModelDependency.$type, [DataModelDependency.datamodel, DataModelDependency.version]],
+   [CrossModelEditionInfo.$type, [CrossModelEditionInfo.edition, CrossModelEditionInfo.version]]
 ]);
 PROPERTY_ORDER.set(SourceObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
 PROPERTY_ORDER.set(TargetObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);

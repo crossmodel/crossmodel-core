@@ -25,6 +25,7 @@ import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../langua
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
 import { CrossModelRoot, isCrossModelRoot } from '../language-server/generated/ast.js';
 import { findDocument } from '../language-server/util/ast-util.js';
+import { ensureCrossModelVersion } from './crossmodel-version-util.js';
 import { AstCrossModelDocument } from './open-text-document-manager.js';
 import { LANGUAGE_CLIENT_ID } from './openable-text-documents.js';
 
@@ -141,6 +142,14 @@ export class ModelService {
       if (!isAstNode(root)) {
          throw new Error(`No AST node to update exists in '${args.uri}'`);
       }
+
+      // Ensure CrossModel version is up to date for datamodels
+      if (typeof args.model !== 'string' && isCrossModelRoot(args.model)) {
+         this.ensureDataModelVersionUpdated(args.model);
+      } else if (isCrossModelRoot(root)) {
+         this.ensureDataModelVersionUpdated(root);
+      }
+
       const textDocument = document.textDocument;
       const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
       if (text === textDocument.getText()) {
@@ -190,6 +199,9 @@ export class ModelService {
    async save(args: SaveModelArgs<CrossModelRoot>): Promise<void> {
       // sync: implicit update of internal data structure to match file system (similar to workspace initialization)
       const documentUri = URI.parse(args.uri);
+      if (typeof args.model !== 'string' && isCrossModelRoot(args.model)) {
+         this.ensureDataModelVersionUpdated(args.model);
+      }
       const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
       if (this.documents.hasDocument(documentUri)) {
          await this.update(args);
@@ -209,6 +221,18 @@ export class ModelService {
    protected serialize(uri: URI, model: AstNode): string {
       const serializer = this.shared.ServiceRegistry.getServices(uri).serializer.Serializer;
       return serializer.serialize(model);
+   }
+
+   /**
+    * Ensures that a datamodel has the current CrossModel version and edition info.
+    * Updates them if needed.
+    *
+    * @param root the semantic root to check
+    */
+   protected ensureDataModelVersionUpdated(root: CrossModelRoot): void {
+      if (root.datamodel) {
+         ensureCrossModelVersion(root.datamodel);
+      }
    }
 
    getId(node: AstNode, uri = findDocument(node)?.uri): string | undefined {

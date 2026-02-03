@@ -45,6 +45,7 @@ export type CrossModelKeywordNames =
     | "conceptual"
     | "conditions"
     | "cross-join"
+    | "crossmodel"
     | "customProperties"
     | "datamodel"
     | "datatype"
@@ -52,6 +53,7 @@ export type CrossModelKeywordNames =
     | "description"
     | "diagram"
     | "edges"
+    | "edition"
     | "entity"
     | "expression"
     | "expressions"
@@ -197,6 +199,23 @@ export function isCardinality(item: unknown): item is Cardinality {
     return item === '0..1' || item === '1..1' || item === '0..N' || item === '1..N';
 }
 
+export interface CrossModelEditionInfo extends langium.AstNode {
+    readonly $container: DataModel;
+    readonly $type: 'CrossModelEditionInfo';
+    edition: string;
+    version: string;
+}
+
+export const CrossModelEditionInfo = {
+    $type: 'CrossModelEditionInfo',
+    edition: 'edition',
+    version: 'version'
+} as const;
+
+export function isCrossModelEditionInfo(item: unknown): item is CrossModelEditionInfo {
+    return reflection.isInstance(item, CrossModelEditionInfo.$type);
+}
+
 export interface CrossModelRoot extends langium.AstNode {
     readonly $type: 'CrossModelRoot';
     datamodel?: DataModel;
@@ -316,6 +335,7 @@ export function isDataElementMapping(item: unknown): item is DataElementMapping 
 export interface DataModel extends NamedObject, WithCustomProperties {
     readonly $container: CrossModelRoot;
     readonly $type: 'DataModel';
+    crossmodel?: CrossModelEditionInfo;
     dependencies: Array<DataModelDependency>;
     type: string;
     version?: string;
@@ -323,6 +343,7 @@ export interface DataModel extends NamedObject, WithCustomProperties {
 
 export const DataModel = {
     $type: 'DataModel',
+    crossmodel: 'crossmodel',
     customProperties: 'customProperties',
     dependencies: 'dependencies',
     description: 'description',
@@ -854,6 +875,7 @@ export type CrossModelAstType = {
     AttributeMappingTarget: AttributeMappingTarget
     BinaryExpression: BinaryExpression
     BooleanExpression: BooleanExpression
+    CrossModelEditionInfo: CrossModelEditionInfo
     CrossModelRoot: CrossModelRoot
     CustomProperty: CustomProperty
     DataElement: DataElement
@@ -967,6 +989,18 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             },
             superTypes: []
         },
+        CrossModelEditionInfo: {
+            name: CrossModelEditionInfo.$type,
+            properties: {
+                edition: {
+                    name: CrossModelEditionInfo.edition
+                },
+                version: {
+                    name: CrossModelEditionInfo.version
+                }
+            },
+            superTypes: []
+        },
         CrossModelRoot: {
             name: CrossModelRoot.$type,
             properties: {
@@ -1075,6 +1109,9 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
         DataModel: {
             name: DataModel.$type,
             properties: {
+                crossmodel: {
+                    name: DataModel.crossmodel
+                },
                 customProperties: {
                     name: DataModel.customProperties,
                     defaultValue: []
