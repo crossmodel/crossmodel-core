@@ -143,7 +143,7 @@ export class ModelService {
          throw new Error(`No AST node to update exists in '${args.uri}'`);
       }
 
-      // Ensure CrossModel version is up to date for datamodels
+      // Ensure CrossModel version is up to date for data models
       let text: string;
       if (typeof args.model === 'string') {
          const parsed = this.shared.workspace.LangiumDocumentFactory.fromString(args.model, documentUri);
@@ -213,7 +213,7 @@ export class ModelService {
    async save(args: SaveModelArgs<CrossModelRoot>): Promise<void> {
       // sync: implicit update of internal data structure to match file system (similar to workspace initialization)
       const documentUri = URI.parse(args.uri);
-      // Ensure CrossModel version is up to date for datamodels
+      // Ensure CrossModel version is up to date for data models
       let text: string;
       if (typeof args.model === 'string') {
          const parsed = this.shared.workspace.LangiumDocumentFactory.fromString(args.model, documentUri);

@@ -14,6 +14,7 @@
 // Cache for version and edition to avoid repeated file reads
 let cachedVersion: string | undefined;
 let cachedEdition: string | undefined;
+const CROSSMODEL_EDITION_PREFIX = 'crossmodel-';
 
 function getPackageJson(): { name?: string; version?: string } | undefined {
    try {
@@ -37,9 +38,9 @@ function populatePackageMetadata(): void {
    }
    const pkg = getPackageJson();
    cachedVersion = pkg?.version ?? '0.0.0';
-   if (pkg?.name?.startsWith('crossmodel-')) {
+   if (pkg?.name?.startsWith(CROSSMODEL_EDITION_PREFIX)) {
       // Extract edition from package name (e.g., 'crossmodel-core' -> 'core')
-      cachedEdition = pkg.name.substring('crossmodel-'.length);
+      cachedEdition = pkg.name.substring(CROSSMODEL_EDITION_PREFIX.length);
    } else {
       cachedEdition = 'core'; // fallback
    }
@@ -62,9 +63,3 @@ export function getCrossModelVersion(): string {
 export function getCrossModelEdition(): string {
    return getEditionFromPackage();
 }
-
-// For backward compatibility and convenience, also export as constants
-// These are evaluated at module load time, so if you need the truly
-// up-to-date values at runtime, use getCrossModelVersion() and getCrossModelEdition() instead.
-export const CROSSMODEL_VERSION: string = (() => getVersionFromPackage())();
-export const CROSSMODEL_EDITION: string = (() => getEditionFromPackage())();

@@ -238,12 +238,14 @@ export class CrossModelDataModelManager {
             `[DataModel] Re-build affected documents (${docs.length}): ${docs.map(doc => workspace.wsRelativePath(doc.uri)).join(', ')}`
          );
          docs.forEach(doc => {
-            this.langiumDocuments.invalidateDocument(doc.uri);
+            // Force re-parse/re-build of the document
+            this.documentBuilder.resetToState(doc, DocumentState.Changed);
             changed.push(doc.uri);
          });
       }
    }
 
+   // Adds the data model for the given URI. Returns the ID of the added data model.
    protected addDataModel(uri: URI, dataModel: DataModel): string[] {
       const dataModelInfo = new DataModelInfo(uri, dataModel);
       if (!dataModelInfo.isUnknown) {
@@ -285,6 +287,7 @@ export class CrossModelDataModelManager {
       return [];
    }
 
+   // Updates (or adds) the data model for the given URI. Returns the IDs of data models that were added/updated.
    protected async updateDataModel(uri: URI): Promise<string[]> {
       const newDataModel = await parseDataModelFile(uri, this.langiumDocuments);
       if (!newDataModel) {
@@ -294,10 +297,12 @@ export class CrossModelDataModelManager {
       const toUpdate = [];
       const existingDataModelInfo = this.uriToDataModel.get(uri.toString());
       const newDataModelId = createDataModelId(newDataModel.id, newDataModel.version);
+      // data model ID changed, remove old one
       if (existingDataModelInfo && existingDataModelInfo?.id !== newDataModelId) {
          this.logger.info(`[DataModel] Replace data model "${existingDataModelInfo.id}" with "${newDataModelId}"`);
          toUpdate.push(...this.deleteDataModel(uri));
       }
+      // add new/updated data model
       toUpdate.push(...this.addDataModel(uri, newDataModel));
       return toUpdate;
    }

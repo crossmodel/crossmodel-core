@@ -2,7 +2,7 @@
  * Copyright (c) 2026 CrossBreeze.
  ********************************************************************************/
 
-import { CROSSMODEL_EDITION, getCrossModelVersion } from '@crossmodel/protocol';
+import { getCrossModelEdition, getCrossModelVersion } from '@crossmodel/protocol';
 import { CrossModelEditionInfo, DataModel } from '../language-server/generated/ast.js';
 
 /**
@@ -17,7 +17,7 @@ export function needsCrossModelVersionUpdate(dataModel: DataModel): boolean {
       // No crossmodel info stored, needs update
       return true;
    }
-   return dataModel.crossmodel.edition !== CROSSMODEL_EDITION || dataModel.crossmodel.version !== currentVersion;
+   return dataModel.crossmodel.edition !== getCrossModelEdition() || dataModel.crossmodel.version !== currentVersion;
 }
 
 /**
@@ -32,11 +32,11 @@ export function updateCrossModelVersion(dataModel: DataModel): void {
       // Create the crossmodel object
       (dataModel as any).crossmodel = {
          $type: 'CrossModelEditionInfo',
-         edition: CROSSMODEL_EDITION,
+         edition: getCrossModelEdition(),
          version: currentVersion
       } as CrossModelEditionInfo;
    } else {
-      dataModel.crossmodel.edition = CROSSMODEL_EDITION;
+      dataModel.crossmodel.edition = getCrossModelEdition();
       dataModel.crossmodel.version = currentVersion;
    }
 }
