@@ -3311,6 +3311,17 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
         },
         {
           "$type": "TypeAttribute",
+          "name": "crossmodel",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/interfaces@1"
+            }
+          }
+        },
+        {
+          "$type": "TypeAttribute",
           "name": "dependencies",
           "type": {
             "$type": "ArrayType",
@@ -3322,17 +3333,6 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
             }
           },
           "isOptional": false
-        },
-        {
-          "$type": "TypeAttribute",
-          "name": "crossmodel",
-          "isOptional": true,
-          "type": {
-            "$type": "SimpleType",
-            "typeRef": {
-              "$ref": "#/interfaces@1"
-            }
-          }
         }
       ]
     },

@@ -3,8 +3,6 @@
  ********************************************************************************/
 import { ModelService } from '@crossmodel/model-service/lib/common';
 import {
-   CROSSMODEL_EDITION,
-   CROSSMODEL_VERSION,
    DATAMODEL_FILE,
    DataModelType,
    DataModelTypeInfos,
@@ -17,6 +15,8 @@ import {
    RelationshipType,
    TargetObjectType,
    findNextUnique,
+   getCrossModelEdition,
+   getCrossModelVersion,
    isMemberPermittedInModel,
    quote,
    toId,
@@ -70,8 +70,8 @@ function getInitialDataModelContent(): string {
     type: ${DataModelTypeInfos.logical.value}
     version: 1.0.0
     crossmodel:
-        edition: ${CROSSMODEL_EDITION}
-        version: ${CROSSMODEL_VERSION}
+        edition: ${getCrossModelEdition()}
+        version: ${getCrossModelVersion()}
 `;
 }
 

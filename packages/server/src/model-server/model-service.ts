@@ -23,7 +23,7 @@ import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumen
 import { URI } from 'vscode-uri';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
-import { CrossModelRoot, isCrossModelRoot } from '../language-server/generated/ast.js';
+import { CrossModelRoot, isCrossModelRoot, isDataModel } from '../language-server/generated/ast.js';
 import { findDocument } from '../language-server/util/ast-util.js';
 import { ensureCrossModelVersion } from './crossmodel-version-util.js';
 import { AstCrossModelDocument } from './open-text-document-manager.js';
@@ -144,14 +144,28 @@ export class ModelService {
       }
 
       // Ensure CrossModel version is up to date for datamodels
-      if (typeof args.model !== 'string' && isCrossModelRoot(args.model)) {
-         this.ensureDataModelVersionUpdated(args.model);
-      } else if (isCrossModelRoot(root)) {
-         this.ensureDataModelVersionUpdated(root);
+      let text: string;
+      if (typeof args.model === 'string') {
+         const parsed = this.shared.workspace.LangiumDocumentFactory.fromString(args.model, documentUri);
+         const parsedRoot = parsed.parseResult.value;
+         if (isCrossModelRoot(parsedRoot)) {
+            if (parsedRoot.datamodel) {
+               ensureCrossModelVersion(parsedRoot.datamodel);
+            }
+            text = this.serialize(documentUri, parsedRoot);
+         } else {
+            text = args.model;
+         }
+      } else {
+         if (isDataModel(args.model)) {
+            ensureCrossModelVersion(args.model);
+         } else if (isCrossModelRoot(args.model) && args.model.datamodel) {
+            ensureCrossModelVersion(args.model.datamodel);
+         }
+         text = this.serialize(documentUri, args.model);
       }
 
       const textDocument = document.textDocument;
-      const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
       if (text === textDocument.getText()) {
          return {
             diagnostics: document.diagnostics ?? [],
@@ -199,12 +213,29 @@ export class ModelService {
    async save(args: SaveModelArgs<CrossModelRoot>): Promise<void> {
       // sync: implicit update of internal data structure to match file system (similar to workspace initialization)
       const documentUri = URI.parse(args.uri);
-      if (typeof args.model !== 'string' && isCrossModelRoot(args.model)) {
-         this.ensureDataModelVersionUpdated(args.model);
+      // Ensure CrossModel version is up to date for datamodels
+      let text: string;
+      if (typeof args.model === 'string') {
+         const parsed = this.shared.workspace.LangiumDocumentFactory.fromString(args.model, documentUri);
+         const parsedRoot = parsed.parseResult.value;
+         if (isCrossModelRoot(parsedRoot)) {
+            if (parsedRoot.datamodel) {
+               ensureCrossModelVersion(parsedRoot.datamodel);
+            }
+            text = this.serialize(documentUri, parsedRoot);
+         } else {
+            text = args.model;
+         }
+      } else {
+         if (isDataModel(args.model)) {
+            ensureCrossModelVersion(args.model);
+         } else if (isCrossModelRoot(args.model) && args.model.datamodel) {
+            ensureCrossModelVersion(args.model.datamodel);
+         }
+         text = this.serialize(documentUri, args.model);
       }
-      const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
       if (this.documents.hasDocument(documentUri)) {
-         await this.update(args);
+         await this.update({ ...args, model: text });
       } else {
          this.documents.createDocument(documentUri, text);
          await this.documentBuilder.update([documentUri], []);
@@ -221,18 +252,6 @@ export class ModelService {
    protected serialize(uri: URI, model: AstNode): string {
       const serializer = this.shared.ServiceRegistry.getServices(uri).serializer.Serializer;
       return serializer.serialize(model);
-   }
-
-   /**
-    * Ensures that a datamodel has the current CrossModel version and edition info.
-    * Updates them if needed.
-    *
-    * @param root the semantic root to check
-    */
-   protected ensureDataModelVersionUpdated(root: CrossModelRoot): void {
-      if (root.datamodel) {
-         ensureCrossModelVersion(root.datamodel);
-      }
    }
 
    getId(node: AstNode, uri = findDocument(node)?.uri): string | undefined {
