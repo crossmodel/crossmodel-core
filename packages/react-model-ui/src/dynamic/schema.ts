@@ -121,6 +121,8 @@ export interface GridColumnDescriptor {
    required?: boolean;
    /** Dependency on another column that controls applicability (disabled/dimmed when not applicable). */
    dependency?: ColumnDependency;
+   /** If true, this column is read-only for type-property rows (_typeProperty). */
+   readonlyForTypeProperty?: boolean;
    /**
     * Deserializes the raw model value to the row value used for display and editing.
     * Called when syncing model data to grid rows.
@@ -150,10 +152,9 @@ export interface CollectionDescriptor {
    /**
     * Rendering strategy:
     * - 'existing': Delegate to an existing hand-coded DataGrid component.
-    * - 'custom-properties': Use the existing CustomPropertiesDataGrid.
     * - 'dynamic': Render via DynamicDataGrid using column descriptors.
     */
-   renderMode: 'existing' | 'custom-properties' | 'dynamic';
+   renderMode: 'existing' | 'dynamic';
    /** For 'existing' mode: the React component to render. */
    existingComponent?: React.ComponentType<any>;
    /** Whether the section is collapsed by default. */
@@ -182,6 +183,18 @@ export interface CollectionDescriptor {
    resizableColumns?: boolean;
    /** For 'dynamic' mode: column resize mode ('fit' or 'expand'). */
    columnResizeMode?: 'fit' | 'expand';
+   /**
+    * For 'dynamic' mode: the property on each collection item whose value is an ObjectDefinition
+    * type reference used to resolve inherited attribute properties per row. When set, the grid
+    * resolves each row's type and shows inherited values (e.g., datatype, length) from the definition.
+    */
+   typeProperty?: string;
+   /**
+    * When true, the grid supports "definition rows" — virtual rows from the type's
+    * propertyDefinitions that don't yet have a local entry. These rows allow value-only
+    * editing and are enriched with metadata from the definition.
+    */
+   supportsDefinitionRows?: boolean;
 }
 
 /**

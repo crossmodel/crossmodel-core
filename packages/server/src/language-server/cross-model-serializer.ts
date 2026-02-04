@@ -122,7 +122,8 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                   return undefined;
                }
                const separator = onNewLine ? CrossModelSerializer.CHAR_NEWLINE : ' ';
-               const serializedProp = `${getPropertyKeyword(prop)}:${separator}${serializedPropValue}`;
+               const keyword = isAstNode(propValue) ? getPropertyKeyword(prop, propValue.$type) : getPropertyKeyword(prop);
+               const serializedProp = `${keyword}:${separator}${serializedPropValue}`;
                const serialized = isFirstNested ? this.indent(serializedProp, indentationLevel) : serializedProp;
                isFirstNested = false;
                return serialized;

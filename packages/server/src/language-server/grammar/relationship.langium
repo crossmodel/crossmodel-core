@@ -2,7 +2,27 @@ import 'terminals'
 import 'common'
 import 'entity'
 
-// Relationship definition
+// --- Relationship Definition (type definition for relationships) ---
+
+interface RelationshipDefinition extends ObjectDefinition {
+    parentCardinality?: string;
+    childCardinality?: string;
+}
+
+RelationshipDefinition returns RelationshipDefinition:
+    'relationshipDefinition' ':'
+        INDENT
+            NamedObjectFragment
+            (abstract?='abstract' ':' ('TRUE' | 'true'))?
+            ('extends' ':' extends=[RelationshipDefinition:IDReference])?
+            ('parentCardinality' ':' parentCardinality=Cardinality)?
+            ('childCardinality' ':' childCardinality=Cardinality)?
+            CustomPropertiesFragment?
+        DEDENT
+;
+
+// --- Relationship ---
+
 interface Relationship extends DataElementContainerLink, WithCustomProperties {
     parent?: @LogicalEntity
     parentRole?: string
@@ -12,9 +32,6 @@ interface Relationship extends DataElementContainerLink, WithCustomProperties {
     childCardinality?: string
     attributes: RelationshipAttribute[]
 }
-
-Cardinality returns string:
-    '0..1' | '1..1' | '0..N' | '1..N';
 
 Relationship returns Relationship:
     'relationship' ':'

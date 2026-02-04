@@ -4,7 +4,6 @@
 import * as React from 'react';
 import { useTypeProperties } from '../hooks/useTypeProperties';
 import { FormSection } from '../views/FormSection';
-import { CustomPropertiesDataGrid } from '../views/common/CustomPropertiesDataGrid';
 import { DynamicDataGrid } from './DynamicDataGrid';
 import { CollectionDescriptor, DynamicFormSchema } from './schema';
 
@@ -23,14 +22,11 @@ export function DynamicCollection({ collection, schema, rootObj }: DynamicCollec
             <collection.existingComponent />
          )}
          {collection.renderMode === 'dynamic' && collection.columns && (
-            <DynamicDataGrid collection={collection} schema={schema} rootObj={rootObj} />
-         )}
-         {collection.renderMode === 'custom-properties' && (
-            <CustomPropertiesDataGrid
-               contextType={schema.diagnosticPath}
-               customProperties={rootObj[collection.property] ?? []}
-               errorMessage={`No ${schema.displayName.toLowerCase()} available`}
-               propertyDefinitions={propertyDefinitions}
+            <DynamicDataGrid
+               collection={collection}
+               schema={schema}
+               rootObj={rootObj}
+               propertyDefinitions={collection.supportsDefinitionRows ? propertyDefinitions : undefined}
             />
          )}
       </FormSection>

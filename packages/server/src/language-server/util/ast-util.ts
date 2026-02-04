@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { AttributeMappingSourceType, TypeGuard, getSemanticRoot, toIdReference } from '@crossmodel/protocol';
+import { AttributeMappingSourceType, ResolvedInheritedProperties, TypeGuard, getSemanticRoot, toIdReference } from '@crossmodel/protocol';
 import { Dimension, Point } from '@eclipse-glsp/server';
 import { AstNode, AstNodeDescription, AstUtils, LangiumDocument, Reference, isAstNode, isAstNodeDescription } from 'langium';
 import { ID_PROPERTY, IdProvider } from '../cross-model-naming.js';
@@ -32,7 +32,8 @@ import {
    isMapping,
    isObjectDefinition,
    isRelationship,
-   isSystemDiagram
+   isSystemDiagram,
+   reflection
 } from '../generated/ast.js';
 
 export type RootContainer = {
@@ -426,4 +427,62 @@ export function resolveAllPropertyDefinitions(
    }
 
    return result;
+}
+
+/** Base ObjectDefinition property names that are not "inheritable" type-specific properties. */
+const BASE_OBJECT_DEFINITION_PROPERTIES = new Set<string>(['abstract', 'customProperties', 'description', 'extends', 'id', 'name']);
+
+/**
+ * Discovers the inheritable properties for a given ObjectDefinition subtype by comparing
+ * its reflection metadata against the base ObjectDefinition properties.
+ * Returns the property names that are type-specific (e.g., datatype, length for AttributeDefinition).
+ */
+function getInheritablePropertyNames(type: string): string[] {
+   const typeMetaData = reflection.getTypeMetaData(type);
+   return Object.keys(typeMetaData.properties).filter(prop => !BASE_OBJECT_DEFINITION_PROPERTIES.has(prop));
+}
+
+/**
+ * Walks the extends chain of an ObjectDefinition and collects type-specific inheritable properties.
+ * Uses Langium's reflection API to dynamically discover which properties go beyond base ObjectDefinition.
+ * Child values take precedence (first-set wins when walking from leaf to root).
+ * Returns undefined if no inheritable properties are found.
+ */
+export function resolveInheritedProperties(objectDef: ObjectDefinition): ResolvedInheritedProperties | undefined {
+   const inheritableProps = getInheritablePropertyNames(objectDef.$type);
+   if (inheritableProps.length === 0) {
+      return undefined;
+   }
+
+   const properties: Record<string, any> = {};
+   const propertySources: Record<string, string> = {};
+
+   let current: ObjectDefinition | undefined = objectDef;
+   const visited = new Set<string>();
+   while (current) {
+      const currentId = current.id ?? current.name ?? '';
+      if (visited.has(currentId)) {
+         break;
+      }
+      visited.add(currentId);
+
+      for (const prop of inheritableProps) {
+         if (properties[prop] === undefined) {
+            const value = (current as any)[prop];
+            if (value !== undefined && value !== false) {
+               properties[prop] = value;
+               propertySources[prop] = currentId;
+            }
+         }
+      }
+
+      current = current.extends?.ref;
+   }
+
+   // Return undefined if no properties were collected
+   if (Object.keys(properties).length === 0) {
+      return undefined;
+   }
+
+   return { properties, propertySources };
 }

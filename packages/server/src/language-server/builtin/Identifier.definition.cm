@@ -1,4 +1,4 @@
-objectDefinition:
+identifierDefinition:
     id: Identifier
     name: "Identifier"
     description: "Root definition for all identifier types"

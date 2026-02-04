@@ -26,8 +26,8 @@ import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumen
 import { URI } from 'vscode-uri';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
-import { CrossModelRoot, isCrossModelRoot, isObjectDefinition } from '../language-server/generated/ast.js';
-import { findDocument, resolveAllPropertyDefinitions } from '../language-server/util/ast-util.js';
+import { CrossModelRoot, isCrossModelRoot, isObjectDefinition, reflection } from '../language-server/generated/ast.js';
+import { findDocument, resolveAllPropertyDefinitions, resolveInheritedProperties } from '../language-server/util/ast-util.js';
 import { AstCrossModelDocument } from './open-text-document-manager.js';
 import { LANGUAGE_CLIENT_ID } from './openable-text-documents.js';
 
@@ -267,7 +267,15 @@ export class ModelService {
 
    async resolveObjectDefinition(args: ResolveObjectDefinitionArgs): Promise<ResolvedObjectDefinition | undefined> {
       const indexManager = this.shared.workspace.IndexManager;
-      const description = indexManager.getElementById(args.type, 'ObjectDefinition');
+      // Look up across all ObjectDefinition subtypes using Langium's isSubtype check
+      const allDefinitionTypes = reflection.getAllTypes().filter(t => reflection.isSubtype(t, 'ObjectDefinition'));
+      let description;
+      for (const defType of allDefinitionTypes) {
+         description = indexManager.getElementById(args.type, defType);
+         if (description) {
+            break;
+         }
+      }
       if (!description) {
          return undefined;
       }
@@ -320,12 +328,16 @@ export class ModelService {
          };
       });
 
+      const inheritedProperties = resolveInheritedProperties(node);
+
       return {
          id: node.id ?? '',
          name: node.name,
          abstract: node.abstract || undefined,
          extends: node.extends?.$refText,
-         propertyDefinitions
+         definitionType: node.$type,
+         propertyDefinitions,
+         inheritedProperties
       };
    }
 

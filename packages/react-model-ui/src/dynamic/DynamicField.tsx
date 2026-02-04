@@ -19,9 +19,13 @@ export interface DynamicFieldProps {
    rootObj: any;
    /** Sibling fields in the same section, used for cascading dependency clears. */
    siblingFields?: FieldDescriptor[];
+   /** Inherited values from the type definition (e.g., from AttributeDefinition). Shown as placeholders when local value is empty. */
+   typeDefaults?: Record<string, any>;
+   /** The type reference ID set on the current object (e.g., 'HubKey'). Used for the "enforced by" label. */
+   typeReferenceId?: string;
 }
 
-export function DynamicField({ field, schema, rootObj, siblingFields }: DynamicFieldProps): React.ReactElement {
+export function DynamicField({ field, schema, rootObj, siblingFields, typeDefaults, typeReferenceId }: DynamicFieldProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const diagnostics = useDiagnosticsManager();
    const api = useModelQueryApi();
@@ -33,6 +37,14 @@ export function DynamicField({ field, schema, rootObj, siblingFields }: DynamicF
    const isApplicable = field.dependency ? field.dependency.isApplicable(rootObj[field.dependency.sourceProperty]) : true;
    const isDisabled = readonly || field.disabled || !isApplicable;
    const diagInfo = diagnostics.info(schema.diagnosticPath, field.property);
+
+   // Check for inherited default from type definition
+   const inheritedValue = typeDefaults?.[field.property];
+   const hasLocalValue = rootObj[field.property] !== undefined && rootObj[field.property] !== '' && rootObj[field.property] !== false;
+   const showInherited = inheritedValue !== undefined && !hasLocalValue && isApplicable;
+   const enforcedByLabel = showInherited && typeReferenceId
+      ? `enforced by '${typeReferenceId}' type`
+      : undefined;
 
    // Find sibling fields that depend on this field (for cascading clears)
    const dependentFields = React.useMemo(
@@ -78,7 +90,10 @@ export function DynamicField({ field, schema, rootObj, siblingFields }: DynamicF
             <div className='p-field p-fluid' style={{ opacity: isApplicable ? 1 : 0.4 }}
                title={!isApplicable ? field.dependency?.disabledTooltip : undefined}>
                <div>
-                  <label htmlFor={field.property}>{field.label}</label>
+                  <label htmlFor={field.property}>
+                     {field.label}
+                     {enforcedByLabel && <span style={{ fontStyle: 'italic', opacity: 0.6, marginLeft: '0.5rem' }}>({enforcedByLabel})</span>}
+                  </label>
                   <InputText
                      id={field.property}
                      value={isApplicable ? (rootObj[field.property] ?? '') : ''}
@@ -86,6 +101,7 @@ export function DynamicField({ field, schema, rootObj, siblingFields }: DynamicF
                      disabled={isDisabled}
                      required={field.required}
                      className={diagInfo.inputClasses()}
+                     placeholder={showInherited ? String(inheritedValue) : undefined}
                   />
                </div>
                <ErrorInfo diagnostic={diagInfo} />
@@ -117,21 +133,31 @@ export function DynamicField({ field, schema, rootObj, siblingFields }: DynamicF
             <div className='p-field p-fluid' style={{ opacity: isApplicable ? 1 : 0.4 }}
                title={!isApplicable ? field.dependency?.disabledTooltip : undefined}>
                <div>
-                  <label htmlFor={field.property}>{field.label}</label>
+                  <label htmlFor={field.property}>
+                     {field.label}
+                     {enforcedByLabel && <span style={{ fontStyle: 'italic', opacity: 0.6, marginLeft: '0.5rem' }}>({enforcedByLabel})</span>}
+                  </label>
                   <InputNumber
                      inputId={field.property}
-                     value={isApplicable ? (rootObj[field.property] ?? undefined) : undefined}
+                     value={isApplicable ? (rootObj[field.property] ?? null) : null}
                      onValueChange={(e: InputNumberValueChangeEvent) => handleChange(e.value)}
                      disabled={isDisabled}
                      className={diagInfo.inputClasses()}
                      useGrouping={false}
+                     placeholder={showInherited ? String(inheritedValue) : undefined}
                   />
                </div>
                <ErrorInfo diagnostic={diagInfo} />
             </div>
          );
 
-      case 'boolean':
+      case 'boolean': {
+         const boolInherited = typeDefaults?.[field.property];
+         const boolHasLocal = rootObj[field.property] !== undefined && rootObj[field.property] !== false;
+         const showBoolInherited = boolInherited && !boolHasLocal && isApplicable;
+         const boolEnforcedLabel = showBoolInherited && typeReferenceId
+            ? `enforced by '${typeReferenceId}' type`
+            : undefined;
          return (
             <div className='p-field p-fluid' style={{ opacity: isApplicable ? 1 : 0.4 }}
                title={!isApplicable ? field.dependency?.disabledTooltip : undefined}>
@@ -142,11 +168,15 @@ export function DynamicField({ field, schema, rootObj, siblingFields }: DynamicF
                      onChange={(e: CheckboxChangeEvent) => handleChange(e.checked)}
                      disabled={isDisabled}
                   />
-                  <label htmlFor={field.property}>{field.label}</label>
+                  <label htmlFor={field.property}>
+                     {field.label}
+                     {boolEnforcedLabel && <span style={{ fontStyle: 'italic', opacity: 0.6, marginLeft: '0.5rem' }}>({boolEnforcedLabel})</span>}
+                  </label>
                </div>
                <ErrorInfo diagnostic={diagInfo} />
             </div>
          );
+      }
 
       case 'reference':
          return (
@@ -155,7 +185,7 @@ export function DynamicField({ field, schema, rootObj, siblingFields }: DynamicF
 
       case 'dropdown':
          return (
-            <DynamicDropdownField field={field} schema={schema} rootObj={rootObj} siblingFields={siblingFields} />
+            <DynamicDropdownField field={field} schema={schema} rootObj={rootObj} siblingFields={siblingFields} typeDefaults={typeDefaults} typeReferenceId={typeReferenceId} />
          );
 
       case 'readonly':
@@ -233,7 +263,7 @@ function DynamicReferenceField({ field, schema, rootObj }: DynamicFieldProps): R
    );
 }
 
-function DynamicDropdownField({ field, schema, rootObj, siblingFields }: DynamicFieldProps): React.ReactElement {
+function DynamicDropdownField({ field, schema, rootObj, siblingFields, typeDefaults, typeReferenceId }: DynamicFieldProps): React.ReactElement {
    const dispatch = useModelDispatch();
    const diagnostics = useDiagnosticsManager();
    const readonly = useReadonly();
@@ -251,6 +281,15 @@ function DynamicDropdownField({ field, schema, rootObj, siblingFields }: Dynamic
    );
 
    const diagInfo = diagnostics.info(schema.diagnosticPath, field.property);
+
+   // Inherited value from type definition
+   const inheritedValue = typeDefaults?.[field.property];
+   const currentValue = rootObj[field.property];
+   const hasLocalValue = currentValue !== undefined && currentValue !== '';
+   const showInherited = inheritedValue !== undefined && !hasLocalValue;
+   const enforcedByLabel = showInherited && typeReferenceId
+      ? `enforced by '${typeReferenceId}' type`
+      : undefined;
 
    const handleChange = React.useCallback(
       (e: AutoCompleteChangeEvent) => {
@@ -287,7 +326,10 @@ function DynamicDropdownField({ field, schema, rootObj, siblingFields }: Dynamic
    return (
       <div className='p-field p-fluid'>
          <div>
-            <label htmlFor={field.property}>{field.label}</label>
+            <label htmlFor={field.property}>
+               {field.label}
+               {enforcedByLabel && <span style={{ fontStyle: 'italic', opacity: 0.6, marginLeft: '0.5rem' }}>({enforcedByLabel})</span>}
+            </label>
             <AutoComplete
                inputId={field.property}
                value={rootObj[field.property] ?? ''}
@@ -297,6 +339,7 @@ function DynamicDropdownField({ field, schema, rootObj, siblingFields }: Dynamic
                dropdown
                disabled={readonly}
                className={diagInfo.inputClasses()}
+               placeholder={showInherited ? String(inheritedValue) : undefined}
             />
          </div>
          <ErrorInfo diagnostic={diagInfo} />

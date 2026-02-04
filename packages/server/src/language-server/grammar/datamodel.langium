@@ -1,6 +1,23 @@
 import 'terminals'
 import 'common'
 
+// --- Data Model Definition (type definition for data models) ---
+
+interface DataModelDefinition extends ObjectDefinition {
+}
+
+DataModelDefinition returns DataModelDefinition:
+    'datamodelDefinition' ':'
+        INDENT
+            NamedObjectFragment
+            (abstract?='abstract' ':' ('TRUE' | 'true'))?
+            ('extends' ':' extends=[DataModelDefinition:IDReference])?
+            CustomPropertiesFragment?
+        DEDENT
+;
+
+// --- Data Model ---
+
 interface DataModel extends NamedObject, WithCustomProperties {
     type?: @ObjectDefinition;
     version?: string;

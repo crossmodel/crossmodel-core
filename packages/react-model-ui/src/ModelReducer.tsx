@@ -7,7 +7,6 @@ import { DynamicFormDispatchAction, DynamicFormReducer, isDynamicFormDispatchAct
 import { EntityDispatchAction, EntityModelReducer, isEntityDispatchAction } from './EntityModelReducer';
 import { MappingSourcesDispatchAction, MappingSourcesModelReducer, isMappingSourcesDispatchAction } from './MappingSourcesReducer';
 import { MappingTargetDispatchAction, MappingTargetModelReducer, isMappingTargetDispatchAction } from './MappingTargetReducer';
-import { ObjectDefinitionDispatchAction, ObjectDefinitionReducer, isObjectDefinitionDispatchAction } from './ObjectDefinitionReducer';
 import { RelationshipDispatchAction, RelationshipModelReducer, isRelationshipDispatchAction } from './RelationshipModelReducer';
 
 export interface ModelAction {
@@ -26,7 +25,6 @@ export type DispatchAction =
    | RelationshipDispatchAction
    | MappingTargetDispatchAction
    | MappingSourcesDispatchAction
-   | ObjectDefinitionDispatchAction
    | DynamicFormDispatchAction;
 
 export type ModelStateReason = DispatchAction['type'] | 'model:initial';
@@ -60,9 +58,6 @@ export function ModelReducer(state: ModelState, action: DispatchAction): ModelSt
    }
    if (isMappingSourcesDispatchAction(action)) {
       return MappingSourcesModelReducer(state, action);
-   }
-   if (isObjectDefinitionDispatchAction(action)) {
-      return ObjectDefinitionReducer(state, action);
    }
    if (isDynamicFormDispatchAction(action)) {
       return DynamicFormReducer(state, action);

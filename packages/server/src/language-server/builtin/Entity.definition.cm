@@ -1,4 +1,4 @@
-objectDefinition:
+entityDefinition:
     id: Entity
     name: "Entity"
     description: "Root definition for all entity types"

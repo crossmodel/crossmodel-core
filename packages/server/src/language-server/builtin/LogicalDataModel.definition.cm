@@ -1,4 +1,4 @@
-objectDefinition:
+datamodelDefinition:
     id: LogicalDataModel
     name: "Logical Data Model"
     description: "A logical data model"

@@ -13,11 +13,13 @@ import {
    DataModel,
    LogicalEntity,
    Mapping,
+   ObjectDefinition,
    Relationship,
    SystemDiagram,
    isDataModel,
    isLogicalEntity,
    isMapping,
+   isObjectDefinition,
    isRelationship,
    isSystemDiagram
 } from '../../../src/language-server/generated/ast';
@@ -87,6 +89,10 @@ export async function parseMapping(input: DocumentInput, assert: ParseAssert = {
 
 export async function parseDataModel(input: DocumentInput, assert: ParseAssert = {}): Promise<WithDocument<DataModel>> {
    return parseSemanticRoot(input, assert, isDataModel);
+}
+
+export async function parseObjectDefinition(input: DocumentInput, assert: ParseAssert = {}): Promise<WithDocument<ObjectDefinition>> {
+   return parseSemanticRoot(input, assert, isObjectDefinition);
 }
 
 export const MockFileSystem: DefaultSharedModuleContext = {
@@ -224,4 +230,9 @@ export function diagramDocumentUri(...segments: string[]): string {
 export function mappingDocumentUri(...segments: string[]): string {
    const last = segments.pop()!;
    return testUri(...segments, last + ModelFileExtensions.Mapping);
+}
+
+export function definitionDocumentUri(...segments: string[]): string {
+   const last = segments.pop()!;
+   return testUri(...segments, last + ModelFileExtensions.ObjectDefinition);
 }

@@ -39,6 +39,7 @@ export type CrossModelKeywordNames =
     | "abstract"
     | "apply"
     | "attribute"
+    | "attributeDefinition"
     | "attributes"
     | "baseNode"
     | "child"
@@ -48,6 +49,7 @@ export type CrossModelKeywordNames =
     | "cross-join"
     | "customProperties"
     | "datamodel"
+    | "datamodelDefinition"
     | "datatype"
     | "defaultValue"
     | "dependencies"
@@ -55,6 +57,7 @@ export type CrossModelKeywordNames =
     | "diagram"
     | "edges"
     | "entity"
+    | "entityDefinition"
     | "expression"
     | "expressions"
     | "extends"
@@ -62,6 +65,7 @@ export type CrossModelKeywordNames =
     | "from"
     | "height"
     | "id"
+    | "identifierDefinition"
     | "identifiers"
     | "inherits"
     | "inner-join"
@@ -81,6 +85,7 @@ export type CrossModelKeywordNames =
     | "precision"
     | "primary"
     | "relationship"
+    | "relationshipDefinition"
     | "scale"
     | "sourceNode"
     | "sources"
@@ -98,6 +103,30 @@ export type CrossModelKeywordNames =
     | "y";
 
 export type CrossModelTokenNames = CrossModelTerminalNames | CrossModelKeywordNames;
+
+export interface AttributeDefinition extends ObjectDefinition, WithDataType {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'AttributeDefinition';
+}
+
+export const AttributeDefinition = {
+    $type: 'AttributeDefinition',
+    abstract: 'abstract',
+    customProperties: 'customProperties',
+    datatype: 'datatype',
+    description: 'description',
+    extends: 'extends',
+    id: 'id',
+    length: 'length',
+    mandatory: 'mandatory',
+    name: 'name',
+    precision: 'precision',
+    scale: 'scale'
+} as const;
+
+export function isAttributeDefinition(item: unknown): item is AttributeDefinition {
+    return reflection.isInstance(item, AttributeDefinition.$type);
+}
 
 export interface AttributeMapping extends WithCustomProperties {
     readonly $container: TargetObject;
@@ -227,7 +256,7 @@ export interface CrossModelRoot extends langium.AstNode {
     datamodel?: DataModel;
     entity?: LogicalEntity;
     mapping?: Mapping;
-    objectDefinition?: ObjectDefinition;
+    objectDefinition?: AttributeDefinition | DataModelDefinition | EntityDefinition | IdentifierDefinition | ObjectDefinition | RelationshipDefinition;
     relationship?: Relationship;
     systemDiagram?: SystemDiagram;
 }
@@ -246,15 +275,10 @@ export function isCrossModelRoot(item: unknown): item is CrossModelRoot {
     return reflection.isInstance(item, CrossModelRoot.$type);
 }
 
-export interface CustomProperty extends NamedObject {
+export interface CustomProperty extends NamedObject, WithDataType {
     readonly $container: WithCustomProperties;
     readonly $type: 'CustomProperty';
-    datatype?: string;
     defaultValue?: CustomPropertyValue;
-    length?: number;
-    mandatory: boolean;
-    precision?: number;
-    scale?: number;
     type?: langium.Reference<ObjectDefinition>;
     value?: string;
     values: Array<CustomPropertyValue>;
@@ -395,6 +419,25 @@ export function isDataModel(item: unknown): item is DataModel {
     return reflection.isInstance(item, DataModel.$type);
 }
 
+export interface DataModelDefinition extends ObjectDefinition {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'DataModelDefinition';
+}
+
+export const DataModelDefinition = {
+    $type: 'DataModelDefinition',
+    abstract: 'abstract',
+    customProperties: 'customProperties',
+    description: 'description',
+    extends: 'extends',
+    id: 'id',
+    name: 'name'
+} as const;
+
+export function isDataModelDefinition(item: unknown): item is DataModelDefinition {
+    return reflection.isInstance(item, DataModelDefinition.$type);
+}
+
 export interface DataModelDependency extends langium.AstNode {
     readonly $container: DataModel;
     readonly $type: 'DataModelDependency';
@@ -412,8 +455,27 @@ export function isDataModelDependency(item: unknown): item is DataModelDependenc
     return reflection.isInstance(item, DataModelDependency.$type);
 }
 
+export interface EntityDefinition extends ObjectDefinition {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'EntityDefinition';
+}
+
+export const EntityDefinition = {
+    $type: 'EntityDefinition',
+    abstract: 'abstract',
+    customProperties: 'customProperties',
+    description: 'description',
+    extends: 'extends',
+    id: 'id',
+    name: 'name'
+} as const;
+
+export function isEntityDefinition(item: unknown): item is EntityDefinition {
+    return reflection.isInstance(item, EntityDefinition.$type);
+}
+
 export interface IdentifiedObject extends langium.AstNode {
-    readonly $type: 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataElementContainerMapping' | 'DataElementMapping' | 'DataModel' | 'IdentifiedObject' | 'InheritanceEdge' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNode' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'NamedObject' | 'ObjectDefinition' | 'Relationship' | 'RelationshipEdge' | 'SourceDataElementContainer' | 'SourceObject' | 'SourceObjectAttribute' | 'SystemDiagram' | 'SystemDiagramEdge' | 'TargetObjectAttribute' | 'TypedObject';
+    readonly $type: 'AttributeDefinition' | 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataElementContainerMapping' | 'DataElementMapping' | 'DataModel' | 'DataModelDefinition' | 'EntityDefinition' | 'IdentifiedObject' | 'IdentifierDefinition' | 'InheritanceEdge' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNode' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'NamedObject' | 'ObjectDefinition' | 'Relationship' | 'RelationshipDefinition' | 'RelationshipEdge' | 'SourceDataElementContainer' | 'SourceObject' | 'SourceObjectAttribute' | 'SystemDiagram' | 'SystemDiagramEdge' | 'TargetObjectAttribute' | 'TypedObject';
     id?: string;
 }
 
@@ -424,6 +486,27 @@ export const IdentifiedObject = {
 
 export function isIdentifiedObject(item: unknown): item is IdentifiedObject {
     return reflection.isInstance(item, IdentifiedObject.$type);
+}
+
+export interface IdentifierDefinition extends ObjectDefinition {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'IdentifierDefinition';
+    primary: boolean;
+}
+
+export const IdentifierDefinition = {
+    $type: 'IdentifierDefinition',
+    abstract: 'abstract',
+    customProperties: 'customProperties',
+    description: 'description',
+    extends: 'extends',
+    id: 'id',
+    name: 'name',
+    primary: 'primary'
+} as const;
+
+export function isIdentifierDefinition(item: unknown): item is IdentifierDefinition {
+    return reflection.isInstance(item, IdentifierDefinition.$type);
 }
 
 export type IDReference = string;
@@ -470,12 +553,8 @@ export function isJoinType(item: unknown): item is JoinType {
     return item === 'from' || item === 'inner-join' || item === 'cross-join' || item === 'left-join' || item === 'apply';
 }
 
-export interface LogicalAttribute extends DataElement, WithCustomProperties {
+export interface LogicalAttribute extends DataElement, WithCustomProperties, WithDataType {
     readonly $type: 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
-    length?: number;
-    mandatory: boolean;
-    precision?: number;
-    scale?: number;
 }
 
 export const LogicalAttribute = {
@@ -609,7 +688,7 @@ export function isMapping(item: unknown): item is Mapping {
 }
 
 export interface NamedObject extends IdentifiedObject {
-    readonly $type: 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataModel' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'NamedObject' | 'ObjectDefinition' | 'Relationship' | 'SourceObjectAttribute' | 'TargetObjectAttribute' | 'TypedObject';
+    readonly $type: 'AttributeDefinition' | 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataModel' | 'DataModelDefinition' | 'EntityDefinition' | 'IdentifierDefinition' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'NamedObject' | 'ObjectDefinition' | 'Relationship' | 'RelationshipDefinition' | 'SourceObjectAttribute' | 'TargetObjectAttribute' | 'TypedObject';
     description?: string;
     name?: string;
 }
@@ -657,7 +736,7 @@ export function isNumberValue(item: unknown): item is NumberValue {
 
 export interface ObjectDefinition extends NamedObject, WithCustomProperties {
     readonly $container: CrossModelRoot;
-    readonly $type: 'ObjectDefinition';
+    readonly $type: 'AttributeDefinition' | 'DataModelDefinition' | 'EntityDefinition' | 'IdentifierDefinition' | 'ObjectDefinition' | 'RelationshipDefinition';
     abstract: boolean;
     extends?: langium.Reference<ObjectDefinition>;
 }
@@ -724,6 +803,29 @@ export const RelationshipAttribute = {
 
 export function isRelationshipAttribute(item: unknown): item is RelationshipAttribute {
     return reflection.isInstance(item, RelationshipAttribute.$type);
+}
+
+export interface RelationshipDefinition extends ObjectDefinition {
+    readonly $container: CrossModelRoot;
+    readonly $type: 'RelationshipDefinition';
+    childCardinality?: string;
+    parentCardinality?: string;
+}
+
+export const RelationshipDefinition = {
+    $type: 'RelationshipDefinition',
+    abstract: 'abstract',
+    childCardinality: 'childCardinality',
+    customProperties: 'customProperties',
+    description: 'description',
+    extends: 'extends',
+    id: 'id',
+    name: 'name',
+    parentCardinality: 'parentCardinality'
+} as const;
+
+export function isRelationshipDefinition(item: unknown): item is RelationshipDefinition {
+    return reflection.isInstance(item, RelationshipDefinition.$type);
 }
 
 export interface RelationshipEdge extends SystemDiagramEdge {
@@ -963,7 +1065,7 @@ export function isTypedObject(item: unknown): item is TypedObject {
 }
 
 export interface WithCustomProperties extends langium.AstNode {
-    readonly $type: 'AttributeMapping' | 'DataModel' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'ObjectDefinition' | 'Relationship' | 'RelationshipAttribute' | 'SourceObject' | 'SourceObjectAttribute' | 'TargetObject' | 'TargetObjectAttribute' | 'WithCustomProperties';
+    readonly $type: 'AttributeDefinition' | 'AttributeMapping' | 'DataModel' | 'DataModelDefinition' | 'EntityDefinition' | 'IdentifierDefinition' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'ObjectDefinition' | 'Relationship' | 'RelationshipAttribute' | 'RelationshipDefinition' | 'SourceObject' | 'SourceObjectAttribute' | 'TargetObject' | 'TargetObjectAttribute' | 'WithCustomProperties';
     customProperties: Array<CustomProperty>;
 }
 
@@ -976,7 +1078,30 @@ export function isWithCustomProperties(item: unknown): item is WithCustomPropert
     return reflection.isInstance(item, WithCustomProperties.$type);
 }
 
+export interface WithDataType extends langium.AstNode {
+    readonly $type: 'AttributeDefinition' | 'CustomProperty' | 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute' | 'WithDataType';
+    datatype?: string;
+    length?: number;
+    mandatory: boolean;
+    precision?: number;
+    scale?: number;
+}
+
+export const WithDataType = {
+    $type: 'WithDataType',
+    datatype: 'datatype',
+    length: 'length',
+    mandatory: 'mandatory',
+    precision: 'precision',
+    scale: 'scale'
+} as const;
+
+export function isWithDataType(item: unknown): item is WithDataType {
+    return reflection.isInstance(item, WithDataType.$type);
+}
+
 export type CrossModelAstType = {
+    AttributeDefinition: AttributeDefinition
     AttributeMapping: AttributeMapping
     AttributeMappingExpression: AttributeMappingExpression
     AttributeMappingSource: AttributeMappingSource
@@ -993,8 +1118,11 @@ export type CrossModelAstType = {
     DataElementContainerMapping: DataElementContainerMapping
     DataElementMapping: DataElementMapping
     DataModel: DataModel
+    DataModelDefinition: DataModelDefinition
     DataModelDependency: DataModelDependency
+    EntityDefinition: EntityDefinition
     IdentifiedObject: IdentifiedObject
+    IdentifierDefinition: IdentifierDefinition
     InheritanceEdge: InheritanceEdge
     JoinCondition: JoinCondition
     LogicalAttribute: LogicalAttribute
@@ -1009,6 +1137,7 @@ export type CrossModelAstType = {
     ObjectDefinition: ObjectDefinition
     Relationship: Relationship
     RelationshipAttribute: RelationshipAttribute
+    RelationshipDefinition: RelationshipDefinition
     RelationshipEdge: RelationshipEdge
     SourceDataElementContainer: SourceDataElementContainer
     SourceObject: SourceObject
@@ -1024,10 +1153,54 @@ export type CrossModelAstType = {
     TargetObjectAttribute: TargetObjectAttribute
     TypedObject: TypedObject
     WithCustomProperties: WithCustomProperties
+    WithDataType: WithDataType
 }
 
 export class CrossModelAstReflection extends langium.AbstractAstReflection {
     override readonly types = {
+        AttributeDefinition: {
+            name: AttributeDefinition.$type,
+            properties: {
+                abstract: {
+                    name: AttributeDefinition.abstract,
+                    defaultValue: false
+                },
+                customProperties: {
+                    name: AttributeDefinition.customProperties,
+                    defaultValue: []
+                },
+                datatype: {
+                    name: AttributeDefinition.datatype
+                },
+                description: {
+                    name: AttributeDefinition.description
+                },
+                extends: {
+                    name: AttributeDefinition.extends,
+                    referenceType: ObjectDefinition.$type
+                },
+                id: {
+                    name: AttributeDefinition.id
+                },
+                length: {
+                    name: AttributeDefinition.length
+                },
+                mandatory: {
+                    name: AttributeDefinition.mandatory,
+                    defaultValue: false
+                },
+                name: {
+                    name: AttributeDefinition.name
+                },
+                precision: {
+                    name: AttributeDefinition.precision
+                },
+                scale: {
+                    name: AttributeDefinition.scale
+                }
+            },
+            superTypes: [ObjectDefinition.$type, WithDataType.$type]
+        },
         AttributeMapping: {
             name: AttributeMapping.$type,
             properties: {
@@ -1178,7 +1351,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     defaultValue: []
                 }
             },
-            superTypes: [NamedObject.$type]
+            superTypes: [NamedObject.$type, WithDataType.$type]
         },
         CustomPropertyValue: {
             name: CustomPropertyValue.$type,
@@ -1294,6 +1467,33 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             },
             superTypes: [NamedObject.$type, WithCustomProperties.$type]
         },
+        DataModelDefinition: {
+            name: DataModelDefinition.$type,
+            properties: {
+                abstract: {
+                    name: DataModelDefinition.abstract,
+                    defaultValue: false
+                },
+                customProperties: {
+                    name: DataModelDefinition.customProperties,
+                    defaultValue: []
+                },
+                description: {
+                    name: DataModelDefinition.description
+                },
+                extends: {
+                    name: DataModelDefinition.extends,
+                    referenceType: ObjectDefinition.$type
+                },
+                id: {
+                    name: DataModelDefinition.id
+                },
+                name: {
+                    name: DataModelDefinition.name
+                }
+            },
+            superTypes: [ObjectDefinition.$type]
+        },
         DataModelDependency: {
             name: DataModelDependency.$type,
             properties: {
@@ -1307,6 +1507,33 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             },
             superTypes: []
         },
+        EntityDefinition: {
+            name: EntityDefinition.$type,
+            properties: {
+                abstract: {
+                    name: EntityDefinition.abstract,
+                    defaultValue: false
+                },
+                customProperties: {
+                    name: EntityDefinition.customProperties,
+                    defaultValue: []
+                },
+                description: {
+                    name: EntityDefinition.description
+                },
+                extends: {
+                    name: EntityDefinition.extends,
+                    referenceType: ObjectDefinition.$type
+                },
+                id: {
+                    name: EntityDefinition.id
+                },
+                name: {
+                    name: EntityDefinition.name
+                }
+            },
+            superTypes: [ObjectDefinition.$type]
+        },
         IdentifiedObject: {
             name: IdentifiedObject.$type,
             properties: {
@@ -1315,6 +1542,37 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: []
+        },
+        IdentifierDefinition: {
+            name: IdentifierDefinition.$type,
+            properties: {
+                abstract: {
+                    name: IdentifierDefinition.abstract,
+                    defaultValue: false
+                },
+                customProperties: {
+                    name: IdentifierDefinition.customProperties,
+                    defaultValue: []
+                },
+                description: {
+                    name: IdentifierDefinition.description
+                },
+                extends: {
+                    name: IdentifierDefinition.extends,
+                    referenceType: ObjectDefinition.$type
+                },
+                id: {
+                    name: IdentifierDefinition.id
+                },
+                name: {
+                    name: IdentifierDefinition.name
+                },
+                primary: {
+                    name: IdentifierDefinition.primary,
+                    defaultValue: false
+                }
+            },
+            superTypes: [ObjectDefinition.$type]
         },
         InheritanceEdge: {
             name: InheritanceEdge.$type,
@@ -1379,7 +1637,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     referenceType: ObjectDefinition.$type
                 }
             },
-            superTypes: [DataElement.$type, WithCustomProperties.$type]
+            superTypes: [DataElement.$type, WithCustomProperties.$type, WithDataType.$type]
         },
         LogicalEntity: {
             name: LogicalEntity.$type,
@@ -1658,6 +1916,39 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             },
             superTypes: [WithCustomProperties.$type]
         },
+        RelationshipDefinition: {
+            name: RelationshipDefinition.$type,
+            properties: {
+                abstract: {
+                    name: RelationshipDefinition.abstract,
+                    defaultValue: false
+                },
+                childCardinality: {
+                    name: RelationshipDefinition.childCardinality
+                },
+                customProperties: {
+                    name: RelationshipDefinition.customProperties,
+                    defaultValue: []
+                },
+                description: {
+                    name: RelationshipDefinition.description
+                },
+                extends: {
+                    name: RelationshipDefinition.extends,
+                    referenceType: ObjectDefinition.$type
+                },
+                id: {
+                    name: RelationshipDefinition.id
+                },
+                name: {
+                    name: RelationshipDefinition.name
+                },
+                parentCardinality: {
+                    name: RelationshipDefinition.parentCardinality
+                }
+            },
+            superTypes: [ObjectDefinition.$type]
+        },
         RelationshipEdge: {
             name: RelationshipEdge.$type,
             properties: {
@@ -1907,6 +2198,28 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 customProperties: {
                     name: WithCustomProperties.customProperties,
                     defaultValue: []
+                }
+            },
+            superTypes: []
+        },
+        WithDataType: {
+            name: WithDataType.$type,
+            properties: {
+                datatype: {
+                    name: WithDataType.datatype
+                },
+                length: {
+                    name: WithDataType.length
+                },
+                mandatory: {
+                    name: WithDataType.mandatory,
+                    defaultValue: false
+                },
+                precision: {
+                    name: WithDataType.precision
+                },
+                scale: {
+                    name: WithDataType.scale
                 }
             },
             superTypes: []

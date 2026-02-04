@@ -3,6 +3,7 @@
  ********************************************************************************/
 import {
    CrossModelRoot,
+   CustomPropertyType,
    DataModelDependencyType,
    EntityInheritType,
    LogicalAttributeType,
@@ -15,7 +16,7 @@ import {
    toId,
    toIdReference
 } from '@crossmodel/protocol';
-import { DynamicFormSchema } from './schema';
+import { CollectionDescriptor, DynamicFormSchema } from './schema';
 
 // --- Helpers for EntityAttributes conditional columns ---
 
@@ -46,6 +47,44 @@ const dataTypeOptions = [
    { label: 'Binary', value: 'Binary' },
    { label: 'Location', value: 'Location' }
 ];
+
+/**
+ * Creates a shared custom properties collection descriptor using dynamic renderMode.
+ * This replaces the old 'custom-properties' renderMode with a fully declarative schema.
+ */
+function createCustomPropertiesCollection(opts?: { label?: string; supportsDefinitionRows?: boolean }): CollectionDescriptor {
+   return {
+      property: 'customProperties',
+      label: opts?.label ?? 'Custom properties',
+      renderMode: 'dynamic',
+      itemType: CustomPropertyType,
+      supportsDefinitionRows: opts?.supportsDefinitionRows ?? true,
+      addButtonLabel: 'Add Property',
+      noDataMessage: 'No custom properties',
+      columns: [
+         { property: 'name', header: 'Name', columnType: 'text', width: '15%', filterType: 'text', readonlyForTypeProperty: true },
+         { property: 'description', header: 'Description', columnType: 'text', width: '15%', filterType: 'text', readonlyForTypeProperty: true },
+         {
+            property: 'datatype', header: 'Datatype', columnType: 'dropdown', width: '10%', filterType: 'text',
+            dropdownOptions: dataTypeOptions, readonlyForTypeProperty: true
+         },
+         {
+            property: 'length', header: 'Length', columnType: 'number', width: '70px', readonlyForTypeProperty: true,
+            dependency: { sourceProperty: 'datatype', isApplicable: isLengthApplicable, disabledTooltip: 'Length is applicable only for Text and Binary datatypes' }
+         },
+         {
+            property: 'precision', header: 'Precision', columnType: 'number', width: '70px', readonlyForTypeProperty: true,
+            dependency: { sourceProperty: 'datatype', isApplicable: isPrecisionApplicable, disabledTooltip: 'Precision is applicable only for Decimal and Integer datatypes' }
+         },
+         {
+            property: 'scale', header: 'Scale', columnType: 'number', width: '70px', readonlyForTypeProperty: true,
+            dependency: { sourceProperty: 'datatype', isApplicable: isScaleApplicable, disabledTooltip: 'Scale is applicable only for Decimal, Time and DateTime datatypes' }
+         },
+         { property: 'mandatory', header: 'Mandatory', columnType: 'boolean', width: '50px', readonlyForTypeProperty: true },
+         { property: 'value', header: 'Value', columnType: 'text', width: '15%', filterType: 'text' }
+      ]
+   };
+}
 
 const dataModelSchema: DynamicFormSchema = {
    rootKey: 'datamodel',
@@ -94,11 +133,7 @@ const dataModelSchema: DynamicFormSchema = {
             }
          ]
       },
-      {
-         property: 'customProperties',
-         label: 'Custom properties',
-         renderMode: 'custom-properties'
-      }
+      createCustomPropertiesCollection()
    ]
 };
 
@@ -165,6 +200,7 @@ const logicalEntitySchema: DynamicFormSchema = {
          noDataMessage: 'No attributes defined',
          resizableColumns: true,
          columnResizeMode: 'fit',
+         typeProperty: 'type',
          idGenerator: (row: Record<string, any>, rootObj: any): string =>
             findNextUnique(toId(row.name || ''), rootObj.attributes || [], (attr: any) => attr.id || ''),
          itemBuilder: (rowData: Record<string, any>): Record<string, any> => ({
@@ -179,6 +215,17 @@ const logicalEntitySchema: DynamicFormSchema = {
                required: true,
                width: '20%',
                filterType: 'text'
+            },
+            {
+               property: 'type',
+               header: 'Type',
+               columnType: 'reference',
+               width: '15%',
+               filterType: 'text',
+               referenceConfig: {
+                  syntheticType: LogicalAttributeType,
+                  referenceProperty: 'type'
+               }
             },
             {
                property: 'datatype',
@@ -321,11 +368,7 @@ const logicalEntitySchema: DynamicFormSchema = {
             }
          ]
       },
-      {
-         property: 'customProperties',
-         label: 'Custom properties',
-         renderMode: 'custom-properties'
-      }
+      createCustomPropertiesCollection()
    ]
 };
 
@@ -405,11 +448,7 @@ const relationshipSchema: DynamicFormSchema = {
             }
          ]
       },
-      {
-         property: 'customProperties',
-         label: 'Custom properties',
-         renderMode: 'custom-properties'
-      }
+      createCustomPropertiesCollection()
    ]
 };
 
@@ -433,11 +472,68 @@ const objectDefinitionSchema: DynamicFormSchema = {
       }
    ],
    collections: [
+      createCustomPropertiesCollection({ label: 'Property Definitions' })
+   ]
+};
+
+const attributeDefinitionSchema: DynamicFormSchema = {
+   rootKey: 'objectDefinition',
+   rootType: 'AttributeDefinition',
+   displayName: 'Attribute Definition',
+   iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+   diagnosticPath: 'objectDefinition',
+   typeProperty: 'extends',
+   sections: [
       {
-         property: 'customProperties',
-         label: 'Property Definitions',
-         renderMode: 'custom-properties'
+         label: 'General',
+         fields: [
+            { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
+            { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'abstract', label: 'Abstract', fieldType: 'boolean' },
+            { property: 'extends', label: 'Extends', fieldType: 'reference', referenceProperty: 'extends' },
+            {
+               property: 'datatype',
+               label: 'Data Type',
+               fieldType: 'dropdown',
+               dropdownOptions: dataTypeOptions
+            },
+            {
+               property: 'length',
+               label: 'Length',
+               fieldType: 'number',
+               dependency: {
+                  sourceProperty: 'datatype',
+                  isApplicable: isLengthApplicable,
+                  disabledTooltip: 'Length is applicable only for Text and Binary datatypes'
+               }
+            },
+            {
+               property: 'precision',
+               label: 'Precision',
+               fieldType: 'number',
+               dependency: {
+                  sourceProperty: 'datatype',
+                  isApplicable: isPrecisionApplicable,
+                  disabledTooltip: 'Precision is applicable only for Decimal and Integer datatypes'
+               }
+            },
+            {
+               property: 'scale',
+               label: 'Scale',
+               fieldType: 'number',
+               dependency: {
+                  sourceProperty: 'datatype',
+                  isApplicable: isScaleApplicable,
+                  disabledTooltip: 'Scale is applicable only for Decimal, Time and DateTime datatypes'
+               }
+            },
+            { property: 'mandatory', label: 'Mandatory', fieldType: 'boolean' }
+         ]
       }
+   ],
+   collections: [
+      createCustomPropertiesCollection({ label: 'Property Definitions' })
    ]
 };
 
@@ -502,11 +598,7 @@ const logicalAttributeItemSchema: DynamicFormSchema = {
       }
    ],
    collections: [
-      {
-         property: 'customProperties',
-         label: 'Custom Properties',
-         renderMode: 'custom-properties'
-      }
+      createCustomPropertiesCollection({ label: 'Custom Properties' })
    ]
 };
 
@@ -530,11 +622,187 @@ const logicalIdentifierItemSchema: DynamicFormSchema = {
       }
    ],
    collections: [
+      createCustomPropertiesCollection({ label: 'Custom Properties' })
+   ]
+};
+
+const customPropertyItemSchema: DynamicFormSchema = {
+   rootKey: ITEM_ROOT_KEY,
+   rootType: CustomPropertyType,
+   displayName: 'Custom Property',
+   iconClass: 'codicon codicon-symbol-property',
+   diagnosticPath: ITEM_ROOT_KEY,
+   typeProperty: 'type',
+   sections: [
       {
-         property: 'customProperties',
-         label: 'Custom Properties',
-         renderMode: 'custom-properties'
+         label: 'General',
+         fields: [
+            { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
+            { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'type', label: 'Type', fieldType: 'reference', referenceProperty: 'type' },
+            {
+               property: 'datatype',
+               label: 'Data Type',
+               fieldType: 'dropdown',
+               dropdownOptions: dataTypeOptions
+            },
+            {
+               property: 'length',
+               label: 'Length',
+               fieldType: 'number',
+               dependency: {
+                  sourceProperty: 'datatype',
+                  isApplicable: isLengthApplicable,
+                  disabledTooltip: 'Length is applicable only for Text and Binary datatypes'
+               }
+            },
+            {
+               property: 'precision',
+               label: 'Precision',
+               fieldType: 'number',
+               dependency: {
+                  sourceProperty: 'datatype',
+                  isApplicable: isPrecisionApplicable,
+                  disabledTooltip: 'Precision is applicable only for Decimal and Integer datatypes'
+               }
+            },
+            {
+               property: 'scale',
+               label: 'Scale',
+               fieldType: 'number',
+               dependency: {
+                  sourceProperty: 'datatype',
+                  isApplicable: isScaleApplicable,
+                  disabledTooltip: 'Scale is applicable only for Decimal, Time and DateTime datatypes'
+               }
+            },
+            { property: 'mandatory', label: 'Mandatory', fieldType: 'boolean' },
+            { property: 'value', label: 'Value', fieldType: 'text', undefinedIfEmpty: true }
+         ]
       }
+   ],
+   collections: []
+};
+
+// --- Definition subtype schemas ---
+
+const entityDefinitionSchema: DynamicFormSchema = {
+   rootKey: 'objectDefinition',
+   rootType: 'EntityDefinition',
+   displayName: 'Entity Definition',
+   iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+   diagnosticPath: 'objectDefinition',
+   typeProperty: 'extends',
+   sections: [
+      {
+         label: 'General',
+         fields: [
+            { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
+            { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'abstract', label: 'Abstract', fieldType: 'boolean' },
+            { property: 'extends', label: 'Extends', fieldType: 'reference', referenceProperty: 'extends' }
+         ]
+      }
+   ],
+   collections: [
+      createCustomPropertiesCollection({ label: 'Property Definitions' })
+   ]
+};
+
+const relationshipDefinitionSchema: DynamicFormSchema = {
+   rootKey: 'objectDefinition',
+   rootType: 'RelationshipDefinition',
+   displayName: 'Relationship Definition',
+   iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+   diagnosticPath: 'objectDefinition',
+   typeProperty: 'extends',
+   sections: [
+      {
+         label: 'General',
+         fields: [
+            { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
+            { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'abstract', label: 'Abstract', fieldType: 'boolean' },
+            { property: 'extends', label: 'Extends', fieldType: 'reference', referenceProperty: 'extends' },
+            {
+               property: 'parentCardinality',
+               label: 'Parent Cardinality',
+               fieldType: 'dropdown',
+               dropdownOptions: [
+                  { label: '0..1', value: '0..1' },
+                  { label: '1..1', value: '1..1' },
+                  { label: '0..N', value: '0..N' },
+                  { label: '1..N', value: '1..N' }
+               ]
+            },
+            {
+               property: 'childCardinality',
+               label: 'Child Cardinality',
+               fieldType: 'dropdown',
+               dropdownOptions: [
+                  { label: '0..1', value: '0..1' },
+                  { label: '1..1', value: '1..1' },
+                  { label: '0..N', value: '0..N' },
+                  { label: '1..N', value: '1..N' }
+               ]
+            }
+         ]
+      }
+   ],
+   collections: [
+      createCustomPropertiesCollection({ label: 'Property Definitions' })
+   ]
+};
+
+const identifierDefinitionSchema: DynamicFormSchema = {
+   rootKey: 'objectDefinition',
+   rootType: 'IdentifierDefinition',
+   displayName: 'Identifier Definition',
+   iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+   diagnosticPath: 'objectDefinition',
+   typeProperty: 'extends',
+   sections: [
+      {
+         label: 'General',
+         fields: [
+            { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
+            { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'abstract', label: 'Abstract', fieldType: 'boolean' },
+            { property: 'extends', label: 'Extends', fieldType: 'reference', referenceProperty: 'extends' },
+            { property: 'primary', label: 'Primary', fieldType: 'boolean' }
+         ]
+      }
+   ],
+   collections: [
+      createCustomPropertiesCollection({ label: 'Property Definitions' })
+   ]
+};
+
+const dataModelDefinitionSchema: DynamicFormSchema = {
+   rootKey: 'objectDefinition',
+   rootType: 'DataModelDefinition',
+   displayName: 'Data Model Definition',
+   iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+   diagnosticPath: 'objectDefinition',
+   typeProperty: 'extends',
+   sections: [
+      {
+         label: 'General',
+         fields: [
+            { property: 'id', label: 'ID', fieldType: 'text', disabled: true },
+            { property: 'name', label: 'Name', fieldType: 'text', required: true, undefinedIfEmpty: true },
+            { property: 'description', label: 'Description', fieldType: 'textarea', undefinedIfEmpty: true },
+            { property: 'abstract', label: 'Abstract', fieldType: 'boolean' },
+            { property: 'extends', label: 'Extends', fieldType: 'reference', referenceProperty: 'extends' }
+         ]
+      }
+   ],
+   collections: [
+      createCustomPropertiesCollection({ label: 'Property Definitions' })
    ]
 };
 
@@ -545,8 +813,14 @@ SCHEMA_REGISTRY.set('DataModel', dataModelSchema);
 SCHEMA_REGISTRY.set('LogicalEntity', logicalEntitySchema);
 SCHEMA_REGISTRY.set('Relationship', relationshipSchema);
 SCHEMA_REGISTRY.set('ObjectDefinition', objectDefinitionSchema);
+SCHEMA_REGISTRY.set('AttributeDefinition', attributeDefinitionSchema);
+SCHEMA_REGISTRY.set('EntityDefinition', entityDefinitionSchema);
+SCHEMA_REGISTRY.set('RelationshipDefinition', relationshipDefinitionSchema);
+SCHEMA_REGISTRY.set('IdentifierDefinition', identifierDefinitionSchema);
+SCHEMA_REGISTRY.set('DataModelDefinition', dataModelDefinitionSchema);
 SCHEMA_REGISTRY.set(LogicalAttributeType, logicalAttributeItemSchema);
 SCHEMA_REGISTRY.set(LogicalIdentifierType, logicalIdentifierItemSchema);
+SCHEMA_REGISTRY.set(CustomPropertyType, customPropertyItemSchema);
 
 /**
  * Finds the appropriate DynamicFormSchema for a given CrossModelRoot.

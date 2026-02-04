@@ -1,4 +1,4 @@
-objectDefinition:
+attributeDefinition:
     id: Attribute
     name: "Attribute"
     description: "Root definition for all attribute types"

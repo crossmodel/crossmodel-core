@@ -1,6 +1,56 @@
 import 'terminals'
 import 'common'
 
+// --- Entity Definition (type definition for entities) ---
+
+interface EntityDefinition extends ObjectDefinition {
+}
+
+EntityDefinition returns EntityDefinition:
+    'entityDefinition' ':'
+        INDENT
+            NamedObjectFragment
+            (abstract?='abstract' ':' ('TRUE' | 'true'))?
+            ('extends' ':' extends=[EntityDefinition:IDReference])?
+            CustomPropertiesFragment?
+        DEDENT
+;
+
+// --- Attribute Definition (type definition for attributes) ---
+
+interface AttributeDefinition extends ObjectDefinition, WithDataType {
+}
+
+AttributeDefinition returns AttributeDefinition:
+    'attributeDefinition' ':'
+        INDENT
+            NamedObjectFragment
+            (abstract?='abstract' ':' ('TRUE' | 'true'))?
+            ('extends' ':' extends=[AttributeDefinition:IDReference])?
+            DataTypePropertiesFragment
+            CustomPropertiesFragment?
+        DEDENT
+;
+
+// --- Identifier Definition (type definition for identifiers) ---
+
+interface IdentifierDefinition extends ObjectDefinition {
+    primary?: boolean;
+}
+
+IdentifierDefinition returns IdentifierDefinition:
+    'identifierDefinition' ':'
+        INDENT
+            NamedObjectFragment
+            (abstract?='abstract' ':' ('TRUE' | 'true'))?
+            ('extends' ':' extends=[IdentifierDefinition:IDReference])?
+            (primary?='primary' ':' ('TRUE' | 'true'))?
+            CustomPropertiesFragment?
+        DEDENT
+;
+
+// --- Entity ---
+
 interface LogicalEntity extends DataElementContainer, WithCustomProperties {
     superEntities: @LogicalEntity[];
     attributes: LogicalAttribute[];
@@ -31,20 +81,12 @@ LogicalEntity returns LogicalEntity:
         DEDENT
 ;
 
-interface LogicalAttribute extends DataElement, WithCustomProperties {
-    mandatory?: boolean;
-    length?: number;
-    precision?: number;
-    scale?: number;
+interface LogicalAttribute extends DataElement, WithCustomProperties, WithDataType {
 }
 
 LogicalAttribute returns LogicalAttribute:
     TypedObjectFragment
-    ('datatype' ':' datatype=STRING)?
-    ('length' ':' length=NUMBER)?
-    ('precision' ':' precision=NUMBER)?
-    ('scale' ':' scale=NUMBER)?
-    (mandatory?='mandatory' ':' ('TRUE' | 'true'))?
+    DataTypePropertiesFragment
     CustomPropertiesFragment?
 ;
 

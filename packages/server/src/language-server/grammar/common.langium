@@ -53,6 +53,23 @@ interface DataElement extends NamedObject {
     datatype?: string;
 }
 
+// Data type properties shared by attributes and attribute definitions
+interface WithDataType {
+    datatype?: string;
+    length?: number;
+    precision?: number;
+    scale?: number;
+    mandatory?: boolean;
+}
+
+fragment DataTypePropertiesFragment:
+    ('datatype' ':' datatype=STRING)?
+    ('length' ':' length=NUMBER)?
+    ('precision' ':' precision=NUMBER)?
+    ('scale' ':' scale=NUMBER)?
+    (mandatory?='mandatory' ':' ('TRUE' | 'true'))?
+;
+
 // Custom properties
 interface WithCustomProperties {
     customProperties: CustomProperty[];
@@ -65,13 +82,8 @@ fragment CustomPropertiesFragment:
         DEDENT
     ;
 
-interface CustomProperty extends NamedObject {
+interface CustomProperty extends NamedObject, WithDataType {
     type?: @ObjectDefinition;
-    datatype?: string;
-    length?: number;
-    precision?: number;
-    scale?: number;
-    mandatory?: boolean;
     defaultValue?: CustomPropertyValue;
     values: CustomPropertyValue[];
     value?: string;
@@ -80,11 +92,7 @@ interface CustomProperty extends NamedObject {
 CustomProperty returns CustomProperty:
     NamedObjectFragment
     ('type' ':' type=[ObjectDefinition:IDReference])?
-    ('datatype' ':' datatype=STRING)?
-    ('length' ':' length=NUMBER)?
-    ('precision' ':' precision=NUMBER)?
-    ('scale' ':' scale=NUMBER)?
-    (mandatory?='mandatory' ':' ('TRUE' | 'true'))?
+    DataTypePropertiesFragment
     ('defaultValue' ':' defaultValue=CustomPropertyValue)?
     ('values' ':'
         INDENT
@@ -98,6 +106,10 @@ interface ObjectDefinition extends NamedObject, WithCustomProperties {
     abstract?: boolean;
     extends?: @ObjectDefinition;
 }
+
+// Cardinality values shared by relationships and relationship definitions.
+Cardinality returns string:
+    '0..1' | '1..1' | '0..N' | '1..N';
 
 CustomPropertyValue:
     {infer StringValue} value=STRING |

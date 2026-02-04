@@ -1,12 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { ResolvedObjectDefinition, ResolvedPropertyDefinition } from '@crossmodel/protocol';
+import { ResolvedInheritedProperties, ResolvedObjectDefinition, ResolvedPropertyDefinition } from '@crossmodel/protocol';
 import * as React from 'react';
 import { useModelQueryApi, useUri } from '../ModelContext';
 
 export interface UseTypePropertiesResult {
    propertyDefinitions: ResolvedPropertyDefinition[];
+   inheritedProperties?: ResolvedInheritedProperties;
    loading: boolean;
    definitionName?: string;
    resolvedDefinition?: ResolvedObjectDefinition;
@@ -51,6 +52,7 @@ export function useTypeProperties(type: string | undefined): UseTypePropertiesRe
          if (resolved) {
             setResult({
                propertyDefinitions: resolved.propertyDefinitions,
+               inheritedProperties: resolved.inheritedProperties,
                loading: false,
                definitionName: resolved.name,
                resolvedDefinition: resolved

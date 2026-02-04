@@ -73,31 +73,40 @@ export function RowDetailDialog({ visible, onHide, row, collection, onSave }: Ro
                   obj.id = (action as any).id;
                   break;
                }
-               // Handle custom property actions dispatched by CustomPropertiesDataGrid
-               // These have the form `${contextType}:customProperty:*`
-               default: {
-                  if (action.type.includes(':customProperty:')) {
-                     const a = action as any;
-                     if (action.type.endsWith(':add-customProperty')) {
-                        if (!obj.customProperties) {
-                           obj.customProperties = [];
-                        }
-                        obj.customProperties = [...obj.customProperties, a.customProperty];
-                     } else if (action.type.endsWith(':update')) {
-                        if (obj.customProperties) {
-                           obj.customProperties = [...obj.customProperties];
-                           obj.customProperties[a.customPropertyIdx] = a.customProperty;
-                        }
-                     } else if (action.type.endsWith(':delete-customProperty')) {
-                        if (obj.customProperties) {
-                           obj.customProperties = obj.customProperties.filter((_: any, i: number) => i !== a.customPropertyIdx);
-                        }
-                     } else if (action.type.endsWith(':reorder-customProperties')) {
-                        obj.customProperties = a.customProperties;
-                     }
+               // Handle dynamic collection actions dispatched by DynamicDataGrid
+               case 'dynamic:collection:add': {
+                  const a = action as any;
+                  const collProp = a.collectionProperty;
+                  if (!obj[collProp]) {
+                     obj[collProp] = [];
+                  }
+                  obj[collProp] = [...obj[collProp], a.item];
+                  break;
+               }
+               case 'dynamic:collection:update': {
+                  const a = action as any;
+                  const collProp = a.collectionProperty;
+                  if (obj[collProp]) {
+                     obj[collProp] = [...obj[collProp]];
+                     obj[collProp][a.itemIdx] = a.item;
                   }
                   break;
                }
+               case 'dynamic:collection:delete': {
+                  const a = action as any;
+                  const collProp = a.collectionProperty;
+                  if (obj[collProp]) {
+                     obj[collProp] = obj[collProp].filter((_: any, i: number) => i !== a.itemIdx);
+                  }
+                  break;
+               }
+               case 'dynamic:collection:reorder': {
+                  const a = action as any;
+                  obj[a.collectionProperty] = a.items;
+                  break;
+               }
+               default:
+                  break;
             }
 
             return next;
@@ -144,7 +153,8 @@ export function RowDetailDialog({ visible, onHide, row, collection, onSave }: Ro
             footer={footer}
             modal
             className='row-detail-dialog'
-            style={{ width: '500px' }}
+            style={{ width: '60vw', minWidth: '400px' }}
+            resizable
             dismissableMask
             closable
          >
@@ -163,7 +173,8 @@ export function RowDetailDialog({ visible, onHide, row, collection, onSave }: Ro
          footer={footer}
          modal
          className='row-detail-dialog'
-         style={{ width: '500px' }}
+         style={{ width: '60vw', minWidth: '400px' }}
+         resizable
          dismissableMask
          closable
       >

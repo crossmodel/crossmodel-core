@@ -1,4 +1,4 @@
-objectDefinition:
+relationshipDefinition:
     id: Relationship
     name: "Relationship"
     description: "Root definition for all relationship types"

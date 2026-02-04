@@ -39,6 +39,7 @@ import {
    isSourceObject,
    isSourceObjectAttributeReference,
    isSourceObjectDependency,
+   reflection,
    RelationshipAttribute,
    SourceObject
 } from './generated/ast.js';
@@ -57,6 +58,11 @@ const TYPE_DOMAIN_MAP: Record<string, string> = {
    LogicalEntityNodeAttribute: 'Attribute',
    SourceObjectAttribute: 'Attribute',
    TargetObjectAttribute: 'Attribute',
+   AttributeDefinition: 'Attribute',
+   EntityDefinition: 'Entity',
+   RelationshipDefinition: 'Relationship',
+   IdentifierDefinition: 'Identifier',
+   DataModelDefinition: 'DataModel',
    LogicalIdentifier: 'Identifier',
    CustomProperty: 'CustomProperty'
 };
@@ -271,7 +277,7 @@ export class CrossModelScopeProvider extends DataModelScopeProvider {
       }
       // Filter ObjectDefinitions: suppress abstract ones and restrict to the correct domain
       // based on the container type (e.g., Entity containers only see Entity-rooted definitions).
-      if (description.type === 'ObjectDefinition') {
+      if (reflection.isSubtype(description.type, 'ObjectDefinition')) {
          const node = this.services.shared.workspace.IndexManager.resolveElement(description);
          if (isObjectDefinition(node)) {
             if (node.abstract) {

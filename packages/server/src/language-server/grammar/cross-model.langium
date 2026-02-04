@@ -13,4 +13,9 @@ entry CrossModelRoot:
     relationship=Relationship |
     systemDiagram=SystemDiagram |
     mapping=Mapping |
-    objectDefinition=ObjectDefinition)?;
+    objectDefinition=ObjectDefinition |
+    objectDefinition=AttributeDefinition |
+    objectDefinition=EntityDefinition |
+    objectDefinition=RelationshipDefinition |
+    objectDefinition=IdentifierDefinition |
+    objectDefinition=DataModelDefinition)?;

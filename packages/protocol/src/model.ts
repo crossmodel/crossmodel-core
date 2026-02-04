@@ -191,7 +191,14 @@ export const ModelFileExtensions = {
       if (content.startsWith('mapping')) {
          return 'Mapping';
       }
-      if (content.startsWith('objectDefinition')) {
+      if (
+         content.startsWith('objectDefinition') ||
+         content.startsWith('attributeDefinition') ||
+         content.startsWith('entityDefinition') ||
+         content.startsWith('relationshipDefinition') ||
+         content.startsWith('identifierDefinition') ||
+         content.startsWith('datamodelDefinition')
+      ) {
          return 'ObjectDefinition';
       }
       return undefined;
@@ -199,7 +206,7 @@ export const ModelFileExtensions = {
 
    detectFileExtension(content: string): string | undefined {
       const type = this.detectFileType(content);
-      return type ? this.detectFileExtension(type) : undefined;
+      return type ? ModelFileType.getFileExtension(type) : undefined;
    }
 } as const;
 

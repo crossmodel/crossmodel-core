@@ -298,9 +298,9 @@ export function GenericNumberEditor({
 
    let effectiveValue = value;
    if (forceClear) {
-      effectiveValue = undefined;
+      effectiveValue = null;
    } else if (effectiveValue === undefined) {
-      effectiveValue = options.value ?? undefined;
+      effectiveValue = options.value ?? null;
    }
 
    return (

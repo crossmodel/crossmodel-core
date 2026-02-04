@@ -54,10 +54,50 @@ export interface CustomProperty extends CrossModelElement, TypedObject {
 }
 
 export const ObjectDefinitionType = 'ObjectDefinition';
+export type ObjectDefinitionSubtype =
+   | typeof ObjectDefinitionType
+   | typeof AttributeDefinitionType
+   | typeof EntityDefinitionType
+   | typeof RelationshipDefinitionType
+   | typeof IdentifierDefinitionType
+   | typeof DataModelDefinitionType;
 export interface ObjectDefinition extends CrossModelElement, NamedObject, WithCustomProperties {
-   readonly $type: typeof ObjectDefinitionType;
+   readonly $type: ObjectDefinitionSubtype;
    abstract?: boolean;
    extends?: Reference<ObjectDefinition>;
+}
+
+export const AttributeDefinitionType = 'AttributeDefinition';
+export interface AttributeDefinition extends ObjectDefinition {
+   readonly $type: typeof AttributeDefinitionType;
+   datatype?: string;
+   length?: number;
+   precision?: number;
+   scale?: number;
+   mandatory?: boolean;
+}
+
+export const EntityDefinitionType = 'EntityDefinition';
+export interface EntityDefinition extends ObjectDefinition {
+   readonly $type: typeof EntityDefinitionType;
+}
+
+export const RelationshipDefinitionType = 'RelationshipDefinition';
+export interface RelationshipDefinition extends ObjectDefinition {
+   readonly $type: typeof RelationshipDefinitionType;
+   parentCardinality?: string;
+   childCardinality?: string;
+}
+
+export const IdentifierDefinitionType = 'IdentifierDefinition';
+export interface IdentifierDefinition extends ObjectDefinition {
+   readonly $type: typeof IdentifierDefinitionType;
+   primary?: boolean;
+}
+
+export const DataModelDefinitionType = 'DataModelDefinition';
+export interface DataModelDefinition extends ObjectDefinition {
+   readonly $type: typeof DataModelDefinitionType;
 }
 
 export type CustomPropertyValue = StringValue | NumberValue | BooleanValue;
@@ -93,7 +133,7 @@ export interface CrossModelRoot extends CrossModelElement {
    relationship?: Relationship;
    mapping?: Mapping;
    systemDiagram?: SystemDiagram;
-   objectDefinition?: ObjectDefinition;
+   objectDefinition?: ObjectDefinition | AttributeDefinition | EntityDefinition | RelationshipDefinition | IdentifierDefinition | DataModelDefinition;
 }
 export type TypeGuard<T> = (item: unknown) => item is T;
 export type RootContainer = {
@@ -148,6 +188,7 @@ export interface EntityInherit extends CrossModelElement {
 }
 
 export interface AbstractLogicalAttribute extends CrossModelElement, NamedObject {
+   type?: Reference<ObjectDefinition>;
    datatype?: string;
    length?: number;
    precision?: number;
@@ -556,12 +597,19 @@ export interface ResolvedPropertyDefinition {
    inherited: boolean;
 }
 
+export interface ResolvedInheritedProperties {
+   properties: Record<string, any>;
+   propertySources: Record<string, string>;
+}
+
 export interface ResolvedObjectDefinition {
    id: string;
    name?: string;
    abstract?: boolean;
    extends?: string;
+   definitionType: string;
    propertyDefinitions: ResolvedPropertyDefinition[];
+   inheritedProperties?: ResolvedInheritedProperties;
 }
 
 export interface ResolveObjectDefinitionArgs {

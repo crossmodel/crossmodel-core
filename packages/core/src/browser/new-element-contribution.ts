@@ -154,6 +154,93 @@ const NEW_ELEMENT_TEMPLATES: ReadonlyArray<NewElementTemplate> = [
    }
 ];
 
+// --- Definition templates ---
+
+const NEW_DEFINITION_NAV_MENU = [...NavigatorContextMenu.NAVIGATION, '0_new_definition'];
+const NEW_DEFINITION_MAIN_MENU = [...CommonMenus.FILE, '0_new_definition'];
+const DEFINITION_CATEGORY = 'New Definition';
+
+const INITIAL_ENTITY_DEF_CONTENT = `entityDefinition:
+    id: \${id}
+    name: \${name}
+`;
+
+const INITIAL_ATTRIBUTE_DEF_CONTENT = `attributeDefinition:
+    id: \${id}
+    name: \${name}
+`;
+
+const INITIAL_RELATIONSHIP_DEF_CONTENT = `relationshipDefinition:
+    id: \${id}
+    name: \${name}
+`;
+
+const INITIAL_IDENTIFIER_DEF_CONTENT = `identifierDefinition:
+    id: \${id}
+    name: \${name}
+`;
+
+const INITIAL_DATAMODEL_DEF_CONTENT = `datamodelDefinition:
+    id: \${id}
+    name: \${name}
+`;
+
+interface DefinitionTemplate extends Command {
+   label: string;
+   /** Subfolder under `definitions/` where the file will be created (e.g., 'entities'). */
+   subfolder: string;
+   content: string;
+   validateName?: (name: string) => string | undefined;
+}
+
+const NEW_DEFINITION_TEMPLATES: ReadonlyArray<DefinitionTemplate> = [
+   {
+      id: 'crossbreeze.new.entity-definition',
+      label: 'Entity Definition',
+      subfolder: 'entities',
+      category: DEFINITION_CATEGORY,
+      iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+      content: INITIAL_ENTITY_DEF_CONTENT,
+      validateName: validateObjectName
+   },
+   {
+      id: 'crossbreeze.new.attribute-definition',
+      label: 'Attribute Definition',
+      subfolder: 'attributes',
+      category: DEFINITION_CATEGORY,
+      iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+      content: INITIAL_ATTRIBUTE_DEF_CONTENT,
+      validateName: validateObjectName
+   },
+   {
+      id: 'crossbreeze.new.relationship-definition',
+      label: 'Relationship Definition',
+      subfolder: 'relationships',
+      category: DEFINITION_CATEGORY,
+      iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+      content: INITIAL_RELATIONSHIP_DEF_CONTENT,
+      validateName: validateObjectName
+   },
+   {
+      id: 'crossbreeze.new.identifier-definition',
+      label: 'Identifier Definition',
+      subfolder: 'identifiers',
+      category: DEFINITION_CATEGORY,
+      iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+      content: INITIAL_IDENTIFIER_DEF_CONTENT,
+      validateName: validateObjectName
+   },
+   {
+      id: 'crossbreeze.new.datamodel-definition',
+      label: 'Data Model Definition',
+      subfolder: 'datamodels',
+      category: DEFINITION_CATEGORY,
+      iconClass: ModelStructure.ObjectDefinition.ICON_CLASS,
+      content: INITIAL_DATAMODEL_DEF_CONTENT,
+      validateName: validateObjectName
+   }
+];
+
 const DERIVE_MAPPING_FROM_ENTITY: Command = {
    id: 'crossmodel.mapping',
    label: 'Derive Mapping'
@@ -197,6 +284,30 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
          );
       }
 
+      // Definition templates (submenu commands)
+      for (const template of NEW_DEFINITION_TEMPLATES) {
+         commands.registerCommand(
+            { ...template, label: template.label + '...' },
+            this.newWorkspaceRootUriAwareCommandHandler({
+               isVisible: uri => doesDefinitionFitPackage(uri, this.modelService),
+               isEnabled: uri => doesDefinitionFitPackage(uri, this.modelService),
+               execute: uri => this.createNewDefinitionFile(uri, template)
+            })
+         );
+      }
+
+      // Definition templates (direct context menu commands — shown when right-clicking matching subfolder)
+      for (const template of NEW_DEFINITION_TEMPLATES) {
+         commands.registerCommand(
+            { ...template, id: template.id + '.direct', label: template.label + '...' },
+            this.newWorkspaceRootUriAwareCommandHandler({
+               isVisible: uri => isSelectedDefinitionSubfolder(uri, this.modelService, template),
+               isEnabled: uri => isSelectedDefinitionSubfolder(uri, this.modelService, template),
+               execute: uri => this.createNewDefinitionFile(uri, template)
+            })
+         );
+      }
+
       commands.registerCommand(
          DERIVE_MAPPING_FROM_ENTITY,
          this.newWorkspaceRootUriAwareCommandHandler({
@@ -228,6 +339,25 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
          });
       }
 
+      // Direct definition items (shown when right-clicking matching definition subfolder)
+      for (const [id, template] of NEW_DEFINITION_TEMPLATES.entries()) {
+         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
+            commandId: template.id + '.direct',
+            label: 'New ' + template.label + '...',
+            order: '0.' + (NEW_ELEMENT_TEMPLATES.length + id).toString()
+         });
+      }
+
+      // "New Definition" submenu in navigator context menu
+      registry.registerSubmenu(NEW_DEFINITION_NAV_MENU, DEFINITION_CATEGORY, { sortString: '2' });
+      for (const [id, template] of NEW_DEFINITION_TEMPLATES.entries()) {
+         registry.registerMenuAction(NEW_DEFINITION_NAV_MENU, {
+            commandId: template.id,
+            label: template.label + '...',
+            order: id.toString()
+         });
+      }
+
       registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
          commandId: DERIVE_MAPPING_FROM_ENTITY.id,
          label: DERIVE_MAPPING_FROM_ENTITY.label + '...'
@@ -237,6 +367,16 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       registry.registerSubmenu(NEW_ELEMENT_MAIN_MENU, TEMPLATE_CATEGORY, { sortString: '1' });
       for (const [id, template] of NEW_ELEMENT_TEMPLATES.entries()) {
          registry.registerMenuAction(NEW_ELEMENT_MAIN_MENU, {
+            commandId: template.id,
+            label: template.label + '...',
+            order: id.toString()
+         });
+      }
+
+      // "New Definition" submenu in main menu bar
+      registry.registerSubmenu(NEW_DEFINITION_MAIN_MENU, DEFINITION_CATEGORY, { sortString: '2' });
+      for (const [id, template] of NEW_DEFINITION_TEMPLATES.entries()) {
+         registry.registerMenuAction(NEW_DEFINITION_MAIN_MENU, {
             commandId: template.id,
             label: template.label + '...',
             order: id.toString()
@@ -265,6 +405,57 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       const targetTypeDirectory = URI.fromFilePath(dataModel.directory).resolve(ModelFileType.getFolder(targetType));
       // if the user selected a sub-directory in the correct target type directory, we use that
       return targetTypeDirectory.isEqualOrParent(selectedDirectory.resource) ? selectedDirectory.resource : targetTypeDirectory;
+   }
+
+   protected async createNewDefinitionFile(uri: URI, template: DefinitionTemplate): Promise<void> {
+      const targetDirectory = await this.getDefinitionTargetDirectory(uri, template.subfolder);
+      if (!targetDirectory) {
+         return;
+      }
+      const options = await getGridInputOptions(
+         {
+            title: 'New ' + template.label + '...',
+            parentUri: targetDirectory,
+            inputs: [{ id: 'name', label: 'Name', placeholder: 'DefinitionName' }],
+            validate: value => {
+               const name = JSON.parse(value).name ?? '';
+               if (!name) {
+                  return 'Name is required.';
+               }
+               const validationError = template.validateName?.(name);
+               if (validationError) {
+                  return validationError;
+               }
+               return this.validateFile(join(targetDirectory, toId(name), ModelFileExtensions.ObjectDefinition));
+            }
+         },
+         this.labelProvider
+      );
+      if (!options) {
+         return;
+      }
+      const id = toId(options.name);
+      const content = resolvePlaceholder(template.content, { id, name: quote(options.name) });
+      const fileUri = join(targetDirectory, id, ModelFileExtensions.ObjectDefinition);
+      await this.fileService.create(fileUri, content);
+      this.fireCreateNewFile({ parent: targetDirectory, uri: fileUri });
+      open(this.openerService, fileUri);
+   }
+
+   protected async getDefinitionTargetDirectory(source: URI, subfolder: string): Promise<URI | undefined> {
+      const selectedDirectory = await this.getDirectory(source);
+      if (!selectedDirectory) {
+         return;
+      }
+      const dataModel = await this.modelService.getDataModelInfo({ contextUri: source.toString() });
+      if (!dataModel) {
+         this.messageService.error('Could not determine data model for ' + source.path.fsPath());
+         return;
+      }
+      const definitionsDir = URI.fromFilePath(dataModel.directory)
+         .resolve(ModelStructure.ObjectDefinition.FOLDER)
+         .resolve(subfolder);
+      return definitionsDir;
    }
 
    protected async deriveNewMappingFile(entityUri: URI): Promise<void> {
@@ -621,6 +812,39 @@ function folderNameForMemberType(memberType: ModelFileType | string): string {
    return '';
 }
 
+function doesDefinitionFitPackage(target: URI | undefined, modelService: ModelService): boolean {
+   if (!target) {
+      return false;
+   }
+   // Definitions can be created inside any existing data model package
+   return modelService.dataModels.some(candidate => URI.fromFilePath(candidate.directory).isEqualOrParent(target));
+}
+
+/**
+ * Returns true when `target` is exactly the definition subfolder for `template`,
+ * e.g. `{dataModel}/definitions/entities` for an EntityDefinition template.
+ */
+function isSelectedDefinitionSubfolder(target: URI | undefined, modelService: ModelService, template: DefinitionTemplate): boolean {
+   if (!target) {
+      return false;
+   }
+   const surroundingDataModel = modelService.dataModels.find(candidate => URI.fromFilePath(candidate.directory).isEqualOrParent(target));
+   if (surroundingDataModel) {
+      const dataModelUri = URI.fromFilePath(surroundingDataModel.directory);
+      const defSubfolderUri = dataModelUri.resolve(ModelStructure.ObjectDefinition.FOLDER).resolve(template.subfolder);
+      if (target.isEqual(defSubfolderUri)) {
+         return true;
+      }
+   }
+   // Fallback: check base name matches subfolder AND parent is the definitions folder
+   const base = target.path.base.toLowerCase();
+   const parentBase = target.parent.path.base.toLowerCase();
+   if (base === template.subfolder.toLowerCase() && parentBase === ModelStructure.ObjectDefinition.FOLDER.toLowerCase()) {
+      return true;
+   }
+   return false;
+}
+
 function isSelectedModelFolder(target: URI | undefined, modelService: ModelService, template: NewElementTemplate): boolean {
    if (!target) {
       return false;
@@ -632,15 +856,24 @@ function isSelectedModelFolder(target: URI | undefined, modelService: ModelServi
 
    const surroundingDataModel = modelService.dataModels.find(candidate => URI.fromFilePath(candidate.directory).isEqualOrParent(target));
    if (surroundingDataModel) {
-      const folderUri = URI.fromFilePath(surroundingDataModel.directory).resolve(expectedFolder);
+      const dataModelUri = URI.fromFilePath(surroundingDataModel.directory);
+      const folderUri = dataModelUri.resolve(expectedFolder);
+      // Exact match: target is the direct member type folder (e.g., {dataModel}/entities)
       if (target.isEqual(folderUri)) {
          return true;
       }
+      // Ensure the target is NOT inside the definitions directory — definition subfolders
+      // (e.g., definitions/entities) should not match instance element type folders.
+      const definitionsUri = dataModelUri.resolve(ModelStructure.ObjectDefinition.FOLDER);
+      if (definitionsUri.isEqualOrParent(target)) {
+         return false;
+      }
    }
 
-   // Fallback: check the selected folder's base name
+   // Fallback: check the selected folder's base name, but only if it's not inside a definitions folder
    const base = target.path.base.toLowerCase();
-   if (base === expectedFolder) {
+   const parentBase = target.parent.path.base.toLowerCase();
+   if (base === expectedFolder && parentBase !== ModelStructure.ObjectDefinition.FOLDER.toLowerCase()) {
       return true;
    }
 

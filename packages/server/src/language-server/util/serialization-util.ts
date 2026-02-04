@@ -4,15 +4,20 @@
 
 import { isReference } from 'langium';
 import {
+   AttributeDefinition,
    AttributeMapping,
+   CrossModelRoot,
    AttributeMappingExpression,
    AttributeMappingSource,
    AttributeMappingTarget,
    BooleanValue,
    CustomProperty,
    DataModel,
+   DataModelDefinition,
    DataModelDependency,
+   EntityDefinition,
    IdentifiedObject,
+   IdentifierDefinition,
    InheritanceEdge,
    JoinCondition,
    LogicalAttribute,
@@ -25,6 +30,7 @@ import {
    ObjectDefinition,
    Relationship,
    RelationshipAttribute,
+   RelationshipDefinition,
    RelationshipEdge,
    SourceObject,
    SourceObjectAttribute,
@@ -47,9 +53,28 @@ const PROPERTY_KEYWORDS = new Map<string, string>([
 ]);
 
 /**
- * Get the keyword for a property, or the property name itself if no keyword mapping exists.
+ * When multiple grammar alternatives map to the same property (e.g., objectDefinition=ObjectDefinition | objectDefinition=AttributeDefinition),
+ * the keyword depends on the actual $type of the value. Maps `propertyName.valueType` to the correct keyword.
  */
-export function getPropertyKeyword(property: string): string {
+const TYPE_SPECIFIC_KEYWORDS = new Map<string, string>([
+   [`${CrossModelRoot.objectDefinition}.${AttributeDefinition.$type}`, 'attributeDefinition'],
+   [`${CrossModelRoot.objectDefinition}.${EntityDefinition.$type}`, 'entityDefinition'],
+   [`${CrossModelRoot.objectDefinition}.${RelationshipDefinition.$type}`, 'relationshipDefinition'],
+   [`${CrossModelRoot.objectDefinition}.${IdentifierDefinition.$type}`, 'identifierDefinition'],
+   [`${CrossModelRoot.objectDefinition}.${DataModelDefinition.$type}`, 'datamodelDefinition']
+]);
+
+/**
+ * Get the keyword for a property, or the property name itself if no keyword mapping exists.
+ * When a value's $type is provided, type-specific keywords take precedence.
+ */
+export function getPropertyKeyword(property: string, valueType?: string): string {
+   if (valueType) {
+      const typeSpecific = TYPE_SPECIFIC_KEYWORDS.get(`${property}.${valueType}`);
+      if (typeSpecific) {
+         return typeSpecific;
+      }
+   }
    return PROPERTY_KEYWORDS.get(property) ?? property;
 }
 
@@ -60,6 +85,8 @@ export function getPropertyKeyword(property: string): string {
 const UNQUOTED_PROPERTIES = new Set<string>([
    `${Relationship.$type}.${Relationship.parentCardinality}`,
    `${Relationship.$type}.${Relationship.childCardinality}`,
+   `${RelationshipDefinition.$type}.${RelationshipDefinition.parentCardinality}`,
+   `${RelationshipDefinition.$type}.${RelationshipDefinition.childCardinality}`,
    `${SourceObject.$type}.${SourceObject.join}`,
    `${DataModel.$type}.${DataModel.version}`,
    `${DataModelDependency.$type}.${DataModelDependency.version}`,
@@ -284,6 +311,59 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          ...NAMED_OBJECT_PROPERTIES,
          ObjectDefinition.abstract,
          ObjectDefinition.extends,
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [
+      AttributeDefinition.$type,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         AttributeDefinition.abstract,
+         AttributeDefinition.extends,
+         AttributeDefinition.datatype,
+         AttributeDefinition.length,
+         AttributeDefinition.precision,
+         AttributeDefinition.scale,
+         AttributeDefinition.mandatory,
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [
+      EntityDefinition.$type,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         EntityDefinition.abstract,
+         EntityDefinition.extends,
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [
+      RelationshipDefinition.$type,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         RelationshipDefinition.abstract,
+         RelationshipDefinition.extends,
+         RelationshipDefinition.parentCardinality,
+         RelationshipDefinition.childCardinality,
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [
+      IdentifierDefinition.$type,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         IdentifierDefinition.abstract,
+         IdentifierDefinition.extends,
+         IdentifierDefinition.primary,
+         ...CUSTOM_PROPERTIES
+      ]
+   ],
+   [
+      DataModelDefinition.$type,
+      [
+         ...NAMED_OBJECT_PROPERTIES,
+         DataModelDefinition.abstract,
+         DataModelDefinition.extends,
          ...CUSTOM_PROPERTIES
       ]
    ]
