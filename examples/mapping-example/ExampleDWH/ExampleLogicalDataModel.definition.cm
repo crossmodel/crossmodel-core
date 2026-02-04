@@ -1,4 +1,4 @@
-objectDefinition:
+datamodelDefinition:
     id: ExampleLogicalDataModel
     name: "Exampe Logical Data Model"
     extends: LogicalDataModel

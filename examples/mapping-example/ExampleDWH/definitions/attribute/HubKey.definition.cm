@@ -1,0 +1,4 @@
+attributeDefinition:
+    id: HubKey
+    name: "Hub Key"
+    datatype: "Integer"

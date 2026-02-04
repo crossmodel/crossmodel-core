@@ -8,3 +8,6 @@ entity:
       - id: Age
         name: "Age"
         datatype: "Integer"
+      - id: ExampleDWH_CalcAge_CalcAge_SQN
+        name: "CalcAge_SQN"
+        type: HubKey
