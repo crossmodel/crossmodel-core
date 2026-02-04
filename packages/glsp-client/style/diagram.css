@@ -41,39 +41,37 @@
 
 .sprotty text {
    font-family: monospace;
+   fill: var(--node-font-color, currentColor);
 }
 
-.sprotty-edge {
-   stroke-width: var(--edge-border-weight, 2px);
-}
-
-.sprotty-edge:not(.selected, .mouseover) {
-   stroke: var(--edge-border-color, var(--sprotty-edge));
-   stroke-dasharray: var(--edge-border-style, none);
-}
-
+.sprotty-edge,
 .sprotty-edge.selected,
 .sprotty-edge.mouseover {
-   stroke: var(--sprotty-edge-selected);
-   stroke-dasharray: none;
+   stroke-width: var(--edge-border-weight, 2px) !important;
+   stroke: var(--edge-border-color, var(--sprotty-edge)) !important;
+   stroke-dasharray: var(--edge-border-style, none) !important;
 }
 
 /* Nodes */
-.sprotty-node:not(.selected, .mouseover) {
-   fill: var(--node-background-color, #fbfaff);
-   stroke: var(--node-border-color, #a8a1c5);
-   stroke-width: var(--node-border-weight, 2px);
-   stroke-dasharray: var(--node-border-style, none);
+.sprotty-node,
+.sprotty-node.selected,
+.sprotty-node.mouseover {
+   fill: var(--node-background-color, #fbfaff) !important;
+   stroke: var(--node-border-color, #a8a1c5) !important;
+   stroke-width: var(--node-border-weight, 2px) !important;
+   stroke-dasharray: var(--node-border-style, none) !important;
    /* filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.8)); */
 }
 
-.sprotty-node:not(.selected, .mouseover) text {
+.sprotty-node text {
    fill: var(--node-font-color, inherit);
 }
 
-.source-object .sprotty-node:not(.selected, .mouseover) {
-   stroke: #a1c5a5;
-   fill: #fefffe;
+.source-object .sprotty-node,
+.source-object .sprotty-node.selected,
+.source-object .sprotty-node.mouseover {
+   stroke: var(--node-border-color, #a1c5a5) !important;
+   fill: var(--node-background-color, #fefffe) !important;
 }
 
 .attribute-port {
@@ -118,30 +116,22 @@
 }
 
 .attribute-compartment.mouseover,
-.sprotty-node.mouseover:not(.selected),
-.sprotty-edge.mouseover:not(.selected),
+.attribute-compartment.selected,
+.sprotty-node.mouseover,
+.sprotty-node.selected,
+.sprotty-edge.mouseover,
+.sprotty-edge.selected,
+.sprotty-edge.connector-selected,
 .source-highlight > .sprotty-node {
-   stroke: var(--theia-focusBorder);
-   stroke-width: 2px;
    opacity: 1;
 }
 
-.attribute-compartment.selected,
 .sprotty-node.selected,
+.sprotty-node.mouseover,
 .sprotty-edge.selected,
+.sprotty-edge.mouseover,
 .sprotty-edge.connector-selected {
-   stroke: var(--theia-focusBorder);
-   stroke-width: 2px;
-   stroke-dasharray: 6px 3px;
-}
-
-.attribute-compartment.mouseover,
-.attribute-compartment.selected,
-.sprotty-node.mouseover:not(.selected),
-.sprotty-node.selected,
-.source-highlight > .sprotty-node {
-   fill: #f3faff;
-   stroke-width: 2px;
+   stroke-dasharray: 6px 3px !important;
 }
 
 .sprotty .attribute_expression_marker {
