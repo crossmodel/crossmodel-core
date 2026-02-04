@@ -30,25 +30,29 @@ function getPackageJson(): { name?: string; version?: string } | undefined {
    }
 }
 
-function getVersionFromPackage(): string {
-   if (cachedVersion === undefined) {
-      const pkg = getPackageJson();
-      cachedVersion = pkg?.version ?? '0.0.0';
+function populatePackageMetadata(): void {
+   if (cachedVersion !== undefined && cachedEdition !== undefined) {
+      // Already cached, no need to read again
+      return;
    }
-   return cachedVersion;
+   const pkg = getPackageJson();
+   cachedVersion = pkg?.version ?? '0.0.0';
+   if (pkg?.name?.startsWith('crossmodel-')) {
+      // Extract edition from package name (e.g., 'crossmodel-core' -> 'core')
+      cachedEdition = pkg.name.substring('crossmodel-'.length);
+   } else {
+      cachedEdition = 'core'; // fallback
+   }
+}
+
+function getVersionFromPackage(): string {
+   populatePackageMetadata();
+   return cachedVersion!;
 }
 
 function getEditionFromPackage(): string {
-   if (cachedEdition === undefined) {
-      const pkg = getPackageJson();
-      if (pkg?.name?.startsWith('crossmodel-')) {
-         // Extract edition from package name (e.g., 'crossmodel-core' -> 'core')
-         cachedEdition = pkg.name.substring('crossmodel-'.length);
-      } else {
-         cachedEdition = 'core'; // fallback
-      }
-   }
-   return cachedEdition;
+   populatePackageMetadata();
+   return cachedEdition!;
 }
 
 export function getCrossModelVersion(): string {
