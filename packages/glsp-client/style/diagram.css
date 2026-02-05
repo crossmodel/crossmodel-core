@@ -126,14 +126,6 @@
    opacity: 1;
 }
 
-.sprotty-node.selected,
-.sprotty-node.mouseover,
-.sprotty-edge.selected,
-.sprotty-edge.mouseover,
-.sprotty-edge.connector-selected {
-   stroke-dasharray: 6px 3px !important;
-}
-
 .sprotty .attribute_expression_marker {
    text-anchor: start;
    fill: #666666;
