@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.26.0](https://github.com/crossmodel/crossmodel-core/compare/v0.25.1...v0.26.0) (2026-02-05)
+
+**Note:** Version bump only for package @crossmodel/form-client
+
+
+
+
+
 ## [0.25.1](https://github.com/crossmodel/crossmodel-core/compare/v0.25.0...v0.25.1) (2026-02-04)
 
 **Note:** Version bump only for package @crossmodel/form-client
