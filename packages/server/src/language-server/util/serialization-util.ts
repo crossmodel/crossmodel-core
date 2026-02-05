@@ -207,14 +207,37 @@ const PROPERTY_ORDER = new Map<string, string[]>([
          LogicalEntityNode.x,
          LogicalEntityNode.y,
          LogicalEntityNode.width,
-         LogicalEntityNode.height
+         LogicalEntityNode.height,
+         LogicalEntityNode.backgroundColor,
+         LogicalEntityNode.borderColor,
+         LogicalEntityNode.borderWeight,
+         LogicalEntityNode.borderStyle,
+         LogicalEntityNode.fontColor
       ]
    ],
    [
       RelationshipEdge.$type,
-      [...IDENTIFIED_PROPERTIES, RelationshipEdge.relationship, RelationshipEdge.sourceNode, RelationshipEdge.targetNode]
+      [
+         ...IDENTIFIED_PROPERTIES,
+         RelationshipEdge.relationship,
+         RelationshipEdge.sourceNode,
+         RelationshipEdge.targetNode,
+         RelationshipEdge.borderColor,
+         RelationshipEdge.borderWeight,
+         RelationshipEdge.borderStyle
+      ]
    ],
-   [InheritanceEdge.$type, [...IDENTIFIED_PROPERTIES, InheritanceEdge.baseNode, InheritanceEdge.superNode]],
+   [
+      InheritanceEdge.$type,
+      [
+         ...IDENTIFIED_PROPERTIES,
+         InheritanceEdge.baseNode,
+         InheritanceEdge.superNode,
+         InheritanceEdge.borderColor,
+         InheritanceEdge.borderWeight,
+         InheritanceEdge.borderStyle
+      ]
+   ],
    [Mapping.$type, [...IDENTIFIED_PROPERTIES, Mapping.sources, Mapping.target, ...CUSTOM_PROPERTIES]],
    [
       SourceObject.$type,

@@ -32,6 +32,11 @@ interface LogicalEntityNode extends IdentifiedObject {
     y: number;
     width: number;
     height: number;
+    backgroundColor?: string;
+    borderColor?: string;
+    borderWeight?: number;
+    borderStyle?: string;
+    fontColor?: string;
 }
 
 LogicalEntityNode returns LogicalEntityNode:
@@ -41,12 +46,21 @@ LogicalEntityNode returns LogicalEntityNode:
     'y' ':' y=NUMBER
     'width' ':' width=NUMBER
     'height' ':' height=NUMBER
+    ('backgroundColor' ':' backgroundColor=STRING)?
+    ('borderColor' ':' borderColor=STRING)?
+    ('borderWeight' ':' borderWeight=NUMBER)?
+    ('borderStyle' ':' borderStyle=STRING)?
+    ('fontColor' ':' fontColor=STRING)?
 ;
 
 interface LogicalEntityNodeAttribute extends LogicalAttribute {
 }
 
-interface SystemDiagramEdge extends IdentifiedObject {}
+interface SystemDiagramEdge extends IdentifiedObject {
+    borderColor?: string;
+    borderWeight?: number;
+    borderStyle?: string;
+}
 
 SystemDiagramEdge returns SystemDiagramEdge:
     RelationshipEdge | InheritanceEdge
@@ -63,6 +77,9 @@ RelationshipEdge returns RelationshipEdge:
     'relationship' ':' relationship=[Relationship:IDReference]
     'sourceNode' ':' sourceNode=[LogicalEntityNode:IDReference]
     'targetNode' ':' targetNode=[LogicalEntityNode:IDReference]
+    ('borderColor' ':' borderColor=STRING)?
+    ('borderWeight' ':' borderWeight=NUMBER)?
+    ('borderStyle' ':' borderStyle=STRING)?
 ;
 
 interface InheritanceEdge extends SystemDiagramEdge {
@@ -74,4 +91,7 @@ InheritanceEdge returns InheritanceEdge:
     IdentifiedObjectFragment
     'baseNode' ':' baseNode=[LogicalEntityNode:IDReference]
     'superNode' ':' superNode=[LogicalEntityNode:IDReference]
+    ('borderColor' ':' borderColor=STRING)?
+    ('borderWeight' ':' borderWeight=NUMBER)?
+    ('borderStyle' ':' borderStyle=STRING)?
 ;

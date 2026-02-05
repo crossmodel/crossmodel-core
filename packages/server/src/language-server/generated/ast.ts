@@ -38,7 +38,11 @@ export type CrossModelKeywordNames =
     | "apply"
     | "attribute"
     | "attributes"
+    | "backgroundColor"
     | "baseNode"
+    | "borderColor"
+    | "borderStyle"
+    | "borderWeight"
     | "child"
     | "childCardinality"
     | "childRole"
@@ -55,6 +59,7 @@ export type CrossModelKeywordNames =
     | "entity"
     | "expression"
     | "expressions"
+    | "fontColor"
     | "from"
     | "height"
     | "id"
@@ -388,6 +393,9 @@ export interface InheritanceEdge extends SystemDiagramEdge {
 export const InheritanceEdge = {
     $type: 'InheritanceEdge',
     baseNode: 'baseNode',
+    borderColor: 'borderColor',
+    borderStyle: 'borderStyle',
+    borderWeight: 'borderWeight',
     id: 'id',
     superNode: 'superNode'
 } as const;
@@ -468,7 +476,12 @@ export function isLogicalEntity(item: unknown): item is LogicalEntity {
 export interface LogicalEntityNode extends IdentifiedObject {
     readonly $container: SystemDiagram;
     readonly $type: 'LogicalEntityNode';
+    backgroundColor?: string;
+    borderColor?: string;
+    borderStyle?: string;
+    borderWeight?: number;
     entity: langium.Reference<LogicalEntity>;
+    fontColor?: string;
     height: number;
     width: number;
     x: number;
@@ -477,7 +490,12 @@ export interface LogicalEntityNode extends IdentifiedObject {
 
 export const LogicalEntityNode = {
     $type: 'LogicalEntityNode',
+    backgroundColor: 'backgroundColor',
+    borderColor: 'borderColor',
+    borderStyle: 'borderStyle',
+    borderWeight: 'borderWeight',
     entity: 'entity',
+    fontColor: 'fontColor',
     height: 'height',
     id: 'id',
     width: 'width',
@@ -640,6 +658,9 @@ export interface RelationshipEdge extends SystemDiagramEdge {
 
 export const RelationshipEdge = {
     $type: 'RelationshipEdge',
+    borderColor: 'borderColor',
+    borderStyle: 'borderStyle',
+    borderWeight: 'borderWeight',
     id: 'id',
     relationship: 'relationship',
     sourceNode: 'sourceNode',
@@ -783,10 +804,16 @@ export function isSystemDiagram(item: unknown): item is SystemDiagram {
 
 export interface SystemDiagramEdge extends IdentifiedObject {
     readonly $type: 'InheritanceEdge' | 'RelationshipEdge' | 'SystemDiagramEdge';
+    borderColor?: string;
+    borderStyle?: string;
+    borderWeight?: number;
 }
 
 export const SystemDiagramEdge = {
     $type: 'SystemDiagramEdge',
+    borderColor: 'borderColor',
+    borderStyle: 'borderStyle',
+    borderWeight: 'borderWeight',
     id: 'id'
 } as const;
 
@@ -1130,6 +1157,15 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     name: InheritanceEdge.baseNode,
                     referenceType: LogicalEntityNode.$type
                 },
+                borderColor: {
+                    name: InheritanceEdge.borderColor
+                },
+                borderStyle: {
+                    name: InheritanceEdge.borderStyle
+                },
+                borderWeight: {
+                    name: InheritanceEdge.borderWeight
+                },
                 id: {
                     name: InheritanceEdge.id
                 },
@@ -1219,9 +1255,24 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
         LogicalEntityNode: {
             name: LogicalEntityNode.$type,
             properties: {
+                backgroundColor: {
+                    name: LogicalEntityNode.backgroundColor
+                },
+                borderColor: {
+                    name: LogicalEntityNode.borderColor
+                },
+                borderStyle: {
+                    name: LogicalEntityNode.borderStyle
+                },
+                borderWeight: {
+                    name: LogicalEntityNode.borderWeight
+                },
                 entity: {
                     name: LogicalEntityNode.entity,
                     referenceType: LogicalEntity.$type
+                },
+                fontColor: {
+                    name: LogicalEntityNode.fontColor
                 },
                 height: {
                     name: LogicalEntityNode.height
@@ -1412,6 +1463,15 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
         RelationshipEdge: {
             name: RelationshipEdge.$type,
             properties: {
+                borderColor: {
+                    name: RelationshipEdge.borderColor
+                },
+                borderStyle: {
+                    name: RelationshipEdge.borderStyle
+                },
+                borderWeight: {
+                    name: RelationshipEdge.borderWeight
+                },
                 id: {
                     name: RelationshipEdge.id
                 },
@@ -1557,6 +1617,15 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
         SystemDiagramEdge: {
             name: SystemDiagramEdge.$type,
             properties: {
+                borderColor: {
+                    name: SystemDiagramEdge.borderColor
+                },
+                borderStyle: {
+                    name: SystemDiagramEdge.borderStyle
+                },
+                borderWeight: {
+                    name: SystemDiagramEdge.borderWeight
+                },
                 id: {
                     name: SystemDiagramEdge.id
                 }

@@ -1998,6 +1998,136 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
               },
               "arguments": []
             }
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "backgroundColor"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "backgroundColor",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderColor"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderColor",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderWeight"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderWeight",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@7"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderStyle"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderStyle",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "fontColor"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "fontColor",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
           }
         ]
       },
@@ -2133,6 +2263,84 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
               "deprecatedSyntax": false,
               "isMulti": false
             }
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderColor"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderColor",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderWeight"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderWeight",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@7"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderStyle"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderStyle",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
           }
         ]
       },
@@ -2211,6 +2419,84 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
               "deprecatedSyntax": false,
               "isMulti": false
             }
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderColor"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderColor",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderWeight"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderWeight",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@7"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "borderStyle"
+              },
+              {
+                "$type": "Keyword",
+                "value": ":"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "borderStyle",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@4"
+                  },
+                  "arguments": []
+                }
+              }
+            ],
+            "cardinality": "?"
           }
         ]
       },
@@ -3801,6 +4087,51 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
             "primitiveType": "number"
           },
           "isOptional": false
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "backgroundColor",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "borderColor",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "borderWeight",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "number"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "borderStyle",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "fontColor",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
         }
       ]
     },
@@ -3822,7 +4153,35 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
           "$ref": "#/interfaces@2"
         }
       ],
-      "attributes": []
+      "attributes": [
+        {
+          "$type": "TypeAttribute",
+          "name": "borderColor",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "borderWeight",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "number"
+          }
+        },
+        {
+          "$type": "TypeAttribute",
+          "name": "borderStyle",
+          "isOptional": true,
+          "type": {
+            "$type": "SimpleType",
+            "primitiveType": "string"
+          }
+        }
+      ]
     },
     {
       "$type": "Interface",

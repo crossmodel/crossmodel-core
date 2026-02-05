@@ -5,7 +5,9 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable max-len */
 
+import { BACKGROUND_COLOR, BORDER_COLOR, BORDER_STYLE, BORDER_WEIGHT, FONT_COLOR } from '@crossmodel/protocol';
 import {
+   ArgsAware,
    EdgePadding,
    GCompartmentView,
    GEdge,
@@ -17,6 +19,7 @@ import {
    RoundedCornerNodeView,
    RoundedCornerWrapper,
    Selectable,
+   isArgsAware,
    svg
 } from '@eclipse-glsp/client';
 import { ReactNode } from '@theia/core/shared/react';
@@ -39,6 +42,40 @@ export class DiagramNodeView extends RoundedCornerNodeView {
          view.data.class.mouseover = node.hoverFeedback;
          view.data.class.selected = node.selected;
       }
+
+      // Apply custom styling CSS classes from node args if defined
+      const argsAwareNode = node as GNode & Hoverable & Selectable & ArgsAware;
+      if (view && isArgsAware(node) && argsAwareNode.args) {
+         if (!view.data) {
+            view.data = {};
+         }
+         if (!view.data.style) {
+            view.data.style = {};
+         }
+
+         // Set CSS custom properties for styling
+         if (argsAwareNode.args[BACKGROUND_COLOR]) {
+            view.data.style['--node-background-color'] = argsAwareNode.args[BACKGROUND_COLOR] as string;
+         }
+         if (argsAwareNode.args[BORDER_COLOR]) {
+            view.data.style['--node-border-color'] = argsAwareNode.args[BORDER_COLOR] as string;
+         }
+         if (argsAwareNode.args[BORDER_WEIGHT] !== undefined) {
+            view.data.style['--node-border-weight'] = String(argsAwareNode.args[BORDER_WEIGHT]) + 'px';
+         }
+         if (argsAwareNode.args[BORDER_STYLE]) {
+            const borderStyle = argsAwareNode.args[BORDER_STYLE] as string;
+            if (borderStyle === 'dashed') {
+               view.data.style['--node-border-style'] = '8 4';
+            } else if (borderStyle === 'dotted') {
+               view.data.style['--node-border-style'] = '2 2';
+            }
+         }
+         if (argsAwareNode.args[FONT_COLOR]) {
+            view.data.style['--node-font-color'] = argsAwareNode.args[FONT_COLOR] as string;
+         }
+      }
+
       return view;
    }
 }
@@ -82,6 +119,39 @@ export class CrossModelEdgeView extends PolylineEdgeViewWithGapsOnIntersections 
    protected override renderAdditionals(edge: GEdge, segments: Point[], context: RenderingContext): VNode[] {
       const edgePadding = EdgePadding.from(edge);
       return edgePadding ? [this.renderMouseHandle(segments, edgePadding)] : [];
+   }
+
+   override render(edge: Readonly<GEdge>, context: RenderingContext): VNode | undefined {
+      const view = super.render(edge, context);
+
+      // Apply custom styling CSS custom properties from edge args if defined
+      const argsAwareEdge = edge as GEdge & ArgsAware;
+      if (view && isArgsAware(edge) && argsAwareEdge.args) {
+         if (!view.data) {
+            view.data = {};
+         }
+         if (!view.data.style) {
+            view.data.style = {};
+         }
+
+         // Set CSS custom properties for styling
+         if (argsAwareEdge.args[BORDER_COLOR]) {
+            view.data.style['--edge-border-color'] = argsAwareEdge.args[BORDER_COLOR] as string;
+         }
+         if (argsAwareEdge.args[BORDER_WEIGHT] !== undefined) {
+            view.data.style['--edge-border-weight'] = String(argsAwareEdge.args[BORDER_WEIGHT]) + 'px';
+         }
+         if (argsAwareEdge.args[BORDER_STYLE]) {
+            const borderStyle = argsAwareEdge.args[BORDER_STYLE] as string;
+            if (borderStyle === 'dashed') {
+               view.data.style['--edge-border-style'] = '8 4';
+            } else if (borderStyle === 'dotted') {
+               view.data.style['--edge-border-style'] = '2 2';
+            }
+         }
+      }
+
+      return view;
    }
 
    protected renderMouseHandle(segments: Point[], padding: number): VNode {
