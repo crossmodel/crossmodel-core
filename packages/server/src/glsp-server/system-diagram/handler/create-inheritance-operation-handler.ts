@@ -81,7 +81,8 @@ export class SystemDiagramCreateInheritanceOperationHandler extends JsonCreateEd
          superNode: {
             ref: superEntityNode,
             $refText: toIdReference(this.modelState.idProvider.getNodeId(superEntityNode) || superEntityNode.id || '')
-         }
+         },
+         routingPoints: []
       };
       this.modelState.systemDiagram.edges.push(edge);
       this.actionDispatcher.dispatchAfterNextUpdate(

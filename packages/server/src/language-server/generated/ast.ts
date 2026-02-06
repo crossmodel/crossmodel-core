@@ -78,6 +78,7 @@ export type CrossModelKeywordNames =
     | "primary"
     | "relational"
     | "relationship"
+    | "routingPoints"
     | "scale"
     | "sourceNode"
     | "sources"
@@ -389,6 +390,7 @@ export const InheritanceEdge = {
     $type: 'InheritanceEdge',
     baseNode: 'baseNode',
     id: 'id',
+    routingPoints: 'routingPoints',
     superNode: 'superNode'
 } as const;
 
@@ -642,12 +644,30 @@ export const RelationshipEdge = {
     $type: 'RelationshipEdge',
     id: 'id',
     relationship: 'relationship',
+    routingPoints: 'routingPoints',
     sourceNode: 'sourceNode',
     targetNode: 'targetNode'
 } as const;
 
 export function isRelationshipEdge(item: unknown): item is RelationshipEdge {
     return reflection.isInstance(item, RelationshipEdge.$type);
+}
+
+export interface RoutingPoint extends langium.AstNode {
+    readonly $container: SystemDiagramEdge;
+    readonly $type: 'RoutingPoint';
+    x: number;
+    y: number;
+}
+
+export const RoutingPoint = {
+    $type: 'RoutingPoint',
+    x: 'x',
+    y: 'y'
+} as const;
+
+export function isRoutingPoint(item: unknown): item is RoutingPoint {
+    return reflection.isInstance(item, RoutingPoint.$type);
 }
 
 export interface SourceDataElementContainer extends IdentifiedObject {
@@ -783,11 +803,13 @@ export function isSystemDiagram(item: unknown): item is SystemDiagram {
 
 export interface SystemDiagramEdge extends IdentifiedObject {
     readonly $type: 'InheritanceEdge' | 'RelationshipEdge' | 'SystemDiagramEdge';
+    routingPoints: Array<RoutingPoint>;
 }
 
 export const SystemDiagramEdge = {
     $type: 'SystemDiagramEdge',
-    id: 'id'
+    id: 'id',
+    routingPoints: 'routingPoints'
 } as const;
 
 export function isSystemDiagramEdge(item: unknown): item is SystemDiagramEdge {
@@ -877,6 +899,7 @@ export type CrossModelAstType = {
     Relationship: Relationship
     RelationshipAttribute: RelationshipAttribute
     RelationshipEdge: RelationshipEdge
+    RoutingPoint: RoutingPoint
     SourceDataElementContainer: SourceDataElementContainer
     SourceObject: SourceObject
     SourceObjectAttribute: SourceObjectAttribute
@@ -1132,6 +1155,10 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 },
                 id: {
                     name: InheritanceEdge.id
+                },
+                routingPoints: {
+                    name: InheritanceEdge.routingPoints,
+                    defaultValue: []
                 },
                 superNode: {
                     name: InheritanceEdge.superNode,
@@ -1419,6 +1446,10 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     name: RelationshipEdge.relationship,
                     referenceType: Relationship.$type
                 },
+                routingPoints: {
+                    name: RelationshipEdge.routingPoints,
+                    defaultValue: []
+                },
                 sourceNode: {
                     name: RelationshipEdge.sourceNode,
                     referenceType: LogicalEntityNode.$type
@@ -1429,6 +1460,18 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: [SystemDiagramEdge.$type]
+        },
+        RoutingPoint: {
+            name: RoutingPoint.$type,
+            properties: {
+                x: {
+                    name: RoutingPoint.x
+                },
+                y: {
+                    name: RoutingPoint.y
+                }
+            },
+            superTypes: []
         },
         SourceDataElementContainer: {
             name: SourceDataElementContainer.$type,
@@ -1559,6 +1602,10 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             properties: {
                 id: {
                     name: SystemDiagramEdge.id
+                },
+                routingPoints: {
+                    name: SystemDiagramEdge.routingPoints,
+                    defaultValue: []
                 }
             },
             superTypes: [IdentifiedObject.$type]

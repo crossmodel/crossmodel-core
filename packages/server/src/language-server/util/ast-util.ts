@@ -205,6 +205,7 @@ export function createRelationshipEdge(
       relationship,
       sourceNode,
       targetNode,
+      routingPoints: opts?.routingPoints ?? [],
       ...opts
    };
 }

@@ -27,7 +27,7 @@ export class SystemDiagramConfiguration implements DiagramConfiguration {
          elementTypeId: RELATIONSHIP_EDGE_TYPE,
          deletable: true,
          repositionable: false,
-         routable: false,
+         routable: true,
          sourceElementTypeIds: [ENTITY_NODE_TYPE],
          targetElementTypeIds: [ENTITY_NODE_TYPE]
       },
@@ -35,7 +35,7 @@ export class SystemDiagramConfiguration implements DiagramConfiguration {
          elementTypeId: INHERITANCE_EDGE_TYPE,
          deletable: true,
          repositionable: false,
-         routable: false,
+         routable: true,
          dynamic: true,
          sourceElementTypeIds: [ENTITY_NODE_TYPE],
          targetElementTypeIds: [ENTITY_NODE_TYPE]

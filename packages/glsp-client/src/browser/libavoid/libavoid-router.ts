@@ -4,7 +4,7 @@
  * https://github.com/Aksem/sprotty-routing-libavoid
  ********************************************************************************/
 
-import { GRID, isLeftPortId } from '@crossmodel/protocol';
+import { GRID, HAS_MANUAL_ROUTING_POINTS, isLeftPortId } from '@crossmodel/protocol';
 import {
    AbstractEdgeRouter,
    Action,
@@ -153,8 +153,15 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       return anchor;
    }
 
-   updateEdgeRouting(connRef: LibavoidConnRef, edge: GEdge): void {
+   updateEdgeRouting(connRef: LibavoidConnRef | undefined, edge: GEdge): void {
       if (!edge?.source || !edge?.target) {
+         return;
+      }
+      if (this.hasManualRoutingPoints(edge)) {
+         this.edgeRouting.set(edge.id, this.buildManualRoute(edge));
+         return;
+      }
+      if (!connRef) {
          return;
       }
       const routedPoints: RoutedPoint[] = [];
@@ -190,6 +197,32 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
               edge,
               edge.targetAnchorCorrection
            );
+   }
+
+   protected hasManualRoutingPoints(edge: GEdge): boolean {
+      return (!!edge.routingPoints && edge.routingPoints.length > 0) || !!edge.args?.[HAS_MANUAL_ROUTING_POINTS];
+   }
+
+   protected buildManualRoute(edge: GEdge): RoutedPoint[] {
+      const routingPoints = edge.routingPoints ?? [];
+      if (!edge.source || !edge.target) {
+         return routingPoints.map((point, index) => ({ kind: 'linear', pointIndex: index, ...point }));
+      }
+
+      const refContainer = edge.parent;
+      const firstRef = routingPoints[0] ?? { x: edge.source.position?.x || 0, y: edge.source.position?.y || 0 };
+      const lastRef =
+         routingPoints[routingPoints.length - 1] ?? { x: edge.target.position?.x || firstRef.x, y: edge.target.position?.y || firstRef.y };
+
+      const sourceAnchor = this.getTranslatedAnchor(edge.source, firstRef, refContainer, edge, edge.sourceAnchorCorrection);
+      const targetAnchor = this.getTranslatedAnchor(edge.target, lastRef, refContainer, edge, edge.targetAnchorCorrection);
+
+      const routedPoints: RoutedPoint[] = [{ kind: 'source', ...sourceAnchor }];
+      routingPoints.forEach((point, index) => {
+         routedPoints.push({ kind: 'linear', pointIndex: index, ...point });
+      });
+      routedPoints.push({ kind: 'target', ...targetAnchor });
+      return routedPoints;
    }
 
    protected updateShape(element: BoundsAwareModelElement): void {
@@ -251,28 +284,44 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       // Create pins along the top edge
       for (const xPos of horizontalPinPositions) {
          this.createPin(
-            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, xPos, ShapeConnectionPin.ATTACH_POS_TOP, ShapeConnectionPin.DIRECTION_UP
+            shapeRef,
+            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
+            xPos,
+            ShapeConnectionPin.ATTACH_POS_TOP,
+            ShapeConnectionPin.DIRECTION_UP
          );
       }
 
       // Create pins along the bottom edge
       for (const xPos of horizontalPinPositions) {
          this.createPin(
-            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, xPos, ShapeConnectionPin.ATTACH_POS_BOTTOM, ShapeConnectionPin.DIRECTION_DOWN
+            shapeRef,
+            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
+            xPos,
+            ShapeConnectionPin.ATTACH_POS_BOTTOM,
+            ShapeConnectionPin.DIRECTION_DOWN
          );
       }
 
       // Create pins along the left edge
       for (const yPos of verticalPinPositions) {
          this.createPin(
-            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, ShapeConnectionPin.ATTACH_POS_LEFT, yPos, ShapeConnectionPin.DIRECTION_LEFT
+            shapeRef,
+            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
+            ShapeConnectionPin.ATTACH_POS_LEFT,
+            yPos,
+            ShapeConnectionPin.DIRECTION_LEFT
          );
       }
 
       // Create pins along the right edge
       for (const yPos of verticalPinPositions) {
          this.createPin(
-            shapeRef, ShapeConnectionPin.ORTHOGONAL_PIN_ID, ShapeConnectionPin.ATTACH_POS_RIGHT, yPos, ShapeConnectionPin.DIRECTION_RIGHT
+            shapeRef,
+            ShapeConnectionPin.ORTHOGONAL_PIN_ID,
+            ShapeConnectionPin.ATTACH_POS_RIGHT,
+            yPos,
+            ShapeConnectionPin.DIRECTION_RIGHT
          );
       }
    }
@@ -320,13 +369,7 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       return positions;
    }
 
-   protected createPin(
-      shape: LibavoidShapeRef,
-      classId: number,
-      x: number,
-      y: number,
-      direction: number
-   ): LibavoidShapeConnectionPin {
+   protected createPin(shape: LibavoidShapeRef, classId: number, x: number, y: number, direction: number): LibavoidShapeConnectionPin {
       const pin = new Libavoid.ShapeConnectionPin(shape, classId, x, y, true, 0, direction);
       pin.setExclusive(false);
       return pin;
@@ -369,6 +412,10 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
          return connectionRef;
       }
 
+      if (this.hasManualRoutingPoints(edge)) {
+         return undefined;
+      }
+
       const sourceNodeId = this.resolveEndpointNodeId(edge.sourceId, parent);
       const sourceShape = sourceNodeId ? this.shapes[sourceNodeId] : undefined;
       if (!sourceShape) {
@@ -398,6 +445,14 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
       const edgeById: { [key: string]: GEdge } = {};
       for (const edge of edges) {
          edgeById[edge.id] = edge;
+         if (this.hasManualRoutingPoints(edge)) {
+            const existing = this.connectors[edge.id];
+            if (existing) {
+               this.avoidRouter.deleteConnector(existing);
+               delete this.connectors[edge.id];
+            }
+            continue;
+         }
          const connRef = this.updateConnector(edge, parent);
          if (connRef) {
             this.connectors[edge.id] = connRef;
@@ -465,6 +520,11 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
 
       // only collected changed edge ids during transaction as the edge may have changed in-between
       this.changedEdgeIds.forEach(edgeId => this.updateEdgeRouting(this.connectors[edgeId], edgeById[edgeId]));
+      edges.forEach(edge => {
+         if (this.hasManualRoutingPoints(edge)) {
+            this.edgeRouting.set(edge.id, this.buildManualRoute(edge));
+         }
+      });
       this.changedEdgeIds = [];
       return this.edgeRouting;
    }
@@ -474,6 +534,9 @@ export class LibavoidEdgeRouter extends AbstractEdgeRouter implements IMultipleE
    }
 
    route(edge: Readonly<LibavoidEdge>, args?: Record<string, unknown>): RoutedPoint[] {
+      if (this.hasManualRoutingPoints(edge)) {
+         return this.buildManualRoute(edge);
+      }
       const route = this.edgeRouting.get(edge.id);
       if (route) {
          return route;

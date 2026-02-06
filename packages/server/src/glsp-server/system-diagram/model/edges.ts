@@ -4,6 +4,7 @@
 
 import {
    INHERITANCE_EDGE_TYPE,
+   HAS_MANUAL_ROUTING_POINTS,
    REFERENCE_CONTAINER_TYPE,
    REFERENCE_PROPERTY,
    REFERENCE_VALUE,
@@ -55,6 +56,14 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
       this.sourceId(sourceId || '');
       this.targetId(targetId || '');
 
+      // Add routing points if they exist
+      if (edge.routingPoints && edge.routingPoints.length > 0) {
+         this.addArg(HAS_MANUAL_ROUTING_POINTS, true);
+         edge.routingPoints.forEach(rp => {
+            this.addRoutingPoint(rp.x, rp.y);
+         });
+      }
+
       return this;
    }
 }
@@ -84,6 +93,15 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
 
       this.sourceId(sourceId || '');
       this.targetId(targetId || '');
+
+      // Add routing points if they exist
+      if (edge.routingPoints && edge.routingPoints.length > 0) {
+         this.addArg(HAS_MANUAL_ROUTING_POINTS, true);
+         edge.routingPoints.forEach(rp => {
+            this.addRoutingPoint(rp.x, rp.y);
+         });
+      }
+
       return this;
    }
 }

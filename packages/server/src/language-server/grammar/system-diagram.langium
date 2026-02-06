@@ -46,7 +46,18 @@ LogicalEntityNode returns LogicalEntityNode:
 interface LogicalEntityNodeAttribute extends LogicalAttribute {
 }
 
-interface SystemDiagramEdge extends IdentifiedObject {}
+interface RoutingPoint {
+    x: number;
+    y: number;
+}
+
+RoutingPoint returns RoutingPoint:
+    'x' ':' x=NUMBER 'y' ':' y=NUMBER
+;
+
+interface SystemDiagramEdge extends IdentifiedObject {
+    routingPoints?: RoutingPoint[];
+}
 
 SystemDiagramEdge returns SystemDiagramEdge:
     RelationshipEdge | InheritanceEdge
@@ -63,6 +74,11 @@ RelationshipEdge returns RelationshipEdge:
     'relationship' ':' relationship=[Relationship:IDReference]
     'sourceNode' ':' sourceNode=[LogicalEntityNode:IDReference]
     'targetNode' ':' targetNode=[LogicalEntityNode:IDReference]
+    ('routingPoints' ':'
+        INDENT
+            (LIST_ITEM routingPoints+=RoutingPoint)+
+        DEDENT
+    )?
 ;
 
 interface InheritanceEdge extends SystemDiagramEdge {
@@ -74,4 +90,9 @@ InheritanceEdge returns InheritanceEdge:
     IdentifiedObjectFragment
     'baseNode' ':' baseNode=[LogicalEntityNode:IDReference]
     'superNode' ':' superNode=[LogicalEntityNode:IDReference]
+    ('routingPoints' ':'
+        INDENT
+            (LIST_ITEM routingPoints+=RoutingPoint)+
+        DEDENT
+    )?
 ;

@@ -19,6 +19,7 @@ import {
    gridModule,
    initializeDiagramContainer,
    overrideModelElement,
+   routingModule,
    withEditLabelFeature
 } from '@eclipse-glsp/client';
 import { GLSPDiagramConfiguration } from '@eclipse-glsp/theia-integration';
@@ -28,6 +29,8 @@ import { createCrossModelDiagramModule } from '../crossmodel-diagram-module';
 import { libAvoidModule } from '../libavoid';
 import { AttributeCompartment } from '../model';
 import { AttributeCompartmentView } from '../views';
+import { crossModelChangeBoundsToolModule } from '../change-bounds/crossmodel-change-bounds-tool-module';
+import { crossModelEdgeEditToolModule } from '../edge-edit/crossmodel-edge-edit-tool-module';
 import { systemContextMenuModule } from './context-menu/context-menu-module';
 import { systemEdgeCreationToolModule } from './edge-creation-tool/edge-creation-tool-module';
 import { systemHoverModule } from './hover/hover-module';
@@ -43,12 +46,13 @@ export class SystemDiagramConfiguration extends GLSPDiagramConfiguration {
       return initializeDiagramContainer(
          container,
          {
-            replace: systemSelectModule
+            replace: [systemSelectModule, crossModelChangeBoundsToolModule, crossModelEdgeEditToolModule]
          },
          ...containerConfiguration,
          libAvoidModule,
          systemHoverModule,
          gridModule,
+         routingModule,
          systemDiagramModule,
          systemNodeCreationModule,
          systemEdgeCreationToolModule,

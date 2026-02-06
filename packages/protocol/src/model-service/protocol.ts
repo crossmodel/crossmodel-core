@@ -255,12 +255,20 @@ export interface SystemDiagram extends CrossModelElement, IdentifiedObject, With
 export type Edge = InheritanceEdge | RelationshipEdge;
 export const EdgeType = 'Edge';
 
+export const RoutingPointType = 'RoutingPoint';
+export interface RoutingPoint extends CrossModelElement {
+   readonly $type: typeof RoutingPointType;
+   x: number;
+   y: number;
+}
+
 export const InheritanceEdgeType = 'InheritanceEdge';
 export interface InheritanceEdge extends CrossModelElement, IdentifiedObject, WithCustomProperties {
    readonly $container: SystemDiagram;
    readonly $type: typeof InheritanceEdgeType;
    baseNode: Reference<EntityNode>;
    superNode: Reference<EntityNode>;
+   routingPoints: Array<RoutingPoint>;
 }
 
 export const RelationshipEdgeType = 'RelationshipEdge';
@@ -270,6 +278,7 @@ export interface RelationshipEdge extends CrossModelElement, IdentifiedObject, W
    relationship: Reference<Relationship>;
    sourceNode: Reference<EntityNode>;
    targetNode: Reference<EntityNode>;
+   routingPoints: Array<RoutingPoint>;
 }
 
 export const DataModelType = 'DataModel';

@@ -22,6 +22,8 @@ export const ATTRIBUTE_COMPARTMENT_TYPE = DefaultTypes.COMPARTMENT + ':attribute
 export const REFERENCE_CONTAINER_TYPE = 'reference-container-type';
 export const REFERENCE_PROPERTY = 'reference-property';
 export const REFERENCE_VALUE = 'reference-value';
+export const HAS_MANUAL_ROUTING_POINTS = 'has-manual-routing-points';
+export const CLEAR_MANUAL_ROUTING_POINTS = 'clear-manual-routing-points';
 
 export type RenderProps = Record<string, string | number | boolean | undefined> & {
    theme: 'light' | 'dark' | 'hc' | 'hcLight'; // supported ThemeType of Theia

@@ -58,7 +58,8 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
                targetNode: {
                   ref: targetNode,
                   $refText: toIdReference(this.modelState.idProvider.getNodeId(targetNode) || targetNode.id || '')
-               }
+               },
+               routingPoints: []
             };
             this.modelState.systemDiagram.edges.push(edge);
             this.actionDispatcher.dispatchAfterNextUpdate(

@@ -130,7 +130,8 @@ export class SystemDiagramDropFilesOperationHandler extends JsonOperationHandler
                   targetNode: {
                      ref: childNode,
                      $refText: toIdReference(this.modelState.idProvider.getNodeId(childNode) || childNode.id || '')
-                  }
+                  },
+                  routingPoints: []
                };
                container.edges.push(edge);
             }

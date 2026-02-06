@@ -5,7 +5,7 @@ import { describe, expect, test } from '@jest/globals';
 import { isReference } from 'langium';
 
 import { InheritanceEdge, RelationshipEdge, isInheritanceEdge, isRelationshipEdge } from '../../src/language-server/generated/ast';
-import { diagram1, diagram2, diagram3, diagram4, diagram5, diagram6, diagram7 } from './test-utils/test-documents/diagram/index';
+import { diagram1, diagram2, diagram3, diagram4, diagram5, diagram6, diagram7, diagram8 } from './test-utils/test-documents/diagram/index';
 import { createCrossModelTestServices, parseSystemDiagram } from './test-utils/utils';
 
 const services = createCrossModelTestServices();
@@ -112,6 +112,18 @@ describe('CrossModel language Diagram', () => {
             expect(edge1?.baseNode?.$refText).toBe('SubCustomerNode');
             expect(isReference(edge1?.superNode)).toBe(true);
             expect(edge1?.superNode?.$refText).toBe('CustomerNode');
+         });
+
+         test('Inheritance edge with routing points', async () => {
+            const systemDiagram = await parseSystemDiagram({ services, text: diagram8 });
+
+            expect(systemDiagram?.edges).toHaveLength(1);
+            const edge = systemDiagram?.edges[0] as InheritanceEdge;
+            expect(isInheritanceEdge(edge)).toBe(true);
+            expect(edge?.routingPoints).toBeDefined();
+            expect(edge?.routingPoints?.length).toBe(2);
+            expect(edge?.routingPoints?.[0]).toEqual({ x: 250, y: 200 });
+            expect(edge?.routingPoints?.[1]).toEqual({ x: 300, y: 150 });
          });
       });
    });

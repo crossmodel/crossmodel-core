@@ -80,8 +80,12 @@ export class AttributeCompartmentView extends GCompartmentView {
 @injectable()
 export class CrossModelEdgeView extends PolylineEdgeViewWithGapsOnIntersections {
    protected override renderAdditionals(edge: GEdge, segments: Point[], context: RenderingContext): VNode[] {
+      const additionals: VNode[] = [];
       const edgePadding = EdgePadding.from(edge);
-      return edgePadding ? [this.renderMouseHandle(segments, edgePadding)] : [];
+      if (edgePadding) {
+         additionals.push(this.renderMouseHandle(segments, edgePadding));
+      }
+      return additionals;
    }
 
    protected renderMouseHandle(segments: Point[], padding: number): VNode {

@@ -16,10 +16,12 @@ import {
    RectangularNodeView,
    configureDefaultModelElements,
    configureModelElement,
+   edgeEditToolModule,
    gridModule,
    hoverFeedbackFeature,
    initializeDiagramContainer,
    overrideModelElement,
+   routingModule,
    selectFeature
 } from '@eclipse-glsp/client';
 import { GLSPDiagramConfiguration } from '@eclipse-glsp/theia-integration';
@@ -39,7 +41,15 @@ export class MappingDiagramConfiguration extends GLSPDiagramConfiguration {
 
    configureContainer(container: Container, ...containerConfiguration: ContainerConfiguration): Container {
       return initializeDiagramContainer(container, ...containerConfiguration, {
-         add: [gridModule, mappingDiagramModule, mappingEdgeCreationToolModule, sourceObjectCreationToolModule, libAvoidModule]
+         add: [
+            gridModule,
+            routingModule,
+            edgeEditToolModule,
+            mappingDiagramModule,
+            mappingEdgeCreationToolModule,
+            sourceObjectCreationToolModule,
+            libAvoidModule
+         ]
       });
    }
 }

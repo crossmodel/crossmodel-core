@@ -212,9 +212,15 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    ],
    [
       RelationshipEdge.$type,
-      [...IDENTIFIED_PROPERTIES, RelationshipEdge.relationship, RelationshipEdge.sourceNode, RelationshipEdge.targetNode]
+      [
+         ...IDENTIFIED_PROPERTIES,
+         RelationshipEdge.relationship,
+         RelationshipEdge.sourceNode,
+         RelationshipEdge.targetNode,
+         RelationshipEdge.routingPoints
+      ]
    ],
-   [InheritanceEdge.$type, [...IDENTIFIED_PROPERTIES, InheritanceEdge.baseNode, InheritanceEdge.superNode]],
+   [InheritanceEdge.$type, [...IDENTIFIED_PROPERTIES, InheritanceEdge.baseNode, InheritanceEdge.superNode, InheritanceEdge.routingPoints]],
    [Mapping.$type, [...IDENTIFIED_PROPERTIES, Mapping.sources, Mapping.target, ...CUSTOM_PROPERTIES]],
    [
       SourceObject.$type,

@@ -33,6 +33,7 @@ import { SystemDiagramChangeBoundsOperationHandler } from './handler/change-boun
 import { SystemDiagramCreateEntityOperationHandler } from './handler/create-entity-operation-handler.js';
 import { SystemDiagramCreateInheritanceOperationHandler } from './handler/create-inheritance-operation-handler.js';
 import { SystemDiagramCreateRelationshipOperationHandler } from './handler/create-relationship-operation-handler.js';
+import { SystemDiagramChangeRoutingPointsOperationHandler } from './handler/change-routing-points-operation-handler.js';
 import { SystemDiagramDeleteOperationHandler } from './handler/delete-operation-handler.js';
 import { SystemDiagramDropFilesOperationHandler } from './handler/drop-files-operation-handler.js';
 import { SystemDiagramOperationHandler } from './handler/layout-operation-handler.js';
@@ -71,6 +72,7 @@ export class SystemDiagramModule extends DiagramModule {
       binding.add(SystemDiagramCreateEntityOperationHandler);
       binding.add(SystemDiagramApplyLabelEditOperationHandler);
       binding.add(SystemDiagramCreateInheritanceOperationHandler);
+      binding.add(SystemDiagramChangeRoutingPointsOperationHandler);
       binding.rebind(LayoutOperationHandler, SystemDiagramOperationHandler);
    }
 
