@@ -46,7 +46,7 @@ export function updateCrossModelVersion(dataModel: DataModel): void {
  * Updates it if needed.
  *
  * @param dataModel the datamodel to update
- * @returns true if an update was performed
+ * @returns true if an update was performed, false if already up to date
  */
 export function ensureCrossModelVersion(dataModel: DataModel): boolean {
    if (needsCrossModelVersionUpdate(dataModel)) {

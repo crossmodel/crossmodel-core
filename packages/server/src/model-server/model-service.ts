@@ -240,7 +240,81 @@ export class ModelService {
          this.documents.createDocument(documentUri, text);
          await this.documentBuilder.update([documentUri], []);
       }
-      return this.documentManager.save(args.uri, text, args.clientId);
+      await this.documentManager.save(args.uri, text, args.clientId);
+
+      // After saving any CrossModel file, ensure its parent datamodel has the current version
+      await this.updateParentDataModelVersion(documentUri, args.clientId);
+   }
+
+   /**
+    * Updates the parent datamodel file with the current CrossModel version if needed.
+    * This is called after saving any CrossModel file to ensure the datamodel tracks
+    * the latest CrossModel version used to modify any file in its scope.
+    *
+    * @param uri URI of the file that was just saved
+    * @param clientId client that initiated the save
+    */
+   protected async updateParentDataModelVersion(uri: URI, clientId: string): Promise<void> {
+      // Find the parent datamodel for this URI
+      const dataModelInfo = this.shared.workspace.DataModelManager.getDataModelInfoByURI(uri);
+      if (!dataModelInfo) {
+         // No parent datamodel found, nothing to update
+         return;
+      }
+
+      // Check if the datamodel file is the same as the file we just saved
+      if (dataModelInfo.uri.toString() === uri.toString()) {
+         // We just saved the datamodel itself, version already updated
+         return;
+      }
+
+      // Get the datamodel document
+      const dataModelDocument = await this.documents.getOrCreateDocument(dataModelInfo.uri);
+      const dataModelRoot = dataModelDocument.parseResult.value;
+      if (!isCrossModelRoot(dataModelRoot) || !dataModelRoot.datamodel) {
+         return;
+      }
+
+      const dataModel = dataModelRoot.datamodel;
+      const updated = ensureCrossModelVersion(dataModel);
+
+      if (!updated) {
+         // Version already up to date
+         return;
+      }
+
+      // Serialize and save the updated datamodel
+      const dataModelText = this.serialize(dataModelInfo.uri, dataModelRoot);
+
+      // Check if the datamodel file is currently open
+      const isOpen = this.documentManager.isOpen(dataModelInfo.uri.toString());
+
+      if (isOpen) {
+         // Update the in-memory document
+         const document = await this.documents.getOrCreateDocument(dataModelInfo.uri);
+         const textDocument = document.textDocument;
+         const newVersion = textDocument.version + 1;
+         await this.documentManager.update(dataModelInfo.uri.toString(), newVersion, dataModelText, clientId);
+
+         // Sync to language client if open there
+         if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
+            this.shared.logger.ClientLogger.info(
+               `[Documents][${basename(dataModelInfo.uri.fsPath)}] Sync version update from ${clientId} to ${LANGUAGE_CLIENT_ID}`
+            );
+            await this.shared.lsp.Connection?.workspace.applyEdit({
+               label: 'Update CrossModel Version',
+               documentChanges: [
+                  // eslint-disable-next-line no-null/no-null
+                  TextDocumentEdit.create(OptionalVersionedTextDocumentIdentifier.create(textDocument.uri, null), [
+                     TextEdit.replace(Range.create(0, 0, uinteger.MAX_VALUE, uinteger.MAX_VALUE), dataModelText)
+                  ])
+               ]
+            });
+         }
+      }
+
+      // Persist to file system
+      await this.documentManager.save(dataModelInfo.uri.toString(), dataModelText, clientId);
    }
 
    /**
