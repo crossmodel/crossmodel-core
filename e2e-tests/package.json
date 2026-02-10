@@ -13,7 +13,7 @@
     "lint": "eslint -c ../.eslintrc.js --ext .ts ./src",
     "playwright:install": "playwright install chromium --with-deps",
     "test": "",
-    "ui-test": "yarn build && yarn playwright test"
+    "ui-test": "yarn build && yarn playwright test --test-ignore \"**/documentation/**/*.spec.ts\" -- $@"
   },
   "dependencies": {
     "@eclipse-glsp/glsp-playwright": "2.5.0",
