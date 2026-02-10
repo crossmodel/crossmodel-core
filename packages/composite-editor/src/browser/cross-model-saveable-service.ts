@@ -2,6 +2,8 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
+import { ModelService } from '@crossmodel/model-service/lib/common';
+import { ModelFileExtensions } from '@crossmodel/protocol';
 import { MaybePromise, URI } from '@theia/core';
 import {
    Navigatable,
@@ -14,7 +16,7 @@ import {
    ShouldSaveDialog,
    Widget
 } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { FilesystemSaveableService } from '@theia/filesystem/lib/browser/filesystem-saveable-service';
 
 export interface DefaultSaveAsSaveableSource extends SaveableSource {
@@ -29,6 +31,8 @@ export namespace DefaultSaveAsSaveableSource {
 
 @injectable()
 export class CrossModelSaveableService extends FilesystemSaveableService {
+   @inject(ModelService) protected readonly modelService: ModelService;
+
    /** Allows us to save as without opening the newly saved file. Improves behavior when saving because of close. */
    private noOpenSaveAsProxy = new Proxy(this, {
       get(service, p, _receiver) {
@@ -56,12 +60,28 @@ export class CrossModelSaveableService extends FilesystemSaveableService {
             await (shouldOpen
                ? this.saveSnapshot(sourceWidget, defaultSaveAsUri, false)
                : this.saveSnapshot.call(this.noOpenSaveAsProxy, sourceWidget, defaultSaveAsUri, false));
+            // Save-as bypasses ModelService; re-save via ModelService to update parent datamodel version.
+            await this.ensureDatamodelVersionOnSaveAs(defaultSaveAsUri);
             return defaultSaveAsUri;
          } catch (e) {
             console.warn(e);
          }
       }
       return super.saveAs(sourceWidget, options);
+   }
+
+   protected async ensureDatamodelVersionOnSaveAs(uri: URI): Promise<void> {
+      if (!ModelFileExtensions.getFileType(uri.toString())) {
+         return;
+      }
+      try {
+         // Re-save through ModelService so the server can update datamodel version if needed.
+         const content = await this.fileService.readFile(uri);
+         const text = content.value.toString();
+         await this.modelService.save({ uri: uri.toString(), model: text, clientId: 'save' });
+      } catch (e) {
+         console.warn('[CrossModelSaveableService] ensureDatamodelVersionOnSaveAs failed', e);
+      }
    }
 
    /** Workaround for https://github.com/eclipse-theia/theia/issues/15501 */
