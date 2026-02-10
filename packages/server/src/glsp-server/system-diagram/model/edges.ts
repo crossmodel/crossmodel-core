@@ -3,6 +3,9 @@
  ********************************************************************************/
 
 import {
+   BORDER_COLOR,
+   BORDER_STYLE,
+   BORDER_WEIGHT,
    INHERITANCE_EDGE_TYPE,
    REFERENCE_CONTAINER_TYPE,
    REFERENCE_PROPERTY,
@@ -55,6 +58,17 @@ export class GRelationshipEdgeBuilder extends GEdgeBuilder<GRelationshipEdge> {
       this.sourceId(sourceId || '');
       this.targetId(targetId || '');
 
+      // Add styling properties if defined
+      if (edge.borderColor) {
+         this.addArg(BORDER_COLOR, edge.borderColor);
+      }
+      if (edge.borderWeight !== undefined) {
+         this.addArg(BORDER_WEIGHT, edge.borderWeight);
+      }
+      if (edge.borderStyle) {
+         this.addArg(BORDER_STYLE, edge.borderStyle);
+      }
+
       return this;
    }
 }
@@ -84,6 +98,18 @@ export class GInheritanceEdgeBuilder extends GEdgeBuilder<GInheritanceEdge> {
 
       this.sourceId(sourceId || '');
       this.targetId(targetId || '');
+
+      // Add styling properties if defined
+      if (edge.borderColor) {
+         this.addArg(BORDER_COLOR, edge.borderColor);
+      }
+      if (edge.borderWeight !== undefined) {
+         this.addArg(BORDER_WEIGHT, edge.borderWeight);
+      }
+      if (edge.borderStyle) {
+         this.addArg(BORDER_STYLE, edge.borderStyle);
+      }
+
       return this;
    }
 }

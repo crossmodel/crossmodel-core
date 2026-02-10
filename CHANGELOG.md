@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.26.1](https://github.com/crossmodel/crossmodel-core/compare/v0.26.0...v0.26.1) (2026-02-06)
+
+**Note:** Version bump only for package crossmodel-core
+
+
+
+
+
+# [0.26.0](https://github.com/crossmodel/crossmodel-core/compare/v0.25.1...v0.26.0) (2026-02-05)
+
+
+### Features
+
+* Add styling properties for nodes and edges in system diagrams ([#265](https://github.com/crossmodel/crossmodel-core/issues/265)) ([bb58c0e](https://github.com/crossmodel/crossmodel-core/commit/bb58c0ead3d0c99f90f4238b03773f6eae533d72))
+
+
+
+
+
+## [0.25.1](https://github.com/crossmodel/crossmodel-core/compare/v0.25.0...v0.25.1) (2026-02-04)
+
+**Note:** Version bump only for package crossmodel-core
+
+
+
+
+
 # [0.25.0](https://github.com/crossmodel/crossmodel-core/compare/v0.24.1...v0.25.0) (2026-02-03)
 
 

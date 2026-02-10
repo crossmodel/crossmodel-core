@@ -2,7 +2,12 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 import {
+   BACKGROUND_COLOR,
+   BORDER_COLOR,
+   BORDER_STYLE,
+   BORDER_WEIGHT,
    ENTITY_NODE_TYPE,
+   FONT_COLOR,
    LABEL_ENTITY,
    REFERENCE_CONTAINER_TYPE,
    REFERENCE_PROPERTY,
@@ -66,6 +71,23 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
          .addArgs(ArgsUtil.cornerRadius(3))
          .addLayoutOption('prefWidth', node.width || 100)
          .addLayoutOption('prefHeight', node.height || 100);
+
+      // Add styling properties if defined
+      if (node.backgroundColor) {
+         this.addArg(BACKGROUND_COLOR, node.backgroundColor);
+      }
+      if (node.borderColor) {
+         this.addArg(BORDER_COLOR, node.borderColor);
+      }
+      if (node.borderWeight !== undefined) {
+         this.addArg(BORDER_WEIGHT, node.borderWeight);
+      }
+      if (node.borderStyle) {
+         this.addArg(BORDER_STYLE, node.borderStyle);
+      }
+      if (node.fontColor) {
+         this.addArg(FONT_COLOR, node.fontColor);
+      }
 
       return this;
    }

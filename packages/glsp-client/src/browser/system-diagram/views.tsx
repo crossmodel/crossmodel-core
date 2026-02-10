@@ -83,7 +83,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <circle cx='14' cy='5' r='4' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' />
+               <circle cx='14' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_PARENT_ONE_SEL_ID)}
@@ -95,7 +95,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <circle cx='14' cy='5' r='4' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' />
+               <circle cx='14' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
 
             <marker
@@ -108,7 +108,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <path d='M 10 0 L 10 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 10 0 L 10 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_PARENT_ONE_M_SEL_ID)}
@@ -120,7 +120,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <path d='M 10 0 L 10 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 10 0 L 10 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
 
             <marker
@@ -133,8 +133,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <path d='M 0 0 L 10 5 L 0 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <circle cx='14' cy='5' r='4' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' />
+               <path d='M 0 0 L 10 5 L 0 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <circle cx='14' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_PARENT_MULTI_SEL_ID)}
@@ -146,8 +146,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <path d='M 0 0 L 10 5 L 0 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <circle cx='14' cy='5' r='4' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' />
+               <path d='M 0 0 L 10 5 L 0 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <circle cx='14' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
 
             <marker
@@ -160,8 +160,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <path d='M 0 0 L 10 5 L 0 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <path d='M 10 0 L 10 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 0 0 L 10 5 L 0 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 10 0 L 10 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_PARENT_MULTI_M_SEL_ID)}
@@ -173,8 +173,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto'
             >
-               <path d='M 0 0 L 10 5 L 0 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <path d='M 10 0 L 10 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 0 0 L 10 5 L 0 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 10 0 L 10 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
 
             <marker
@@ -187,7 +187,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <circle cx='6' cy='5' r='4' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' />
+               <circle cx='6' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_CHILD_ONE_SEL_ID)}
@@ -199,7 +199,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <circle cx='6' cy='5' r='4' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' />
+               <circle cx='6' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
 
             <marker
@@ -212,7 +212,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <path d='M 2 0 L 2 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 2 0 L 2 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_CHILD_ONE_M_SEL_ID)}
@@ -224,7 +224,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <path d='M 2 0 L 2 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 2 0 L 2 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
 
             <marker
@@ -237,8 +237,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <path d='M 20 0 l -10 5 L 20 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <circle cx='6' cy='5' r='4' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' />
+               <path d='M 20 0 l -10 5 L 20 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <circle cx='6' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_CHILD_MULTI_SEL_ID)}
@@ -250,8 +250,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <path d='M 20 0 l -10 5 L 20 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <circle cx='6' cy='5' r='4' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' />
+               <path d='M 20 0 l -10 5 L 20 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <circle cx='6' cy='5' r='4' stroke='context-stroke' fill='var(--sprotty-background)' />
             </marker>
 
             <marker
@@ -264,8 +264,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <path d='M 20 0 l -10 5 L 20 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <path d='M 10 0 L 10 10' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 20 0 l -10 5 L 20 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 10 0 L 10 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
             <marker
                id={this.createDefId(MARKER_RELATIONSHIP_CARDINALITY_CHILD_MULTI_M_SEL_ID)}
@@ -277,8 +277,8 @@ export class SystemGraphView extends GGraphView {
                markerHeight='10'
                orient='auto-start-reverse'
             >
-               <path d='M 20 0 l -10 5 L 20 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
-               <path d='M 10 0 L 10 10' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 20 0 l -10 5 L 20 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
+               <path d='M 10 0 L 10 10' stroke='context-stroke' fill='var(--sprotty-background)' fill-opacity='0' />
             </marker>
 
             <marker
@@ -291,7 +291,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='20'
                orient='auto-start-reverse'
             >
-               <path d='M 0 0 L 10 5 L 0 10 L 0 0 z' stroke='var(--sprotty-edge)' fill='var(--sprotty-background)' />
+               <path d='M 0 0 L 10 5 L 0 10 L 0 0 z' stroke='context-stroke' fill='context-stroke' />
             </marker>
             <marker
                id={this.createDefId(MARKER_INHERITANCE_SELECTED_ID)}
@@ -303,7 +303,7 @@ export class SystemGraphView extends GGraphView {
                markerHeight='20'
                orient='auto-start-reverse'
             >
-               <path d='M 0 0 L 10 5 L 0 10 L 0 0 z' stroke='var(--sprotty-edge-selected)' fill='var(--sprotty-background)' />
+               <path d='M 0 0 L 10 5 L 0 10 L 0 0 z' stroke='context-stroke' fill='context-stroke' />
             </marker>
          </defs>
       ];
