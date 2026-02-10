@@ -7,7 +7,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
    testDir: './src/tests',
-   testMatch: ['**/*.spec.ts'],
+   // Exclude documentation tests from normal runs
+   testMatch: ['**/*.spec.ts', '!documentation/**/*.spec.ts'],
    workers: process.env.CI ? 1 : 2,
    retries: process.env.CI ? 1 : 0,
    // The number of times to repeat each test, useful for debugging flaky tests
