@@ -141,10 +141,8 @@ export class ModelService {
       if (!isAstNode(root)) {
          throw new Error(`No AST node to update exists in '${args.uri}'`);
       }
-
-      const text: string = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
-
       const textDocument = document.textDocument;
+      const text: string = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
       if (text === textDocument.getText()) {
          return {
             diagnostics: document.diagnostics ?? [],
@@ -192,14 +190,14 @@ export class ModelService {
    async save(args: SaveModelArgs<CrossModelRoot>): Promise<void> {
       // sync: implicit update of internal data structure to match file system (similar to workspace initialization)
       const documentUri = URI.parse(args.uri);
-      const text: string = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
+      const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
       if (this.documents.hasDocument(documentUri)) {
-         await this.update({ ...args, model: text });
+         await this.update(args);
       } else {
          this.documents.createDocument(documentUri, text);
          await this.documentBuilder.update([documentUri], []);
       }
-      await this.documentManager.save(args.uri, text, args.clientId);
+      return this.documentManager.save(args.uri, text, args.clientId);
    }
 
    /**
