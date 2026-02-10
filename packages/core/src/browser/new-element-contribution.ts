@@ -359,8 +359,6 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
       };
       const content = yaml.stringify(mapping, { indent: 4 });
       await this.fileService.create(mappingUri, content);
-      // Ensure parent datamodel version gets updated for direct file creation paths.
-      await this.modelService.save({ uri: mappingUri.toString(), model: content, clientId: 'save' });
       this.fireCreateNewFile({ parent: targetDirectory, uri: mappingUri });
       open(this.openerService, mappingUri);
    }
@@ -392,8 +390,6 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
          }
          const { fileUri, content } = options;
          await this.fileService.create(fileUri, content);
-         // Direct file creation bypasses the model save pipeline; trigger it explicitly.
-         await this.modelService.save({ uri: fileUri.toString(), model: content, clientId: 'save' });
          this.fireCreateNewFile({ parent: targetDirectory, uri: fileUri });
          open(this.openerService, fileUri);
       }

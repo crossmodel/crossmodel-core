@@ -7,6 +7,7 @@ import { Disposable, DocumentState, LangiumDocument, MultiMap, UriUtils } from '
 import * as protocol from '@crossmodel/protocol';
 import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { needsCrossModelVersionUpdate, updateCrossModelVersion } from './util/crossmodel-version-util.js';
 import { CrossModelLangiumDocuments } from './cross-model-langium-documents.js';
 import { CrossModelSharedServices } from './cross-model-module.js';
 import { QUALIFIED_ID_SEPARATOR } from './cross-model-naming.js';
@@ -289,9 +290,21 @@ export class CrossModelDataModelManager {
 
    // Updates (or adds) the data model for the given URI. Returns the IDs of data models that were added/updated.
    protected async updateDataModel(uri: URI): Promise<string[]> {
-      const newDataModel = await parseDataModelFile(uri, this.langiumDocuments);
+      let newDataModel = await parseDataModelFile(uri, this.langiumDocuments);
       if (!newDataModel) {
          return [];
+      }
+
+      // Ensure CrossModel version/edition is current on load
+      if (needsCrossModelVersionUpdate(newDataModel)) {
+         updateCrossModelVersion(newDataModel);
+         // Serialize the updated AST and persist to disk
+         const document = await this.langiumDocuments.getOrCreateDocument(uri);
+         const serializer = this.shared.ServiceRegistry.getServices(uri).serializer.Serializer;
+         const text = serializer.serialize(document.parseResult.value);
+         await this.shared.workspace.TextDocumentManager.save(uri.toString(), text, 'datamodel-manager');
+         // Re-parse so in-memory document matches updated disk content
+         newDataModel = (await parseDataModelFile(uri, this.langiumDocuments)) ?? newDataModel;
       }
 
       const toUpdate = [];

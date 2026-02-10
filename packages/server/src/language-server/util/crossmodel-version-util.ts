@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { getCrossModelEdition, getCrossModelVersion } from '@crossmodel/protocol';
-import { CrossModelEditionInfo, DataModel } from '../language-server/generated/ast.js';
+import { CrossModelEditionInfo, DataModel } from '../generated/ast.js';
 
 /**
  * Checks if a datamodel's stored CrossModel version/edition differs from the current one.
@@ -39,19 +39,4 @@ export function updateCrossModelVersion(dataModel: DataModel): void {
       dataModel.crossmodel.edition = getCrossModelEdition();
       dataModel.crossmodel.version = currentVersion;
    }
-}
-
-/**
- * Ensures a datamodel has the current CrossModel version/edition info.
- * Updates it if needed.
- *
- * @param dataModel the datamodel to update
- * @returns true if an update was performed, false if already up to date
- */
-export function ensureCrossModelVersion(dataModel: DataModel): boolean {
-   if (needsCrossModelVersionUpdate(dataModel)) {
-      updateCrossModelVersion(dataModel);
-      return true;
-   }
-   return false;
 }
