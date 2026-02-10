@@ -174,50 +174,18 @@ export class CrossModelToolManager extends ToolManager {
    }
 }
 
-/**
- * Custom hidden bounds updater that preserves manual routing points during the hidden rendering cycle.
- *
- * The parent class computes routes on the hidden model's edges via calcElementAndRoute(), but the hidden model
- * does not have the HAS_MANUAL_ROUTING_POINTS flag or updated routingPoints set during drag on the main model.
- * Without this override, the auto-computed routes would overwrite the user's manual routing points via
- * ComputedBoundsAction.
- *
- * TODO: Once libavoid-js exposes setRoutingCheckpoints() (see https://github.com/Aksem/libavoid-js/pull/33),
- * refactor manual routing to use libavoid checkpoints instead of bypassing the router entirely.
- * That would eliminate the need for this workaround as libavoid would natively respect manual waypoints.
- */
 @injectable()
 export class CrossModelHiddenBoundsUpdater extends GLSPHiddenBoundsUpdater {
-   @inject(EditorContextService) protected editorContext: EditorContextService;
-
    override decorate(vnode: VNode, element: GModelElement): VNode {
       super.decorate(vnode, element);
       if (isRoutable(element)) {
-         // super.decorate() pushed an auto-computed route via calcElementAndRoute().
-         // That route is computed on the hidden model's edge, which does NOT have the
-         // HAS_MANUAL_ROUTING_POINTS flag or updated routingPoints set during drag.
-         // We must check the main model edge and preserve its manual routing points.
          const addedRoute = this.element2route.pop();
-
-         const mainEdge = this.editorContext.modelRoot.index.getById(element.id);
-         if (mainEdge && isRoutable(mainEdge) && this.hasManualRoutingPoints(mainEdge)) {
-            // Build a full route including source and target positions.
-            // The GLSP server's applyRoute() requires at least 2 points and treats the
-            // first/last as source/target anchors, so we can't send bare routingPoints.
-            const source = mainEdge.source?.position ?? { x: 0, y: 0 };
-            const target = mainEdge.target?.position ?? { x: 0, y: 0 };
-            const fullRoute = [source, ...mainEdge.routingPoints, target];
-            this.element2route.push({ elementId: mainEdge.id, newRoutingPoints: fullRoute });
-         } else if (addedRoute?.newRoutingPoints && addedRoute.newRoutingPoints.length >= 2) {
+         if (addedRoute?.newRoutingPoints && addedRoute.newRoutingPoints.length >= 2) {
             this.element2route.push(addedRoute);
          } else {
             this.element2route.push(toElementAndRoutingPoints(element));
          }
       }
       return vnode;
-   }
-
-   protected hasManualRoutingPoints(element: GModelElement & { routingPoints?: { x: number; y: number }[]; args?: Record<string, unknown> }): boolean {
-      return (!!element.routingPoints && element.routingPoints.length > 0) || !!element.args?.[HAS_MANUAL_ROUTING_POINTS];
    }
 }
