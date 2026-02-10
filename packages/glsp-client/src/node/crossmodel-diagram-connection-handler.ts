@@ -51,17 +51,49 @@ export class CrossModelDiagramGLSPConnectionHandler implements ConnectionHandler
       }
    }
 
+   /**
+    * Unique token for the current findPort loop. Used to detect cancellation
+    * (dispose/destruction) or supersession (a new findPort call).
+    */
+   protected _findPortToken?: object;
+
+   /** Handle for the current setTimeout so the retry can be cancelled. */
+   protected _findPortTimer?: ReturnType<typeof setTimeout>;
+
+   /**
+    * Polls for the GLSP server port by repeatedly querying the command service.
+    * See ModelServiceServerImpl.findPort() for detailed documentation of the pattern.
+    */
    protected async findPort(timeout = 500, attempts = -1): Promise<number> {
       const pendingContent = new Deferred<number>();
+      const token = {};
+      this._findPortToken = token;
       let counter = 0;
       const tryQueryingPort = (): void => {
-         setTimeout(async () => {
+         this._findPortTimer = setTimeout(async () => {
+            if (this._findPortToken !== token) {
+               return;
+            }
             try {
-               const port = await this.commandService.executeCommand<number>(GLSP_PORT_COMMAND);
+               const portPromise = this.commandService.executeCommand<number>(GLSP_PORT_COMMAND);
+               // 5s per-attempt timeout to avoid being blocked by a busy language server
+               const port = await Promise.race([
+                  portPromise,
+                  new Promise<number | undefined>(resolve => setTimeout(() => resolve(undefined), 5000))
+               ]);
+               if (this._findPortToken !== token) {
+                  return;
+               }
                if (port) {
                   pendingContent.resolve(port);
+               } else {
+                  // Port not available yet — retry
+                  tryQueryingPort();
                }
             } catch (error) {
+               if (this._findPortToken !== token) {
+                  return;
+               }
                counter++;
                if (attempts >= 0 && counter > attempts) {
                   pendingContent.reject(error);

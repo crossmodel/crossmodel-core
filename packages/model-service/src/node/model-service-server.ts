@@ -115,17 +115,66 @@ export class ModelServiceServerImpl implements ModelServiceServer {
       return connected.promise;
    }
 
+   /**
+    * Unique token for the current findPort loop. Each call to findPort() creates a fresh token.
+    * When dispose() is called, the token is set to undefined, causing any in-flight retry loop
+    * to detect the mismatch and stop. This also handles the case where findPort() is called
+    * multiple times: only the most recent loop's token matches, so older loops stop automatically.
+    */
+   protected _findPortToken?: object;
+
+   /** Handle for the current setTimeout so dispose() can cancel a pending retry. */
+   protected _findPortTimer?: ReturnType<typeof setTimeout>;
+
+   /**
+    * Polls for the server port by repeatedly querying the command service.
+    *
+    * The language server registers the port command handler only after workspace initialization
+    * completes (all models indexed). Until then, executeCommand either throws (command not yet
+    * registered) or returns undefined (server not ready). This method retries until a valid
+    * port is returned.
+    *
+    * @param timeout - Delay in ms between retry attempts (default: 500ms)
+    * @param attempts - Max number of retries on error. -1 means unlimited (default: -1)
+    */
    protected async findPort(timeout = 500, attempts = -1): Promise<number> {
       const pendingContent = new Deferred<number>();
+      // Create a unique ownership token for this findPort invocation.
+      // If dispose() or a subsequent findPort() call changes _findPortToken,
+      // this loop detects the mismatch and stops.
+      const token = {};
+      this._findPortToken = token;
       let counter = 0;
       const tryQueryingPort = (): void => {
-         setTimeout(async () => {
+         this._findPortTimer = setTimeout(async () => {
+            // Check if this loop has been cancelled (dispose called or new findPort started)
+            if (this._findPortToken !== token) {
+               return;
+            }
             try {
-               const port = await this.commandService.executeCommand<number>(MODELSERVER_PORT_COMMAND);
+               const portPromise = this.commandService.executeCommand<number>(MODELSERVER_PORT_COMMAND);
+               // Race against a 5s per-attempt timeout. If the language server is busy
+               // (e.g. indexing a large workspace), executeCommand may hang indefinitely.
+               // The timeout ensures we keep retrying instead of being blocked forever.
+               const port = await Promise.race([
+                  portPromise,
+                  new Promise<number | undefined>(resolve => setTimeout(() => resolve(undefined), 5000))
+               ]);
+               // Re-check cancellation after the async gap
+               if (this._findPortToken !== token) {
+                  return;
+               }
                if (port) {
                   pendingContent.resolve(port);
+               } else {
+                  // Port not available yet (server still starting) — retry
+                  tryQueryingPort();
                }
             } catch (error) {
+               // Re-check cancellation after the async gap
+               if (this._findPortToken !== token) {
+                  return;
+               }
                counter++;
                if (attempts >= 0 && counter > attempts) {
                   pendingContent.reject(error);
@@ -165,6 +214,13 @@ export class ModelServiceServerImpl implements ModelServiceServer {
    }
 
    dispose(): void {
+      // Cancel any running findPort retry loop by invalidating its ownership token
+      // and clearing the pending timer.
+      this._findPortToken = undefined;
+      if (this._findPortTimer) {
+         clearTimeout(this._findPortTimer);
+         this._findPortTimer = undefined;
+      }
       if (this.initialized) {
          this.initialized.resolve();
          this.initialized = undefined;

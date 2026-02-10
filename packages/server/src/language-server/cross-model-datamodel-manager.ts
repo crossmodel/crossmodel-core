@@ -155,6 +155,9 @@ export class CrossModelDataModelManager {
       return Array.from(this.uriToDataModel.values());
    }
 
+   /** Cache for URI-to-DataModelInfo lookups to avoid repeated O(N) path comparisons. */
+   protected _uriLookupCache = new Map<string, DataModelInfo | undefined>();
+
    getDataModelInfoByURI(uri?: URI): DataModelInfo | undefined {
       if (!uri) {
          return;
@@ -165,6 +168,12 @@ export class CrossModelDataModelManager {
          return dataModelInfo;
       }
 
+      // check lookup cache to avoid repeated expensive path comparisons
+      const uriKey = uri.toString();
+      if (this._uriLookupCache.has(uriKey)) {
+         return this._uriLookupCache.get(uriKey);
+      }
+
       // find closest data model info based on the given URI
       // we prefer longer path names as we are deeper in the nested hierarchy
       const closestParent = [...this.uriToDataModel.values()]
@@ -173,13 +182,17 @@ export class CrossModelDataModelManager {
          .at(0);
 
       if (closestParent) {
+         this._uriLookupCache.set(uriKey, closestParent);
          return closestParent;
       }
 
       if (uri.scheme !== 'file') {
-         return this.getDataModelInfoByURI(uri.with({ scheme: 'file' }));
+         const result = this.getDataModelInfoByURI(uri.with({ scheme: 'file' }));
+         this._uriLookupCache.set(uriKey, result);
+         return result;
       }
 
+      this._uriLookupCache.set(uriKey, undefined);
       return undefined;
    }
 
@@ -245,6 +258,7 @@ export class CrossModelDataModelManager {
    }
 
    protected addDataModel(uri: URI, dataModel: DataModel): string[] {
+      this._uriLookupCache.clear();
       const dataModelInfo = new DataModelInfo(uri, dataModel);
       if (!dataModelInfo.isUnknown) {
          this.uriToDataModel.set(dataModelInfo.uri.toString(), dataModelInfo);
@@ -271,6 +285,7 @@ export class CrossModelDataModelManager {
    }
 
    protected deleteDataModel(uri: URI): string[] {
+      this._uriLookupCache.clear();
       const dataModelInfo = this.uriToDataModel.get(uri.toString());
       if (dataModelInfo && !dataModelInfo?.isUnknown) {
          this.uriToDataModel.delete(uri.toString());
