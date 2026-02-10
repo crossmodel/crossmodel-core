@@ -142,7 +142,7 @@ export class ModelService {
          throw new Error(`No AST node to update exists in '${args.uri}'`);
       }
       const textDocument = document.textDocument;
-      const text: string = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
+      const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
       if (text === textDocument.getText()) {
          return {
             diagnostics: document.diagnostics ?? [],
