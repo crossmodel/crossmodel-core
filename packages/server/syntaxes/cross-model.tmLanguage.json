@@ -1,7 +1,9 @@
 {
   "name": "cross-model",
   "scopeName": "source.cross-model",
-  "fileTypes": [".cm"],
+  "fileTypes": [
+    ".cm"
+  ],
   "patterns": [
     {
       "include": "#comments"
