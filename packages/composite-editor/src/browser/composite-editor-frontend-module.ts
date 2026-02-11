@@ -38,5 +38,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
    // Register custom undo/redo handler for CompositeEditor
    bind(CompositeUndoRedoHandler).toSelf().inSingletonScope();
-   rebind(UndoRedoHandler).toService(CompositeUndoRedoHandler);
+   bind(UndoRedoHandler).toService(CompositeUndoRedoHandler);
 });
