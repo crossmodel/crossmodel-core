@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/form-client",
-  "version": "0.21.0",
+  "version": "0.26.2",
   "description": "CrossModel Form-based Editor Contribution",
   "keywords": [
     "theia-extension"
@@ -27,10 +27,10 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/core": "0.21.0",
-    "@crossmodel/model-service": "0.21.0",
-    "@crossmodel/protocol": "0.21.0",
-    "@crossmodel/react-model-ui": "0.21.0",
+    "@crossmodel/core": "0.26.2",
+    "@crossmodel/model-service": "0.26.2",
+    "@crossmodel/protocol": "0.26.2",
+    "@crossmodel/react-model-ui": "0.26.2",
     "@theia/core": "1.67.0",
     "fast-deep-equal": "3.1.3",
     "p-debounce": "^2.1.0"

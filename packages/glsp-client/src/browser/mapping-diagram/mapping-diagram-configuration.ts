@@ -26,7 +26,7 @@ import { GLSPDiagramConfiguration } from '@eclipse-glsp/theia-integration';
 import { Container } from '@theia/core/shared/inversify/index';
 import { MappingDiagramLanguage } from '../../common/crossmodel-diagram-language';
 import { createCrossModelDiagramModule } from '../crossmodel-diagram-module';
-import { libAvoidModule } from '../libavoid-module';
+import { libAvoidModule } from '../libavoid';
 import { AttributeCompartment } from '../model';
 import { AttributeCompartmentView } from '../views';
 import { mappingEdgeCreationToolModule } from './edge-creation-tool/edge-creation-tool-module';

@@ -4,7 +4,7 @@
 
 import { Args, DefaultTypes } from '@eclipse-glsp/protocol';
 
-// System Diagram
+// Diagram
 export const ENTITY_NODE_TYPE = DefaultTypes.NODE + ':entity';
 export const RELATIONSHIP_EDGE_TYPE = DefaultTypes.EDGE + ':relationship';
 export const INHERITANCE_EDGE_TYPE = DefaultTypes.EDGE + ':inheritance';
@@ -22,6 +22,13 @@ export const ATTRIBUTE_COMPARTMENT_TYPE = DefaultTypes.COMPARTMENT + ':attribute
 export const REFERENCE_CONTAINER_TYPE = 'reference-container-type';
 export const REFERENCE_PROPERTY = 'reference-property';
 export const REFERENCE_VALUE = 'reference-value';
+
+// Styling Args
+export const BACKGROUND_COLOR = 'backgroundColor';
+export const BORDER_COLOR = 'borderColor';
+export const BORDER_WEIGHT = 'borderWeight';
+export const BORDER_STYLE = 'borderStyle';
+export const FONT_COLOR = 'fontColor';
 
 export type RenderProps = Record<string, string | number | boolean | undefined> & {
    theme: 'light' | 'dark' | 'hc' | 'hcLight'; // supported ThemeType of Theia
@@ -48,4 +55,12 @@ export namespace RenderProps {
 
    export const SOURCE_OBJECT_IDX_NAME = 'sourceObjectIndex';
    export const SOURCE_OBJECT_IDX = RenderProps.key(SOURCE_OBJECT_IDX_NAME);
+}
+
+export const SEMANTIC_URI = 'semanticUri';
+
+export namespace SemanticUri {
+   export function read(args?: Args): string | undefined {
+      return args ? (args[SEMANTIC_URI] as string | undefined) : undefined;
+   }
 }

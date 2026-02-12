@@ -4,6 +4,7 @@
  * https://github.com/Aksem/sprotty-routing-libavoid
  ********************************************************************************/
 
+import { GRID } from '@crossmodel/protocol';
 import { LibavoidRouteType } from './libavoid';
 
 export const LibavoidEdgeRouterOptions = Symbol('LibavoidEdgeRouterOptions');
@@ -202,18 +203,70 @@ export interface LibavoidEdgeRouterConfiguration extends LibavoidRouterOptions, 
 }
 
 export const DEFAULT_LIBAVOID_EDGE_ROUTER_CONFIG: LibavoidEdgeRouterConfiguration = {
-   // Manhattan style routing
+   // --- Routing Type ---
+   // Orthogonal produces Manhattan-style routes (horizontal and vertical segments only).
+   // PolyLine would allow diagonal segments but typically looks less clean in structured diagrams.
    routingType: LibavoidRouteType.Orthogonal,
+
+   // --- Core Penalties ---
+
+   // Penalizes routes that cross other connector paths. Higher values make the router try harder
+   // to avoid crossings at the cost of potentially longer routes. Set to 0 to disable.
+   // Values above ~200 can cause significantly longer detour routes.
    crossingPenalty: 100,
+
+   // Penalizes routes that travel away from the destination before turning toward it (U-turns).
+   // Set to 0 to allow looping routes. A value of 100 strongly discourages reverse-direction segments.
    reverseDirectionPenalty: 100,
-   portDirectionPenalty: 100,
+
+   // Penalizes each additional segment beyond the first. Essential for orthogonal routing to prevent
+   // staircase-like paths. Must be > 0 for orthogonal nudging to work.
+   // Lower values allow more turns, higher values produce straighter routes with fewer bends.
    segmentPenalty: 10,
-   shapeBufferDistance: 100,
-   fixedSharedPathPenalty: 100,
+
+   // --- Grid-Aligned Spacing ---
+
+   // Extra padding added to each obstacle boundary when computing routes. Connectors maintain at
+   // least this distance from shape borders. Increasing pushes edges further from nodes.
+   // Uses GRID.x to align the buffer to the grid for consistent spacing in grid-snapped layouts.
+   shapeBufferDistance: GRID.x,
+
+   // Distance used to separate overlapping connector segments during the nudging phase.
+   // Controls how far apart parallel edge segments are pushed. Larger values give more visual
+   // separation but consume more diagram space. Uses GRID.x to align nudged segments to the grid.
+   idealNudgingDistance: GRID.x,
+
+   // --- Disabled Experimental Features ---
+   // These are marked experimental in the libavoid docs and disabled for stability.
+
+   // Penalizes port selection when the opposite endpoint is not in a 90-degree visibility cone.
+   // Very slow; not recommended for normal use.
+   portDirectionPenalty: 0,
+
+   // Penalizes sharing segments with immovable portions of existing connector routes.
+   // Experimental; not recommended for normal use.
+   fixedSharedPathPenalty: 0,
+
+   // Attempts to reroute shared paths entering the same side of a junction.
+   // Depends on fixedSharedPathPenalty. Experimental.
+   penaliseOrthogonalSharedPathsAtConnEnds: false,
+
+   // --- Nudging Options ---
+
+   // Preprocessing step that unifies segments and centers them in free space before nudging.
+   // Produces better visual results but can be slow on very large diagrams (hundreds of edges).
    performUnifyingNudgingPreprocessingStep: true,
+
+   // Separates intermediate segments of connectors sharing common endpoints.
+   // Setting to false would allow overlapping shared paths.
    nudgeSharedPathsWithCommonEndPoint: true,
-   penaliseOrthogonalSharedPathsAtConnEnds: true,
-   // do not nudge on the ports as this might nudge out of the visual representation of the ports
-   nudgeOrthogonalSegmentsConnectedToShapes: false,
-   nudgeOrthogonalTouchingColinearSegments: true
+
+   // Separates collinear segments that touch only at their endpoints.
+   // Usually resolved in the other dimension, but enabling ensures explicit separation.
+   nudgeOrthogonalTouchingColinearSegments: true,
+
+   // Nudges final segments attached to shapes apart. With the multi-pin approach, this helps
+   // the router optimize which pin to use for each connector. Setting to false would fix final
+   // segments in place, preventing optimization of connections at shape boundaries.
+   nudgeOrthogonalSegmentsConnectedToShapes: true
 };

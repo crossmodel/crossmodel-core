@@ -23,7 +23,7 @@ import {
    SourceModelStorage
 } from '@eclipse-glsp/server';
 import { inject, injectable, postConstruct } from 'inversify';
-import { AstUtils } from 'langium';
+import { AstNode, AstUtils } from 'langium';
 import debounce from 'p-debounce';
 import { DiagnosticSeverity } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
@@ -93,10 +93,14 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
    protected async updateEditMode(document: AstCrossModelDocument): Promise<Action[]> {
       const actions = [];
       const prevEditMode = this.state.editMode;
-      this.state.editMode =
-         document.diagnostics.filter(diagnostic => diagnostic.severity === DiagnosticSeverity.Error).length > 0
-            ? EditMode.READONLY
-            : EditMode.EDITABLE;
+      // Only set readonly mode for parse/lexing errors, not validation errors
+      // Validation errors can be fixed in the form/diagram views
+      const hasParseErrors = document.diagnostics.some(
+         diagnostic =>
+            diagnostic.severity === DiagnosticSeverity.Error &&
+            (diagnostic.data?.code === 'lexing-error' || diagnostic.data?.code === 'parsing-error')
+      );
+      this.state.editMode = hasParseErrors ? EditMode.READONLY : EditMode.EDITABLE;
       if (prevEditMode !== this.state.editMode) {
          if (this.state.isReadonly) {
             actions.push(SetEditModeAction.create(EditMode.READONLY));
@@ -118,8 +122,14 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
       // save document and all related documents
       this.state.modelService.save({ uri: saveUri, model: this.state.semanticRoot, clientId: this.state.clientId });
       AstUtils.streamReferences(this.state.semanticRoot)
-         .map(refInfo => refInfo.reference.ref)
-         .nonNullable()
+         .map(refInfo => {
+            if ('items' in refInfo.reference) {
+               return refInfo.reference.items.map(item => item.ref).filter((ref): ref is AstNode => ref !== undefined);
+            } else {
+               return refInfo.reference.ref ? [refInfo.reference.ref] : [];
+            }
+         })
+         .flat()
          .map(ref => AstUtils.findRootNode(ref) as CrossModelRoot)
          .forEach(root =>
             this.state.modelService.save({ uri: root.$document!.uri.toString(), model: root, clientId: this.state.clientId })

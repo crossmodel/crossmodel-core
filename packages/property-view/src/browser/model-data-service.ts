@@ -42,13 +42,17 @@ export class ModelDataService implements PropertyDataService {
    }
 
    protected async getPropertyData(selection: GlspSelection, info?: GModelElementInfo): Promise<PropertiesRenderData | undefined> {
-      if (info?.reference) {
+      if (!info) {
+         return undefined;
+      }
+      if (typeof info.reference === 'string') {
+         return { uri: info.reference, renderProps: info.renderProps };
+      }
+      if (info.reference) {
          const reference = await this.modelService.resolveReference(info.reference);
-
          const renderProps = { ...info.renderProps, focusField: info.reference.property };
-
          return reference ? { uri: reference?.uri, renderProps } : undefined;
-      } else if (selection.sourceUri && info?.renderProps) {
+      } else if (selection.sourceUri && info.renderProps) {
          return { uri: selection.sourceUri, renderProps: info.renderProps };
       }
       return undefined;

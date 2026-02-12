@@ -1,6 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
+import { ENTITY_NODE_TYPE, INHERITANCE_EDGE_TYPE, RELATIONSHIP_EDGE_TYPE } from '@crossmodel/protocol';
 import {
    Action,
    CSS_HIDDEN_EXTENSION_CLASS,
@@ -9,10 +10,10 @@ import {
    FitToScreenAction,
    ICommand,
    PaletteItem,
-   RequestContextActions,
-   SetContextActions,
    SetModelAction,
    ToolPalette,
+   TriggerEdgeCreationAction,
+   TriggerNodeCreationAction,
    UpdateModelAction,
    createIcon
 } from '@eclipse-glsp/client';
@@ -22,6 +23,7 @@ const CLICKED_CSS_CLASS = 'clicked';
 @injectable()
 export class CrossModelToolPalette extends ToolPalette {
    protected readonly defaultToolsBtnId = 'default-tool';
+   protected readonly buttonMap = new Map<string, HTMLElement>();
    protected override initializeContents(containerElement: HTMLElement): void {
       this.addMinimizePaletteButton();
       this.createHeader();
@@ -58,6 +60,7 @@ export class CrossModelToolPalette extends ToolPalette {
 
    protected override createToolButton(item: PaletteItem, index: number): HTMLElement {
       const button = super.createToolButton(item, index);
+      this.buttonMap.set(item.id, button);
       if (item.id === this.defaultToolsBtnId) {
          this.defaultToolsButton = button;
       }
@@ -74,20 +77,6 @@ export class CrossModelToolPalette extends ToolPalette {
       fitToScreenButton.ariaLabel = fitToScreenButton.title;
       fitToScreenButton.tabIndex = 1;
       return fitToScreenButton;
-   }
-
-   protected override async setPaletteItems(): Promise<void> {
-      super.setPaletteItems();
-      this.changeActiveButton();
-      const requestAction = RequestContextActions.create({
-         contextId: ToolPalette.ID,
-         editorContext: {
-            selectedElementIds: []
-         }
-      });
-      const response = await this.actionDispatcher.request<SetContextActions>(requestAction);
-      this.paletteItems = response.actions.map(action => action as PaletteItem);
-      this.dynamic = this.paletteItems.some(item => this.hasDynamicAction(item));
    }
 
    override changeActiveButton(button?: HTMLElement): void {
@@ -112,6 +101,26 @@ export class CrossModelToolPalette extends ToolPalette {
          if (this.focusTracker.hasFocus) {
             // if focus was deliberately taken do not restore focus to the palette
             this.focusTracker.diagramElement?.focus();
+         }
+      } else if (TriggerNodeCreationAction.is(action)) {
+         if (action.elementTypeId === ENTITY_NODE_TYPE) {
+            const type = action.args?.['type'];
+            if (type === 'show') {
+               this.changeActiveButton(this.buttonMap.get('entity-show-tool'));
+            } else if (type === 'create') {
+               this.changeActiveButton(this.buttonMap.get('entity-create-tool'));
+            }
+         }
+      } else if (TriggerEdgeCreationAction.is(action)) {
+         if (action.elementTypeId === RELATIONSHIP_EDGE_TYPE) {
+            const type = action.args?.['type'];
+            if (type === 'show') {
+               this.changeActiveButton(this.buttonMap.get('relationship-show-tool'));
+            } else if (type === 'create') {
+               this.changeActiveButton(this.buttonMap.get('relationship-create-tool'));
+            }
+         } else if (action.elementTypeId === INHERITANCE_EDGE_TYPE) {
+            this.changeActiveButton(this.buttonMap.get('inheritance-create-tool'));
          }
       }
    }

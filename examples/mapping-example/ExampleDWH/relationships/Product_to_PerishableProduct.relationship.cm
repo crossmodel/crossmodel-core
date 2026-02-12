@@ -1,0 +1,7 @@
+relationship:
+    id: Product_to_PerishableProduct
+    name: "Product to PerishableProduct"
+    parent: ExampleDWH.Product
+    parentCardinality: 1..N
+    child: ExampleDWH.PerishableProduct
+    childCardinality: 1..1

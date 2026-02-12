@@ -1,0 +1,15 @@
+systemDiagram:
+    id: FilterAttributesDiagram
+    nodes:
+      - id: FilterByDataTypeEntityNode
+        entity: FilterByDataTypeEntity
+        x: 396
+        y: 200
+        width: 10
+        height: 10
+      - id: FilterByTextEntityNode
+        entity: FilterByTextEntity
+        x: 396
+        y: 429
+        width: 10
+        height: 10

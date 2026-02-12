@@ -6,7 +6,7 @@ import { describe, expect, test } from '@jest/globals';
 import { URI } from 'vscode-uri';
 import { createSourceObject } from '../../../src/language-server/util/ast-util';
 import { customer } from '../test-utils/test-documents/entity/customer';
-import { createCrossModelTestServices, parseLogicalEntity, parseMapping, testUri } from '../test-utils/utils';
+import { createCrossModelTestServices, entityDocumentUri, parseLogicalEntity, parseMapping } from '../test-utils/utils';
 
 const services = createCrossModelTestServices();
 
@@ -39,7 +39,7 @@ describe('createSourceObject', () => {
          const entityRef = {
             name: 'Customer',
             type: 'LogicalEntity',
-            documentUri: URI.parse(testUri('customer.entity.cm')),
+            documentUri: URI.parse(entityDocumentUri('customer')),
             path: '/Customer'
          };
 
@@ -81,7 +81,7 @@ describe('createSourceObject', () => {
          const entityRef = {
             name: 'Customer',
             type: 'LogicalEntity',
-            documentUri: URI.parse(testUri('customer.entity.cm')),
+            documentUri: URI.parse(entityDocumentUri('customer')),
             path: '/Customer'
          };
 

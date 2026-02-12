@@ -26,7 +26,7 @@ export class MappingDiagramAddSourceObjectOperationHandler extends JsonOperation
       const container = this.modelState.mapping;
       const scope = this.modelState.services.language.references.ScopeProvider.getCompletionScope({
          container: { globalId: this.modelState.mapping.id! },
-         syntheticElements: [{ property: 'sources', type: SourceObject }],
+         syntheticElements: [{ property: 'sources', type: SourceObject.$type }],
          property: 'entity'
       });
       const entityDescription = scope.elementScope.getElement(operation.entityName);

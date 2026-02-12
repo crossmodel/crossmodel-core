@@ -9,7 +9,13 @@ import { CompletionItemKind, InsertTextFormat, TextEdit } from 'vscode-languages
 import type { Range } from 'vscode-languageserver-types';
 import { CrossModelServices } from './cross-model-module.js';
 import { CrossModelScopeProvider } from './cross-model-scope-provider.js';
-import { AttributeMapping, RelationshipAttribute, isAttributeMapping } from './generated/ast.js';
+import {
+   AttributeMapping,
+   AttributeMappingExpression,
+   IdentifiedObject,
+   RelationshipAttribute,
+   isAttributeMappingExpression
+} from './generated/ast.js';
 import { fixDocument } from './util/ast-util.js';
 
 /**
@@ -60,11 +66,15 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
       assignment: GrammarAST.Assignment,
       acceptor: CompletionAcceptor
    ): MaybePromise<void> {
-      if (assignment.feature === 'id') {
+      if (assignment.feature === IdentifiedObject.id) {
          return this.completionForId(context, assignment, acceptor);
       }
-      if (isAttributeMapping(context.node) && assignment.feature === 'expression') {
-         return this.completeAttributeMappingExpression(context, context.node, acceptor);
+      if (isAttributeMappingExpression(context.node) && assignment.feature === AttributeMappingExpression.expression) {
+         const attributeMapping = (context.node as any).$container as AttributeMapping;
+         return this.completeAttributeMappingExpression(context, attributeMapping, acceptor);
+      }
+      if (isAttributeMappingExpression(context.node) && assignment.feature === AttributeMappingExpression.language) {
+         return this.completeAttributeMappingLanguage(context, acceptor);
       }
       if (GrammarAST.isRuleCall(assignment.terminal) && assignment.terminal.rule.ref) {
          const type = this.getRuleType(assignment.terminal.rule.ref);
@@ -82,9 +92,12 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
 
    protected completeAttributeMappingExpression(
       context: CompletionContext,
-      mapping: AttributeMapping,
+      mapping: AttributeMapping | undefined,
       acceptor: CompletionAcceptor
    ): MaybePromise<void> {
+      if (!mapping) {
+         return;
+      }
       const text = context.textDocument.getText();
       const expressionUpToCursor = text.substring(context.tokenOffset, context.offset);
       const referenceStart = expressionUpToCursor.lastIndexOf('{{');
@@ -182,6 +195,20 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
       });
    }
 
+   protected completeAttributeMappingLanguage(context: CompletionContext, acceptor: CompletionAcceptor): MaybePromise<void> {
+      const languages = ['SQL', 'Python'];
+      for (const language of languages) {
+         acceptor(context, {
+            label: language,
+            textEdit: {
+               newText: quote(language),
+               range: this.getCompletionRange(context)
+            },
+            kind: CompletionItemKind.Value
+         });
+      }
+   }
+
    protected getCompletionRange(context: CompletionContext): Range {
       const text = context.textDocument.getText();
       const existingText = text.substring(context.tokenOffset, context.offset);
@@ -220,17 +247,21 @@ export class CrossModelCompletionProvider extends DefaultCompletionProvider {
 
    protected filterRelationshipAttribute(node: RelationshipAttribute, context: CompletionContext, desc: AstNodeDescription): boolean {
       // only show relevant attributes depending on the parent or child context
-      if (context.features.find(feature => feature.property === 'child')) {
+      if (context.features.find(feature => feature.property === RelationshipAttribute.child)) {
          return desc.name.startsWith(node.$container.child?.$refText + '.');
       }
-      if (context.features.find(feature => feature.property === 'parent')) {
+      if (context.features.find(feature => feature.property === RelationshipAttribute.parent)) {
          return desc.name.startsWith(node.$container.parent?.$refText + '.');
       }
       return true;
    }
 
-   protected override createReferenceCompletionItem(description: AstNodeDescription): CompletionValueItem {
-      const item = super.createReferenceCompletionItem(description);
+   protected override createReferenceCompletionItem(
+      description: AstNodeDescription,
+      refInfo: ReferenceInfo,
+      context: CompletionContext
+   ): CompletionValueItem {
+      const item = super.createReferenceCompletionItem(description, refInfo, context);
       return {
          ...item,
          sortText: this.scopeProvider.sortText(description),

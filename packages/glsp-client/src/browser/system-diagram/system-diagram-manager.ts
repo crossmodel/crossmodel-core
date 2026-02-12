@@ -13,7 +13,7 @@ export class SystemDiagramManager extends GLSPDiagramManager implements OpenWith
    static readonly ID = 'system-diagram-manager';
 
    get label(): string {
-      return SystemDiagramLanguage.label;
+      return 'Diagram Editor';
    }
 
    override get iconClass(): string {

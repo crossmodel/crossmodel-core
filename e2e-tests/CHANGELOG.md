@@ -3,6 +3,148 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.26.2](https://github.com/crossmodel/crossmodel-core/compare/v0.26.1...v0.26.2) (2026-02-11)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.26.1](https://github.com/crossmodel/crossmodel-core/compare/v0.26.0...v0.26.1) (2026-02-06)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+# [0.26.0](https://github.com/crossmodel/crossmodel-core/compare/v0.25.1...v0.26.0) (2026-02-05)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.25.1](https://github.com/crossmodel/crossmodel-core/compare/v0.25.0...v0.25.1) (2026-02-04)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+# [0.25.0](https://github.com/crossmodel/crossmodel-core/compare/v0.24.1...v0.25.0) (2026-02-03)
+
+
+### Features
+
+* implement name and ID uniqueness validation checks ([#260](https://github.com/crossmodel/crossmodel-core/issues/260)) ([5ef170b](https://github.com/crossmodel/crossmodel-core/commit/5ef170baf00d9fb23bb2c24063a85805a8fc069a))
+
+
+
+
+
+## [0.24.1](https://github.com/crossmodel/crossmodel-core/compare/v0.24.0...v0.24.1) (2026-02-02)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+# [0.24.0](https://github.com/crossmodel/crossmodel-core/compare/v0.23.2...v0.24.0) (2026-02-02)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.23.2](https://github.com/crossmodel/crossmodel-core/compare/v0.23.1...v0.23.2) (2026-01-29)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.23.1](https://github.com/crossmodel/crossmodel-core/compare/v0.23.0...v0.23.1) (2026-01-28)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+# [0.23.0](https://github.com/crossmodel/crossmodel-core/compare/v0.22.0...v0.23.0) (2026-01-22)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+# [0.22.0](https://github.com/crossmodel/crossmodel-core/compare/v0.21.6...v0.22.0) (2026-01-22)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.21.6](https://github.com/crossmodel/crossmodel-core/compare/v0.21.5...v0.21.6) (2026-01-22)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.21.5](https://github.com/crossmodel/crossmodel-core/compare/v0.21.4...v0.21.5) (2026-01-22)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.21.4](https://github.com/crossmodel/crossmodel-core/compare/v0.21.3...v0.21.4) (2026-01-21)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.21.3](https://github.com/crossmodel/crossmodel-core/compare/v0.21.2...v0.21.3) (2026-01-20)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.21.2](https://github.com/crossmodel/crossmodel-core/compare/v0.21.1...v0.21.2) (2026-01-19)
+
+**Note:** Version bump only for package crossmodel-e2e-tests
+
+
+
+
+
+## [0.21.1](https://github.com/crossmodel/crossmodel-core/compare/v0.21.0...v0.21.1) (2026-01-19)
+
+
+### Bug Fixes
+
+* Autocomplete reset value ([#249](https://github.com/crossmodel/crossmodel-core/issues/249)) ([235d51b](https://github.com/crossmodel/crossmodel-core/commit/235d51ba2cf4ea9303a1949cc4965b4b7d3cc8a7))
+
+
+
+
+
 # [0.21.0](https://github.com/crossmodel/crossmodel-core/compare/v0.20.6...v0.21.0) (2026-01-16)
 
 

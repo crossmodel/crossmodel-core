@@ -83,30 +83,26 @@ export class OpenTextDocumentManager {
    }
 
    onUpdate(uri: string, listener: (model: ModelUpdatedEvent<AstCrossModelDocument>) => void): Disposable {
-      return this.documentBuilder.onBuildPhase(DocumentState.Validated, (allChangedDocuments, _token) => {
-         const changedDocument = allChangedDocuments.find(document => document.uri.toString() === uri) as
-            | CrossModelLangiumDocument
-            | undefined;
-         if (changedDocument) {
-            const buildTrigger = allChangedDocuments.find(
-               document => document.uri.toString() === this.lastUpdate?.changed?.[0]?.toString()
-            );
-            const sourceClientId = this.getAuthor(buildTrigger ?? changedDocument);
-            const event: ModelUpdatedEvent<AstCrossModelDocument> = {
-               document: {
-                  root: changedDocument.parseResult.value as CrossModelRoot,
-                  diagnostics: changedDocument.diagnostics ?? [],
-                  uri: changedDocument.textDocument.uri
-               },
-               sourceClientId,
-               reason: this.lastUpdate?.changed.find(changed => UriUtils.equals(changed, changedDocument.uri))
-                  ? 'changed'
-                  : this.lastUpdate?.deleted.find(deleted => UriUtils.equals(deleted, changedDocument.uri))
-                    ? 'deleted'
-                    : 'updated'
-            };
-            listener(event);
+      return this.documentBuilder.onDocumentPhase(DocumentState.Validated, (document, _token) => {
+         if (document.uri.toString() !== uri) {
+            return;
          }
+         const changedDocument = document as CrossModelLangiumDocument;
+         const sourceClientId = this.getAuthor(changedDocument);
+         const event: ModelUpdatedEvent<AstCrossModelDocument> = {
+            document: {
+               root: changedDocument.parseResult.value as CrossModelRoot,
+               diagnostics: changedDocument.diagnostics ?? [],
+               uri: changedDocument.textDocument.uri
+            },
+            sourceClientId,
+            reason: this.lastUpdate?.changed.find(changed => UriUtils.equals(changed, changedDocument.uri))
+               ? 'changed'
+               : this.lastUpdate?.deleted.find(deleted => UriUtils.equals(deleted, changedDocument.uri))
+                 ? 'deleted'
+                 : 'updated'
+         };
+         listener(event);
       });
    }
 

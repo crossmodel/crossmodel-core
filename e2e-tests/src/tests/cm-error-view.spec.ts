@@ -13,7 +13,7 @@ test.describe('CrossModel Error Views', () => {
    });
 
    test('Form Editor should show error if model code is broken', async () => {
-      const editor = await app.openEditor('example-entity.entity.cm', CMCompositeEditor);
+      const editor = await app.openEditor('ExampleEntity.entity.cm', CMCompositeEditor);
       expect(editor).toBeDefined();
 
       const codeEditor = await editor.switchToCodeEditor();
@@ -29,8 +29,8 @@ test.describe('CrossModel Error Views', () => {
       ).toBeTruthy();
    });
 
-   test('System Diagram Editor should show error if model code is broken', async () => {
-      const editor = await app.openEditor('example-diagram.diagram.cm', CMCompositeEditor);
+   test('Diagram Editor should show error if model code is broken', async () => {
+      const editor = await app.openEditor('ExampleDiagram.diagram.cm', CMCompositeEditor);
       expect(editor).toBeDefined();
 
       const codeEditor = await editor.switchToCodeEditor();

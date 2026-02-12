@@ -20,25 +20,24 @@ export class CompositeUndoRedoHandler implements UndoRedoHandler<Widget> {
    readonly priority = 100; // Higher than default to take precedence
 
    select(): Widget | undefined {
-      return this.shell.activeWidget ?? undefined;
+      return this.findFocusedUndoableWidget();
    }
 
-   undo(): void {
-      const target = this.findFocusedUndoableWidget();
-      if (target && typeof (target as any).undo === 'function') {
-         (target as any).undo();
+   undo(item: Widget): void {
+      if (typeof (item as any).undo === 'function') {
+         (item as any).undo();
       }
    }
 
-   redo(): void {
-      const target = this.findFocusedUndoableWidget();
-      if (target && typeof (target as any).redo === 'function') {
-         (target as any).redo();
+   redo(item: Widget): void {
+      if (typeof (item as any).redo === 'function') {
+         (item as any).redo();
       }
    }
 
    /**
     * Prefer the widget that currently owns focus; fall back to active widget, then property view.
+    * Only returns a widget if it actually has an undo method.
     */
    private findFocusedUndoableWidget(): Widget | undefined {
       const focused = this.findWidgetContainingActiveElement();

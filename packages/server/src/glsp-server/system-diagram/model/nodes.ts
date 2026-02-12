@@ -1,9 +1,21 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { ENTITY_NODE_TYPE, LABEL_ENTITY, REFERENCE_CONTAINER_TYPE, REFERENCE_PROPERTY, REFERENCE_VALUE } from '@crossmodel/protocol';
+import {
+   BACKGROUND_COLOR,
+   BORDER_COLOR,
+   BORDER_STYLE,
+   BORDER_WEIGHT,
+   ENTITY_NODE_TYPE,
+   FONT_COLOR,
+   LABEL_ENTITY,
+   REFERENCE_CONTAINER_TYPE,
+   REFERENCE_PROPERTY,
+   REFERENCE_VALUE,
+   SEMANTIC_URI
+} from '@crossmodel/protocol';
 import { ArgsUtil, GNode, GNodeBuilder } from '@eclipse-glsp/server';
-import { LogicalEntityNode } from '../../../language-server/generated/ast.js';
+import { LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
 import { getAttributes } from '../../../language-server/util/ast-util.js';
 import { AttributeCompartment, AttributesCompartmentBuilder, createHeader } from '../../common/nodes.js';
 import { SystemModelIndex } from './system-model-index.js';
@@ -28,9 +40,14 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
 
       // Options which are the same for every node
       this.addCssClasses('diagram-node', 'entity');
-      this.addArg(REFERENCE_CONTAINER_TYPE, LogicalEntityNode);
+      this.addArg(REFERENCE_CONTAINER_TYPE, LogicalEntityNode.$type);
       this.addArg(REFERENCE_PROPERTY, 'entity');
       this.addArg(REFERENCE_VALUE, node.entity?.$refText);
+
+      const semanticUri = index.services.shared.workspace.IndexManager.findDocumentUri(node.entity, LogicalEntity.$type);
+      if (semanticUri) {
+         this.addArg(SEMANTIC_URI, semanticUri.toString());
+      }
 
       // Add the label/name of the node
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));
@@ -54,6 +71,23 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
          .addArgs(ArgsUtil.cornerRadius(3))
          .addLayoutOption('prefWidth', node.width || 100)
          .addLayoutOption('prefHeight', node.height || 100);
+
+      // Add styling properties if defined
+      if (node.backgroundColor) {
+         this.addArg(BACKGROUND_COLOR, node.backgroundColor);
+      }
+      if (node.borderColor) {
+         this.addArg(BORDER_COLOR, node.borderColor);
+      }
+      if (node.borderWeight !== undefined) {
+         this.addArg(BORDER_WEIGHT, node.borderWeight);
+      }
+      if (node.borderStyle) {
+         this.addArg(BORDER_STYLE, node.borderStyle);
+      }
+      if (node.fontColor) {
+         this.addArg(FONT_COLOR, node.fontColor);
+      }
 
       return this;
    }

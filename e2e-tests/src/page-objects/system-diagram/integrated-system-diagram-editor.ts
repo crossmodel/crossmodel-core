@@ -18,7 +18,7 @@ export class IntegratedSystemDiagramEditor extends IntegratedEditor {
       super(
          {
             tabSelector,
-            viewSelector: normalizeId(`#system-diagram:${parent.app.workspace.pathAsUrl(filePath)}`)
+            viewSelector: normalizeId(`#diagram:${parent.app.workspace.pathAsUrl(filePath)}`)
          },
          parent
       );

@@ -14,13 +14,14 @@ import {
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { SystemDiagramLanguage } from '../../common/crossmodel-diagram-language';
 import { CrossModelClientContribution } from '../crossmodel-client-contribution';
-import { LibAvoidInitializer } from '../libavoid-initializer';
+import { LibAvoidInitializer } from '../libavoid';
 import { SystemDiagramConfiguration } from './system-diagram-configuration';
 import { SystemDiagramManager } from './system-diagram-manager';
 import { SystemDiagramWidget } from './system-diagram-widget';
 
 export class SystemDiagramModule extends GLSPTheiaFrontendModule {
    readonly diagramLanguage = SystemDiagramLanguage;
+   protected override enableMarkerNavigationCommands = false;
 
    bindDiagramConfiguration(context: ContainerContext): void {
       context.bind(DiagramConfiguration).to(SystemDiagramConfiguration);

@@ -4,21 +4,12 @@
 
 import { InputText } from 'primereact/inputtext';
 import * as React from 'react';
-import {
-   useCanRedo,
-   useCanUndo,
-   useDiagnosticsManager,
-   useMapping,
-   useModelDispatch,
-   useReadonly,
-   useRedo,
-   useUndo
-} from '../../ModelContext';
+import { useDiagnosticsManager, useMapping } from '../../ModelContext';
 import { modelComponent } from '../../ModelViewer';
 import { themed } from '../../ThemedViewer';
 import { FormSection } from '../FormSection';
+import { AttributeMappingExpressionDataGrid } from '../common/AttributeMappingExpressionDataGrid';
 import { AttributeMappingSourcesDataGrid } from '../common/AttributeMappingSourcesDataGrid';
-import { handleUndoRedoKeys } from '../common/gridKeydownHandler';
 import { ErrorInfo } from './ErrorInfo';
 import { Form } from './Form';
 
@@ -32,13 +23,7 @@ export interface MappingRenderProps {
 
 export function MappingForm(props: MappingRenderProps): React.ReactElement {
    const mapping = useMapping();
-   const dispatch = useModelDispatch();
-   const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
-   const undo = useUndo();
-   const redo = useRedo();
-   const canUndo = useCanUndo();
-   const canRedo = useCanRedo();
 
    const attributeMapping = mapping.target.mappings[props.mappingIndex];
    if (!attributeMapping) {
@@ -48,10 +33,6 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
    const elementPath = ['mapping', 'target', 'mappings@' + props.mappingIndex];
 
    const targetAttributeDiagnostics = diagnostics.info([...elementPath, 'attribute'], 'value');
-   // expression diagnostics are reported on the mapping node (no property) by the server
-   // (see checkAttributeMapping in the server validator), so request diagnostics
-   // for the mapping element itself rather than the 'expression' property.
-   const expressionDiagnostics = diagnostics.info(elementPath);
 
    return (
       <Form
@@ -63,40 +44,16 @@ export function MappingForm(props: MappingRenderProps): React.ReactElement {
             <div className='p-field p-fluid'>
                <div>
                   <label htmlFor='targetAttribute'>Target Attribute</label>
-                  <InputText
-                     id='targetAttribute'
-                     value={attributeMapping.attribute?.value ?? ''}
-                     disabled={true}
-                     spellCheck={false}
-                     className={expressionDiagnostics.inputClasses()}
-                  />
+                  <InputText id='targetAttribute' value={attributeMapping.attribute?.value ?? ''} disabled={true} spellCheck={false} />
                </div>
                <ErrorInfo diagnostic={targetAttributeDiagnostics} />
-            </div>
-
-            <div className='p-field p-fluid'>
-               <div>
-                  <label htmlFor='expression'>Expression</label>
-                  <InputText
-                     id='expression'
-                     value={attributeMapping.expression ?? ''}
-                     disabled={readonly}
-                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        dispatch({
-                           type: 'attribute-mapping:change-expression',
-                           mappingIdx: props.mappingIndex,
-                           expression: e.target.value ?? ''
-                        })
-                     }
-                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleUndoRedoKeys(e, canUndo, canRedo, undo, redo)}
-                     className={expressionDiagnostics.inputClasses()}
-                  />
-               </div>
-               <ErrorInfo diagnostic={expressionDiagnostics} />
             </div>
          </FormSection>
          <FormSection label='Sources'>
             <AttributeMappingSourcesDataGrid attributeMapping={attributeMapping} mappingIdx={props.mappingIndex} />
+         </FormSection>
+         <FormSection label='Expressions'>
+            <AttributeMappingExpressionDataGrid attributeMapping={attributeMapping} mappingIdx={props.mappingIndex} />
          </FormSection>
       </Form>
    );

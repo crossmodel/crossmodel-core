@@ -1,6 +1,6 @@
 entity:
     id: AddEditDeleteIdentifiers
-    name: "Customer"
+    name: "CustomerIdentifiers"
     attributes:
       - id: Id
         name: "Id"

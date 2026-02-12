@@ -2,6 +2,7 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
+import { ModelFileExtensions } from '@crossmodel/protocol';
 import { nls } from '@theia/core';
 import { FrontendApplicationContribution, NavigatableWidgetOpenHandler, OpenWithHandler, OpenWithService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -31,6 +32,10 @@ export class FormEditorOpenHandler
    }
 
    canHandle(uri: URI): number {
+      const base = uri.path.base;
+      if (base.endsWith(ModelFileExtensions.SystemDiagram) || base.endsWith(ModelFileExtensions.Mapping)) {
+         return -1;
+      }
       return uri.path.ext === '.cm' ? 1 : -1;
    }
 }

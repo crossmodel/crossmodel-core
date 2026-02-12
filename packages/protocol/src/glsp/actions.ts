@@ -1,7 +1,16 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { Action, Operation, Point, hasArrayProp, hasObjectProp, hasStringProp } from '@eclipse-glsp/protocol';
+import {
+   Action,
+   Operation,
+   Point,
+   TriggerEdgeCreationAction,
+   TriggerNodeCreationAction,
+   hasArrayProp,
+   hasObjectProp,
+   hasStringProp
+} from '@eclipse-glsp/protocol';
 
 export interface DropFilesOperation extends Operation {
    kind: typeof DropFilesOperation.KIND;
@@ -177,5 +186,54 @@ export namespace ExpandNavigatorForNewFileAction {
          parentUri: options.parentUri,
          uri: options.uri
       };
+   }
+}
+
+export interface TriggerSystemNodeCreationAction extends TriggerNodeCreationAction {
+   triggerLocation?: Point;
+}
+
+export namespace TriggerSystemNodeCreationAction {
+   export const is = TriggerNodeCreationAction.is;
+   export function create(
+      elementTypeId: string,
+      options?: Omit<TriggerSystemNodeCreationAction, 'kind' | 'elementTypeId'>
+   ): TriggerSystemNodeCreationAction {
+      return { kind: TriggerNodeCreationAction.KIND, elementTypeId, ...options };
+   }
+}
+
+export interface TriggerSystemEdgeCreationAction extends TriggerEdgeCreationAction {
+   triggerLocation?: Point;
+}
+
+export namespace TriggerSystemEdgeCreationAction {
+   export const is = TriggerEdgeCreationAction.is;
+   export function create(
+      elementTypeId: string,
+      options?: Omit<TriggerSystemEdgeCreationAction, 'kind' | 'elementTypeId'>
+   ): TriggerSystemEdgeCreationAction {
+      return { kind: TriggerEdgeCreationAction.KIND, elementTypeId, ...options };
+   }
+}
+
+/**
+ * Action to open an element in the composite editor.
+ */
+export interface OpenCompositeEditorAction extends Action {
+   kind: typeof OpenCompositeEditorAction.KIND;
+   uri: string;
+   perspective?: 'code' | 'primary';
+}
+
+export namespace OpenCompositeEditorAction {
+   export const KIND = 'openCompositeEditor';
+
+   export function is(object: any): object is OpenCompositeEditorAction {
+      return Action.hasKind(object, KIND) && hasStringProp(object, 'uri');
+   }
+
+   export function create(uri: string, options?: Omit<OpenCompositeEditorAction, 'kind' | 'uri'>): OpenCompositeEditorAction {
+      return { kind: KIND, uri, ...options };
    }
 }

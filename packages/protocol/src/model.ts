@@ -72,7 +72,7 @@ export const ModelFileExtensions = {
    LogicalEntity: '.entity.cm',
    Relationship: '.relationship.cm',
    Mapping: '.mapping.cm',
-   SystemDiagram: '.system-diagram.cm',
+   SystemDiagram: '.diagram.cm',
    /* @deprecated Use SystemDiagram instead */
    Diagram: '.diagram.cm',
 
@@ -154,6 +154,10 @@ export const ModelFileExtensions = {
 
    getFolder(uri: string): string {
       return ModelFileType.getFolder(this.getFileType(uri));
+   },
+
+   isFormFile(uri: string): boolean {
+      return ['LogicalEntity', 'DataModel', 'Relationship'].includes(this.getFileType(uri) || '');
    },
 
    detectFileType(content: string): ModelFileType | undefined {
