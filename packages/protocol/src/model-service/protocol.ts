@@ -91,15 +91,15 @@ export function isCrossModelRoot(model?: any): model is CrossModelRoot {
 export const LogicalEntityType = 'LogicalEntity';
 export interface LogicalEntity extends CrossModelElement, NamedObject, WithCustomProperties {
    readonly $type: typeof LogicalEntityType;
-   attributes: Array<LogicalAttribute>;
+   attributes: Array<LogicalEntityAttribute>;
    identifiers: Array<LogicalIdentifier>;
-   superEntities: Array<EntityInherit>;
+   inherits: Array<EntityInherit>;
 }
 
 export const LogicalIdentifierType = 'LogicalIdentifier';
 export interface LogicalIdentifier extends CrossModelElement, NamedObject, WithCustomProperties {
    primary?: boolean;
-   attributes: Array<LogicalAttribute>;
+   attributes: Array<LogicalEntityAttribute>;
 }
 
 export const EntityInheritType = 'EntityInherit';
@@ -108,7 +108,7 @@ export interface EntityInherit extends CrossModelElement {
    parentId: Reference<LogicalEntity>;
 }
 
-export interface AbstractLogicalAttribute extends CrossModelElement, NamedObject {
+export interface LogicalAttribute extends CrossModelElement, NamedObject {
    datatype?: string;
    length?: number;
    precision?: number;
@@ -117,9 +117,9 @@ export interface AbstractLogicalAttribute extends CrossModelElement, NamedObject
    identifier?: boolean;
 }
 
-export const LogicalAttributeType = 'LogicalAttribute';
-export interface LogicalAttribute extends CrossModelElement, AbstractLogicalAttribute, WithCustomProperties {
-   readonly $type: typeof LogicalAttributeType;
+export const LogicalEntityAttributeType = 'LogicalEntityAttribute';
+export interface LogicalEntityAttribute extends CrossModelElement, LogicalAttribute, WithCustomProperties {
+   readonly $type: typeof LogicalEntityAttributeType;
 }
 
 export const RelationshipType = 'Relationship';
@@ -137,8 +137,8 @@ export interface Relationship extends CrossModelElement, NamedObject, WithCustom
 export const RelationshipAttributeType = 'RelationshipAttribute';
 export interface RelationshipAttribute extends CrossModelElement, WithCustomProperties {
    readonly $type: typeof RelationshipAttributeType;
-   parent?: Reference<LogicalAttribute>;
-   child?: Reference<LogicalAttribute>;
+   parent?: Reference<LogicalEntityAttribute>;
+   child?: Reference<LogicalEntityAttribute>;
 }
 
 export const MappingType = 'Mapping';
@@ -225,22 +225,22 @@ export interface AttributeMappingExpression extends CrossModelElement {
 export const AttributeMappingTargetType = 'AttributeMappingTarget';
 export interface AttributeMappingTarget extends CrossModelElement {
    readonly $type: typeof AttributeMappingTargetType;
-   value?: Reference<AbstractLogicalAttribute>;
+   value?: Reference<TargetObjectAttribute>;
 }
 
 export const TargetObjectAttributeType = 'TargetObjectAttribute';
-export interface TargetObjectAttribute extends AbstractLogicalAttribute, WithCustomProperties {
+export interface TargetObjectAttribute extends LogicalAttribute, WithCustomProperties {
    readonly $type: typeof TargetObjectAttributeType;
 }
 
 export const AttributeMappingSourceType = 'AttributeMappingSource';
 export interface AttributeMappingSource extends CrossModelElement {
    readonly $type: typeof AttributeMappingSourceType;
-   value: Reference<AbstractLogicalAttribute>;
+   value: Reference<SourceObjectAttribute>;
 }
 
 export const SourceObjectAttributeType = 'SourceObjectAttribute';
-export interface SourceObjectAttribute extends AbstractLogicalAttribute, WithCustomProperties {
+export interface SourceObjectAttribute extends LogicalAttribute, WithCustomProperties {
    readonly $type: typeof SourceObjectAttributeType;
 }
 

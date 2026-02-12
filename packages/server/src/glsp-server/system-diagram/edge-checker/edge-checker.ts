@@ -36,7 +36,7 @@ export class SystemEdgeCreationChecker implements EdgeCreationChecker {
       const baseEntityGlobalId = this.modelState.idProvider.getGlobalId(baseEntityNode.entity.ref);
       const scope = this.modelState.services.language.references.ScopeProvider.getCompletionScope({
          container: { globalId: baseEntityGlobalId! },
-         property: 'superEntities'
+         property: LogicalEntity.inherits
       });
 
       const superEntityGlobalId = this.modelState.idProvider.getGlobalId(superEntityNode.entity.ref)!;
@@ -65,6 +65,6 @@ export class SystemEdgeCreationChecker implements EdgeCreationChecker {
    }
 
    protected hasSuperEntity(baseEntity: LogicalEntity, superEntity: LogicalEntity): boolean {
-      return baseEntity.superEntities.some(entity => entity.ref === superEntity);
+      return baseEntity.inherits.some(entity => entity.ref === superEntity);
    }
 }

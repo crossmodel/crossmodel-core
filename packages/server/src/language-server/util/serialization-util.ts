@@ -14,8 +14,8 @@ import {
    IdentifiedObject,
    InheritanceEdge,
    JoinCondition,
-   LogicalAttribute,
    LogicalEntity,
+   LogicalEntityAttribute,
    LogicalEntityNode,
    LogicalIdentifier,
    Mapping,
@@ -32,19 +32,6 @@ import {
    WithCustomProperties,
    reflection
 } from '../generated/ast.js';
-
-/**
- * Map of property names to their corresponding keywords in the serialized output.
- * Required because the grammar uses different keywords than the AST property names (e.g., 'inherits' vs 'superEntities').
- */
-const PROPERTY_KEYWORDS = new Map<string, string>([[LogicalEntity.superEntities, 'inherits']]);
-
-/**
- * Get the keyword for a property, or the property name itself if no keyword mapping exists.
- */
-export function getPropertyKeyword(property: string): string {
-   return PROPERTY_KEYWORDS.get(property) ?? property;
-}
 
 /**
  * Properties whose values should not be quoted during serialization.
@@ -169,17 +156,17 @@ const CUSTOM_PROPERTIES = [WithCustomProperties.customProperties];
 const PROPERTY_ORDER = new Map<string, string[]>([
    [
       LogicalEntity.$type,
-      [...NAMED_OBJECT_PROPERTIES, LogicalEntity.superEntities, LogicalEntity.attributes, LogicalEntity.identifiers, ...CUSTOM_PROPERTIES]
+      [...NAMED_OBJECT_PROPERTIES, LogicalEntity.inherits, LogicalEntity.attributes, LogicalEntity.identifiers, ...CUSTOM_PROPERTIES]
    ],
    [
-      LogicalAttribute.$type,
+      LogicalEntityAttribute.$type,
       [
          ...NAMED_OBJECT_PROPERTIES,
-         LogicalAttribute.datatype,
-         LogicalAttribute.length,
-         LogicalAttribute.precision,
-         LogicalAttribute.scale,
-         LogicalAttribute.mandatory,
+         LogicalEntityAttribute.datatype,
+         LogicalEntityAttribute.length,
+         LogicalEntityAttribute.precision,
+         LogicalEntityAttribute.scale,
+         LogicalEntityAttribute.mandatory,
          ...CUSTOM_PROPERTIES
       ]
    ],
@@ -258,8 +245,8 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [DataModel.$type, [...NAMED_OBJECT_PROPERTIES, DataModel.type, DataModel.version, DataModel.dependencies, ...CUSTOM_PROPERTIES]],
    [DataModelDependency.$type, [DataModelDependency.datamodel, DataModelDependency.version]]
 ]);
-PROPERTY_ORDER.set(SourceObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
-PROPERTY_ORDER.set(TargetObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
+PROPERTY_ORDER.set(SourceObjectAttribute.$type, PROPERTY_ORDER.get(LogicalEntityAttribute.$type) ?? []);
+PROPERTY_ORDER.set(TargetObjectAttribute.$type, PROPERTY_ORDER.get(LogicalEntityAttribute.$type) ?? []);
 
 /**
  * Sorts properties in place according to the grammar's property order for the given type.

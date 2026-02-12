@@ -1,17 +1,17 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, findNextUnique, LogicalAttribute, Reference, toId } from '@crossmodel/protocol';
+import { CustomProperty, LogicalEntityAttribute, findNextUnique, toId } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorProperty, GenericAutoCompleteEditor, GenericCheckboxEditor, GenericNumberEditor, GenericTextEditor } from './GenericEditors';
-import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid, handleGenericRowReorder } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
-export interface EntityAttributeRow extends LogicalAttribute {
-   $type: 'LogicalAttribute';
-   $globalId: Reference<'LogicalAttribute'>;
+export interface EntityAttributeRow extends LogicalEntityAttribute {
+   $type: 'LogicalEntityAttribute';
+   $globalId: string;
    id: string;
    idx: number;
    name: string;
@@ -41,7 +41,7 @@ const dataTypeOptions = [
    { label: 'Location', value: 'Location' }
 ];
 
-const deriveAttributeRowId = (attr: Partial<LogicalAttribute>, idx: number): string => {
+const deriveAttributeRowId = (attr: Partial<LogicalEntityAttribute>, idx: number): string => {
    const persistedId = attr.id as string | undefined;
    const globalId = attr.$globalId as string | undefined;
    return persistedId ?? globalId ?? `attr-${idx}`;
@@ -96,7 +96,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          idx: -1,
          id: '', // ID will be assigned when adding the row
          description: '',
-         $type: 'LogicalAttribute',
+         $type: 'LogicalEntityAttribute',
          $globalId: 'toBeAssigned'
       }),
       []
@@ -198,7 +198,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
    React.useEffect(() => {
       attributesRef.current = entity.attributes || [];
       setGridData(current => {
-         const committedData = (entity.attributes || []).map((attr: Partial<LogicalAttribute>, idx) => {
+         const committedData = (entity.attributes || []).map((attr: Partial<LogicalEntityAttribute>, idx) => {
             const isPrimaryIdentifier =
                entity.identifiers?.some(
                   identifier =>
@@ -217,7 +217,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                ...(attr.precision !== undefined ? { precision: attr.precision } : {}),
                ...(attr.scale !== undefined ? { scale: attr.scale } : {}),
                id,
-               $type: 'LogicalAttribute',
+               $type: 'LogicalEntityAttribute',
                $globalId: attr.$globalId || id
             };
          }) as EntityAttributeRow[];

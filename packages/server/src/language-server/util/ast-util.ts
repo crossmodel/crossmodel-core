@@ -14,6 +14,7 @@ import {
    DataModel,
    LogicalAttribute,
    LogicalEntity,
+   LogicalEntityAttribute,
    LogicalEntityNode,
    LogicalEntityNodeAttribute,
    Mapping,
@@ -113,20 +114,20 @@ export function createLogicalEntity(
       attributes: [],
       identifiers: [],
       customProperties: [],
-      superEntities: [],
+      inherits: [],
       ...opts
    };
 }
 
-export function createLogicalAttribute(
+export function createLogicalEntityAttribute(
    container: LogicalEntity,
    id: string,
    name: string,
-   opts?: Partial<Omit<LogicalAttribute, '$container' | '$type' | 'id' | 'name'>>
-): LogicalAttribute {
+   opts?: Partial<Omit<LogicalEntityAttribute, '$container' | '$type' | 'id' | 'name'>>
+): LogicalEntityAttribute {
    return {
       $container: container,
-      $type: LogicalAttribute.$type,
+      $type: LogicalEntityAttribute.$type,
       id,
       name,
       customProperties: [],

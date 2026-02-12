@@ -65,8 +65,8 @@ export class DiagnosticManager {
          return this.result[candidateKey];
       }
       // Fallback: some server diagnostics encode the index directly on the parent
-      // (e.g. '/entity@0^superEntities') instead of on the property segment
-      // ('/entity/superEntities@0^superEntities'). Try that variant as well.
+      // (e.g. '/entity@0^inherits') instead of on the property segment
+      // ('/entity/inherits@0^inherits'). Try that variant as well.
       if (property !== undefined && idx !== undefined) {
          const idxSep = ModelDiagnostic.ELEMENT_INDEX_SEPARATOR;
          const propSep = ModelDiagnostic.ELEMENT_PROPERTY_SEPARATOR;
@@ -76,9 +76,9 @@ export class DiagnosticManager {
             return res;
          }
          // Additional fallback: if elementPath was provided as a path with a property
-         // (e.g. ['entity','superEntities']), the server may have encoded the
+         // (e.g. ['entity','inherits']), the server may have encoded the
          // index on the parent container instead of on the property segment
-         // (i.e. '/entity@0^superEntities'). Try that variant as well.
+         // (i.e. '/entity@0^inherits'). Try that variant as well.
          const parts = singleElementPath.split(ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR);
          if (parts.length > 1) {
             const parentSingle = parts.slice(0, -1).join(ModelDiagnostic.ELEMENT_SEGMENT_SEPARATOR);

@@ -77,7 +77,7 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
    }
 
    /**
-    * Override to export all nested nodes (like LogicalAttribute within LogicalEntity)
+    * Override to export all nested nodes (like LogicalEntityAttribute within LogicalEntity)
     * so they can be referenced from other documents using qualified names.
     */
    override async collectExportedSymbols(document: LangiumDocument): Promise<AstNodeDescription[]> {

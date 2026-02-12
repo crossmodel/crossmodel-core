@@ -2,7 +2,7 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { CustomProperty, LogicalAttribute, LogicalIdentifier as ProtocolLogicalIdentifier, unreachable } from '@crossmodel/protocol';
+import { CustomProperty, LogicalEntityAttribute, LogicalIdentifier as ProtocolLogicalIdentifier, unreachable } from '@crossmodel/protocol';
 import { DispatchAction, ModelAction, ModelState, moveDown, moveUp, undefinedIfEmpty } from './ModelReducer';
 
 export type LogicalIdentifier = ProtocolLogicalIdentifier;
@@ -25,12 +25,12 @@ export interface EntityChangeDescriptionAction extends ModelAction {
 export interface LogicalAttributeUpdateAction extends ModelAction {
    type: 'entity:attribute:update';
    attributeIdx: number;
-   attribute: LogicalAttribute;
+   attribute: LogicalEntityAttribute;
 }
 
 export interface LogicalAttributeAddEmptyAction extends ModelAction {
    type: 'entity:attribute:add-attribute';
-   attribute: LogicalAttribute;
+   attribute: LogicalEntityAttribute;
 }
 
 export interface LogicalAttributeDeleteAction extends ModelAction {
@@ -40,7 +40,7 @@ export interface LogicalAttributeDeleteAction extends ModelAction {
 
 export interface LogicalAttributeReorderAction extends ModelAction {
    type: 'entity:attribute:reorder-attributes';
-   attributes: LogicalAttribute[];
+   attributes: LogicalEntityAttribute[];
 }
 
 export interface CustomPropertyUpdateAction extends ModelAction {
@@ -243,28 +243,28 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          break;
 
       case 'entity:inherit:add':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         (entity as any).superEntities.push(typeof action.inherit === 'string' ? action.inherit : action.inherit);
+         (entity as any).inherits = (entity as any).inherits || [];
+         (entity as any).inherits.push(typeof action.inherit === 'string' ? action.inherit : action.inherit);
          break;
 
       case 'entity:inherit:update':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         (entity as any).superEntities[action.inheritIdx] = typeof action.inherit === 'string' ? action.inherit : action.inherit;
+         (entity as any).inherits = (entity as any).inherits || [];
+         (entity as any).inherits[action.inheritIdx] = typeof action.inherit === 'string' ? action.inherit : action.inherit;
          break;
 
       case 'entity:inherit:delete':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         (entity as any).superEntities.splice(action.inheritIdx, 1);
+         (entity as any).inherits = (entity as any).inherits || [];
+         (entity as any).inherits.splice(action.inheritIdx, 1);
          break;
 
       case 'entity:inherit:move-up':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         moveUp((entity as any).superEntities, action.inheritIdx);
+         (entity as any).inherits = (entity as any).inherits || [];
+         moveUp((entity as any).inherits, action.inheritIdx);
          break;
 
       case 'entity:inherit:move-down':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         moveDown((entity as any).superEntities, action.inheritIdx);
+         (entity as any).inherits = (entity as any).inherits || [];
+         moveDown((entity as any).inherits, action.inheritIdx);
          break;
 
       case 'entity:identifier:reorder-identifiers':

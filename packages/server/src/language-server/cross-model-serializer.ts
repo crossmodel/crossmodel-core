@@ -19,7 +19,6 @@ import {
 } from './generated/ast.js';
 import { isImplicitProperty } from './util/ast-util.js';
 import {
-   getPropertyKeyword,
    getReferenceText,
    getReferenceWrapperProperty,
    isDefaultValue,
@@ -66,7 +65,7 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
          return toId(value);
       }
       if (
-         (key === LogicalEntity.superEntities && Array.isArray(parent)) ||
+         (key === LogicalEntity.inherits && Array.isArray(parent)) ||
          (key === LogicalEntity.attributes && Array.isArray(parent) && typeof parent?.[0] === 'string') ||
          (!Array.isArray(value) && this.isValidReference(parent, key, value))
       ) {
@@ -113,7 +112,7 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                   return undefined;
                }
                const separator = onNewLine ? CrossModelSerializer.CHAR_NEWLINE : ' ';
-               const serializedProp = `${getPropertyKeyword(prop)}:${separator}${serializedPropValue}`;
+               const serializedProp = `${prop}:${separator}${serializedPropValue}`;
                const serialized = isFirstNested ? this.indent(serializedProp, indentationLevel) : serializedProp;
                isFirstNested = false;
                return serialized;

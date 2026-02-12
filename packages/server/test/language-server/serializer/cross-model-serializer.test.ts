@@ -10,8 +10,8 @@ import { CrossModelSerializer } from '../../../src/language-server/cross-model-s
 import { CrossModelRoot, LogicalEntity, Relationship } from '../../../src/language-server/generated/ast';
 import {
    createEntityNode,
-   createLogicalAttribute,
    createLogicalEntity,
+   createLogicalEntityAttribute,
    createRelationship,
    createRelationshipEdge,
    createSystemDiagram
@@ -53,8 +53,8 @@ describe('CrossModelLexer', () => {
          crossModelRootWithoutAttributes = _.cloneDeep(crossModelRoot);
 
          crossModelRoot.entity.attributes = [
-            createLogicalAttribute(crossModelRoot.entity, 'Attribute1', 'Attribute 1'),
-            createLogicalAttribute(crossModelRoot.entity, 'Attribute2', 'Attribute 2')
+            createLogicalEntityAttribute(crossModelRoot.entity, 'Attribute1', 'Attribute 1'),
+            createLogicalEntityAttribute(crossModelRoot.entity, 'Attribute2', 'Attribute 2')
          ];
 
          crossModelRootWithAttributesDifPlace = { $type: 'CrossModelRoot' };
@@ -62,8 +62,8 @@ describe('CrossModelLexer', () => {
             description: 'Test description'
          });
          crossModelRootWithAttributesDifPlace.entity.attributes = [
-            createLogicalAttribute(crossModelRoot.entity, 'Attribute1', 'Attribute 1'),
-            createLogicalAttribute(crossModelRoot.entity, 'Attribute2', 'Attribute 2')
+            createLogicalEntityAttribute(crossModelRoot.entity, 'Attribute1', 'Attribute 1'),
+            createLogicalEntityAttribute(crossModelRoot.entity, 'Attribute2', 'Attribute 2')
          ];
       });
 
@@ -199,8 +199,8 @@ describe('CrossModelLexer', () => {
          const root = document!.parseResult.value as CrossModelRoot;
          const subCustomer = root.entity;
          expect(subCustomer).toBeDefined();
-         expect(subCustomer!.superEntities).toHaveLength(1);
-         expect(subCustomer!.superEntities[0].$refText).toBe('Customer');
+         expect(subCustomer!.inherits).toHaveLength(1);
+         expect(subCustomer!.inherits[0].$refText).toBe('Customer');
       });
 
       test('Multiple inheritance', async () => {
@@ -209,9 +209,9 @@ describe('CrossModelLexer', () => {
             text: sub_customer_multi,
             documentUri: entityDocumentUri('sub_customer_multi')
          });
-         expect(subCustomer.superEntities).toHaveLength(2);
-         expect(subCustomer.superEntities[0].$refText).toBe('Customer');
-         expect(subCustomer.superEntities[1].$refText).toBe('SubCustomer');
+         expect(subCustomer.inherits).toHaveLength(2);
+         expect(subCustomer.inherits[0].$refText).toBe('Customer');
+         expect(subCustomer.inherits[1].$refText).toBe('SubCustomer');
       });
 
       test('Inheritance Cycle', async () => {
