@@ -8,11 +8,6 @@ interface DataModel extends NamedObject, WithCustomProperties {
     dependencies: DataModelDependency[];
 }
 
-interface CrossModelEditionInfo {
-    edition: string;
-    version: string;
-}
-
 DataModel returns DataModel:
     'datamodel' ':'
         INDENT
@@ -29,10 +24,15 @@ DataModel returns DataModel:
         DEDENT
 ;
 
+interface CrossModelEditionInfo {
+    edition: string;
+    version: number;
+}
+
 CrossModelEditionInfo returns CrossModelEditionInfo:
     INDENT
         'edition' ':' edition=ID
-        'version' ':' version=VERSION
+        'version' ':' version=NUMBER
     DEDENT
 ;
 

@@ -314,7 +314,7 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@7"
+                "$ref": "#/rules@8"
               },
               "arguments": []
             }
@@ -3640,7 +3640,7 @@ export const CrossModelGrammar = (): Grammar => loadedCrossModelGrammar ?? (load
           "name": "version",
           "type": {
             "$type": "SimpleType",
-            "primitiveType": "string"
+            "primitiveType": "number"
           },
           "isOptional": false
         }

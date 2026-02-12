@@ -272,12 +272,20 @@ export interface RelationshipEdge extends CrossModelElement, IdentifiedObject, W
    targetNode: Reference<EntityNode>;
 }
 
+export const CrossModelEditionInfoType = 'CrossModelEditionInfo';
+export interface CrossModelEditionInfo extends CrossModelElement {
+   readonly $type: typeof CrossModelEditionInfoType;
+   edition: string;
+   version: number;
+}
+
 export const DataModelType = 'DataModel';
 export type DataModelType = 'conceptual' | 'logical' | 'relational';
 export interface DataModel extends CrossModelElement, NamedObject, WithCustomProperties {
    readonly $type: typeof DataModelType;
    type: DataModelType;
    version?: string;
+   crossmodel?: CrossModelEditionInfo;
    dependencies: Array<DataModelDependency>;
 }
 

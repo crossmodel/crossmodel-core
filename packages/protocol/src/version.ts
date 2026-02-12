@@ -63,3 +63,15 @@ export function getCrossModelVersion(): string {
 export function getCrossModelEdition(): string {
    return getEditionFromPackage();
 }
+
+/**
+ * Returns the major version component of the CrossModel version as a number.
+ * Minor and patch versions don't cause breaking grammar changes, so only the major version
+ * is stored in datamodel.cm files for migration detection.
+ *
+ * @returns the major version number, or undefined if it cannot be parsed
+ */
+export function getCrossModelMajorVersion(): number | undefined {
+   const version = getVersionFromPackage();
+   return parseInt(version.split('.')[0], 10);
+}

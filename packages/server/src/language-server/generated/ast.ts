@@ -208,7 +208,7 @@ export interface CrossModelEditionInfo extends langium.AstNode {
     readonly $container: DataModel;
     readonly $type: 'CrossModelEditionInfo';
     edition: string;
-    version: string;
+    version: number;
 }
 
 export const CrossModelEditionInfo = {

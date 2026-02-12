@@ -16,7 +16,7 @@ import {
    TargetObjectType,
    findNextUnique,
    getCrossModelEdition,
-   getCrossModelVersion,
+   getCrossModelMajorVersion,
    isMemberPermittedInModel,
    quote,
    toId,
@@ -64,14 +64,20 @@ interface NewElementTemplate<T extends readonly InputOptions[] = readonly InputO
  * The version is read from CROSSMODEL_VERSION constant which is sourced from package.json.
  */
 function getInitialDataModelContent(): string {
+   const edition = getCrossModelEdition();
+   const majorVersion = getCrossModelMajorVersion();
+   const crossmodelBlock =
+      edition !== undefined && majorVersion !== undefined
+         ? `
+    crossmodel:
+        edition: ${edition}
+        version: ${majorVersion}`
+         : '';
    return `datamodel:
     id: _
     name: ""
     type: ${DataModelTypeInfos.logical.value}
-    version: 1.0.0
-    crossmodel:
-        edition: ${getCrossModelEdition()}
-        version: ${getCrossModelVersion()}
+    version: 1.0.0${crossmodelBlock}
 `;
 }
 

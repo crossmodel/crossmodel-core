@@ -109,7 +109,7 @@ export class CrossModelSerializer implements Serializer<CrossModelRoot> {
                // arrays and objects start on a new line -- skip some objects that we do not actually serialize in object structure
                const onNewLine = Array.isArray(propValue) || (isAstNode(propValue) && !isInlineSerializedType(propValue.$type));
                const serializedPropValue = this.toYaml(value, prop, propValue, onNewLine ? indentationLevel + 1 : 0);
-               if (!serializedPropValue) {
+               if (serializedPropValue === undefined || serializedPropValue === '') {
                   return undefined;
                }
                const separator = onNewLine ? CrossModelSerializer.CHAR_NEWLINE : ' ';

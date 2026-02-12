@@ -3,3 +3,6 @@ datamodel:
     name: "Example CRM"
     type: logical
     version: 1.0.0
+    crossmodel:
+        edition: core
+        version: 0

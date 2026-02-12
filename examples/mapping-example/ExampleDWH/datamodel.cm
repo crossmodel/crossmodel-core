@@ -4,6 +4,9 @@ datamodel:
     description: "Example Data Warehouse Logical Data Model"
     type: logical
     version: 1.0.0
+    crossmodel:
+        edition: core
+        version: 0
     dependencies:
       - datamodel: ExampleCRM
         version: 1.0.0
