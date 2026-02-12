@@ -14,7 +14,7 @@ import {
    isLogicalEntityNode,
    isRelationship,
    isRelationshipEdge
-} from '../../../language-server/generated/ast.js';
+} from '../../../language-server/ast.js';
 import { CrossModelIndex } from '../../common/cross-model-index.js';
 
 @injectable()

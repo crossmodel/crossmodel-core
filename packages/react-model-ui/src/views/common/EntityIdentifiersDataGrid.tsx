@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, findNextUnique, LogicalIdentifier, toId } from '@crossmodel/protocol';
+import { CustomProperty, LogicalIdentifier, findNextUnique, toId } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
 import { EditorContainer, EditorProperty, GenericCheckboxEditor, GenericTextEditor } from './GenericEditors';
-import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid, handleGenericRowReorder } from './PrimeDataGrid';
 import { focusTable } from './focusManagement';
 import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
@@ -20,20 +20,18 @@ export interface EntityIdentifierRow {
    description?: string;
    customProperties?: CustomProperty[];
    $type?: 'LogicalIdentifier';
-   $globalId?: string;
+   _globalId?: string;
    _uncommitted?: boolean;
 }
 
 const deriveIdentifierRowId = (identifier: Partial<LogicalIdentifier>, idx: number): string => {
    const persistedId = identifier.id as string | undefined;
-   const globalId = identifier.$globalId as string | undefined;
+   const globalId = identifier._globalId as string | undefined;
    return persistedId ?? globalId ?? `identifier-${idx}`;
 };
 
 function convertIdentifierToRow(identifier: LogicalIdentifier, idx: number): EntityIdentifierRow {
-   const attributeIds = (identifier.attributes || []).map(attr =>
-      typeof attr === 'object' ? attr.id : String(attr).replace(/^[-_]+/, '')
-   );
+   const attributeIds = (identifier.attributes || []).map(attr => String(attr).replace(/^[-_]+/, ''));
    const id = deriveIdentifierRowId(identifier, idx);
    return {
       idx,
@@ -53,8 +51,8 @@ function convertRowToIdentifier(row: EntityIdentifierRow): LogicalIdentifier {
       attributes: row.attributeIds as any,
       description: row.description,
       $type: 'LogicalIdentifier',
-      $globalId: row.id,
-      ...(row.customProperties ? { customProperties: row.customProperties } : {})
+      _globalId: row.id,
+      customProperties: row.customProperties ?? []
    };
 }
 
@@ -138,7 +136,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
          attributeIds: [],
          description: '',
          $type: 'LogicalIdentifier',
-         $globalId: 'toBeAssigned'
+         _globalId: 'toBeAssigned'
       }),
       []
    );
@@ -206,7 +204,7 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
             headerStyle: { width: '30%' },
             body: (rowData: EntityIdentifierRow) => {
                const selectedAttributes = entity.attributes
-                  .filter(attr => rowData.attributeIds.includes(attr.id))
+                  .filter(attr => rowData.attributeIds.includes(attr.id!))
                   .map(attr => attr.name)
                   .join(', ');
                return <EditorProperty basePath={['entity', 'identifiers']} field='attributes' row={rowData} value={selectedAttributes} />;
@@ -301,8 +299,8 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                ...convertRowToIdentifier(identifierData),
                id: newId,
                name: identifierName || '',
-               $globalId: `${entity.id}.${newId}`
-            }; // If this will be primary, first unset any existing primary identifier and its attributes
+               _globalId: `${entity.id}.${newId}`
+            }; // If this will be primary, first unset any existing primary identifier
             if (identifier.primary) {
                const currentPrimary = entity.identifiers?.find(i => i.primary);
                if (currentPrimary) {
@@ -315,38 +313,8 @@ export function EntityIdentifiersDataGrid(): React.ReactElement {
                         primary: false
                      }
                   });
-
-                  // Update its attributes to non-primary
-                  currentPrimary.attributes.forEach(attrId => {
-                     const attrIdx = entity.attributes.findIndex(attr => attr.id === (typeof attrId === 'string' ? attrId : attrId.id));
-                     if (attrIdx !== -1) {
-                        dispatch({
-                           type: 'entity:attribute:update',
-                           attributeIdx: attrIdx,
-                           attribute: {
-                              ...entity.attributes[attrIdx],
-                              identifier: false
-                           }
-                        });
-                     }
-                  });
                }
             }
-
-            // Set the identifier status on all selected attributes
-            identifier.attributeIds.forEach(attrId => {
-               const attrIdx = entity.attributes.findIndex(attr => attr.id === attrId);
-               if (attrIdx !== -1) {
-                  dispatch({
-                     type: 'entity:attribute:update',
-                     attributeIdx: attrIdx,
-                     attribute: {
-                        ...entity.attributes[attrIdx],
-                        identifier: identifier.primary
-                     }
-                  });
-               }
-            });
 
             // Add the new identifier
             dispatch({

@@ -209,7 +209,7 @@ export function DataModelDependenciesDataGrid(): React.ReactElement {
    const dependenciesRef = React.useRef(dataModel?.dependencies || []);
 
    const deriveDependencyRowId = React.useCallback((dependency: Partial<DataModelDependency>, idx: number): string => {
-      const globalId = (dependency as { $globalId?: string })?.$globalId;
+      const globalId = (dependency as { _globalId?: string })?._globalId;
       const datamodelName = dependency.datamodel || 'dependency';
       const version = dependency.version || 'latest';
       return globalId ?? `${datamodelName}-${version}-${idx}`;

@@ -5,7 +5,7 @@
 
 import { createTokenInstance, IToken, TokenType } from 'chevrotain';
 import { IndentationAwareTokenBuilder } from 'langium';
-import { CrossModelTerminals } from '../generated/ast.js';
+import { CrossModelTerminals } from '../ast.js';
 
 export class CrossModelTokenBuilder extends IndentationAwareTokenBuilder {
    protected readonly listItemRegExp = new RegExp(CrossModelTerminals.LIST_ITEM.source, CrossModelTerminals.LIST_ITEM.flags + 'y');

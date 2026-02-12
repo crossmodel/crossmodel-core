@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
-import { CrossReferenceContext, CustomProperty, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
+import { CrossReferenceContext, RelationshipAttribute, RelationshipAttributeType } from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
@@ -33,7 +33,6 @@ export function AttributeProperty({ field, row, value }: AttributePropertyProps)
 export interface RelationshipAttributeRow extends RelationshipAttribute {
    idx: number;
    id: string;
-   customProperties?: CustomProperty[];
    _uncommitted?: boolean;
 }
 
@@ -199,7 +198,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
       setGridData(current => {
          const committedData = (relationship.attributes || []).map((attr, idx) => {
             const persistedId = (attr as any).id as string | undefined;
-            const globalId = (attr as any).$globalId as string | undefined;
+            const globalId = (attr as any)._globalId as string | undefined;
             const id = persistedId ?? globalId ?? `attr-${idx}`;
             return {
                ...attr,
@@ -234,6 +233,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
    const defaultEntry = React.useMemo<RelationshipAttributeRow>(
       () => ({
          $type: RelationshipAttributeType,
+         customProperties: [],
          parent: '',
          child: '',
          idx: -1,
@@ -261,7 +261,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
 
             const finalAttribute = {
                ...attributeData,
-               ...(customProperties ? { customProperties } : {})
+               customProperties: customProperties ?? []
             };
 
             // Add the new attribute through dispatch
@@ -342,7 +342,7 @@ export function RelationshipAttributesDataGrid(): React.ReactElement {
             relationship.attributes || [],
             (attr, idx) => {
                const persistedId = (attr as any).id as string | undefined;
-               const globalId = (attr as any).$globalId as string | undefined;
+               const globalId = (attr as any)._globalId as string | undefined;
                return persistedId ?? globalId ?? `attr-${idx}`;
             },
             reorderedAttributes => {

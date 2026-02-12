@@ -9,8 +9,7 @@ import {
    SourceObjectDependency,
    isAttributeMappingSource,
    isSourceObject
-} from '../../../language-server/generated/ast.js';
-import { getOwner } from '../../../language-server/util/ast-util.js';
+} from '../../../language-server/ast.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { MappingModelState } from '../model/mapping-model-state.js';
 
@@ -65,7 +64,7 @@ export class MappingDiagramDeleteElementOperationHandler extends JsonOperationHa
       );
       deleteInfo.attributeSources.push(
          ...mapping.target.mappings.flatMap(attrMapping =>
-            attrMapping.sources.filter(attrSource => attrSource.value.ref && getOwner(attrSource.value?.ref) === source)
+            attrMapping.sources.filter(attrSource => attrSource.value.ref?.$container === source)
          )
       );
    }

@@ -16,7 +16,7 @@ import {
    SystemDiagramEdge,
    isLogicalEntity,
    isRelationshipEdge
-} from '../../../language-server/generated/ast.js';
+} from '../../../language-server/ast.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';
 
@@ -73,6 +73,7 @@ export class SystemDiagramDropFilesOperationHandler extends JsonOperationHandler
       const node: LogicalEntityNode = {
          $type: LogicalEntityNode.$type,
          $container: container,
+         _attributes: [],
          id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode.$type, entity.id + 'Node', this.modelState.systemDiagram),
          entity: {
             $refText: referenceText,

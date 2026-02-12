@@ -2,20 +2,10 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode, AstNodeDescription, AstUtils, DefaultScopeComputation, LangiumDocument, MultiMap, Reference } from 'langium';
+import { AstNode, AstNodeDescription, AstUtils, DefaultScopeComputation, LangiumDocument, MultiMap } from 'langium';
 import { CrossModelDataModelManager, UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
-import { DefaultIdProvider, combineIds } from './cross-model-naming.js';
-import {
-   LogicalEntity,
-   LogicalEntityNode,
-   LogicalEntityNodeAttribute,
-   SourceObject,
-   SourceObjectAttribute,
-   TargetObject,
-   TargetObjectAttribute
-} from './generated/ast.js';
-import { fixDocument, setAttributes, setImplicitId, setOwner } from './util/ast-util.js';
+import { DefaultIdProvider } from './cross-model-naming.js';
 
 /**
  * Custom node description that wraps a given description under a potentially new name and also stores the datamodel id for faster access.
@@ -114,77 +104,12 @@ export class CrossModelScopeComputation extends DefaultScopeComputation {
          const id = this.idProvider.getNodeId(node);
          if (id) {
             symbols.add(container, this.descriptions.createDescription(node, id, document));
-
-            if (node.$type === LogicalEntityNode.$type) {
-               this.processEntityNode(node as LogicalEntityNode, id, document).forEach((description: AstNodeDescription) =>
-                  symbols.add(container, description)
-               );
-            } else if (node.$type === SourceObject.$type) {
-               this.processSourceObject(node as SourceObject, id, document).forEach((description: AstNodeDescription) =>
-                  symbols.add(container, description)
-               );
-            }
          }
-         if (node.$type === TargetObject.$type) {
-            const entity = this.getLogicalEntity(node as TargetObject, document);
-            if (entity?.id) {
-               this.processTargetObject(node as TargetObject, entity.id, document).forEach((description: AstNodeDescription) =>
-                  symbols.add(container, description)
-               );
-            }
-         }
-      }
-   }
 
-   protected processEntityNode(node: LogicalEntityNode, nodeId: string, document: LangiumDocument): AstNodeDescription[] {
-      const entity = this.getLogicalEntity(node, document);
-      if (!entity) {
-         return [];
+         // we extend the ast node here as we are already iterating over the complete document and we have access to the local symbols
+         this.services.shared.ast.AstExtensionService.extendLocalAstNode(node, id, document).forEach(description =>
+            symbols.add(container, description)
+         );
       }
-      const attributes =
-         entity.attributes.map<LogicalEntityNodeAttribute>(attribute =>
-            setOwner({ ...attribute, $type: LogicalEntityNodeAttribute.$type }, node)
-         ) ?? [];
-      setAttributes(node, attributes);
-      return attributes
-         .filter(attribute => attribute.id !== undefined) // Only process attributes with an id
-         .map(attribute => this.descriptions.createDescription(attribute, combineIds(nodeId, attribute.id!), document));
-   }
-
-   protected getLogicalEntity(node: AstNode & { entity?: Reference<LogicalEntity> }, document: LangiumDocument): LogicalEntity | undefined {
-      try {
-         return fixDocument(node, document).entity?.ref;
-      } catch (error) {
-         console.error(error);
-         return undefined;
-      }
-   }
-
-   protected processSourceObject(node: SourceObject, nodeId: string, document: LangiumDocument): AstNodeDescription[] {
-      const entity = this.getLogicalEntity(node, document);
-      if (!entity) {
-         return [];
-      }
-      const attributes =
-         entity.attributes.map<SourceObjectAttribute>(attribute => setOwner({ ...attribute, $type: SourceObjectAttribute.$type }, node)) ??
-         [];
-      setAttributes(node, attributes);
-      return attributes
-         .filter(attribute => attribute.id !== undefined) // Ensure attribute.id is defined
-         .map(attribute => this.descriptions.createDescription(attribute, combineIds(nodeId, attribute.id!), document));
-   }
-
-   protected processTargetObject(node: TargetObject, nodeId: string, document: LangiumDocument): AstNodeDescription[] {
-      const entity = this.getLogicalEntity(node, document);
-      if (!entity) {
-         return [];
-      }
-      const attributes =
-         entity.attributes.map<TargetObjectAttribute>(attribute => setOwner({ ...attribute, $type: TargetObjectAttribute.$type }, node)) ??
-         [];
-      setImplicitId(node, nodeId);
-      setAttributes(node, attributes);
-      // for target attributes, we use simple names and not object-qualified ones
-      return attributes.map(attribute => this.descriptions.createDescription(attribute, attribute.id, document));
    }
 }

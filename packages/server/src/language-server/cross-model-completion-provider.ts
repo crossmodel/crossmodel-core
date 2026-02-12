@@ -15,7 +15,7 @@ import {
    IdentifiedObject,
    RelationshipAttribute,
    isAttributeMappingExpression
-} from './generated/ast.js';
+} from './ast.js';
 import { fixDocument } from './util/ast-util.js';
 
 /**

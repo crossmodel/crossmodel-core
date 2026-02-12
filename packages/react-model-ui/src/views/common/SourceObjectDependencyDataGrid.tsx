@@ -22,7 +22,7 @@ import {
    useRedo,
    useUndo
 } from '../../ModelContext';
-import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid, handleGenericRowReorder } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, handleUndoRedoKeys, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface SourceObjectDependencyEditorProps {
@@ -66,11 +66,11 @@ function SourceObjectDependencyEditor(props: SourceObjectDependencyEditorProps):
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: sourceObject.$globalId },
+         container: { globalId: sourceObject._globalId! },
          syntheticElements: [{ property: 'dependencies', type: SourceObjectDependencyType }],
          property: 'source'
       }),
-      [sourceObject.$globalId]
+      [sourceObject._globalId]
    );
 
    const search = React.useCallback(
@@ -203,7 +203,7 @@ export function SourceObjectDependencyDataGrid({ mapping, sourceObjectIdx }: Sou
    const dependenciesRef = React.useRef(sourceObject.dependencies || []);
 
    const deriveDependencyRowId = React.useCallback((dependency: Partial<SourceObjectDependency>, idx: number): string => {
-      const globalId = (dependency as { $globalId?: string })?.$globalId;
+      const globalId = (dependency as { _globalId?: string })?._globalId;
       const source = dependency.source || 'source';
       return globalId ?? `${source}-${idx}`;
    }, []);

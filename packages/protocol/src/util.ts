@@ -2,86 +2,21 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { CrossModelRegex, IdentifiedObject } from './model-service/protocol';
+import { CrossModelTerminals, IdentifiedObject, isCrossModelKeywordNames } from './model-service/transfer-model';
 
-/** created from the CrossModelKeywordNames in the generated ast.ts. */
-export const RESERVED_KEYWORDS = [
-   '!=',
-   '.',
-   '0..1',
-   '0..N',
-   '1..1',
-   '1..N',
-   ':',
-   '<',
-   '<=',
-   '=',
-   '>',
-   '>=',
-   'TRUE',
-   'apply',
-   'attribute',
-   'attributes',
-   'baseNode',
-   'backgroundColor',
-   'borderColor',
-   'borderStyle',
-   'borderWeight',
-   'child',
-   'childCardinality',
-   'childRole',
-   'conceptual',
-   'conditions',
-   'cross-join',
-   'customProperties',
-   'datamodel',
-   'datatype',
-   'dependencies',
-   'description',
-   'diagram',
-   'edges',
-   'entity',
-   'expression',
-   'expressions',
-   'from',
-   'height',
-   'id',
-   'identifiers',
-   'inherits',
-   'inner-join',
-   'join',
-   'language',
-   'left-join',
-   'length',
-   'logical',
-   'mandatory',
-   'mapping',
-   'mappings',
-   'name',
-   'nodes',
-   'fontColor',
-   'parent',
-   'parentCardinality',
-   'parentRole',
-   'precision',
-   'primary',
-   'relational',
-   'relationship',
-   'scale',
-   'sourceNode',
-   'sources',
-   'superNode',
-   'systemDiagram',
-   'target',
-   'targetNode',
-   'true',
-   'type',
-   'value',
-   'version',
-   'width',
-   'x',
-   'y'
-];
+export type TypeGuard<T> = (item: unknown) => item is T;
+
+/** Removes `readonly` from all properties of `T`. */
+export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+
+export function asMutable<T>(item: T): Mutable<T> {
+   return item;
+}
+
+export function toMutable<T>(item: unknown, guard: TypeGuard<T>): item is Mutable<T> | undefined;
+export function toMutable<T>(item: unknown, guard?: TypeGuard<T>): item is Mutable<T> | undefined {
+   return guard ? guard(item) : true;
+}
 
 export function quote(text: string, quoteChar = '"', replaceChar = "'"): string {
    if (text.length === 0) {
@@ -125,10 +60,10 @@ export function toId(text: string): string {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^\w_\-~$#@/\d]/g, '_');
    // escape reserved keywords
-   if (RESERVED_KEYWORDS.includes(id)) {
+   if (isCrossModelKeywordNames(id)) {
       id = ID_ESCAPE_CHAR + id;
    }
-   if (CrossModelRegex.ID.test(id)) {
+   if (CrossModelTerminals.ID.test(id)) {
       return id;
    }
    // prefix with '_' if necessary
@@ -152,7 +87,7 @@ export function identity<T>(value: T): T {
 }
 
 export function identifier<T extends IdentifiedObject>(value: T): string {
-   return value.id;
+   return value.id!;
 }
 
 export function findNextUnique<T>(suggestion: string, existing: T[], nameGetter: (element: T) => string): string {
@@ -165,8 +100,6 @@ export function findNextUnique<T>(suggestion: string, existing: T[], nameGetter:
    return name;
 }
 
-/** taken from the generated ast.ts. */
-export const ID_REGEX = /\^?[_a-zA-Z][\w_\-~$#@/\d]*$/;
 export const NPM_PACKAGE_NAME_REGEX = /^(?:(?:@(?:[a-z0-9-*~][a-z0-9-*._~]*)?\/[a-z0-9-._~])|[a-z0-9-~])[a-z0-9-._~]*$/;
 
 export function packageNameToId(input: string): string {

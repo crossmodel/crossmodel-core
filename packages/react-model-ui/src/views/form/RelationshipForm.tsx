@@ -2,7 +2,15 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { ModelFileType, ModelStructure, ReferenceableElement, computeRelationshipName, toId } from '@crossmodel/protocol';
+import {
+   Cardinality,
+   CardinalityValues,
+   ModelFileType,
+   ModelStructure,
+   ReferenceableElement,
+   computeRelationshipName,
+   toId
+} from '@crossmodel/protocol';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import * as React from 'react';
@@ -46,8 +54,6 @@ export function RelationshipForm(): React.ReactElement {
       [api, reference]
    );
    const referenceLabelProvider = (element: ReferenceableElement): string => element.label;
-
-   const cardinalities = ['0..1', '1..1', '0..N', '1..N'];
 
    const updateNameAndId = React.useCallback(
       (parent?: string, child?: string) => {
@@ -154,12 +160,12 @@ export function RelationshipForm(): React.ReactElement {
                      options={{
                         value: relationship.parentCardinality ?? '',
                         editorCallback: (v: string) =>
-                           dispatch({ type: 'relationship:change-parent-cardinality', parentCardinality: v ?? '' }),
+                           dispatch({ type: 'relationship:change-parent-cardinality', parentCardinality: v as Cardinality }),
                         rowData: { idx: -1 }
                      }}
                      basePath={['relationship']}
                      field={'parentCardinality'}
-                     dropdownOptions={cardinalities.map(c => ({ label: c, value: c }))}
+                     dropdownOptions={CardinalityValues.map(c => ({ label: c, value: c }))}
                   />
                </div>
                <ErrorInfo diagnostic={parentCardinalityDiagnostics} />
@@ -201,12 +207,12 @@ export function RelationshipForm(): React.ReactElement {
                      options={{
                         value: relationship.childCardinality ?? '',
                         editorCallback: (v: string) =>
-                           dispatch({ type: 'relationship:change-child-cardinality', childCardinality: v ?? '' }),
+                           dispatch({ type: 'relationship:change-child-cardinality', childCardinality: v as Cardinality }),
                         rowData: { idx: -1 }
                      }}
                      basePath={['relationship']}
                      field={'childCardinality'}
-                     dropdownOptions={cardinalities.map(c => ({ label: c, value: c }))}
+                     dropdownOptions={CardinalityValues.map(c => ({ label: c, value: c }))}
                   />
                </div>
                <ErrorInfo diagnostic={childCardinalityDiagnostics} />

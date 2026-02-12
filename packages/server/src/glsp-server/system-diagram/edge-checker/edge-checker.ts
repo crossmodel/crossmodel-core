@@ -4,7 +4,7 @@
 import { INHERITANCE_EDGE_TYPE } from '@crossmodel/protocol';
 import { EdgeCreationChecker, GModelElement, ModelState, getOrThrow } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { LogicalEntity, LogicalEntityNode, isInheritanceEdge } from '../../../language-server/generated/ast.js';
+import { LogicalEntity, LogicalEntityNode, isInheritanceEdge } from '../../../language-server/ast.js';
 import { SystemModelState } from '../model/system-model-state.js';
 
 @injectable()

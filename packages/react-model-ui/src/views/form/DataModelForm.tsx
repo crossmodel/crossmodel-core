@@ -2,7 +2,7 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { AllDataModelTypeInfos, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
+import { AllDataModelTypeInfos, DataModelType, DataModelTypeInfo, ModelStructure, toId } from '@crossmodel/protocol';
 import { debounce } from 'lodash';
 import {
    AutoComplete,
@@ -78,7 +78,7 @@ export function DataModelForm(): React.ReactElement {
 
    const debounceRef = React.useRef(
       debounce((value: string) => {
-         dispatch({ type: 'datamodel:change-type', dataModelType: value });
+         dispatch({ type: 'datamodel:change-type', dataModelType: value as DataModelType });
       }, 300)
    );
 

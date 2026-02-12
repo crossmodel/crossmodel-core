@@ -151,7 +151,9 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          this.setDirty(true);
          this.onContentChangedEmitter.fire();
          console.debug(`[${this.options.clientId}] Send update to server`);
-         await this.modelService.update({ uri: this.document.uri, model: root, clientId: this.options.clientId });
+         const updatedDocument = await this.modelService.update({ uri: this.document.uri, model: root, clientId: this.options.clientId });
+         this.document = updatedDocument;
+         this.update();
       }
    }
 
@@ -274,7 +276,8 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
                   attribute: {
                      $type: AttributeMappingTargetType,
                      value: mappingProps.attributeId
-                  }
+                  },
+                  customProperties: []
                });
                mappingIndex = this.document.root.mapping.target.mappings.length - 1;
             }

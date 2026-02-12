@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CustomProperty, LogicalEntityAttribute, findNextUnique, toId } from '@crossmodel/protocol';
+import { LogicalEntityAttribute, findNextUnique, toId } from '@crossmodel/protocol';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useEntity, useModelDispatch, useReadonly } from '../../ModelContext';
@@ -11,14 +11,13 @@ import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface EntityAttributeRow extends LogicalEntityAttribute {
    $type: 'LogicalEntityAttribute';
-   $globalId: string;
+   _globalId: string;
    id: string;
    idx: number;
    name: string;
    datatype: string;
-   description?: string;
-   customProperties?: CustomProperty[];
    _uncommitted?: boolean;
+   identifier?: boolean;
 }
 
 const dataTypeOptions = [
@@ -43,7 +42,7 @@ const dataTypeOptions = [
 
 const deriveAttributeRowId = (attr: Partial<LogicalEntityAttribute>, idx: number): string => {
    const persistedId = attr.id as string | undefined;
-   const globalId = attr.$globalId as string | undefined;
+   const globalId = attr._globalId as string | undefined;
    return persistedId ?? globalId ?? `attr-${idx}`;
 };
 
@@ -96,8 +95,10 @@ export function EntityAttributesDataGrid(): React.ReactElement {
          idx: -1,
          id: '', // ID will be assigned when adding the row
          description: '',
+         mandatory: false,
          $type: 'LogicalEntityAttribute',
-         $globalId: 'toBeAssigned'
+         _globalId: 'toBeAssigned',
+         customProperties: []
       }),
       []
    );
@@ -200,10 +201,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
       setGridData(current => {
          const committedData = (entity.attributes || []).map((attr: Partial<LogicalEntityAttribute>, idx) => {
             const isPrimaryIdentifier =
-               entity.identifiers?.some(
-                  identifier =>
-                     identifier.primary && identifier.attributes.some(a => (typeof a === 'string' ? a === attr.id : a.id === attr.id))
-               ) || false;
+               entity.identifiers?.some(identifier => identifier.primary && identifier.attributes.some(a => a === attr.id)) || false;
 
             const id = deriveAttributeRowId(attr, idx);
             return {
@@ -218,7 +216,8 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                ...(attr.scale !== undefined ? { scale: attr.scale } : {}),
                id,
                $type: 'LogicalEntityAttribute',
-               $globalId: attr.$globalId || id
+               _globalId: attr._globalId || id,
+               customProperties: attr.customProperties || []
             };
          }) as EntityAttributeRow[];
 
@@ -468,21 +467,18 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                      primary: true,
                      attributes: [attributeId] as any,
                      $type: 'LogicalIdentifier',
-                     $globalId: `${entity.id}.${identifierId}`
+                     _globalId: `${entity.id}.${identifierId}`,
+                     customProperties: []
                   }
                });
             }
          } else if (!isNew) {
             // Only handle removal for existing attributes
             // Find identifier containing this attribute
-            const identifierToUpdate = entity.identifiers?.find(identifier =>
-               identifier.attributes.some(attr => (typeof attr === 'string' ? attr === attributeId : attr.id === attributeId))
-            );
+            const identifierToUpdate = entity.identifiers?.find(identifier => identifier.attributes.some(attr => attr === attributeId));
 
             if (identifierToUpdate) {
-               const remainingAttributes = identifierToUpdate.attributes.filter(attr =>
-                  typeof attr === 'string' ? attr !== attributeId : attr.id !== attributeId
-               );
+               const remainingAttributes = identifierToUpdate.attributes.filter(attr => attr !== attributeId);
 
                if (remainingAttributes.length === 0) {
                   // If no attributes left, remove the identifier
@@ -538,16 +534,16 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             const isPrecision = isPrecisionApplicable(attribute.datatype);
             const isScale = isScaleApplicable(attribute.datatype);
 
-            const finalAttribute = {
+            const finalAttribute: LogicalEntityAttribute = {
                ...attributeData,
                id: newId,
-               $globalId: newId,
+               _globalId: newId,
                ...(description ? { description } : {}),
-               ...(mandatory ? { mandatory } : {}),
+               ...{ mandatory },
                ...(isLength && length !== undefined ? { length } : {}),
                ...(isPrecision && precision !== undefined ? { precision } : {}),
                ...(isScale && scale !== undefined ? { scale } : {}),
-               ...(customProperties ? { customProperties } : {})
+               ...{ customProperties }
             };
 
             // Add the new attribute through dispatch
@@ -584,7 +580,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             const updatedAttribute = {
                ...rest,
                ...(description ? { description } : {}),
-               ...(mandatory ? { mandatory } : {}),
+               ...{ mandatory },
                ...(isLength && length !== undefined ? { length } : {}),
                ...(isPrecision && precision !== undefined ? { precision } : {}),
                ...(isScale && scale !== undefined ? { scale } : {}),
@@ -593,7 +589,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                   ? { customProperties }
                   : (oldAttribute as any)?.customProperties
                     ? { customProperties: (oldAttribute as any).customProperties }
-                    : {})
+                    : { customProperties: [] })
             };
 
             dispatch({
@@ -605,9 +601,7 @@ export function EntityAttributesDataGrid(): React.ReactElement {
             // Handle identifier changes separately
             // Find the current primary identifier if it exists
             const primaryIdentifier = entity.identifiers?.find(identifier => identifier.primary);
-            const isCurrentlyInPrimary = primaryIdentifier?.attributes.some(attr =>
-               typeof attr === 'string' ? attr === oldAttribute.id : attr.id === oldAttribute.id
-            );
+            const isCurrentlyInPrimary = primaryIdentifier?.attributes.some(attr => attr === oldAttribute.id);
             const identifierChanged = attribute.identifier !== isCurrentlyInPrimary;
 
             if (identifierChanged) {
@@ -634,15 +628,14 @@ export function EntityAttributesDataGrid(): React.ReactElement {
                            primary: true,
                            attributes: [oldAttribute.id] as any,
                            $type: 'LogicalIdentifier',
-                           $globalId: `${entity.id}.${identifierId}`
+                           _globalId: `${entity.id}.${identifierId}`,
+                           customProperties: []
                         }
                      });
                   }
                } else if (primaryIdentifier) {
                   // Removing from primary identifier
-                  const remainingAttributes = primaryIdentifier.attributes.filter(attr =>
-                     typeof attr === 'string' ? attr !== oldAttribute.id : attr.id !== oldAttribute.id
-                  );
+                  const remainingAttributes = primaryIdentifier.attributes.filter(attr => attr !== oldAttribute.id);
 
                   // Always update the identifier with remaining attributes, even if empty
                   dispatch({

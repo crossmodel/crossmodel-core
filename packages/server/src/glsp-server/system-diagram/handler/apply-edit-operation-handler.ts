@@ -5,7 +5,7 @@
 import { toId, toIdReference } from '@crossmodel/protocol';
 import { ApplyLabelEditOperation, Command, getOrThrow, JsonOperationHandler } from '@eclipse-glsp/server';
 import { injectable } from 'inversify';
-import { CrossModelRoot, LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
+import { CrossModelRoot, LogicalEntity, LogicalEntityNode } from '../../../language-server/ast.js';
 import { findDocument } from '../../../language-server/util/ast-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';

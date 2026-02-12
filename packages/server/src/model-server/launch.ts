@@ -68,16 +68,16 @@ export function startModelServer(services: CrossModelLSPServices, workspaceFolde
  * @returns a promise that is resolved as soon as the connection is closed or rejects if an error occurs
  */
 async function createClientConnection(socket: net.Socket, services: CrossModelLSPServices, logger: ClientLogger): Promise<void> {
-   logger.info(`Starting model server connection for client: '${socket.localAddress}'`);
+   logger.info(`[ModelServer] Starting model server connection for client: '${socket.localAddress}'`);
    const connection = createConnection(socket);
    currentConnections.push(connection);
 
-   const modelServer = new ModelServer(connection, services.shared.model.ModelService);
+   const modelServer = new ModelServer(connection, services);
    connection.onDispose(() => modelServer.dispose());
    socket.on('close', () => modelServer.dispose());
 
    connection.listen();
-   logger.info(`Connecting to client: '${socket.localAddress}'`);
+   logger.info(`[ModelServer] Connecting to client: '${socket.localAddress}'`);
 
    return new Promise((resolve, rejects) => {
       connection.onClose(() => resolve(undefined));

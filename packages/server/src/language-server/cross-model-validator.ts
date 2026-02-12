@@ -7,13 +7,10 @@ import {
    ModelMemberPermissions,
    findAllExpressions,
    getExpressionText,
-   getSemanticRoot,
    isMemberPermittedInModel
 } from '@crossmodel/protocol';
 import { AstNode, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
 import { Diagnostic } from 'vscode-languageserver-protocol';
-import type { CrossModelServices } from './cross-model-module.js';
-import { ID_PROPERTY } from './cross-model-naming.js';
 import {
    AttributeMapping,
    AttributeMappingExpression,
@@ -38,8 +35,10 @@ import {
    isCrossModelRoot,
    isDataModel,
    isSourceObjectAttributeReference
-} from './generated/ast.js';
-import { findDocument, getOwner, isSemanticRoot } from './util/ast-util.js';
+} from './ast.js';
+import type { CrossModelServices } from './cross-model-module.js';
+import { ID_PROPERTY } from './cross-model-naming.js';
+import { findDocument, getSemanticRoot, isSemanticRoot } from './util/ast-util.js';
 import { getAttributeMappingExpressionRefRange } from './util/expression-range.js';
 
 export interface FilenameNotMatchingDiagnostic extends Diagnostic {
@@ -85,7 +84,10 @@ export function registerValidationChecks(services: CrossModelServices): void {
  * Implementation of custom validations.
  */
 export class CrossModelValidator {
-   constructor(protected services: CrossModelServices) {}
+   constructor(
+      protected services: CrossModelServices,
+      protected logger = services.shared.client.Logger.for('Validator')
+   ) {}
 
    checkNamedObject(namedObject: NamedObject, accept: ValidationAcceptor): void {
       if (namedObject.name === undefined || namedObject.name.length === 0) {
@@ -193,7 +195,7 @@ export class CrossModelValidator {
          return;
       }
       if (!isMemberPermittedInModel(packageType, semanticRoot.$type)) {
-         this.services.shared.client.Logger.info('Issuing a warning: ' + Object.entries(node).join('\n\t'));
+         this.logger.info('Issuing a warning: ' + Object.entries(node).join('\n\t'));
          accept('error', `Member of type '${semanticRoot?.$type}' is not permitted in a model of type '${packageType}'.`, { node });
       }
    }
@@ -483,7 +485,7 @@ export class CrossModelValidator {
          if (!reference.ref) {
             return true;
          }
-         const referencedSourceObject = getOwner(reference.ref);
+         const referencedSourceObject = reference.ref.$container;
          return (
             referencedSourceObject === sourceObject ||
             !!sourceObject.dependencies.find(dependency => dependency.source.ref === referencedSourceObject)

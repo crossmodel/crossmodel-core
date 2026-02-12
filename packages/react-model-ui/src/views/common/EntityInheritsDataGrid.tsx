@@ -1,14 +1,29 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CrossReferenceContext, EntityInherit, EntityInheritType, LogicalEntityType, toIdReference } from '@crossmodel/protocol';
+import {
+   CrossModelElement,
+   CrossReferenceContext,
+   LogicalEntity,
+   LogicalEntityType,
+   type Reference,
+   toIdReference
+} from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useEntity, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
+
+/** Client-side-only type constant (not in AST). */
+const EntityInheritType = 'EntityInherit' as const;
+
+export interface EntityInherit extends CrossModelElement {
+   readonly $type: typeof EntityInheritType;
+   parentId: Reference<LogicalEntity>;
+}
 
 export interface EntityInheritRow extends EntityInherit {
    idx: number;
@@ -47,11 +62,11 @@ function EntityInheritEditor(props: EntityInheritEditorProps): React.ReactElemen
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: entity?.$globalId || '' },
+         container: { globalId: entity?._globalId || '' },
          syntheticElements: [{ property: 'inherits', type: LogicalEntityType }],
          property: 'inherits'
       }),
-      [entity.$globalId]
+      [entity._globalId]
    );
 
    const search = React.useCallback(
@@ -185,7 +200,7 @@ export function EntityInheritsDataGrid(): React.ReactElement {
          const committedData = (entity?.inherits || []).map((dep: any, idx: number) => {
             // dep can be either a string Reference or an object with different shapes
             const parentId =
-               typeof dep === 'string' ? dep : (dep?.parentId ?? dep?.$refText ?? (dep?.ref && (dep.ref.id || dep.ref.$globalId)) ?? '');
+               typeof dep === 'string' ? dep : (dep?.parentId ?? dep?.$refText ?? (dep?.ref && (dep.ref.id || dep.ref._globalId)) ?? '');
             return {
                $type: EntityInheritType,
                parentId,

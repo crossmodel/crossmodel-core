@@ -88,7 +88,7 @@ export function AttributeMappingExpressionDataGrid({
    const expressionsRef = React.useRef<any[]>((attributeMapping as any).expressions || []);
 
    const deriveExpressionRowId = React.useCallback((expression: any, idx: number): string => {
-      const globalId = expression?.$globalId;
+      const globalId = expression?._globalId;
       return globalId ?? `expr-${idx}`;
    }, []);
 

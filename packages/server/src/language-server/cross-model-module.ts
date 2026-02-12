@@ -2,7 +2,8 @@
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
 
-import { AstNode, DefaultServiceRegistry, IndentationAwareLexer, Module, ServiceRegistry, inject } from 'langium';
+import * as transfer from '@crossmodel/protocol';
+import { DefaultServiceRegistry, IndentationAwareLexer, Module, ServiceRegistry, inject } from 'langium';
 import {
    DefaultSharedModuleContext,
    LangiumServices,
@@ -19,11 +20,14 @@ import { ModelService } from '../model-server/model-service.js';
 import { OpenTextDocumentManager } from '../model-server/open-text-document-manager.js';
 import { OpenableTextDocuments } from '../model-server/openable-text-documents.js';
 import { Serializer } from '../model-server/serializer.js';
+import { CrossModelRoot } from './ast.js';
+import { CrossModelAstExtensionService } from './cross-model-ast-extension.js';
 import { ClientLogger } from './cross-model-client-logger.js';
 import { CrossModelCodeActionProvider } from './cross-model-code-action-provider.js';
 import { CrossModelCompletionProvider } from './cross-model-completion-provider.js';
 import { CrossModelDataModelManager } from './cross-model-datamodel-manager.js';
 import { CrossModelDocumentBuilder } from './cross-model-document-builder.js';
+import { CrossModelClientConverter } from './cross-model-document-converter.js';
 import { CrossModelDocumentValidator } from './cross-model-document-validator.js';
 import { CrossModelModelFormatter } from './cross-model-formatter.js';
 import { CrossModelIndexManager } from './cross-model-index-manager.js';
@@ -44,7 +48,7 @@ import { CrossModelLinker } from './references/cross-model-linker.js';
  ***************************/
 export type ExtendedLangiumServices = LangiumServices & {
    serializer: {
-      Serializer: Serializer<AstNode>;
+      Serializer: Serializer<CrossModelRoot | transfer.CrossModelRoot>;
    };
 };
 
@@ -89,9 +93,13 @@ export interface CrossModelAddedSharedServices {
    };
    client: {
       Logger: ClientLogger;
+      Converter: CrossModelClientConverter;
    };
    lsp: {
       /* override */ LanguageServer: CrossModelLanguageServer;
+   };
+   ast: {
+      AstExtensionService: CrossModelAstExtensionService;
    };
 }
 
@@ -115,13 +123,17 @@ export const CrossModelSharedModule: Module<
       IndexManager: services => new CrossModelIndexManager(services)
    },
    client: {
-      Logger: services => new ClientLogger(services)
+      Logger: services => new ClientLogger(services),
+      Converter: services => new CrossModelClientConverter(services)
    },
    lsp: {
       LanguageServer: services => new CrossModelLanguageServer(services)
    },
    model: {
       ModelService: services => new ModelService(services)
+   },
+   ast: {
+      AstExtensionService: services => new CrossModelAstExtensionService(services)
    }
 };
 
@@ -190,7 +202,7 @@ export function createCrossModelModule(
          Formatter: () => new CrossModelModelFormatter()
       },
       serializer: {
-         Serializer: services => new CrossModelSerializer(services.Grammar)
+         Serializer: () => new CrossModelSerializer()
       },
       parser: {
          TokenBuilder: () => new CrossModelTokenBuilder(),

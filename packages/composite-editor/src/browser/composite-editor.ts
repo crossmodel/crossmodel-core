@@ -316,10 +316,10 @@ export class CompositeEditor
          }
          if (node.$type === DataModelType) {
             // replace the parent directory name of the file with the user-specified id
-            return this.resourceUri.withScheme('file').parent.parent.resolve(node.id).resolve(this.resourceUri.path.base);
+            return this.resourceUri.withScheme('file').parent.parent.resolve(node.id!).resolve(this.resourceUri.path.base);
          } else {
             // replace the default base name of the file with the user-specified id
-            return this.resourceUri.withScheme('file').parent.resolve(`${node.id}${ModelFileExtensions.getFileExtension(uri)}`);
+            return this.resourceUri.withScheme('file').parent.resolve(`${node.id!}${ModelFileExtensions.getFileExtension(uri)}`);
          }
       } finally {
          await this.modelService.close({ uri, clientId: 'save' });

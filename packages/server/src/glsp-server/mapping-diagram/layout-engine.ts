@@ -14,7 +14,6 @@ import {
    findParentByClass
 } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { getOwner } from '../../language-server/util/ast-util.js';
 import { MappingModelState } from './model/mapping-model-state.js';
 import { GSourceObjectNode, GTargetObjectNode } from './model/nodes.js';
 
@@ -81,7 +80,7 @@ export class MappingDiagramLayoutEngine implements LayoutEngine {
       const mappings = target?.mappings ? [...target.mappings] : [];
       const sourceNodeOrder = mappings
          .sort((left, right) => (left.attribute?.value.ref?.$containerIndex ?? 0) - (right.attribute?.value.ref?.$containerIndex ?? 0))
-         .flatMap(mapping => mapping.sources.map(source => idx.createId(getOwner(source.value.ref))));
+         .flatMap(mapping => mapping.sources.map(source => idx.createId(source.value.ref?.$container)));
       return (left: GNode, right: GNode): number => {
          if (!sourceNodeOrder.includes(left.id)) {
             return 1;

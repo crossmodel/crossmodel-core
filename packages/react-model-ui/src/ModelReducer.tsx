@@ -76,7 +76,7 @@ export function swap<T>(list: T[], firstIdx: number, secondIdx: number): void {
    }
 }
 
-export function undefinedIfEmpty(string?: string): string | undefined {
+export function undefinedIfEmpty<T>(string?: T): T | undefined {
    return valueIfEmpty(string, undefined);
 }
 

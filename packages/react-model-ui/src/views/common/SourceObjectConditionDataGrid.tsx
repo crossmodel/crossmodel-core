@@ -67,7 +67,7 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: sourceObject.$globalId },
+         container: { globalId: sourceObject._globalId },
          syntheticElements: [
             { property: 'conditions', type: JoinConditionType },
             { property: 'expression', type: BinaryExpressionType },
@@ -75,7 +75,7 @@ function SourceObjectConditionEditor(props: SourceObjectConditionEditorProps): R
          ],
          property: 'value'
       }),
-      [sourceObject.$globalId, isLeft]
+      [sourceObject._globalId, isLeft]
    );
 
    const search = React.useCallback(
@@ -294,7 +294,7 @@ export function SourceObjectConditionDataGrid({ mapping, sourceObjectIdx }: Sour
    const sourceObject = mapping.sources[sourceObjectIdx];
    const deriveConditionRowId = React.useCallback(
       (condition: SourceObjectCondition, idx: number): string => {
-         const globalId = (condition as { $globalId?: string })?.$globalId;
+         const globalId = (condition as { _globalId?: string })?._globalId;
          return globalId ?? `condition-${sourceObjectIdx}-${idx}`;
       },
       [sourceObjectIdx]

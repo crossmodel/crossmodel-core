@@ -9,7 +9,18 @@ module.exports = {
       'guard-for-in': 'error',
       'no-caller': 'error',
       'no-eval': 'error',
-      'no-restricted-imports': ['error', '..', '../index', '../..', '../../index', 'src'],
+      'no-restricted-imports': [
+         'error',
+         {
+            paths: ['..', '../index', '../..', '../../index', 'src'],
+            patterns: [
+               {
+                  group: ['**/generated/ast', '**/generated/ast.js'],
+                  message: 'Import from the augmented AST module (e.g., "../ast.js") instead of directly from "generated/ast.js".'
+               }
+            ]
+         }
+      ],
       'no-sequences': 'error',
       'no-throw-literal': 'error',
       'no-unused-expressions': [
