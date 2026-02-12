@@ -38,7 +38,8 @@ export class ModelService {
       protected documentManager = shared.workspace.TextDocumentManager,
       protected documents: CrossModelLangiumDocuments = shared.workspace.LangiumDocuments,
       protected documentBuilder = shared.workspace.DocumentBuilder,
-      protected fileSystemProvider = shared.workspace.FileSystemProvider
+      protected fileSystemProvider = shared.workspace.FileSystemProvider,
+      protected logger = shared.client.Logger.for('ModelService')
    ) {
       // sync updates with language client
       this.documentBuilder.onDocumentPhase(DocumentState.Validated, async (changedDocument, _token) => {
@@ -50,8 +51,8 @@ export class ModelService {
          if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
             // we only want to apply a text edit if the editor is already open
             // because opening and updating at the same time might cause problems as the open call resets the document to filesystem
-            shared.logger.ClientLogger.info(
-               `[Documents][${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`
+            this.logger.info(
+               `[${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`
             );
             await this.shared.lsp.Connection?.workspace.applyEdit({
                label: 'Update Model',

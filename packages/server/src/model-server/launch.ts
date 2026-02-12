@@ -8,6 +8,7 @@ import * as net from 'net';
 import * as rpc from 'vscode-jsonrpc/node.js';
 import { URI } from 'vscode-uri';
 import { CrossModelLSPServices, IntegratedServer } from '../integration.js';
+import { ClientLogger } from '../language-server/cross-model-client-logger.js';
 import { ModelServer } from './model-server.js';
 
 const currentConnections: rpc.MessageConnection[] = [];
@@ -22,27 +23,27 @@ export function startModelServer(services: CrossModelLSPServices, workspaceFolde
    const started = new Deferred();
    const stopped = new Deferred();
 
-   const logger = services.shared.logger.ClientLogger;
-   const netServer = net.createServer(socket => createClientConnection(socket, services));
+   const logger = services.shared.client.Logger.for('ModelServer');
+   const netServer = net.createServer(socket => createClientConnection(socket, services, logger));
    netServer.listen(0);
    netServer.on('listening', () => {
       const addressInfo = netServer.address();
       if (!addressInfo) {
-         logger.error('[ModelServer] Could not resolve address info. Shutting down.');
+         logger.error('Could not resolve address info. Shutting down.');
          close(netServer);
          return;
       } else if (typeof addressInfo === 'string') {
-         logger.error(`[ModelServer] Unexpectedly listening to pipe or domain socket "${addressInfo}". Shutting down.`);
+         logger.error(`Unexpectedly listening to pipe or domain socket "${addressInfo}". Shutting down.`);
          close(netServer);
          return;
       }
-      logger.info(`[ModelServer] Ready to accept new client requests on port: ${addressInfo.port}`);
+      logger.info(`Ready to accept new client requests on port: ${addressInfo.port}`);
       services.shared.lsp.Connection?.onRequest(MODELSERVER_PORT_COMMAND, () => addressInfo.port);
       started.resolve();
    });
    netServer.on('error', err => {
       console.log('[ModelServer] Error: ', err);
-      logger.error('[ModelServer] Error: ' + err.message);
+      logger.error('Error: ' + err.message);
       close(netServer);
    });
    netServer.on('close', () => {
@@ -66,8 +67,8 @@ export function startModelServer(services: CrossModelLSPServices, workspaceFolde
  * @param services language services
  * @returns a promise that is resolved as soon as the connection is closed or rejects if an error occurs
  */
-async function createClientConnection(socket: net.Socket, services: CrossModelLSPServices): Promise<void> {
-   services.shared.logger.ClientLogger.info(`[ModelServer] Starting model server connection for client: '${socket.localAddress}'`);
+async function createClientConnection(socket: net.Socket, services: CrossModelLSPServices, logger: ClientLogger): Promise<void> {
+   logger.info(`Starting model server connection for client: '${socket.localAddress}'`);
    const connection = createConnection(socket);
    currentConnections.push(connection);
 
@@ -76,7 +77,7 @@ async function createClientConnection(socket: net.Socket, services: CrossModelLS
    socket.on('close', () => modelServer.dispose());
 
    connection.listen();
-   services.shared.logger.ClientLogger.info(`[ModelServer] Connecting to client: '${socket.localAddress}'`);
+   logger.info(`Connecting to client: '${socket.localAddress}'`);
 
    return new Promise((resolve, rejects) => {
       connection.onClose(() => resolve(undefined));

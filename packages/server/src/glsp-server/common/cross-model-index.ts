@@ -68,7 +68,7 @@ export class CrossModelIndex extends GModelIndex {
    protected override doIndex(element: GModelElement): void {
       if (this.idToElement.has(element.id)) {
          // super method throws error which is a bit too extreme, simply log the error to the client
-         this.services.shared.logger.ClientLogger.error('Duplicate element id in graph: ' + element.id);
+         this.services.shared.client.Logger.error('Duplicate element id in graph: ' + element.id);
          return;
       }
       super.doIndex(element);

@@ -44,7 +44,7 @@ export class OpenableTextDocuments<T extends TextDocument> extends NormalizedTex
    public constructor(
       protected configuration: TextDocumentsConfiguration<T>,
       protected services: CrossModelSharedServices,
-      protected logger = services.logger.ClientLogger
+      protected logger = services.client.Logger.for('TextDocuments')
    ) {
       super(configuration);
    }

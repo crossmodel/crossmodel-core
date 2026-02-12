@@ -87,8 +87,8 @@ export interface CrossModelAddedSharedServices {
       LangiumDocuments: CrossModelLangiumDocuments;
       IndexManager: CrossModelIndexManager;
    };
-   logger: {
-      ClientLogger: ClientLogger;
+   client: {
+      Logger: ClientLogger;
    };
    lsp: {
       /* override */ LanguageServer: CrossModelLanguageServer;
@@ -114,8 +114,8 @@ export const CrossModelSharedModule: Module<
       DocumentBuilder: services => new CrossModelDocumentBuilder(services),
       IndexManager: services => new CrossModelIndexManager(services)
    },
-   logger: {
-      ClientLogger: services => new ClientLogger(services)
+   client: {
+      Logger: services => new ClientLogger(services)
    },
    lsp: {
       LanguageServer: services => new CrossModelLanguageServer(services)
