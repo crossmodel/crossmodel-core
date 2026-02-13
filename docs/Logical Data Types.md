@@ -7,7 +7,7 @@ This document defines the logical data types available in CrossModel for modelin
 - **Functional naming**: Type names describe the content, not the storage mechanism. "Text" means textual data, not "variable-length multibyte character string."
 - **Properties over types**: Variations like unicode, fixed-length, or timezone are expressed as properties on a type, not as separate types. This keeps the type list small and meaningful.
 - **Logical independence**: The same logical model can be mapped to any supported database. Property values guide the mapper to choose the best physical type.
-- **Domain types are separate**: Business-level types like Money, Currency, Email, or PhoneNumber are handled by a separate domain system built on top of these base types.
+- **Domain types are separate**: Business-level types like Money, Currency, Duration, Email, or PhoneNumber are handled by a separate domain system built on top of these base types.
 
 ## Supported Platforms
 
@@ -36,10 +36,9 @@ Physical type mappings are provided for seven platforms in the following order:
 | 7 | [Date](#7-date) | Temporal | Calendar date |
 | 8 | [Time](#8-time) | Temporal | Time of day |
 | 9 | [DateTime](#9-datetime) | Temporal | Combined date and time |
-| 10 | [Duration](#10-duration) | Temporal | Time interval or period |
-| 11 | [Guid](#11-guid) | Identity | Universally unique identifier |
-| 12 | [Geometry](#12-geometry) | Spatial | Planar/Cartesian spatial data |
-| 13 | [Geography](#13-geography) | Spatial | Geodetic/spherical spatial data |
+| 10 | [Guid](#10-guid) | Identity | Universally unique identifier |
+| 11 | [Geometry](#11-geometry) | Spatial | Planar/Cartesian spatial data |
+| 12 | [Geography](#12-geography) | Spatial | Geodetic/spherical spatial data |
 
 ## Property Applicability
 
@@ -56,7 +55,7 @@ Not all properties apply to all types. The following table shows which propertie
 | scale | | | | x | | x | x |
 | timezone | | | | | | x | x |
 
-Types with no configurable properties: **Boolean**, **Date**, **Duration**, **Guid**, **Geometry**, **Geography**.
+Types with no configurable properties: **Boolean**, **Date**, **Guid**, **Geometry**, **Geography**.
 
 ---
 
@@ -411,40 +410,7 @@ A combined date and time value, optionally with fractional seconds and timezone 
 
 ---
 
-### 10. Duration
-
-A time interval representing a span of time, such as "3 months", "14 days", or "2 hours 30 minutes". Used for expressing differences between points in time, validity periods, or elapsed time.
-
-#### Properties
-
-None.
-
-#### Modeling Examples
-
-| Use Case | Attribute | Type |
-|----------|-----------|------|
-| Contract length | `contractPeriod` | Duration |
-| Elapsed processing time | `processingTime` | Duration |
-| Warranty period | `warrantyPeriod` | Duration |
-| Maximum session length | `sessionTimeout` | Duration |
-
-#### Physical Type Mapping
-
-| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
-|-----------|------------|--------|------------|--------|------------|-------|
-| INT _(seconds)_ | INTERVAL DAY TO SECOND | INT _(seconds)_ | INT _(seconds)_ | INTERVAL DAY TO SECOND | INTERVAL | INT _(seconds)_ |
-
-> **Platform notes:**
->
-> - **PostgreSQL** has a fully flexible INTERVAL type that can represent months, days, hours, minutes, and seconds in a single value.
-> - **Databricks** supports INTERVAL as a column data type with two categories: INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND. These cannot be mixed.
-> - **Oracle** splits intervals into INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND (because months have variable lengths).
-> - **Snowflake**, **Fabric**, **SQL Server**, and **MySQL** have no native interval column type; the mapper stores the value as an integer number of seconds or uses application-level representation. Snowflake supports INTERVAL syntax in expressions but not as a column data type.
-> - Consider modeling very different kinds of durations (calendar periods vs. elapsed time) as separate attributes.
-
----
-
-### 11. Guid
+### 10. Guid
 
 A universally unique identifier (UUID/GUID), a 128-bit value used for globally unique identification of records across systems without coordination.
 
@@ -477,7 +443,7 @@ None.
 
 ---
 
-### 12. Geometry
+### 11. Geometry
 
 Spatial data in a planar (Cartesian) coordinate system. Use Geometry for projected coordinate systems, building floor plans, engineering drawings, or any spatial data that uses flat-earth mathematics. Distances and areas are calculated using Euclidean geometry.
 
@@ -511,7 +477,7 @@ None at the logical level. The coordinate reference system (SRID) and specific g
 
 ---
 
-### 13. Geography
+### 12. Geography
 
 Spatial data in a geodetic (spherical) coordinate system using latitude and longitude on the Earth's surface. Use Geography for GPS coordinates, store locations, delivery routes, or any data that requires accurate distance calculations over the Earth's curved surface. Distances are calculated using great-circle mathematics and returned in meters.
 
@@ -574,12 +540,11 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP_NTZ(_s_) |
 | DateTime | timezone | TIMESTAMP_TZ |
 | DateTime | scale: _s_, timezone | TIMESTAMP_TZ(_s_) |
-| Duration | | INT |
 | Guid | | UUID |
 | Geometry | | GEOMETRY |
 | Geography | | GEOGRAPHY |
 
-> Snowflake stores all text as UTF-8; VARCHAR is used for all string types regardless of `unicode` or `fixedLength` properties. All integers are internally NUMBER(38,0). FLOAT is always 64-bit double precision. Snowflake has no timezone-aware TIME type. INTERVAL is supported in expressions but not as a column data type.
+> Snowflake stores all text as UTF-8; VARCHAR is used for all string types regardless of `unicode` or `fixedLength` properties. All integers are internally NUMBER(38,0). FLOAT is always 64-bit double precision. Snowflake has no timezone-aware TIME type.
 
 ### Databricks
 
@@ -608,7 +573,6 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | STRING |
 | DateTime | | TIMESTAMP_NTZ |
 | DateTime | timezone | TIMESTAMP |
-| Duration | | INTERVAL DAY TO SECOND |
 | Guid | | STRING |
 | Geometry | | GEOMETRY |
 | Geography | | GEOGRAPHY |
@@ -644,7 +608,6 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | DATETIME2(_s_) |
 | DateTime | timezone | DATETIME2 |
 | DateTime | scale: _s_, timezone | DATETIME2(_s_) |
-| Duration | | INT |
 | Guid | | UNIQUEIDENTIFIER |
 | Geometry | | VARBINARY _(WKB)_ |
 | Geography | | VARBINARY _(WKB)_ |
@@ -681,7 +644,6 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | DATETIME2(_s_) |
 | DateTime | timezone | DATETIMEOFFSET |
 | DateTime | scale: _s_, timezone | DATETIMEOFFSET(_s_) |
-| Duration | | INT |
 | Guid | | UNIQUEIDENTIFIER |
 | Geometry | | geometry |
 | Geography | | geography |
@@ -715,7 +677,6 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP(_s_) |
 | DateTime | timezone | TIMESTAMP WITH TIME ZONE |
 | DateTime | scale: _s_, timezone | TIMESTAMP(_s_) WITH TIME ZONE |
-| Duration | | INTERVAL DAY TO SECOND |
 | Guid | | RAW(16) |
 | Geometry | | SDO_GEOMETRY |
 | Geography | | SDO_GEOMETRY |
@@ -748,7 +709,6 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP(_s_) |
 | DateTime | timezone | TIMESTAMPTZ |
 | DateTime | scale: _s_, timezone | TIMESTAMPTZ(_s_) |
-| Duration | | INTERVAL |
 | Guid | | UUID |
 | Geometry | | geometry |
 | Geography | | geography |
@@ -783,7 +743,6 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | scale: _s_ | TIME(_s_) |
 | DateTime | | DATETIME |
 | DateTime | scale: _s_ | DATETIME(_s_) |
-| Duration | | INT |
 | Guid | | CHAR(36) |
 | Geometry | | GEOMETRY |
 | Geography | | GEOMETRY |
@@ -822,7 +781,6 @@ The following table shows how the previous logical types and properties map to t
 | Date | Date | Unchanged. |
 | Time | Time | New properties: `timezone`. `scale` replaces previous `precision` usage on Time. |
 | DateTime | DateTime | New properties: `timezone`. `scale` replaces previous `precision` usage on DateTime. |
-| _(new)_ | Duration | New type for time intervals. |
 | Guid | Guid | Unchanged. |
 | Binary | Binary | New property: `fixedLength`. |
 | Location | Geometry | Renamed. For planar/Cartesian spatial data. |
