@@ -151,9 +151,9 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          this.setDirty(true);
          this.onContentChangedEmitter.fire();
          console.debug(`[${this.options.clientId}] Send update to server`);
-         const updatedDocument = await this.modelService.update({ uri: this.document.uri, model: root, clientId: this.options.clientId });
-         this.document = updatedDocument;
-         this.update();
+         // Do not use the returned document to avoid overwriting keystrokes typed during the server round-trip.
+         // Diagnostics are synced separately via the handleUpdate event listener.
+         await this.modelService.update({ uri: this.document.uri, model: root, clientId: this.options.clientId });
       }
    }
 

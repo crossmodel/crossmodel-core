@@ -49,7 +49,6 @@ export class ModelService {
          }
          const textDocument = changedDocument.textDocument;
          if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
-            const serializedText = this.serialize(changedDocument.parseResult.value as ast.CrossModelRoot);
             // we only want to apply a text edit if the editor is already open
             // because opening and updating at the same time might cause problems as the open call resets the document to filesystem
             this.logger.info(`[${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`);
@@ -59,7 +58,7 @@ export class ModelService {
                   // we use a null version to indicate that the version is known
                   // eslint-disable-next-line no-null/no-null
                   TextDocumentEdit.create(OptionalVersionedTextDocumentIdentifier.create(textDocument.uri, null), [
-                     TextEdit.replace(Range.create(0, 0, uinteger.MAX_VALUE, uinteger.MAX_VALUE), serializedText)
+                     TextEdit.replace(Range.create(0, 0, uinteger.MAX_VALUE, uinteger.MAX_VALUE), textDocument.getText())
                   ])
                ]
             });
