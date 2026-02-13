@@ -7,7 +7,7 @@ This document defines the logical data types available in CrossModel for modelin
 - **Functional naming**: Type names describe the content, not the storage mechanism. "Text" means textual data, not "variable-length multibyte character string."
 - **Properties over types**: Variations like unicode, fixed-length, or timezone are expressed as properties on a type, not as separate types. This keeps the type list small and meaningful.
 - **Logical independence**: The same logical model can be mapped to any supported database. Property values guide the mapper to choose the best physical type.
-- **Domain types are separate**: Business-level types like Money, Currency, Duration, Email, or PhoneNumber are handled by a separate domain system built on top of these base types.
+- **Domain types are separate**: Business-level types like Money, Currency, Email, or PhoneNumber are handled by a separate domain system built on top of these base types.
 
 ## Supported Platforms
 
@@ -39,24 +39,26 @@ Physical type mappings are provided for ten platforms in the following order:
 | 7 | [Date](#7-date) | Temporal | Calendar date |
 | 8 | [Time](#8-time) | Temporal | Time of day |
 | 9 | [DateTime](#9-datetime) | Temporal | Combined date and time |
-| 10 | [UUID](#10-uuid) | Identity | Universally unique identifier |
-| 11 | [Geometry](#11-geometry) | Spatial | Planar/Cartesian spatial data |
-| 12 | [Geography](#12-geography) | Spatial | Geodetic/spherical spatial data |
+| 10 | [Duration](#10-duration) | Temporal | Time interval or period |
+| 11 | [UUID](#11-uuid) | Identity | Universally unique identifier |
+| 12 | [Geometry](#12-geometry) | Spatial | Planar/Cartesian spatial data |
+| 13 | [Geography](#13-geography) | Spatial | Geodetic/spherical spatial data |
 
 ## Property Applicability
 
 Not all properties apply to all types. The following table shows which properties can be set on which types.
 
-| Property | Text | Binary | Integer | Decimal | Float | Time | DateTime |
-|----------|:----:|:------:|:-------:|:-------:|:-----:|:----:|:--------:|
-| length | x | x | | | | | |
-| fixedLength | x | x | | | | | |
-| unicode | x | | | | | | |
-| minValue | | | x | | | | |
-| maxValue | | | x | | | | |
-| precision | | | | x | x | | |
-| scale | | | | x | | x | x |
-| timezone | | | | | | x | x |
+| Property | Text | Binary | Integer | Decimal | Float | Time | DateTime | Duration |
+|----------|:----:|:------:|:-------:|:-------:|:-----:|:----:|:--------:|:--------:|
+| length | x | x | | | | | | |
+| fixedLength | x | x | | | | | | |
+| unicode | x | | | | | | | |
+| minValue | | | x | | | | | |
+| maxValue | | | x | | | | | |
+| precision | | | | x | x | | | |
+| scale | | | | x | | x | x | |
+| timezone | | | | | | x | x | |
+| unit | | | | | | | | x |
 
 Types with no configurable properties: **Boolean**, **Date**, **UUID**, **Geometry**, **Geography**.
 
@@ -438,7 +440,59 @@ A combined date and time value, optionally with fractional seconds and timezone 
 
 ---
 
-### 10. UUID
+### 10. Duration
+
+A time interval representing a span of time, such as "24 months", "90 days", or "30 minutes". Used for expressing differences between points in time, validity periods, or elapsed time. The `unit` property specifies how the duration is measured and determines the physical type mapping.
+
+#### Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| unit | enum | seconds | The unit of measurement. Values: `milliseconds`, `seconds`, `minutes`, `hours`, `days`, `months`, `years`. |
+
+**Validation rules:**
+
+- Calendar-based units (`months`, `years`) produce different physical types than time-based units on platforms that distinguish them (Oracle, Databricks, Java).
+- Platforms without native interval types store the value as an integer in the specified unit.
+
+#### Modeling Examples
+
+| Use Case | Attribute | Type | Properties |
+|----------|-----------|------|------------|
+| Response time SLA | `maxResponseTime` | Duration | unit: milliseconds |
+| Session timeout | `sessionTimeout` | Duration | unit: minutes |
+| Work shift length | `shiftLength` | Duration | unit: hours |
+| Data retention | `retentionPeriod` | Duration | unit: days |
+| Warranty period | `warrantyPeriod` | Duration | unit: months |
+| Contract length | `contractLength` | Duration | unit: years |
+| Processing time | `processingTime` | Duration | _(none — defaults to seconds)_ |
+
+#### Physical Type Mapping
+
+The `unit` property determines both the physical type and, for platforms that store durations as integers, the unit of the stored integer value.
+
+| Unit | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
+|------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
+| milliseconds | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND(3) | INTERVAL | INT | int | timedelta | Duration |
+| seconds _(default)_ | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration |
+| minutes | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration |
+| hours | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration |
+| days | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY TO SECOND | INTERVAL | INT | int | timedelta | Duration |
+| months | INT | INTERVAL YEAR TO MONTH | INT | INT | INTERVAL YEAR TO MONTH | INTERVAL | INT | int | int | Period |
+| years | INT | INTERVAL YEAR TO MONTH | INT | INT | INTERVAL YEAR TO MONTH | INTERVAL | INT | int | int | Period |
+
+> **Platform notes:**
+>
+> - **PostgreSQL** has a fully flexible INTERVAL type that can represent any unit in a single value, so the `unit` property does not affect the physical type.
+> - **Databricks** supports two INTERVAL categories: INTERVAL DAY TO SECOND (for milliseconds through days) and INTERVAL YEAR TO MONTH (for months and years). These cannot be mixed in a single column.
+> - **Oracle** splits intervals into INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND (because months have variable lengths). The DAY(0) prefix is used for sub-day units to suppress the day component.
+> - **Snowflake**, **Fabric**, **SQL Server**, **MySQL**, and **MongoDB** have no native interval column type. The mapper stores the value as an integer in the specified unit (e.g., unit: minutes → INT storing the number of minutes). Snowflake supports INTERVAL syntax in expressions but not as a column data type.
+> - **Python** `datetime.timedelta` supports milliseconds through days. For `months` and `years`, Python has no built-in duration type — the mapper stores as a plain `int` in the specified unit.
+> - **Java** `java.time.Duration` handles milliseconds through days. For `months` and `years`, the mapper uses `java.time.Period` instead.
+
+---
+
+### 11. UUID
 
 A universally unique identifier (RFC 4122), a 128-bit value used for globally unique identification of records across systems without coordination.
 
@@ -474,7 +528,7 @@ None.
 
 ---
 
-### 11. Geometry
+### 12. Geometry
 
 Spatial data in a planar (Cartesian) coordinate system. Use Geometry for projected coordinate systems, building floor plans, engineering drawings, or any spatial data that uses flat-earth mathematics. Distances and areas are calculated using Euclidean geometry.
 
@@ -511,7 +565,7 @@ None at the logical level. The coordinate reference system (SRID) and specific g
 
 ---
 
-### 12. Geography
+### 13. Geography
 
 Spatial data in a geodetic (spherical) coordinate system using latitude and longitude on the Earth's surface. Use Geography for GPS coordinates, store locations, delivery routes, or any data that requires accurate distance calculations over the Earth's curved surface. Distances are calculated using great-circle mathematics and returned in meters.
 
@@ -576,11 +630,12 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP_NTZ(_s_) |
 | DateTime | timezone | TIMESTAMP_TZ |
 | DateTime | scale: _s_, timezone | TIMESTAMP_TZ(_s_) |
+| Duration | | INT _(unit)_ |
 | UUID | | UUID |
 | Geometry | | GEOMETRY |
 | Geography | | GEOGRAPHY |
 
-> Snowflake stores all text as UTF-8; VARCHAR is used for all string types regardless of `unicode` or `fixedLength` properties. All integers are internally NUMBER(38,0). FLOAT is always 64-bit double precision. Snowflake has no timezone-aware TIME type.
+> Snowflake stores all text as UTF-8; VARCHAR is used for all string types regardless of `unicode` or `fixedLength` properties. All integers are internally NUMBER(38,0). FLOAT is always 64-bit double precision. Snowflake has no timezone-aware TIME type. INTERVAL is supported in expressions but not as a column data type — Duration maps to INT storing the value in the specified `unit`.
 
 ### Databricks
 
@@ -609,6 +664,8 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | STRING |
 | DateTime | | TIMESTAMP_NTZ |
 | DateTime | timezone | TIMESTAMP |
+| Duration | unit: ms/s/min/h/d | INTERVAL DAY TO SECOND |
+| Duration | unit: months/years | INTERVAL YEAR TO MONTH |
 | UUID | | STRING |
 | Geometry | | GEOMETRY |
 | Geography | | GEOGRAPHY |
@@ -644,6 +701,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | DATETIME2(_s_) |
 | DateTime | timezone | DATETIME2 |
 | DateTime | scale: _s_, timezone | DATETIME2(_s_) |
+| Duration | | INT _(unit)_ |
 | UUID | | UNIQUEIDENTIFIER |
 | Geometry | | VARBINARY _(WKB)_ |
 | Geography | | VARBINARY _(WKB)_ |
@@ -680,6 +738,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | DATETIME2(_s_) |
 | DateTime | timezone | DATETIMEOFFSET |
 | DateTime | scale: _s_, timezone | DATETIMEOFFSET(_s_) |
+| Duration | | INT _(unit)_ |
 | UUID | | UNIQUEIDENTIFIER |
 | Geometry | | geometry |
 | Geography | | geography |
@@ -713,6 +772,8 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP(_s_) |
 | DateTime | timezone | TIMESTAMP WITH TIME ZONE |
 | DateTime | scale: _s_, timezone | TIMESTAMP(_s_) WITH TIME ZONE |
+| Duration | unit: ms/s/min/h/d | INTERVAL DAY TO SECOND |
+| Duration | unit: months/years | INTERVAL YEAR TO MONTH |
 | UUID | | RAW(16) |
 | Geometry | | SDO_GEOMETRY |
 | Geography | | SDO_GEOMETRY |
@@ -745,7 +806,9 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP(_s_) |
 | DateTime | timezone | TIMESTAMPTZ |
 | DateTime | scale: _s_, timezone | TIMESTAMPTZ(_s_) |
+| Duration | | INTERVAL |
 | UUID | | UUID |
+
 | Geometry | | geometry |
 | Geography | | geography |
 
@@ -779,6 +842,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | scale: _s_ | TIME(_s_) |
 | DateTime | | DATETIME |
 | DateTime | scale: _s_ | DATETIME(_s_) |
+| Duration | | INT _(unit)_ |
 | UUID | | CHAR(36) |
 | Geometry | | GEOMETRY |
 | Geography | | GEOMETRY |
@@ -805,6 +869,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | string |
 | DateTime | | date |
 | DateTime | timezone | date |
+| Duration | | int _(unit)_ |
 | UUID | | binData _(UUID)_ |
 | Geometry | | object _(GeoJSON)_ |
 | Geography | | object _(GeoJSON)_ |
@@ -826,6 +891,8 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | datetime.time _(with tzinfo)_ |
 | DateTime | | datetime.datetime |
 | DateTime | timezone | datetime.datetime _(with tzinfo)_ |
+| Duration | unit: ms/s/min/h/d | datetime.timedelta |
+| Duration | unit: months/years | int _(unit)_ |
 | UUID | | uuid.UUID |
 | Geometry | | str _(WKT)_ |
 | Geography | | str _(WKT)_ |
@@ -855,6 +922,8 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | OffsetTime |
 | DateTime | | LocalDateTime |
 | DateTime | timezone | OffsetDateTime |
+| Duration | unit: ms/s/min/h/d | Duration |
+| Duration | unit: months/years | Period |
 | UUID | | UUID |
 | Geometry | | Geometry _(JTS)_ |
 | Geography | | Geometry _(JTS)_ |
@@ -876,6 +945,7 @@ The following validation rules are enforced when properties are set on logical t
 7. **scale** can only be set on Decimal, Time, or DateTime.
 8. **scale** cannot exceed **precision** on Decimal.
 9. **timezone** can only be set on Time or DateTime.
+10. **unit** can only be set on Duration. Valid values: `milliseconds`, `seconds`, `minutes`, `hours`, `days`, `months`, `years`.
 
 ---
 
@@ -893,6 +963,7 @@ The following table shows how the previous logical types and properties map to t
 | Date | Date | Unchanged. |
 | Time | Time | New properties: `timezone`. `scale` replaces previous `precision` usage on Time. |
 | DateTime | DateTime | New properties: `timezone`. `scale` replaces previous `precision` usage on DateTime. |
+| _(new)_ | Duration | New type for time intervals. Property: `unit`. Maps to native INTERVAL where supported. |
 | Guid | UUID | Renamed. Aligned with RFC 4122 / ISO standard terminology. |
 | Binary | Binary | New property: `fixedLength`. |
 | Location | Geometry | Renamed. For planar/Cartesian spatial data. |
