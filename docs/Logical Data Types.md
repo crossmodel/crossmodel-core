@@ -39,7 +39,7 @@ Physical type mappings are provided for ten platforms in the following order:
 | 7 | [Date](#7-date) | Temporal | Calendar date |
 | 8 | [Time](#8-time) | Temporal | Time of day |
 | 9 | [DateTime](#9-datetime) | Temporal | Combined date and time |
-| 10 | [Guid](#10-guid) | Identity | Universally unique identifier |
+| 10 | [UUID](#10-uuid) | Identity | Universally unique identifier |
 | 11 | [Geometry](#11-geometry) | Spatial | Planar/Cartesian spatial data |
 | 12 | [Geography](#12-geography) | Spatial | Geodetic/spherical spatial data |
 
@@ -58,7 +58,7 @@ Not all properties apply to all types. The following table shows which propertie
 | scale | | | | x | | x | x |
 | timezone | | | | | | x | x |
 
-Types with no configurable properties: **Boolean**, **Date**, **Guid**, **Geometry**, **Geography**.
+Types with no configurable properties: **Boolean**, **Date**, **UUID**, **Geometry**, **Geography**.
 
 ---
 
@@ -438,9 +438,9 @@ A combined date and time value, optionally with fractional seconds and timezone 
 
 ---
 
-### 10. Guid
+### 10. UUID
 
-A universally unique identifier (UUID/GUID), a 128-bit value used for globally unique identification of records across systems without coordination.
+A universally unique identifier (RFC 4122), a 128-bit value used for globally unique identification of records across systems without coordination.
 
 #### Properties
 
@@ -450,9 +450,9 @@ None.
 
 | Use Case | Attribute | Type |
 |----------|-----------|------|
-| Correlation ID | `correlationId` | Guid |
-| External reference | `externalRef` | Guid |
-| API key | `apiKeyId` | Guid |
+| Correlation ID | `correlationId` | UUID |
+| External reference | `externalRef` | UUID |
+| API key | `apiKeyId` | UUID |
 
 #### Physical Type Mapping
 
@@ -576,7 +576,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP_NTZ(_s_) |
 | DateTime | timezone | TIMESTAMP_TZ |
 | DateTime | scale: _s_, timezone | TIMESTAMP_TZ(_s_) |
-| Guid | | UUID |
+| UUID | | UUID |
 | Geometry | | GEOMETRY |
 | Geography | | GEOGRAPHY |
 
@@ -609,7 +609,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | STRING |
 | DateTime | | TIMESTAMP_NTZ |
 | DateTime | timezone | TIMESTAMP |
-| Guid | | STRING |
+| UUID | | STRING |
 | Geometry | | GEOMETRY |
 | Geography | | GEOGRAPHY |
 
@@ -644,7 +644,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | DATETIME2(_s_) |
 | DateTime | timezone | DATETIME2 |
 | DateTime | scale: _s_, timezone | DATETIME2(_s_) |
-| Guid | | UNIQUEIDENTIFIER |
+| UUID | | UNIQUEIDENTIFIER |
 | Geometry | | VARBINARY _(WKB)_ |
 | Geography | | VARBINARY _(WKB)_ |
 
@@ -680,7 +680,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | DATETIME2(_s_) |
 | DateTime | timezone | DATETIMEOFFSET |
 | DateTime | scale: _s_, timezone | DATETIMEOFFSET(_s_) |
-| Guid | | UNIQUEIDENTIFIER |
+| UUID | | UNIQUEIDENTIFIER |
 | Geometry | | geometry |
 | Geography | | geography |
 
@@ -713,7 +713,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP(_s_) |
 | DateTime | timezone | TIMESTAMP WITH TIME ZONE |
 | DateTime | scale: _s_, timezone | TIMESTAMP(_s_) WITH TIME ZONE |
-| Guid | | RAW(16) |
+| UUID | | RAW(16) |
 | Geometry | | SDO_GEOMETRY |
 | Geography | | SDO_GEOMETRY |
 
@@ -745,7 +745,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | DateTime | scale: _s_ | TIMESTAMP(_s_) |
 | DateTime | timezone | TIMESTAMPTZ |
 | DateTime | scale: _s_, timezone | TIMESTAMPTZ(_s_) |
-| Guid | | UUID |
+| UUID | | UUID |
 | Geometry | | geometry |
 | Geography | | geography |
 
@@ -779,7 +779,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | scale: _s_ | TIME(_s_) |
 | DateTime | | DATETIME |
 | DateTime | scale: _s_ | DATETIME(_s_) |
-| Guid | | CHAR(36) |
+| UUID | | CHAR(36) |
 | Geometry | | GEOMETRY |
 | Geography | | GEOMETRY |
 
@@ -805,7 +805,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | string |
 | DateTime | | date |
 | DateTime | timezone | date |
-| Guid | | binData _(UUID)_ |
+| UUID | | binData _(UUID)_ |
 | Geometry | | object _(GeoJSON)_ |
 | Geography | | object _(GeoJSON)_ |
 
@@ -826,7 +826,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | datetime.time _(with tzinfo)_ |
 | DateTime | | datetime.datetime |
 | DateTime | timezone | datetime.datetime _(with tzinfo)_ |
-| Guid | | uuid.UUID |
+| UUID | | uuid.UUID |
 | Geometry | | str _(WKT)_ |
 | Geography | | str _(WKT)_ |
 
@@ -855,7 +855,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Time | timezone | OffsetTime |
 | DateTime | | LocalDateTime |
 | DateTime | timezone | OffsetDateTime |
-| Guid | | UUID |
+| UUID | | UUID |
 | Geometry | | Geometry _(JTS)_ |
 | Geography | | Geometry _(JTS)_ |
 
@@ -893,7 +893,7 @@ The following table shows how the previous logical types and properties map to t
 | Date | Date | Unchanged. |
 | Time | Time | New properties: `timezone`. `scale` replaces previous `precision` usage on Time. |
 | DateTime | DateTime | New properties: `timezone`. `scale` replaces previous `precision` usage on DateTime. |
-| Guid | Guid | Unchanged. |
+| Guid | UUID | Renamed. Aligned with RFC 4122 / ISO standard terminology. |
 | Binary | Binary | New property: `fixedLength`. |
 | Location | Geometry | Renamed. For planar/Cartesian spatial data. |
 | _(new)_ | Geography | New type for geodetic spatial data. Split from Location. |
