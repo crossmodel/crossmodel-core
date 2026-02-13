@@ -3,6 +3,7 @@
  ********************************************************************************/
 import {
    CrossModelValidationErrors,
+   DATAMODEL_FILE,
    ModelFileExtensions,
    ModelMemberPermissions,
    findAllExpressions,
@@ -38,7 +39,7 @@ import {
 } from './ast.js';
 import type { CrossModelServices } from './cross-model-module.js';
 import { ID_PROPERTY } from './cross-model-naming.js';
-import { findDocument, getSemanticRoot, isSemanticRoot } from './util/ast-util.js';
+import { findDocument, findSemanticRoot, isSemanticRoot } from './util/ast-util.js';
 import { getAttributeMappingExpressionRefRange } from './util/expression-range.js';
 
 export interface FilenameNotMatchingDiagnostic extends Diagnostic {
@@ -132,7 +133,15 @@ export class CrossModelValidator {
       const basename = UriUtils.basename(document.uri);
       const extname = ModelFileExtensions.getFileExtension(basename) ?? UriUtils.extname(document.uri);
       const basenameWithoutExt = basename.slice(0, -extname.length);
-      if (basenameWithoutExt.toLowerCase() !== identifiedObject.id?.toLocaleLowerCase()) {
+      if (isDataModel(identifiedObject)) {
+         if (basename !== DATAMODEL_FILE) {
+            accept('error', `Data models need to be placed in ${DATAMODEL_FILE} file to be effective.`, {
+               node: identifiedObject,
+               property: IdentifiedObject.id,
+               data: { code: CrossModelValidationErrors.FilenameNotMatching }
+            });
+         }
+      } else if (basenameWithoutExt.toLowerCase() !== identifiedObject.id?.toLocaleLowerCase()) {
          accept('warning', `Filename should match element id: ${identifiedObject.id}`, {
             node: identifiedObject,
             property: IdentifiedObject.id,
@@ -187,7 +196,7 @@ export class CrossModelValidator {
       if (!isCrossModelRoot(node)) {
          return;
       }
-      const semanticRoot = getSemanticRoot(node);
+      const semanticRoot = findSemanticRoot(node);
       const info = this.services.shared.workspace.DataModelManager.getDataModelInfoByDocument(node.$document);
       const packageType = info?.type;
       // The problem is with the system type, not necessarily anything under it.

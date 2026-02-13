@@ -3,8 +3,6 @@
  ********************************************************************************/
 import { AttributeMappingSourceType, TypeGuard, toIdReference } from '@crossmodel/protocol';
 import { AstNode, AstNodeDescription, AstUtils, LangiumDocument, isAstNode, isAstNodeDescription } from 'langium';
-import { IdProvider } from '../cross-model-naming.js';
-import { getLocalName } from '../cross-model-scope.js';
 import {
    AttributeMapping,
    AttributeMappingSource,
@@ -24,8 +22,8 @@ import {
    isRelationship,
    isSystemDiagram
 } from '../ast.js';
-
-export type SemanticRoot = DataModel | LogicalEntity | Mapping | Relationship | SystemDiagram;
+import { IdProvider } from '../cross-model-naming.js';
+import { getLocalName } from '../cross-model-scope.js';
 
 export function createSourceObject(entity: LogicalEntity | AstNodeDescription, container: Mapping, idProvider: IdProvider): SourceObject {
    const entityId = isAstNodeDescription(entity)
@@ -83,7 +81,7 @@ export function findDocument<T extends AstNode = CrossModelRoot>(node?: AstNode)
    if (!node) {
       return undefined;
    }
-   const rootNode = AstUtils.findRootNode(node);
+   const rootNode = findDocumentRoot(node);
    const result = rootNode.$document;
    return result ? <LangiumDocument<T>>result : undefined;
 }
@@ -113,25 +111,36 @@ export function fixDocument<T extends AstNode = AstNode, R extends AstNode = Ast
    return node;
 }
 
+export type SemanticRoot = DataModel | LogicalEntity | Mapping | Relationship | SystemDiagram;
 export type WithDocument<T> = T & { $document: LangiumDocument<CrossModelRoot> };
 export type DocumentContent = LangiumDocument | AstNode;
 
-export function isSemanticRoot(element: unknown): element is SemanticRoot {
+export function findDocumentRoot(node: AstNode): CrossModelRoot;
+export function findDocumentRoot(node?: AstNode): CrossModelRoot | undefined;
+export function findDocumentRoot(node?: AstNode): CrossModelRoot | undefined {
+   if (!node) {
+      return undefined;
+   }
+   const rootNode = AstUtils.findRootNode(node);
+   return isCrossModelRoot(rootNode) ? rootNode : undefined;
+}
+
+export function isSemanticRoot(element?: unknown): element is SemanticRoot {
+   if (!element) {
+      return false;
+   }
    return isDataModel(element) || isLogicalEntity(element) || isMapping(element) || isRelationship(element) || isSystemDiagram(element);
 }
 
-export function getSemanticRoot(root: CrossModelRoot): SemanticRoot | undefined {
-   return root.datamodel ?? root.entity ?? root.mapping ?? root.relationship ?? root.systemDiagram;
-}
-
-export function findSemanticRoot(input: DocumentContent): SemanticRoot | undefined;
+export function findSemanticRoot(input?: DocumentContent): SemanticRoot | undefined;
+export function findSemanticRoot<T extends SemanticRoot>(input: DocumentContent | undefined, guard: TypeGuard<T>): T | undefined;
 export function findSemanticRoot<T extends SemanticRoot>(input: DocumentContent, guard: TypeGuard<T>): T | undefined;
-export function findSemanticRoot<T extends SemanticRoot>(input: DocumentContent, guard?: TypeGuard<T>): SemanticRoot | T | undefined {
-   const root = isAstNode(input) ? (input.$document?.parseResult?.value ?? AstUtils.findRootNode(input)) : input.parseResult?.value;
-   if (!isCrossModelRoot(root)) {
+export function findSemanticRoot<T extends SemanticRoot>(input?: DocumentContent, guard?: TypeGuard<T>): SemanticRoot | T | undefined {
+   if (!input) {
       return undefined;
    }
-   const semanticRoot = getSemanticRoot(root);
+   const root = isAstNode(input) ? findDocumentRoot(input) : (input?.parseResult?.value as CrossModelRoot);
+   const semanticRoot = root?.datamodel || root?.entity || root?.mapping || root?.relationship || root?.systemDiagram;
    return guard ? (guard(semanticRoot) ? semanticRoot : undefined) : semanticRoot;
 }
 
