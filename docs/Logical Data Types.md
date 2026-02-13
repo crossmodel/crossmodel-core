@@ -9,6 +9,20 @@ This document defines the logical data types available in CrossModel for modelin
 - **Logical independence**: The same logical model can be mapped to any supported database. Property values guide the mapper to choose the best physical type.
 - **Domain types are separate**: Business-level types like Money, Currency, Email, or PhoneNumber are handled by a separate domain system built on top of these base types.
 
+## Supported Platforms
+
+Physical type mappings are provided for seven platforms in the following order:
+
+| Platform | Engine | Notes |
+|----------|--------|-------|
+| **Snowflake** | Cloud-native SQL | All text UTF-8; all integers NUMBER(38,0) internally |
+| **Databricks** | Spark / Delta Lake | No TIME type; VARCHAR/CHAR are metadata constraints on STRING |
+| **Fabric** | Synapse SQL (Data Warehouse) | UTF-8 only; no TINYINT, DATETIMEOFFSET, or spatial column types |
+| **SQL Server** | Microsoft SQL Server | Full type system with NVARCHAR, DATETIMEOFFSET, spatial types |
+| **Oracle** | Oracle Database | NUMBER for all numerics; DATE includes time; no native TIME |
+| **PostgreSQL** | PostgreSQL (+ PostGIS) | Native UUID, INTERVAL, BOOLEAN; always UTF-8 |
+| **MySQL** | MySQL / MariaDB | UNSIGNED variants; no native BOOLEAN; no timezone-aware types |
+
 ## Overview
 
 | # | Type | Category | Description |
@@ -72,16 +86,22 @@ Character/string data of any length and encoding.
 
 #### Physical Type Mapping
 
-| Properties | SQL Server | PostgreSQL | MySQL | Oracle |
-|-----------|------------|------------|-------|--------|
-| _(default)_ | NVARCHAR(MAX) | TEXT | LONGTEXT | CLOB |
-| length: _n_ | NVARCHAR(_n_) | VARCHAR(_n_) | VARCHAR(_n_) | NVARCHAR2(_n_) |
-| length: _n_, fixedLength: true | NCHAR(_n_) | CHAR(_n_) | CHAR(_n_) | NCHAR(_n_) |
-| length: _n_, unicode: false | VARCHAR(_n_) | VARCHAR(_n_) | VARCHAR(_n_) | VARCHAR2(_n_) |
-| length: _n_, fixedLength: true, unicode: false | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) |
-| unicode: false | VARCHAR(MAX) | TEXT | LONGTEXT | CLOB |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|
+| _(default)_ | VARCHAR | STRING | VARCHAR(MAX) | NVARCHAR(MAX) | CLOB | TEXT | LONGTEXT |
+| length: _n_ | VARCHAR(_n_) | STRING | VARCHAR(_n_) | NVARCHAR(_n_) | NVARCHAR2(_n_) | VARCHAR(_n_) | VARCHAR(_n_) |
+| length: _n_, fixedLength | VARCHAR(_n_) | STRING | CHAR(_n_) | NCHAR(_n_) | NCHAR(_n_) | CHAR(_n_) | CHAR(_n_) |
+| length: _n_, !unicode | VARCHAR(_n_) | STRING | VARCHAR(_n_) | VARCHAR(_n_) | VARCHAR2(_n_) | VARCHAR(_n_) | VARCHAR(_n_) |
+| length: _n_, fixedLength, !unicode | VARCHAR(_n_) | STRING | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) |
+| !unicode | VARCHAR | STRING | VARCHAR(MAX) | VARCHAR(MAX) | CLOB | TEXT | LONGTEXT |
 
-> **Note:** PostgreSQL stores all text as UTF-8 natively, so the `unicode` property does not affect the physical type. The mapper uses VARCHAR/CHAR regardless. Oracle recommends AL32UTF8 encoding for all new databases, making the NVARCHAR2 vs VARCHAR2 distinction primarily relevant for legacy systems.
+> **Platform notes:**
+>
+> - **Snowflake** stores all text as UTF-8 natively. VARCHAR is used for all text regardless of `unicode` or `fixedLength` properties — CHAR exists as an alias but does not pad.
+> - **Databricks** uses STRING for all text. VARCHAR(_n_) and CHAR(_n_) exist as metadata constraints on STRING but are not distinct physical types.
+> - **Fabric** uses UTF-8 collation for all text; NVARCHAR/NCHAR are not supported. VARCHAR(MAX) is limited to 16 MB per cell.
+> - **PostgreSQL** stores all text as UTF-8 natively, so the `unicode` property does not affect the physical type.
+> - **Oracle** recommends AL32UTF8 encoding for all new databases, making the NVARCHAR2 vs VARCHAR2 distinction primarily relevant for legacy systems.
 
 ---
 
@@ -107,13 +127,19 @@ Raw byte data for storing files, hashes, encrypted values, or any non-textual co
 
 #### Physical Type Mapping
 
-| Properties | SQL Server | PostgreSQL | MySQL | Oracle |
-|-----------|------------|------------|-------|--------|
-| _(default)_ | VARBINARY(MAX) | BYTEA | LONGBLOB | BLOB |
-| length: _n_ | VARBINARY(_n_) | BYTEA | VARBINARY(_n_) | RAW(_n_) |
-| length: _n_, fixedLength: true | BINARY(_n_) | BYTEA | BINARY(_n_) | RAW(_n_) |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|
+| _(default)_ | BINARY | BINARY | VARBINARY(MAX) | VARBINARY(MAX) | BLOB | BYTEA | LONGBLOB |
+| length: _n_ | BINARY(_n_) | BINARY | VARBINARY(_n_) | VARBINARY(_n_) | RAW(_n_) | BYTEA | VARBINARY(_n_) |
+| length: _n_, fixedLength | BINARY(_n_) | BINARY | VARBINARY(_n_) | BINARY(_n_) | RAW(_n_) | BYTEA | BINARY(_n_) |
 
-> **Note:** PostgreSQL uses BYTEA for all binary data regardless of length or fixed-length settings. Oracle's RAW type supports up to 2000 bytes; larger values automatically map to BLOB.
+> **Platform notes:**
+>
+> - **Snowflake** BINARY and VARBINARY are synonymous — there is no fixed-length distinction and no padding.
+> - **Databricks** uses BINARY for all binary data without length constraints.
+> - **Fabric** does not support fixed-length BINARY; use VARBINARY. VARBINARY(MAX) is limited to 16 MB per cell.
+> - **PostgreSQL** uses BYTEA for all binary data regardless of length or fixed-length settings.
+> - **Oracle** RAW supports up to 2000 bytes; larger values automatically map to BLOB.
 
 ---
 
@@ -135,11 +161,16 @@ None.
 
 #### Physical Type Mapping
 
-| SQL Server | PostgreSQL | MySQL | Oracle |
-|------------|------------|-------|--------|
-| BIT | BOOLEAN | TINYINT(1) | NUMBER(1) |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|------------|--------|------------|--------|------------|-------|
+| BOOLEAN | BOOLEAN | BIT | BIT | NUMBER(1) | BOOLEAN | TINYINT(1) |
 
-> **Note:** MySQL does not have a native BOOLEAN type; TINYINT(1) is the conventional representation. Oracle uses NUMBER(1) with a CHECK constraint for 0/1.
+> **Platform notes:**
+>
+> - **Snowflake** and **PostgreSQL** have native BOOLEAN with ternary logic (TRUE, FALSE, NULL).
+> - **MySQL** does not have a native BOOLEAN type; TINYINT(1) is the conventional representation.
+> - **Oracle** uses NUMBER(1) with a CHECK constraint for 0/1.
+> - **Fabric** and **SQL Server** use BIT.
 
 ---
 
@@ -159,7 +190,7 @@ Whole numbers without a fractional component. The optional `minValue` and `maxVa
 | Use Case | Attribute | Type | Properties |
 |----------|-----------|------|------------|
 | Person's age | `age` | Integer | minValue: 0, maxValue: 150 |
-| Status flag (0–255) | `statusCode` | Integer | minValue: 0, maxValue: 255 |
+| Status flag (0-255) | `statusCode` | Integer | minValue: 0, maxValue: 255 |
 | Order quantity | `quantity` | Integer | minValue: 0, maxValue: 999999 |
 | Generic foreign key | `customerId` | Integer | _(none — defaults to standard int)_ |
 | Large counter | `eventSequence` | Integer | minValue: 0, maxValue: 9223372036854775807 |
@@ -171,18 +202,26 @@ When no properties are set, the mapper defaults to a standard signed 32-bit inte
 
 The mapper selects the physical type based on the range defined by `minValue` and `maxValue`:
 
-| Range | SQL Server | PostgreSQL | MySQL | Oracle |
-|-------|------------|------------|-------|--------|
-| 0 to 255 | TINYINT | SMALLINT | TINYINT UNSIGNED | NUMBER(3) |
-| -128 to 127 | TINYINT | SMALLINT | TINYINT | NUMBER(3) |
-| -32768 to 32767 | SMALLINT | SMALLINT | SMALLINT | NUMBER(5) |
-| 0 to 65535 | INT | INTEGER | SMALLINT UNSIGNED | NUMBER(5) |
-| -2^31 to 2^31-1 _(default)_ | INT | INTEGER | INT | NUMBER(10) |
-| 0 to 2^32-1 | BIGINT | BIGINT | INT UNSIGNED | NUMBER(10) |
-| -2^63 to 2^63-1 | BIGINT | BIGINT | BIGINT | NUMBER(19) |
-| 0 to 2^64-1 | NUMERIC(20) | NUMERIC(20) | BIGINT UNSIGNED | NUMBER(20) |
+| Range | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-------|-----------|------------|--------|------------|--------|------------|-------|
+| 0 to 255 | NUMBER(3) | TINYINT | SMALLINT | TINYINT | NUMBER(3) | SMALLINT | TINYINT UNSIGNED |
+| -128 to 127 | NUMBER(3) | TINYINT | SMALLINT | TINYINT | NUMBER(3) | SMALLINT | TINYINT |
+| -32768 to 32767 | NUMBER(5) | SMALLINT | SMALLINT | SMALLINT | NUMBER(5) | SMALLINT | SMALLINT |
+| 0 to 65535 | NUMBER(5) | INT | INT | INT | NUMBER(5) | INTEGER | SMALLINT UNSIGNED |
+| -2^31 to 2^31-1 _(default)_ | NUMBER(10) | INT | INT | INT | NUMBER(10) | INTEGER | INT |
+| 0 to 2^32-1 | NUMBER(10) | BIGINT | BIGINT | BIGINT | NUMBER(10) | BIGINT | INT UNSIGNED |
+| -2^63 to 2^63-1 | NUMBER(19) | BIGINT | BIGINT | BIGINT | NUMBER(19) | BIGINT | BIGINT |
+| 0 to 2^64-1 | NUMBER(20) | DECIMAL(20) | NUMERIC(20) | NUMERIC(20) | NUMBER(20) | NUMERIC(20) | BIGINT UNSIGNED |
 
-> **Note:** SQL Server's TINYINT is unsigned (0–255) by definition. PostgreSQL does not support unsigned integers; the mapper selects the next larger signed type. Oracle uses NUMBER(_p_) for all integer types. When `minValue` >= 0, MySQL can use UNSIGNED variants for more efficient storage.
+> **Platform notes:**
+>
+> - **Snowflake** stores all integers as NUMBER(38,0) internally — the precision shown here is a logical hint; storage is optimized automatically based on actual values.
+> - **Databricks** has TINYINT (-128 to 127), SMALLINT, INT, BIGINT — all signed only, no unsigned variants.
+> - **Fabric** does not support TINYINT; the smallest integer type is SMALLINT.
+> - **SQL Server** TINYINT is unsigned (0-255) by definition.
+> - **PostgreSQL** does not support unsigned integers; the mapper selects the next larger signed type.
+> - **Oracle** uses NUMBER(_p_) for all integer types.
+> - **MySQL** supports UNSIGNED variants for more efficient storage when `minValue` >= 0.
 
 ---
 
@@ -198,6 +237,7 @@ Exact fixed-point numbers for values where precision matters, such as financial 
 | scale | number | _(omit)_ | Number of digits to the right of the decimal point. |
 
 **Validation rules:**
+
 - `scale` cannot exceed `precision`.
 - Both properties are optional but typically specified together.
 
@@ -213,12 +253,18 @@ Exact fixed-point numbers for values where precision matters, such as financial 
 
 #### Physical Type Mapping
 
-| Properties | SQL Server | PostgreSQL | MySQL | Oracle |
-|-----------|------------|------------|-------|--------|
-| precision: _p_, scale: _s_ | DECIMAL(_p_,_s_) | NUMERIC(_p_,_s_) | DECIMAL(_p_,_s_) | NUMBER(_p_,_s_) |
-| _(default)_ | DECIMAL(18,2) | NUMERIC | DECIMAL(10,0) | NUMBER |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|
+| precision: _p_, scale: _s_ | NUMBER(_p_,_s_) | DECIMAL(_p_,_s_) | DECIMAL(_p_,_s_) | DECIMAL(_p_,_s_) | NUMBER(_p_,_s_) | NUMERIC(_p_,_s_) | DECIMAL(_p_,_s_) |
+| _(default)_ | NUMBER(38,0) | DECIMAL(10,0) | DECIMAL(18,0) | DECIMAL(18,2) | NUMBER | NUMERIC | DECIMAL(10,0) |
 
-> **Note:** The default precision and scale when omitted are database-specific. PostgreSQL's NUMERIC without parameters allows arbitrary precision. Oracle's NUMBER without parameters is also arbitrary precision.
+> **Platform notes:**
+>
+> - All platforms support up to 38 digits of precision.
+> - **Snowflake** uses NUMBER for both integer and decimal types; storage is optimized automatically.
+> - **PostgreSQL** NUMERIC without parameters allows arbitrary precision.
+> - **Oracle** NUMBER without parameters is also arbitrary precision.
+> - Default precision and scale when omitted are database-specific — specify both for portable models.
 
 ---
 
@@ -242,12 +288,17 @@ Approximate floating-point numbers following IEEE 754 representation. Use this f
 
 #### Physical Type Mapping
 
-| Properties | SQL Server | PostgreSQL | MySQL | Oracle |
-|-----------|------------|------------|-------|--------|
-| _(default)_ or precision > 7 | FLOAT(53) | DOUBLE PRECISION | DOUBLE | BINARY_DOUBLE |
-| precision <= 7 | REAL | REAL | FLOAT | BINARY_FLOAT |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|
+| _(default)_ or precision > 7 | FLOAT | DOUBLE | FLOAT | FLOAT(53) | BINARY_DOUBLE | DOUBLE PRECISION | DOUBLE |
+| precision <= 7 | FLOAT | FLOAT | REAL | REAL | BINARY_FLOAT | REAL | FLOAT |
 
-> **Note:** SQL Server's FLOAT(_n_) parameter is in bits (1–53), not decimal digits. The mapper converts: <= 7 decimal digits ≈ 24 bits (REAL), > 7 decimal digits ≈ 53 bits (DOUBLE PRECISION). Oracle's BINARY_FLOAT/BINARY_DOUBLE are the IEEE 754 types; the legacy FLOAT type is actually an alias for NUMBER.
+> **Platform notes:**
+>
+> - **Snowflake** FLOAT is always 64-bit double precision — FLOAT, DOUBLE, and REAL are all synonymous. The precision property has no effect on the physical type.
+> - **Databricks** has distinct FLOAT (32-bit single precision) and DOUBLE (64-bit double precision) types.
+> - **SQL Server** FLOAT(_n_) parameter is in bits (1-53), not decimal digits. The mapper converts: <= 7 decimal digits = 24 bits (REAL), > 7 decimal digits = 53 bits.
+> - **Oracle** BINARY_FLOAT/BINARY_DOUBLE are the IEEE 754 types; the legacy FLOAT type is an alias for NUMBER.
 
 ---
 
@@ -269,11 +320,13 @@ None.
 
 #### Physical Type Mapping
 
-| SQL Server | PostgreSQL | MySQL | Oracle |
-|------------|------------|-------|--------|
-| DATE | DATE | DATE | DATE |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|------------|--------|------------|--------|------------|-------|
+| DATE | DATE | DATE | DATE | DATE | DATE | DATE |
 
-> **Note:** Oracle's DATE type actually includes a time component (to the second). When mapping a logical Date to Oracle, the mapper should use DATE with a convention that the time portion is midnight (00:00:00), or consider using a CHECK constraint to enforce date-only semantics.
+> **Platform notes:**
+>
+> - **Oracle** DATE actually includes a time component (to the second). When mapping a logical Date to Oracle, the mapper should use DATE with a convention that the time portion is midnight (00:00:00).
 
 ---
 
@@ -285,7 +338,7 @@ A time of day consisting of hours, minutes, and seconds, optionally with fractio
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| scale | number | _(omit)_ | Number of fractional second digits (0–9). |
+| scale | number | _(omit)_ | Number of fractional second digits (0-9). |
 | timezone | boolean | false | When true, the value includes a timezone offset. |
 
 #### Modeling Examples
@@ -299,14 +352,21 @@ A time of day consisting of hours, minutes, and seconds, optionally with fractio
 
 #### Physical Type Mapping
 
-| Properties | SQL Server | PostgreSQL | MySQL | Oracle |
-|-----------|------------|------------|-------|--------|
-| _(default)_ | TIME | TIME | TIME | INTERVAL DAY TO SECOND |
-| scale: _s_ | TIME(_s_) | TIME(_s_) | TIME(_s_) | INTERVAL DAY(0) TO SECOND(_s_) |
-| timezone: true | DATETIMEOFFSET | TIME WITH TIME ZONE | TIME | TIMESTAMP WITH TIME ZONE |
-| scale: _s_, timezone: true | DATETIMEOFFSET(_s_) | TIME(_s_) WITH TIME ZONE | TIME(_s_) | TIMESTAMP(_s_) WITH TIME ZONE |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|
+| _(default)_ | TIME | STRING | TIME | TIME | INTERVAL DAY TO SECOND | TIME | TIME |
+| scale: _s_ | TIME(_s_) | STRING | TIME(_s_) | TIME(_s_) | INTERVAL DAY(0) TO SECOND(_s_) | TIME(_s_) | TIME(_s_) |
+| timezone | TIME | STRING | TIME | DATETIMEOFFSET | TIMESTAMP WITH TIME ZONE | TIME WITH TIME ZONE | TIME |
+| scale: _s_, timezone | TIME(_s_) | STRING | TIME(_s_) | DATETIMEOFFSET(_s_) | TIMESTAMP(_s_) WITH TIME ZONE | TIME(_s_) WITH TIME ZONE | TIME(_s_) |
 
-> **Note:** SQL Server does not have a TIME WITH TIME ZONE type; DATETIMEOFFSET (which includes the date) is the closest equivalent. MySQL does not support timezone-aware time types natively. Oracle does not have a dedicated TIME type; INTERVAL DAY TO SECOND or TIMESTAMP is used depending on context.
+> **Platform notes:**
+>
+> - **Databricks** does not have a TIME type. Time values must be stored as STRING (e.g., "14:30:00") and parsed at query time.
+> - **Snowflake** has a native TIME type but does not support timezone-aware time.
+> - **Fabric** supports TIME with up to 6 fractional second digits, but no timezone-aware variant.
+> - **SQL Server** does not have a TIME WITH TIME ZONE type; DATETIMEOFFSET (which includes the date) is the closest equivalent.
+> - **Oracle** does not have a dedicated TIME type; INTERVAL DAY TO SECOND or TIMESTAMP is used.
+> - **MySQL** does not support timezone-aware time types natively.
 
 ---
 
@@ -318,7 +378,7 @@ A combined date and time value, optionally with fractional seconds and timezone 
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| scale | number | _(omit)_ | Number of fractional second digits (0–9). |
+| scale | number | _(omit)_ | Number of fractional second digits (0-9). |
 | timezone | boolean | false | When true, the value includes a timezone offset. |
 
 #### Modeling Examples
@@ -332,14 +392,22 @@ A combined date and time value, optionally with fractional seconds and timezone 
 
 #### Physical Type Mapping
 
-| Properties | SQL Server | PostgreSQL | MySQL | Oracle |
-|-----------|------------|------------|-------|--------|
-| _(default)_ | DATETIME2 | TIMESTAMP | DATETIME | TIMESTAMP |
-| scale: _s_ | DATETIME2(_s_) | TIMESTAMP(_s_) | DATETIME(_s_) | TIMESTAMP(_s_) |
-| timezone: true | DATETIMEOFFSET | TIMESTAMPTZ | DATETIME | TIMESTAMP WITH TIME ZONE |
-| scale: _s_, timezone: true | DATETIMEOFFSET(_s_) | TIMESTAMPTZ(_s_) | DATETIME(_s_) | TIMESTAMP(_s_) WITH TIME ZONE |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|
+| _(default)_ | TIMESTAMP_NTZ | TIMESTAMP_NTZ | DATETIME2 | DATETIME2 | TIMESTAMP | TIMESTAMP | DATETIME |
+| scale: _s_ | TIMESTAMP_NTZ(_s_) | TIMESTAMP_NTZ | DATETIME2(_s_) | DATETIME2(_s_) | TIMESTAMP(_s_) | TIMESTAMP(_s_) | DATETIME(_s_) |
+| timezone | TIMESTAMP_TZ | TIMESTAMP | DATETIME2 | DATETIMEOFFSET | TIMESTAMP WITH TIME ZONE | TIMESTAMPTZ | DATETIME |
+| scale: _s_, timezone | TIMESTAMP_TZ(_s_) | TIMESTAMP | DATETIME2(_s_) | DATETIMEOFFSET(_s_) | TIMESTAMP(_s_) WITH TIME ZONE | TIMESTAMPTZ(_s_) | DATETIME(_s_) |
 
-> **Note:** MySQL does not have a timezone-aware datetime type. It stores values in UTC and converts based on the session timezone, but does not preserve the original offset. PostgreSQL's TIMESTAMPTZ internally stores UTC and converts on retrieval. SQL Server's DATETIMEOFFSET preserves the original offset. Oracle's TIMESTAMP WITH TIME ZONE preserves the timezone region or offset.
+> **Platform notes:**
+>
+> - **Snowflake** offers three timestamp variants: TIMESTAMP_NTZ (no timezone, wallclock time), TIMESTAMP_LTZ (session timezone, stores UTC), and TIMESTAMP_TZ (stores UTC with offset). TIMESTAMP_NTZ is the default; TIMESTAMP_TZ preserves the offset at write time but does not store the timezone name.
+> - **Databricks** TIMESTAMP is timezone-aware (normalizes to UTC, converts using session timezone). TIMESTAMP_NTZ has no timezone handling. Neither accepts a fractional seconds parameter — precision is always microsecond (6 digits).
+> - **Fabric** uses DATETIME2 for all datetime values with a maximum of 6 fractional second digits. DATETIMEOFFSET is not supported for column storage; timezone-aware data requires a separate timezone column with the AT TIME ZONE function.
+> - **MySQL** does not have a timezone-aware datetime type. It stores values in UTC and converts based on the session timezone, but does not preserve the original offset.
+> - **PostgreSQL** TIMESTAMPTZ internally stores UTC and converts on retrieval.
+> - **SQL Server** DATETIMEOFFSET preserves the original offset.
+> - **Oracle** TIMESTAMP WITH TIME ZONE preserves the timezone region or offset.
 
 ---
 
@@ -362,11 +430,17 @@ None.
 
 #### Physical Type Mapping
 
-| SQL Server | PostgreSQL | MySQL | Oracle |
-|------------|------------|-------|--------|
-| INT _(seconds)_ | INTERVAL | INT _(seconds)_ | INTERVAL DAY TO SECOND |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|------------|--------|------------|--------|------------|-------|
+| INT _(seconds)_ | INTERVAL DAY TO SECOND | INT _(seconds)_ | INT _(seconds)_ | INTERVAL DAY TO SECOND | INTERVAL | INT _(seconds)_ |
 
-> **Note:** Only PostgreSQL has a fully flexible INTERVAL type that can represent months, days, hours, minutes, and seconds in a single value. Oracle splits intervals into INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND (because months have variable lengths). SQL Server and MySQL have no native interval type; the mapper stores the value as an integer number of seconds or uses application-level representation. Consider modeling very different kinds of durations (calendar periods vs. elapsed time) as separate attributes.
+> **Platform notes:**
+>
+> - **PostgreSQL** has a fully flexible INTERVAL type that can represent months, days, hours, minutes, and seconds in a single value.
+> - **Databricks** supports INTERVAL as a column data type with two categories: INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND. These cannot be mixed.
+> - **Oracle** splits intervals into INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND (because months have variable lengths).
+> - **Snowflake**, **Fabric**, **SQL Server**, and **MySQL** have no native interval column type; the mapper stores the value as an integer number of seconds or uses application-level representation. Snowflake supports INTERVAL syntax in expressions but not as a column data type.
+> - Consider modeling very different kinds of durations (calendar periods vs. elapsed time) as separate attributes.
 
 ---
 
@@ -388,11 +462,18 @@ None.
 
 #### Physical Type Mapping
 
-| SQL Server | PostgreSQL | MySQL | Oracle |
-|------------|------------|-------|--------|
-| UNIQUEIDENTIFIER | UUID | CHAR(36) | RAW(16) |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL |
+|-----------|------------|--------|------------|--------|------------|-------|
+| UUID | STRING | UNIQUEIDENTIFIER | UNIQUEIDENTIFIER | RAW(16) | UUID | CHAR(36) |
 
-> **Note:** Only SQL Server and PostgreSQL have native UUID types. MySQL stores UUIDs as CHAR(36) string representation or BINARY(16) for compact storage. Oracle uses RAW(16) for the binary representation.
+> **Platform notes:**
+>
+> - **Snowflake** has a native UUID type storing 128-bit values in 8-4-4-4-12 hexadecimal format. UUID_STRING() generates new values.
+> - **Databricks** has no native UUID type; values are stored as STRING. The uuid() function generates new values.
+> - **Fabric** supports UNIQUEIDENTIFIER but with limitations — it cannot be read on the SQL analytics endpoint and is stored as binary in Parquet.
+> - **PostgreSQL** has a native UUID type.
+> - **Oracle** uses RAW(16) for the binary representation.
+> - **MySQL** stores UUIDs as CHAR(36) string representation or BINARY(16) for compact storage.
 
 ---
 
@@ -415,11 +496,18 @@ None at the logical level. The coordinate reference system (SRID) and specific g
 
 #### Physical Type Mapping
 
-| SQL Server | PostgreSQL + PostGIS | MySQL | Oracle |
-|------------|---------------------|-------|--------|
-| geometry | geometry | GEOMETRY | SDO_GEOMETRY |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL + PostGIS | MySQL |
+|-----------|------------|--------|------------|--------|---------------------|-------|
+| GEOMETRY | GEOMETRY | VARBINARY _(WKB)_ | geometry | SDO_GEOMETRY | geometry | GEOMETRY |
 
-> **Note:** Requires PostGIS extension on PostgreSQL. Oracle uses SDO_GEOMETRY for both planar and geodetic data, differentiated by SRID. Specific subtypes (POINT, LINESTRING, POLYGON, etc.) can be constrained at the physical level.
+> **Platform notes:**
+>
+> - **Databricks** supports native GEOMETRY from runtime 17.1+ with WKT, WKB, and GeoJSON formats.
+> - **Fabric** Data Warehouse does not support spatial column types. Store as VARBINARY with Well-Known Binary (WKB) encoding and cast to geometry at query time using spatial functions.
+> - **PostgreSQL** requires the PostGIS extension.
+> - **Oracle** uses SDO_GEOMETRY for both planar and geodetic data, differentiated by SRID.
+> - **Snowflake** supports GEOMETRY with WKT, WKB, EWKT, EWKB, and GeoJSON formats; coordinates are limited to 2D.
+> - Specific subtypes (POINT, LINESTRING, POLYGON, etc.) can be constrained at the physical level.
 
 ---
 
@@ -442,15 +530,126 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 
 #### Physical Type Mapping
 
-| SQL Server | PostgreSQL + PostGIS | MySQL | Oracle |
-|------------|---------------------|-------|--------|
-| geography | geography | GEOMETRY _(SRID 4326)_ | SDO_GEOMETRY _(SRID 4326)_ |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL + PostGIS | MySQL |
+|-----------|------------|--------|------------|--------|---------------------|-------|
+| GEOGRAPHY | GEOGRAPHY | VARBINARY _(WKB)_ | geography | SDO_GEOMETRY _(SRID 4326)_ | geography | GEOMETRY _(SRID 4326)_ |
 
-> **Note:** MySQL does not have a dedicated geography type; spatial functions determine whether calculations use planar or spherical math based on the SRID. Oracle uses SDO_GEOMETRY with SRID 4326 for geodetic data. PostGIS and SQL Server have dedicated geography types that enforce spherical calculations.
+> **Platform notes:**
+>
+> - **Databricks** supports native GEOGRAPHY from runtime 17.1+ with geodetic coordinate semantics.
+> - **Fabric** Data Warehouse does not support spatial column types. Store as VARBINARY with Well-Known Binary (WKB) encoding and cast to geography at query time.
+> - **Snowflake** GEOGRAPHY uses WGS 84 (SRID 4326) and returns distances in meters.
+> - **MySQL** does not have a dedicated geography type; spatial functions determine whether calculations use planar or spherical math based on the SRID.
+> - **Oracle** uses SDO_GEOMETRY with SRID 4326 for geodetic data.
+> - **PostgreSQL** and **SQL Server** have dedicated geography types that enforce spherical calculations.
 
 ---
 
 ## Appendix A: Complete Physical Type Mapping Reference
+
+### Snowflake
+
+| Logical Type | Properties | Physical Type |
+|-------------|------------|---------------|
+| Text | | VARCHAR |
+| Text | length: _n_ | VARCHAR(_n_) |
+| Text | length: _n_, fixedLength | VARCHAR(_n_) |
+| Text | length: _n_, !unicode | VARCHAR(_n_) |
+| Binary | | BINARY |
+| Binary | length: _n_ | BINARY(_n_) |
+| Binary | length: _n_, fixedLength | BINARY(_n_) |
+| Boolean | | BOOLEAN |
+| Integer | | NUMBER(10) |
+| Integer | 0 to 255 | NUMBER(3) |
+| Integer | -32768 to 32767 | NUMBER(5) |
+| Integer | -2^31 to 2^31-1 | NUMBER(10) |
+| Integer | larger ranges | NUMBER(19) |
+| Decimal | precision: _p_, scale: _s_ | NUMBER(_p_,_s_) |
+| Float | | FLOAT |
+| Float | precision <= 7 | FLOAT |
+| Date | | DATE |
+| Time | | TIME |
+| Time | scale: _s_ | TIME(_s_) |
+| DateTime | | TIMESTAMP_NTZ |
+| DateTime | scale: _s_ | TIMESTAMP_NTZ(_s_) |
+| DateTime | timezone | TIMESTAMP_TZ |
+| DateTime | scale: _s_, timezone | TIMESTAMP_TZ(_s_) |
+| Duration | | INT |
+| Guid | | UUID |
+| Geometry | | GEOMETRY |
+| Geography | | GEOGRAPHY |
+
+> Snowflake stores all text as UTF-8; VARCHAR is used for all string types regardless of `unicode` or `fixedLength` properties. All integers are internally NUMBER(38,0). FLOAT is always 64-bit double precision. Snowflake has no timezone-aware TIME type. INTERVAL is supported in expressions but not as a column data type.
+
+### Databricks
+
+| Logical Type | Properties | Physical Type |
+|-------------|------------|---------------|
+| Text | | STRING |
+| Text | length: _n_ | STRING |
+| Text | length: _n_, fixedLength | STRING |
+| Text | length: _n_, !unicode | STRING |
+| Binary | | BINARY |
+| Binary | length: _n_ | BINARY |
+| Binary | length: _n_, fixedLength | BINARY |
+| Boolean | | BOOLEAN |
+| Integer | | INT |
+| Integer | -128 to 127 | TINYINT |
+| Integer | -32768 to 32767 | SMALLINT |
+| Integer | -2^31 to 2^31-1 | INT |
+| Integer | -2^63 to 2^63-1 | BIGINT |
+| Integer | 0 to 2^64-1 | DECIMAL(20) |
+| Decimal | precision: _p_, scale: _s_ | DECIMAL(_p_,_s_) |
+| Float | | DOUBLE |
+| Float | precision <= 7 | FLOAT |
+| Date | | DATE |
+| Time | | STRING |
+| Time | scale: _s_ | STRING |
+| Time | timezone | STRING |
+| DateTime | | TIMESTAMP_NTZ |
+| DateTime | timezone | TIMESTAMP |
+| Duration | | INTERVAL DAY TO SECOND |
+| Guid | | STRING |
+| Geometry | | GEOMETRY |
+| Geography | | GEOGRAPHY |
+
+> Databricks uses STRING for all text — VARCHAR/CHAR exist as metadata constraints only. There is no TIME type; use STRING. TIMESTAMP normalizes to UTC (timezone-aware); TIMESTAMP_NTZ is wallclock time. Neither accepts a fractional seconds parameter. All integer types are signed only. GEOMETRY/GEOGRAPHY require Databricks Runtime 17.1+.
+
+### Fabric
+
+| Logical Type | Properties | Physical Type |
+|-------------|------------|---------------|
+| Text | | VARCHAR(MAX) |
+| Text | length: _n_ | VARCHAR(_n_) |
+| Text | length: _n_, fixedLength | CHAR(_n_) |
+| Text | length: _n_, !unicode | VARCHAR(_n_) |
+| Text | length: _n_, fixedLength, !unicode | CHAR(_n_) |
+| Binary | | VARBINARY(MAX) |
+| Binary | length: _n_ | VARBINARY(_n_) |
+| Binary | length: _n_, fixedLength | VARBINARY(_n_) |
+| Boolean | | BIT |
+| Integer | | INT |
+| Integer | 0 to 255 | SMALLINT |
+| Integer | -32768 to 32767 | SMALLINT |
+| Integer | -2^31 to 2^31-1 | INT |
+| Integer | -2^63 to 2^63-1 | BIGINT |
+| Integer | 0 to 2^64-1 | NUMERIC(20) |
+| Decimal | precision: _p_, scale: _s_ | DECIMAL(_p_,_s_) |
+| Float | | FLOAT |
+| Float | precision <= 7 | REAL |
+| Date | | DATE |
+| Time | | TIME |
+| Time | scale: _s_ | TIME(_s_) |
+| DateTime | | DATETIME2 |
+| DateTime | scale: _s_ | DATETIME2(_s_) |
+| DateTime | timezone | DATETIME2 |
+| DateTime | scale: _s_, timezone | DATETIME2(_s_) |
+| Duration | | INT |
+| Guid | | UNIQUEIDENTIFIER |
+| Geometry | | VARBINARY _(WKB)_ |
+| Geography | | VARBINARY _(WKB)_ |
+
+> Fabric uses UTF-8 collation for all text; NVARCHAR/NCHAR are not supported. TINYINT is not supported (use SMALLINT). DATETIMEOFFSET is not supported for column storage — timezone-aware DateTime maps to DATETIME2 (timezone information is lost; use a separate timezone column). TIME and DATETIME2 support up to 6 fractional second digits. Spatial types cannot be stored as columns — use VARBINARY with WKB encoding. VARCHAR(MAX) and VARBINARY(MAX) are limited to 16 MB per cell.
 
 ### SQL Server
 
@@ -487,74 +686,6 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Geometry | | geometry |
 | Geography | | geography |
 
-### PostgreSQL
-
-| Logical Type | Properties | Physical Type |
-|-------------|------------|---------------|
-| Text | | TEXT |
-| Text | length: _n_ | VARCHAR(_n_) |
-| Text | length: _n_, fixedLength | CHAR(_n_) |
-| Binary | | BYTEA |
-| Binary | length: _n_ | BYTEA |
-| Binary | length: _n_, fixedLength | BYTEA |
-| Boolean | | BOOLEAN |
-| Integer | | INTEGER |
-| Integer | -32768 to 32767 | SMALLINT |
-| Integer | -2^31 to 2^31-1 | INTEGER |
-| Integer | larger ranges | BIGINT |
-| Decimal | precision: _p_, scale: _s_ | NUMERIC(_p_,_s_) |
-| Float | | DOUBLE PRECISION |
-| Float | precision <= 7 | REAL |
-| Date | | DATE |
-| Time | | TIME |
-| Time | scale: _s_ | TIME(_s_) |
-| Time | timezone | TIME WITH TIME ZONE |
-| DateTime | | TIMESTAMP |
-| DateTime | scale: _s_ | TIMESTAMP(_s_) |
-| DateTime | timezone | TIMESTAMPTZ |
-| DateTime | scale: _s_, timezone | TIMESTAMPTZ(_s_) |
-| Duration | | INTERVAL |
-| Guid | | UUID |
-| Geometry | | geometry |
-| Geography | | geography |
-
-> PostgreSQL uses UTF-8 natively; the `unicode` property has no effect on type selection. BYTEA is used for all binary data regardless of length/fixedLength properties.
-
-### MySQL
-
-| Logical Type | Properties | Physical Type |
-|-------------|------------|---------------|
-| Text | | LONGTEXT |
-| Text | length: _n_ | VARCHAR(_n_) |
-| Text | length: _n_, fixedLength | CHAR(_n_) |
-| Binary | | LONGBLOB |
-| Binary | length: _n_ | VARBINARY(_n_) |
-| Binary | length: _n_, fixedLength | BINARY(_n_) |
-| Boolean | | TINYINT(1) |
-| Integer | | INT |
-| Integer | 0 to 255 | TINYINT UNSIGNED |
-| Integer | -128 to 127 | TINYINT |
-| Integer | -32768 to 32767 | SMALLINT |
-| Integer | 0 to 65535 | SMALLINT UNSIGNED |
-| Integer | -2^31 to 2^31-1 | INT |
-| Integer | 0 to 2^32-1 | INT UNSIGNED |
-| Integer | -2^63 to 2^63-1 | BIGINT |
-| Integer | 0 to 2^64-1 | BIGINT UNSIGNED |
-| Decimal | precision: _p_, scale: _s_ | DECIMAL(_p_,_s_) |
-| Float | | DOUBLE |
-| Float | precision <= 7 | FLOAT |
-| Date | | DATE |
-| Time | | TIME |
-| Time | scale: _s_ | TIME(_s_) |
-| DateTime | | DATETIME |
-| DateTime | scale: _s_ | DATETIME(_s_) |
-| Duration | | INT |
-| Guid | | CHAR(36) |
-| Geometry | | GEOMETRY |
-| Geography | | GEOMETRY |
-
-> MySQL does not support timezone-aware temporal types or unsigned PostgreSQL-style integers. For unicode, MySQL defaults to utf8mb4 charset in modern versions; the `unicode` flag controls the column character set when non-default encoding is needed.
-
 ### Oracle
 
 | Logical Type | Properties | Physical Type |
@@ -590,6 +721,74 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Geography | | SDO_GEOMETRY |
 
 > Oracle does not have native TIME or BOOLEAN types. Oracle's DATE includes a time component; for date-only semantics, a convention of midnight time is used. RAW supports up to 2000 bytes; larger binary data maps to BLOB. Oracle's NVARCHAR2 supports up to 4000 bytes (2000 characters in AL16UTF16).
+
+### PostgreSQL
+
+| Logical Type | Properties | Physical Type |
+|-------------|------------|---------------|
+| Text | | TEXT |
+| Text | length: _n_ | VARCHAR(_n_) |
+| Text | length: _n_, fixedLength | CHAR(_n_) |
+| Binary | | BYTEA |
+| Binary | length: _n_ | BYTEA |
+| Binary | length: _n_, fixedLength | BYTEA |
+| Boolean | | BOOLEAN |
+| Integer | | INTEGER |
+| Integer | -32768 to 32767 | SMALLINT |
+| Integer | -2^31 to 2^31-1 | INTEGER |
+| Integer | larger ranges | BIGINT |
+| Decimal | precision: _p_, scale: _s_ | NUMERIC(_p_,_s_) |
+| Float | | DOUBLE PRECISION |
+| Float | precision <= 7 | REAL |
+| Date | | DATE |
+| Time | | TIME |
+| Time | scale: _s_ | TIME(_s_) |
+| Time | timezone | TIME WITH TIME ZONE |
+| DateTime | | TIMESTAMP |
+| DateTime | scale: _s_ | TIMESTAMP(_s_) |
+| DateTime | timezone | TIMESTAMPTZ |
+| DateTime | scale: _s_, timezone | TIMESTAMPTZ(_s_) |
+| Duration | | INTERVAL |
+| Guid | | UUID |
+| Geometry | | geometry |
+| Geography | | geography |
+
+> PostgreSQL uses UTF-8 natively; the `unicode` property has no effect on type selection. BYTEA is used for all binary data regardless of length/fixedLength properties. PostGIS extension is required for geometry/geography types.
+
+### MySQL
+
+| Logical Type | Properties | Physical Type |
+|-------------|------------|---------------|
+| Text | | LONGTEXT |
+| Text | length: _n_ | VARCHAR(_n_) |
+| Text | length: _n_, fixedLength | CHAR(_n_) |
+| Binary | | LONGBLOB |
+| Binary | length: _n_ | VARBINARY(_n_) |
+| Binary | length: _n_, fixedLength | BINARY(_n_) |
+| Boolean | | TINYINT(1) |
+| Integer | | INT |
+| Integer | 0 to 255 | TINYINT UNSIGNED |
+| Integer | -128 to 127 | TINYINT |
+| Integer | -32768 to 32767 | SMALLINT |
+| Integer | 0 to 65535 | SMALLINT UNSIGNED |
+| Integer | -2^31 to 2^31-1 | INT |
+| Integer | 0 to 2^32-1 | INT UNSIGNED |
+| Integer | -2^63 to 2^63-1 | BIGINT |
+| Integer | 0 to 2^64-1 | BIGINT UNSIGNED |
+| Decimal | precision: _p_, scale: _s_ | DECIMAL(_p_,_s_) |
+| Float | | DOUBLE |
+| Float | precision <= 7 | FLOAT |
+| Date | | DATE |
+| Time | | TIME |
+| Time | scale: _s_ | TIME(_s_) |
+| DateTime | | DATETIME |
+| DateTime | scale: _s_ | DATETIME(_s_) |
+| Duration | | INT |
+| Guid | | CHAR(36) |
+| Geometry | | GEOMETRY |
+| Geography | | GEOMETRY |
+
+> MySQL does not support timezone-aware temporal types. For unicode, MySQL defaults to utf8mb4 charset in modern versions; the `unicode` flag controls the column character set when non-default encoding is needed. MySQL is the only platform with UNSIGNED integer variants.
 
 ---
 
