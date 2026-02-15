@@ -10,10 +10,10 @@ import { Disposable } from 'vscode-languageserver';
 import { TextDocumentIdentifier, TextDocumentItem, VersionedTextDocumentIdentifier } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+import { CrossModelRoot } from '../language-server/ast.js';
 import { CrossModelDiagnostic } from '../language-server/cross-model-document-validator.js';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelSharedServices } from '../language-server/cross-model-module.js';
-import { CrossModelRoot } from '../language-server/ast.js';
 import { CrossModelLanguageMetaData } from '../language-server/generated/module.js';
 import { OpenableTextDocuments } from './openable-text-documents.js';
 
@@ -67,7 +67,7 @@ export class OpenTextDocumentManager {
          // Check if the uri of the saved document and the uri of the listener are equal.
          if (event.document.uri === uri && documentURI !== undefined && this.langiumDocs.hasDocument(documentURI)) {
             const document = await this.langiumDocs.getOrCreateDocument(documentURI);
-            const root = document.parseResult.value as CrossModelRoot;
+            const root = document.parseResult.value;
             return listener({
                document: {
                   root,
@@ -91,7 +91,7 @@ export class OpenTextDocumentManager {
          const sourceClientId = this.getAuthor(changedDocument);
          const event: ModelUpdatedEvent<AstModelDocument> = {
             document: {
-               root: changedDocument.parseResult.value as CrossModelRoot,
+               root: changedDocument.parseResult.value,
                diagnostics: changedDocument.diagnostics ?? [],
                uri: changedDocument.textDocument.uri
             },

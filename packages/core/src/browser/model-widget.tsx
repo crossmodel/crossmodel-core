@@ -134,8 +134,11 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          (!deepEqual(this.document.root, document.root) || !deepEqual(this.document.diagnostics, document.diagnostics))
       ) {
          console.debug(`[${this.options.clientId}] Receive update from ${sourceClientId} due to '${reason}'`);
-
-         if (sourceClientId !== this.options.clientId) {
+         if (sourceClientId !== this.options.clientId && reason !== 'saved') {
+            // Save events are confirmations that the file was written to disk.
+            // They never carry new content — only sync diagnostics.
+            // The language client may also fire a save event (with sourceClientId='language-client')
+            // when it detects the file change, which must not overwrite the form's React state.
             this.document = document;
             this.update();
          } else {
