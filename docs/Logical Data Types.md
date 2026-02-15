@@ -11,7 +11,7 @@ This document defines the logical data types available in CrossModel for modelin
 
 ## Supported Platforms
 
-Physical type mappings are provided for ten platforms in the following order:
+Physical type mappings are provided for eleven platforms in the following order:
 
 | Platform | Engine | Notes |
 |----------|--------|-------|
@@ -25,6 +25,7 @@ Physical type mappings are provided for ten platforms in the following order:
 | **MongoDB** | Document database (BSON) | 5 BSON types for numerics; `date` is always UTC datetime; native GeoJSON |
 | **Python** | Python 3 standard library | `int` is arbitrary precision; `float` is always 64-bit; `datetime` module for temporal |
 | **Java** | Java SE (java.time, java.math) | Primitives for small types; `BigDecimal`/`BigInteger` for precision; `java.time` for temporal |
+| **Parquet** | Apache Parquet file format | 8 physical types + logical type annotations; native UUID, GEOMETRY, GEOGRAPHY |
 
 ## Overview
 
@@ -90,14 +91,14 @@ Character/string data of any length and encoding.
 
 #### Physical Type Mapping
 
-| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| _(default)_ | VARCHAR | STRING | VARCHAR(MAX) | NVARCHAR(MAX) | CLOB | TEXT | LONGTEXT | string | str | String |
-| length: _n_ | VARCHAR(_n_) | STRING | VARCHAR(_n_) | NVARCHAR(_n_) | NVARCHAR2(_n_) | VARCHAR(_n_) | VARCHAR(_n_) | string | str | String |
-| length: _n_, fixedLength | VARCHAR(_n_) | STRING | CHAR(_n_) | NCHAR(_n_) | NCHAR(_n_) | CHAR(_n_) | CHAR(_n_) | string | str | String |
-| length: _n_, !unicode | VARCHAR(_n_) | STRING | VARCHAR(_n_) | VARCHAR(_n_) | VARCHAR2(_n_) | VARCHAR(_n_) | VARCHAR(_n_) | string | str | String |
-| length: _n_, fixedLength, !unicode | VARCHAR(_n_) | STRING | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | string | str | String |
-| !unicode | VARCHAR | STRING | VARCHAR(MAX) | VARCHAR(MAX) | CLOB | TEXT | LONGTEXT | string | str | String |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| _(default)_ | VARCHAR | STRING | VARCHAR(MAX) | NVARCHAR(MAX) | CLOB | TEXT | LONGTEXT | string | str | String | STRING |
+| length: _n_ | VARCHAR(_n_) | STRING | VARCHAR(_n_) | NVARCHAR(_n_) | NVARCHAR2(_n_) | VARCHAR(_n_) | VARCHAR(_n_) | string | str | String | STRING |
+| length: _n_, fixedLength | VARCHAR(_n_) | STRING | CHAR(_n_) | NCHAR(_n_) | NCHAR(_n_) | CHAR(_n_) | CHAR(_n_) | string | str | String | STRING |
+| length: _n_, !unicode | VARCHAR(_n_) | STRING | VARCHAR(_n_) | VARCHAR(_n_) | VARCHAR2(_n_) | VARCHAR(_n_) | VARCHAR(_n_) | string | str | String | STRING |
+| length: _n_, fixedLength, !unicode | VARCHAR(_n_) | STRING | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | CHAR(_n_) | string | str | String | STRING |
+| !unicode | VARCHAR | STRING | VARCHAR(MAX) | VARCHAR(MAX) | CLOB | TEXT | LONGTEXT | string | str | String | STRING |
 
 > **Platform notes:**
 >
@@ -109,6 +110,7 @@ Character/string data of any length and encoding.
 > - **MongoDB** stores all strings as UTF-8. Length, fixedLength, and unicode properties have no effect on the BSON type — enforce via application validation or JSON Schema.
 > - **Python** `str` is always Unicode (UTF-8 internally in CPython). Length and encoding constraints are enforced at the application level.
 > - **Java** `String` is always Unicode (UTF-16 internally). Length and encoding constraints are enforced at the application level.
+> - **Parquet** STRING is a logical type annotation on BYTE_ARRAY, always UTF-8 encoded. Length, fixedLength, and unicode properties have no effect on the physical type.
 
 ---
 
@@ -134,11 +136,11 @@ Raw byte data for storing files, hashes, encrypted values, or any non-textual co
 
 #### Physical Type Mapping
 
-| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| _(default)_ | BINARY | BINARY | VARBINARY(MAX) | VARBINARY(MAX) | BLOB | BYTEA | LONGBLOB | binData | bytes | byte[] |
-| length: _n_ | BINARY(_n_) | BINARY | VARBINARY(_n_) | VARBINARY(_n_) | RAW(_n_) | BYTEA | VARBINARY(_n_) | binData | bytes | byte[] |
-| length: _n_, fixedLength | BINARY(_n_) | BINARY | VARBINARY(_n_) | BINARY(_n_) | RAW(_n_) | BYTEA | BINARY(_n_) | binData | bytes | byte[] |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| _(default)_ | BINARY | BINARY | VARBINARY(MAX) | VARBINARY(MAX) | BLOB | BYTEA | LONGBLOB | binData | bytes | byte[] | BYTE_ARRAY |
+| length: _n_ | BINARY(_n_) | BINARY | VARBINARY(_n_) | VARBINARY(_n_) | RAW(_n_) | BYTEA | VARBINARY(_n_) | binData | bytes | byte[] | BYTE_ARRAY |
+| length: _n_, fixedLength | BINARY(_n_) | BINARY | VARBINARY(_n_) | BINARY(_n_) | RAW(_n_) | BYTEA | BINARY(_n_) | binData | bytes | byte[] | FIXED_LEN_BYTE_ARRAY(_n_) |
 
 > **Platform notes:**
 >
@@ -150,6 +152,7 @@ Raw byte data for storing files, hashes, encrypted values, or any non-textual co
 > - **MongoDB** `binData` (BSON binary) stores raw bytes with a subtype byte. Length constraints are enforced via JSON Schema validation.
 > - **Python** `bytes` is immutable; use `bytearray` if mutability is needed. Length is enforced at the application level.
 > - **Java** `byte[]` is the standard representation. Length is enforced at the application level.
+> - **Parquet** uses BYTE_ARRAY for variable-length binary and FIXED_LEN_BYTE_ARRAY(_n_) for fixed-length. Length constraints on variable-length binary are enforced at the application level.
 
 ---
 
@@ -171,9 +174,9 @@ None.
 
 #### Physical Type Mapping
 
-| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| BOOLEAN | BOOLEAN | BIT | BIT | NUMBER(1) | BOOLEAN | TINYINT(1) | bool | bool | boolean |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| BOOLEAN | BOOLEAN | BIT | BIT | NUMBER(1) | BOOLEAN | TINYINT(1) | bool | bool | boolean | BOOLEAN |
 
 > **Platform notes:**
 >
@@ -183,6 +186,7 @@ None.
 > - **Fabric** and **SQL Server** use BIT.
 > - **MongoDB** has a native `bool` BSON type.
 > - **Java** uses the primitive `boolean` (or boxed `Boolean` for nullable).
+> - **Parquet** has a native BOOLEAN physical type (1 bit).
 
 ---
 
@@ -214,16 +218,16 @@ When no properties are set, the mapper defaults to a standard signed 32-bit inte
 
 The mapper selects the physical type based on the range defined by `minValue` and `maxValue`:
 
-| Range | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| 0 to 255 | NUMBER(3) | TINYINT | SMALLINT | TINYINT | NUMBER(3) | SMALLINT | TINYINT UNSIGNED | int | int | short |
-| -128 to 127 | NUMBER(3) | TINYINT | SMALLINT | TINYINT | NUMBER(3) | SMALLINT | TINYINT | int | int | byte |
-| -32768 to 32767 | NUMBER(5) | SMALLINT | SMALLINT | SMALLINT | NUMBER(5) | SMALLINT | SMALLINT | int | int | short |
-| 0 to 65535 | NUMBER(5) | INT | INT | INT | NUMBER(5) | INTEGER | SMALLINT UNSIGNED | int | int | int |
-| -2^31 to 2^31-1 _(default)_ | NUMBER(10) | INT | INT | INT | NUMBER(10) | INTEGER | INT | int | int | int |
-| 0 to 2^32-1 | NUMBER(10) | BIGINT | BIGINT | BIGINT | NUMBER(10) | BIGINT | INT UNSIGNED | long | int | long |
-| -2^63 to 2^63-1 | NUMBER(19) | BIGINT | BIGINT | BIGINT | NUMBER(19) | BIGINT | BIGINT | long | int | long |
-| 0 to 2^64-1 | NUMBER(20) | DECIMAL(20) | NUMERIC(20) | NUMERIC(20) | NUMBER(20) | NUMERIC(20) | BIGINT UNSIGNED | decimal | int | BigInteger |
+| Range | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| 0 to 255 | NUMBER(3) | TINYINT | SMALLINT | TINYINT | NUMBER(3) | SMALLINT | TINYINT UNSIGNED | int | int | short | INT(8, unsigned) |
+| -128 to 127 | NUMBER(3) | TINYINT | SMALLINT | TINYINT | NUMBER(3) | SMALLINT | TINYINT | int | int | byte | INT(8, signed) |
+| -32768 to 32767 | NUMBER(5) | SMALLINT | SMALLINT | SMALLINT | NUMBER(5) | SMALLINT | SMALLINT | int | int | short | INT(16, signed) |
+| 0 to 65535 | NUMBER(5) | INT | INT | INT | NUMBER(5) | INTEGER | SMALLINT UNSIGNED | int | int | int | INT(16, unsigned) |
+| -2^31 to 2^31-1 _(default)_ | NUMBER(10) | INT | INT | INT | NUMBER(10) | INTEGER | INT | int | int | int | INT(32, signed) |
+| 0 to 2^32-1 | NUMBER(10) | BIGINT | BIGINT | BIGINT | NUMBER(10) | BIGINT | INT UNSIGNED | long | int | long | INT(32, unsigned) |
+| -2^63 to 2^63-1 | NUMBER(19) | BIGINT | BIGINT | BIGINT | NUMBER(19) | BIGINT | BIGINT | long | int | long | INT(64, signed) |
+| 0 to 2^64-1 | NUMBER(20) | DECIMAL(20) | NUMERIC(20) | NUMERIC(20) | NUMBER(20) | NUMERIC(20) | BIGINT UNSIGNED | decimal | int | BigInteger | INT(64, unsigned) |
 
 > **Platform notes:**
 >
@@ -237,6 +241,7 @@ The mapper selects the physical type based on the range defined by `minValue` an
 > - **MongoDB** `int` is 32-bit signed, `long` is 64-bit signed. For ranges exceeding 64-bit signed, use `decimal` (Decimal128).
 > - **Python** `int` has arbitrary precision — no subtypes needed regardless of range.
 > - **Java** uses the smallest primitive that fits: `byte` (8-bit signed), `short` (16-bit signed), `int` (32-bit signed), `long` (64-bit signed), or `BigInteger` for arbitrary precision. Use boxed types (`Byte`, `Short`, `Integer`, `Long`) for nullable.
+> - **Parquet** INT is a logical type annotation on INT32 or INT64 physical types. Parameters `bitWidth` (8, 16, 32, 64) and `isSigned` (true/false) control the range. Both signed and unsigned variants are supported natively.
 
 ---
 
@@ -268,10 +273,10 @@ Exact fixed-point numbers for values where precision matters, such as financial 
 
 #### Physical Type Mapping
 
-| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| precision: _p_, scale: _s_ | NUMBER(_p_,_s_) | DECIMAL(_p_,_s_) | DECIMAL(_p_,_s_) | DECIMAL(_p_,_s_) | NUMBER(_p_,_s_) | NUMERIC(_p_,_s_) | DECIMAL(_p_,_s_) | decimal | Decimal | BigDecimal |
-| _(default)_ | NUMBER(38,0) | DECIMAL(10,0) | DECIMAL(18,0) | DECIMAL(18,2) | NUMBER | NUMERIC | DECIMAL(10,0) | decimal | Decimal | BigDecimal |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| precision: _p_, scale: _s_ | NUMBER(_p_,_s_) | DECIMAL(_p_,_s_) | DECIMAL(_p_,_s_) | DECIMAL(_p_,_s_) | NUMBER(_p_,_s_) | NUMERIC(_p_,_s_) | DECIMAL(_p_,_s_) | decimal | Decimal | BigDecimal | DECIMAL(_p_,_s_) |
+| _(default)_ | NUMBER(38,0) | DECIMAL(10,0) | DECIMAL(18,0) | DECIMAL(18,2) | NUMBER | NUMERIC | DECIMAL(10,0) | decimal | Decimal | BigDecimal | DECIMAL(38,0) |
 
 > **Platform notes:**
 >
@@ -283,6 +288,7 @@ Exact fixed-point numbers for values where precision matters, such as financial 
 > - **MongoDB** `decimal` (Decimal128) provides 34 significant digits of precision, matching IEEE 754-2008.
 > - **Python** `decimal.Decimal` supports arbitrary precision with configurable context.
 > - **Java** `BigDecimal` supports arbitrary precision. Precision and scale are set via the constructor or `setScale()` method.
+> - **Parquet** DECIMAL is a logical type annotation. Physical type depends on precision: INT32 (1-9 digits), INT64 (10-18 digits), or FIXED_LEN_BYTE_ARRAY / BYTE_ARRAY for larger values.
 
 ---
 
@@ -306,10 +312,10 @@ Approximate floating-point numbers following IEEE 754 representation. Use this f
 
 #### Physical Type Mapping
 
-| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| _(default)_ or precision > 7 | FLOAT | DOUBLE | FLOAT | FLOAT(53) | BINARY_DOUBLE | DOUBLE PRECISION | DOUBLE | double | float | double |
-| precision <= 7 | FLOAT | FLOAT | REAL | REAL | BINARY_FLOAT | REAL | FLOAT | double | float | float |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| _(default)_ or precision > 7 | FLOAT | DOUBLE | FLOAT | FLOAT(53) | BINARY_DOUBLE | DOUBLE PRECISION | DOUBLE | double | float | double | DOUBLE |
+| precision <= 7 | FLOAT | FLOAT | REAL | REAL | BINARY_FLOAT | REAL | FLOAT | double | float | float | FLOAT |
 
 > **Platform notes:**
 >
@@ -320,6 +326,7 @@ Approximate floating-point numbers following IEEE 754 representation. Use this f
 > - **MongoDB** `double` is always 64-bit IEEE 754. There is no single-precision BSON type.
 > - **Python** `float` is always 64-bit double precision (IEEE 754). There is no single-precision variant.
 > - **Java** has distinct `float` (32-bit) and `double` (64-bit) primitives. Use boxed `Float`/`Double` for nullable.
+> - **Parquet** has native FLOAT (32-bit IEEE 754) and DOUBLE (64-bit IEEE 754) physical types. Also supports FLOAT16 (half-precision) via FIXED_LEN_BYTE_ARRAY(2), but it is not used here.
 
 ---
 
@@ -341,15 +348,16 @@ None.
 
 #### Physical Type Mapping
 
-| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| DATE | DATE | DATE | DATE | DATE | DATE | DATE | date | datetime.date | LocalDate |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| DATE | DATE | DATE | DATE | DATE | DATE | DATE | date | datetime.date | LocalDate | DATE |
 
 > **Platform notes:**
 >
 > - **Oracle** DATE actually includes a time component (to the second). When mapping a logical Date to Oracle, the mapper should use DATE with a convention that the time portion is midnight (00:00:00).
 > - **MongoDB** `date` is always a UTC datetime with millisecond precision. For date-only semantics, store with time set to midnight UTC (00:00:00.000Z).
 > - **Java** `java.time.LocalDate` represents a date without time or timezone.
+> - **Parquet** DATE is a logical type annotation on INT32, storing the number of days from the Unix epoch (1970-01-01).
 
 ---
 
@@ -375,12 +383,12 @@ A time of day consisting of hours, minutes, and seconds, optionally with fractio
 
 #### Physical Type Mapping
 
-| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| _(default)_ | TIME | STRING | TIME | TIME | INTERVAL DAY TO SECOND | TIME | TIME | string | datetime.time | LocalTime |
-| scale: _s_ | TIME(_s_) | STRING | TIME(_s_) | TIME(_s_) | INTERVAL DAY(0) TO SECOND(_s_) | TIME(_s_) | TIME(_s_) | string | datetime.time | LocalTime |
-| timezone | TIME | STRING | TIME | DATETIMEOFFSET | TIMESTAMP WITH TIME ZONE | TIME WITH TIME ZONE | TIME | string | datetime.time | OffsetTime |
-| scale: _s_, timezone | TIME(_s_) | STRING | TIME(_s_) | DATETIMEOFFSET(_s_) | TIMESTAMP(_s_) WITH TIME ZONE | TIME(_s_) WITH TIME ZONE | TIME(_s_) | string | datetime.time | OffsetTime |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| _(default)_ | TIME | STRING | TIME | TIME | INTERVAL DAY TO SECOND | TIME | TIME | string | datetime.time | LocalTime | TIME(MICROS, !UTC) |
+| scale: _s_ | TIME(_s_) | STRING | TIME(_s_) | TIME(_s_) | INTERVAL DAY(0) TO SECOND(_s_) | TIME(_s_) | TIME(_s_) | string | datetime.time | LocalTime | TIME(MICROS, !UTC) |
+| timezone | TIME | STRING | TIME | DATETIMEOFFSET | TIMESTAMP WITH TIME ZONE | TIME WITH TIME ZONE | TIME | string | datetime.time | OffsetTime | TIME(MICROS, UTC) |
+| scale: _s_, timezone | TIME(_s_) | STRING | TIME(_s_) | DATETIMEOFFSET(_s_) | TIMESTAMP(_s_) WITH TIME ZONE | TIME(_s_) WITH TIME ZONE | TIME(_s_) | string | datetime.time | OffsetTime | TIME(MICROS, UTC) |
 
 > **Platform notes:**
 >
@@ -393,6 +401,7 @@ A time of day consisting of hours, minutes, and seconds, optionally with fractio
 > - **MongoDB** has no native time type. Store as a string in ISO 8601 format (e.g., "14:30:00+02:00").
 > - **Python** `datetime.time` supports optional `tzinfo` for timezone-aware values. Fractional seconds are supported to microsecond precision.
 > - **Java** `java.time.LocalTime` for timezone-naive, `java.time.OffsetTime` for timezone-aware. Fractional seconds are supported to nanosecond precision.
+> - **Parquet** TIME is a logical type annotation on INT32 (MILLIS) or INT64 (MICROS/NANOS). The `isAdjustedToUTC` parameter maps to the `timezone` property. The `scale` property does not affect the Parquet unit — use MICROS by default for a good balance of precision and range.
 
 ---
 
@@ -418,12 +427,12 @@ A combined date and time value, optionally with fractional seconds and timezone 
 
 #### Physical Type Mapping
 
-| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| _(default)_ | TIMESTAMP_NTZ | TIMESTAMP_NTZ | DATETIME2 | DATETIME2 | TIMESTAMP | TIMESTAMP | DATETIME | date | datetime.datetime | LocalDateTime |
-| scale: _s_ | TIMESTAMP_NTZ(_s_) | TIMESTAMP_NTZ | DATETIME2(_s_) | DATETIME2(_s_) | TIMESTAMP(_s_) | TIMESTAMP(_s_) | DATETIME(_s_) | date | datetime.datetime | LocalDateTime |
-| timezone | TIMESTAMP_TZ | TIMESTAMP | DATETIME2 | DATETIMEOFFSET | TIMESTAMP WITH TIME ZONE | TIMESTAMPTZ | DATETIME | date | datetime.datetime | OffsetDateTime |
-| scale: _s_, timezone | TIMESTAMP_TZ(_s_) | TIMESTAMP | DATETIME2(_s_) | DATETIMEOFFSET(_s_) | TIMESTAMP(_s_) WITH TIME ZONE | TIMESTAMPTZ(_s_) | DATETIME(_s_) | date | datetime.datetime | OffsetDateTime |
+| Properties | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| _(default)_ | TIMESTAMP_NTZ | TIMESTAMP_NTZ | DATETIME2 | DATETIME2 | TIMESTAMP | TIMESTAMP | DATETIME | date | datetime.datetime | LocalDateTime | TIMESTAMP(MICROS, !UTC) |
+| scale: _s_ | TIMESTAMP_NTZ(_s_) | TIMESTAMP_NTZ | DATETIME2(_s_) | DATETIME2(_s_) | TIMESTAMP(_s_) | TIMESTAMP(_s_) | DATETIME(_s_) | date | datetime.datetime | LocalDateTime | TIMESTAMP(MICROS, !UTC) |
+| timezone | TIMESTAMP_TZ | TIMESTAMP | DATETIME2 | DATETIMEOFFSET | TIMESTAMP WITH TIME ZONE | TIMESTAMPTZ | DATETIME | date | datetime.datetime | OffsetDateTime | TIMESTAMP(MICROS, UTC) |
+| scale: _s_, timezone | TIMESTAMP_TZ(_s_) | TIMESTAMP | DATETIME2(_s_) | DATETIMEOFFSET(_s_) | TIMESTAMP(_s_) WITH TIME ZONE | TIMESTAMPTZ(_s_) | DATETIME(_s_) | date | datetime.datetime | OffsetDateTime | TIMESTAMP(MICROS, UTC) |
 
 > **Platform notes:**
 >
@@ -437,6 +446,7 @@ A combined date and time value, optionally with fractional seconds and timezone 
 > - **MongoDB** `date` stores all values as UTC milliseconds since epoch. There is no timezone-naive variant — all dates are inherently UTC. Fractional second precision is limited to milliseconds (3 digits).
 > - **Python** `datetime.datetime` supports optional `tzinfo` for timezone-aware values. Use `datetime.timezone.utc` or `zoneinfo.ZoneInfo` for timezone handling.
 > - **Java** `java.time.LocalDateTime` for timezone-naive, `java.time.OffsetDateTime` for offset-aware. Use `java.time.ZonedDateTime` if full timezone rules (DST) are needed.
+> - **Parquet** TIMESTAMP is a logical type annotation on INT64. The `isAdjustedToUTC` parameter maps to the `timezone` property. Unit is MILLIS, MICROS, or NANOS — use MICROS by default. The `scale` property does not affect the Parquet unit.
 
 ---
 
@@ -471,15 +481,15 @@ A time interval representing a span of time, such as "24 months", "90 days", or 
 
 The `unit` property determines both the physical type and, for platforms that store durations as integers, the unit of the stored integer value.
 
-| Unit | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| milliseconds | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND(3) | INTERVAL | INT | int | timedelta | Duration |
-| seconds _(default)_ | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration |
-| minutes | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration |
-| hours | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration |
-| days | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY TO SECOND | INTERVAL | INT | int | timedelta | Duration |
-| months | INT | INTERVAL YEAR TO MONTH | INT | INT | INTERVAL YEAR TO MONTH | INTERVAL | INT | int | int | Period |
-| years | INT | INTERVAL YEAR TO MONTH | INT | INT | INTERVAL YEAR TO MONTH | INTERVAL | INT | int | int | Period |
+| Unit | Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|------|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| milliseconds | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND(3) | INTERVAL | INT | int | timedelta | Duration | INTERVAL |
+| seconds _(default)_ | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration | INTERVAL |
+| minutes | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration | INTERVAL |
+| hours | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY(0) TO SECOND | INTERVAL | INT | int | timedelta | Duration | INTERVAL |
+| days | INT | INTERVAL DAY TO SECOND | INT | INT | INTERVAL DAY TO SECOND | INTERVAL | INT | int | timedelta | Duration | INTERVAL |
+| months | INT | INTERVAL YEAR TO MONTH | INT | INT | INTERVAL YEAR TO MONTH | INTERVAL | INT | int | int | Period | INTERVAL |
+| years | INT | INTERVAL YEAR TO MONTH | INT | INT | INTERVAL YEAR TO MONTH | INTERVAL | INT | int | int | Period | INTERVAL |
 
 > **Platform notes:**
 >
@@ -489,6 +499,7 @@ The `unit` property determines both the physical type and, for platforms that st
 > - **Snowflake**, **Fabric**, **SQL Server**, **MySQL**, and **MongoDB** have no native interval column type. The mapper stores the value as an integer in the specified unit (e.g., unit: minutes → INT storing the number of minutes). Snowflake supports INTERVAL syntax in expressions but not as a column data type.
 > - **Python** `datetime.timedelta` supports milliseconds through days. For `months` and `years`, Python has no built-in duration type — the mapper stores as a plain `int` in the specified unit.
 > - **Java** `java.time.Duration` handles milliseconds through days. For `months` and `years`, the mapper uses `java.time.Period` instead.
+> - **Parquet** INTERVAL is a logical type annotation on FIXED_LEN_BYTE_ARRAY(12), encoding three little-endian unsigned integers: months, days, and milliseconds. A single INTERVAL value can represent all unit categories simultaneously, so the `unit` property does not affect the physical type.
 
 ---
 
@@ -510,9 +521,9 @@ None.
 
 #### Physical Type Mapping
 
-| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java |
-|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|
-| UUID | STRING | UNIQUEIDENTIFIER | UNIQUEIDENTIFIER | RAW(16) | UUID | CHAR(36) | binData _(UUID)_ | uuid.UUID | UUID |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|------------|--------|------------|--------|------------|-------|---------|--------|------|---------|
+| UUID | STRING | UNIQUEIDENTIFIER | UNIQUEIDENTIFIER | RAW(16) | UUID | CHAR(36) | binData _(UUID)_ | uuid.UUID | UUID | UUID |
 
 > **Platform notes:**
 >
@@ -525,6 +536,7 @@ None.
 > - **MongoDB** stores UUIDs as `binData` with subtype 4 (UUID). The `UUID()` constructor generates new values.
 > - **Python** `uuid.UUID` from the standard library. Generate with `uuid.uuid4()`.
 > - **Java** `java.util.UUID`. Generate with `UUID.randomUUID()`.
+> - **Parquet** has a native UUID logical type annotation on FIXED_LEN_BYTE_ARRAY(16), stored in big-endian format.
 
 ---
 
@@ -547,9 +559,9 @@ None at the logical level. The coordinate reference system (SRID) and specific g
 
 #### Physical Type Mapping
 
-| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL + PostGIS | MySQL | MongoDB | Python | Java |
-|-----------|------------|--------|------------|--------|---------------------|-------|---------|--------|------|
-| GEOMETRY | GEOMETRY | VARBINARY _(WKB)_ | geometry | SDO_GEOMETRY | geometry | GEOMETRY | object _(GeoJSON)_ | str _(WKT)_ | Geometry _(JTS)_ |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL + PostGIS | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|------------|--------|------------|--------|---------------------|-------|---------|--------|------|---------|
+| GEOMETRY | GEOMETRY | VARBINARY _(WKB)_ | geometry | SDO_GEOMETRY | geometry | GEOMETRY | object _(GeoJSON)_ | str _(WKT)_ | Geometry _(JTS)_ | GEOMETRY _(WKB)_ |
 
 > **Platform notes:**
 >
@@ -562,6 +574,7 @@ None at the logical level. The coordinate reference system (SRID) and specific g
 > - **MongoDB** stores spatial data as GeoJSON objects (`{ type: "Point", coordinates: [x, y] }`). Create a `2d` index for planar geometry queries.
 > - **Python** has no built-in spatial type. Use `str` with WKT representation, or the Shapely library (`shapely.Geometry`) for spatial operations.
 > - **Java** has no built-in spatial type. Use JTS Topology Suite (`org.locationtech.jts.geom.Geometry`) for spatial operations.
+> - **Parquet** has a native GEOMETRY logical type annotation on BYTE_ARRAY, storing WKB with linear/planar edge interpolation. Optional `crs` parameter defaults to OGC:CRS84.
 
 ---
 
@@ -584,9 +597,9 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 
 #### Physical Type Mapping
 
-| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL + PostGIS | MySQL | MongoDB | Python | Java |
-|-----------|------------|--------|------------|--------|---------------------|-------|---------|--------|------|
-| GEOGRAPHY | GEOGRAPHY | VARBINARY _(WKB)_ | geography | SDO_GEOMETRY _(SRID 4326)_ | geography | GEOMETRY _(SRID 4326)_ | object _(GeoJSON)_ | str _(WKT)_ | Geometry _(JTS)_ |
+| Snowflake | Databricks | Fabric | SQL Server | Oracle | PostgreSQL + PostGIS | MySQL | MongoDB | Python | Java | Parquet |
+|-----------|------------|--------|------------|--------|---------------------|-------|---------|--------|------|---------|
+| GEOGRAPHY | GEOGRAPHY | VARBINARY _(WKB)_ | geography | SDO_GEOMETRY _(SRID 4326)_ | geography | GEOMETRY _(SRID 4326)_ | object _(GeoJSON)_ | str _(WKT)_ | Geometry _(JTS)_ | GEOGRAPHY _(WKB)_ |
 
 > **Platform notes:**
 >
@@ -598,6 +611,7 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 > - **PostgreSQL** and **SQL Server** have dedicated geography types that enforce spherical calculations.
 > - **MongoDB** stores geography as GeoJSON objects with `2dsphere` index for spherical queries. Coordinates use [longitude, latitude] order per the GeoJSON specification.
 > - **Python** and **Java** use the same types as Geometry — the distinction between planar and geodetic is determined by the SRID/CRS, not the type.
+> - **Parquet** has a native GEOGRAPHY logical type annotation on BYTE_ARRAY, storing WKB with spherical edge interpolation. Optional `crs` parameter defaults to OGC:CRS84. The `algorithm` parameter controls edge calculation (SPHERICAL by default).
 
 ---
 
@@ -929,6 +943,38 @@ None at the logical level. The coordinate reference system (typically WGS 84 / S
 | Geography | | Geometry _(JTS)_ |
 
 > Java maps integers to the smallest fitting primitive: `byte` (-128..127), `short` (-32768..32767), `int` (-2^31..2^31-1), `long` (-2^63..2^63-1), or `java.math.BigInteger` for arbitrary precision. Use boxed types (`Byte`, `Short`, `Integer`, `Long`) for nullable values. `java.math.BigDecimal` provides arbitrary-precision exact decimals. The `java.time` package (JSR-310) provides `LocalDate`, `LocalTime`, `LocalDateTime` for timezone-naive and `OffsetTime`, `OffsetDateTime` for timezone-aware types. Use `ZonedDateTime` when full timezone rules (DST transitions) are needed. Java has no built-in spatial types — use JTS Topology Suite (`org.locationtech.jts.geom.Geometry`). For unsigned ranges (e.g., 0..255), Java uses the next larger signed type since it has no unsigned primitives.
+
+### Parquet
+
+| Logical Type | Properties | Physical Type |
+|-------------|------------|---------------|
+| Text | | STRING |
+| Binary | | BYTE_ARRAY |
+| Binary | length: _n_, fixedLength | FIXED_LEN_BYTE_ARRAY(_n_) |
+| Boolean | | BOOLEAN |
+| Integer | | INT(32, signed) |
+| Integer | 0 to 255 | INT(8, unsigned) |
+| Integer | -128 to 127 | INT(8, signed) |
+| Integer | -32768 to 32767 | INT(16, signed) |
+| Integer | 0 to 65535 | INT(16, unsigned) |
+| Integer | -2^31 to 2^31-1 | INT(32, signed) |
+| Integer | 0 to 2^32-1 | INT(32, unsigned) |
+| Integer | -2^63 to 2^63-1 | INT(64, signed) |
+| Integer | 0 to 2^64-1 | INT(64, unsigned) |
+| Decimal | precision: _p_, scale: _s_ | DECIMAL(_p_,_s_) |
+| Float | | DOUBLE |
+| Float | precision <= 7 | FLOAT |
+| Date | | DATE |
+| Time | | TIME(MICROS, !UTC) |
+| Time | timezone | TIME(MICROS, UTC) |
+| DateTime | | TIMESTAMP(MICROS, !UTC) |
+| DateTime | timezone | TIMESTAMP(MICROS, UTC) |
+| Duration | | INTERVAL |
+| UUID | | UUID |
+| Geometry | | GEOMETRY _(WKB)_ |
+| Geography | | GEOGRAPHY _(WKB)_ |
+
+> Parquet uses 8 physical types (BOOLEAN, INT32, INT64, FLOAT, DOUBLE, BYTE_ARRAY, FIXED_LEN_BYTE_ARRAY, INT96 deprecated) with logical type annotations to extend semantics. STRING is a logical annotation on BYTE_ARRAY (always UTF-8). INT is a logical annotation on INT32/INT64 with `bitWidth` and `isSigned` parameters — both signed and unsigned are supported natively. DECIMAL is a logical annotation on INT32 (1-9 digits), INT64 (10-18 digits), or BYTE_ARRAY/FIXED_LEN_BYTE_ARRAY for larger precision. TIME and TIMESTAMP support MILLIS, MICROS, or NANOS units with `isAdjustedToUTC` for timezone semantics — MICROS is the recommended default. INTERVAL uses FIXED_LEN_BYTE_ARRAY(12) encoding months, days, and milliseconds as three little-endian unsigned integers. UUID uses FIXED_LEN_BYTE_ARRAY(16) in big-endian format. GEOMETRY and GEOGRAPHY are native logical types storing WKB in BYTE_ARRAY, with optional CRS parameter (default OGC:CRS84). GEOGRAPHY additionally supports an `algorithm` parameter for edge interpolation (default SPHERICAL). Length, fixedLength, unicode, scale, and unit properties have no effect on Parquet physical types — constraints are enforced at the application level.
 
 ---
 
