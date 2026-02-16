@@ -3,24 +3,28 @@
  ********************************************************************************/
 
 import { ModelFileExtensions, TypeGuard } from '@crossmodel/protocol';
-import { EmptyFileSystem, EmptyFileSystemProvider, FileSystemNode, FileSystemProvider, LangiumDocument, URI } from 'langium';
+import { Dimension, Point } from '@eclipse-glsp/server';
+import { EmptyFileSystem, EmptyFileSystemProvider, FileSystemNode, FileSystemProvider, LangiumDocument, Reference, URI } from 'langium';
 import { DefaultSharedModuleContext, LangiumServices } from 'langium/lsp';
 import { ParseHelperOptions, parseDocument as langiumParseDocument } from 'langium/test';
 import path from 'path';
-import { CrossModelServices, createCrossModelServices } from '../../../src/language-server/cross-model-module';
 import {
    CrossModelRoot,
    DataModel,
    LogicalEntity,
+   LogicalEntityAttribute,
+   LogicalEntityNode,
    Mapping,
    Relationship,
+   RelationshipEdge,
    SystemDiagram,
    isDataModel,
    isLogicalEntity,
    isMapping,
    isRelationship,
    isSystemDiagram
-} from '../../../src/language-server/generated/ast';
+} from '../../../src/language-server/ast';
+import { CrossModelServices, createCrossModelServices } from '../../../src/language-server/cross-model-module';
 import { SemanticRoot, WithDocument, findSemanticRoot } from '../../../src/language-server/util/ast-util';
 
 export function createCrossModelTestServices(context: DefaultSharedModuleContext = EmptyFileSystem): CrossModelServices {
@@ -224,4 +228,115 @@ export function diagramDocumentUri(...segments: string[]): string {
 export function mappingDocumentUri(...segments: string[]): string {
    const last = segments.pop()!;
    return testUri(...segments, last + ModelFileExtensions.Mapping);
+}
+
+export function createLogicalEntity(
+   container: CrossModelRoot,
+   id: string,
+   name: string,
+   opts?: Partial<Omit<LogicalEntity, '$container' | '$type' | 'id' | 'name'>>
+): LogicalEntity {
+   return {
+      $container: container,
+      $type: LogicalEntity.$type,
+      id,
+      name,
+      attributes: [],
+      identifiers: [],
+      customProperties: [],
+      inherits: [],
+      ...opts
+   };
+}
+
+export function createLogicalEntityAttribute(
+   container: LogicalEntity,
+   id: string,
+   name: string,
+   opts?: Partial<Omit<LogicalEntityAttribute, '$container' | '$type' | 'id' | 'name'>>
+): LogicalEntityAttribute {
+   return {
+      $container: container,
+      $type: LogicalEntityAttribute.$type,
+      id,
+      name,
+      customProperties: [],
+      mandatory: false,
+      ...opts
+   };
+}
+
+export function createRelationship(
+   container: CrossModelRoot,
+   id: string,
+   name: string,
+   parent: Reference<LogicalEntity>,
+   child: Reference<LogicalEntity>,
+   opts?: Partial<Omit<Relationship, '$container' | '$type' | 'id' | 'name' | 'parent' | 'child'>>
+): Relationship {
+   return {
+      $container: container,
+      $type: Relationship.$type,
+      id,
+      name,
+      parent,
+      child,
+      attributes: [],
+      customProperties: [],
+      ...opts
+   };
+}
+
+export function createSystemDiagram(
+   container: CrossModelRoot,
+   id: string,
+   opts?: Partial<Omit<SystemDiagram, '$container' | '$type' | 'id'>>
+): SystemDiagram {
+   return {
+      $container: container,
+      $type: SystemDiagram.$type,
+      id,
+      nodes: [],
+      edges: [],
+      ...opts
+   };
+}
+
+export function createEntityNode(
+   container: SystemDiagram,
+   id: string,
+   entity: Reference<LogicalEntity>,
+   position: Point,
+   dimension: Dimension,
+   opts?: Partial<Omit<LogicalEntityNode, '$container' | '$type' | 'id' | 'entity'>>
+): LogicalEntityNode {
+   return {
+      $container: container,
+      $type: LogicalEntityNode.$type,
+      _attributes: [],
+      id,
+      entity,
+      ...position,
+      ...dimension,
+      ...opts
+   };
+}
+
+export function createRelationshipEdge(
+   container: SystemDiagram,
+   id: string,
+   relationship: Reference<Relationship>,
+   sourceNode: Reference<LogicalEntityNode>,
+   targetNode: Reference<LogicalEntityNode>,
+   opts?: Partial<Omit<RelationshipEdge, '$container' | '$type' | 'id' | 'relationship' | 'sourceNode' | 'targetNode'>>
+): RelationshipEdge {
+   return {
+      $container: container,
+      $type: RelationshipEdge.$type,
+      id,
+      relationship,
+      sourceNode,
+      targetNode,
+      ...opts
+   };
 }

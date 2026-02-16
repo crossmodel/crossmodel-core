@@ -11,10 +11,8 @@ import {
    isAttributeMapping,
    isAttributeMappingSource,
    isAttributeMappingTarget,
-   isSourceObject,
-   isTargetObject
-} from '../../../language-server/generated/ast.js';
-import { getAttributes } from '../../../language-server/util/ast-util.js';
+   isSourceObject
+} from '../../../language-server/ast.js';
 import { CrossModelIndex } from '../../common/cross-model-index.js';
 
 @injectable()
@@ -40,16 +38,6 @@ export class MappingModelIndex extends CrossModelIndex {
          return this.createAttributeMappingTargetId(node);
       }
       return undefined;
-   }
-
-   protected override indexAstNode(node: AstNode): void {
-      super.indexAstNode(node);
-      // we also want to index implicit attributes
-      if (isSourceObject(node)) {
-         getAttributes(node).forEach(attr => this.indexAstNode(attr));
-      } else if (isTargetObject(node)) {
-         getAttributes(node).forEach(attr => this.indexAstNode(attr));
-      }
    }
 
    protected createAttributeMappingId(mapping: AttributeMapping): string | undefined {

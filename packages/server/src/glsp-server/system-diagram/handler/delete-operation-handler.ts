@@ -10,7 +10,7 @@ import {
    isSystemDiagramEdge,
    LogicalEntityNode,
    SystemDiagramEdge
-} from '../../../language-server/generated/ast.js';
+} from '../../../language-server/ast.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';
 

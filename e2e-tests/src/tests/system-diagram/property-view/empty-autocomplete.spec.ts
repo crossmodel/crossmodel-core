@@ -19,6 +19,9 @@ test.describe('Empty autocomplete fields', () => {
    });
 
    test('Verify autocomplete component accepts empty string to unset values', async () => {
+      // This test performs many sequential operations (add attribute, set/clear
+      // datatype, verify in code editor, cleanup) that accumulate in CI.
+      test.slow();
       const ATTRIBUTE_NAME = 'AttributeForEmptyTest';
 
       // Open the system diagram

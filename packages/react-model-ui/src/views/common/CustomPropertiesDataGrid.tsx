@@ -7,10 +7,11 @@ import * as React from 'react';
 import { useModelDispatch, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
 import { EditorProperty, GenericTextEditor } from './GenericEditors';
-import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid, handleGenericRowReorder } from './PrimeDataGrid';
 import { wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 export interface CustomPropertyRow extends CustomProperty {
+   id: string;
    idx: number;
    _uncommitted?: boolean;
 }
@@ -26,7 +27,7 @@ export interface CustomPropertiesDataGridProps {
 
 const deriveCustomPropertyRowId = (prop: Partial<CustomProperty>, idx: number): string => {
    const persistedId = prop.id as string | undefined;
-   const globalId = prop.$globalId as string | undefined;
+   const globalId = prop._globalId as string | undefined;
    return persistedId ?? globalId ?? `customProperty-${idx}`;
 };
 
@@ -74,7 +75,7 @@ export function CustomPropertiesDataGrid({
    const defaultEntry = React.useMemo<CustomPropertyRow>(
       () => ({
          $type: CustomPropertyType,
-         $globalId: 'toBeAssigned',
+         _globalId: 'toBeAssigned',
          name: '',
          id: '', // ID will be assigned when adding the row
          value: '',
@@ -205,8 +206,9 @@ export function CustomPropertiesDataGrid({
             return;
          }
 
-         const customPropertyIdx =
-            (customProperties || []).findIndex((prop, idx) => deriveCustomPropertyRowId(prop, idx) === customProperty.id);
+         const customPropertyIdx = (customProperties || []).findIndex(
+            (prop, idx) => deriveCustomPropertyRowId(prop, idx) === customProperty.id
+         );
          if (customPropertyIdx === -1) {
             if (customProperty.id) {
                pendingDeleteIdsRef.current.delete(customProperty.id);

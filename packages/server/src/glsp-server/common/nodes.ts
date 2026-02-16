@@ -4,7 +4,7 @@
 
 import { ATTRIBUTE_COMPARTMENT_TYPE, createLeftPortId, createRightPortId } from '@crossmodel/protocol';
 import { DefaultTypes, GCompartment, GCompartmentBuilder, GLabel, GPort } from '@eclipse-glsp/server';
-import { LogicalAttribute } from '../../language-server/generated/ast.js';
+import { LogicalAttribute } from '../../language-server/ast.js';
 import { CrossModelIndex } from './cross-model-index.js';
 
 export function createHeader(text: string, containerId: string, labelType = DefaultTypes.LABEL): GCompartment {

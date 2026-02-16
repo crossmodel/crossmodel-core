@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
-import { CustomProperty, RelationshipAttribute, unreachable } from '@crossmodel/protocol';
+import { Cardinality, CustomProperty, RelationshipAttribute, unreachable } from '@crossmodel/protocol';
 import { DispatchAction, ModelAction, ModelState, undefinedIfEmpty } from './ModelReducer';
 
 export interface RelationshipChangeNameAction extends ModelAction {
@@ -27,7 +27,7 @@ export interface RelationshipChangeParentAction extends ModelAction {
 
 export interface RelationshipChangeParentCardinalityAction extends ModelAction {
    type: 'relationship:change-parent-cardinality';
-   parentCardinality: string;
+   parentCardinality: Cardinality;
 }
 
 export interface RelationshipChangeParentRoleAction extends ModelAction {
@@ -42,7 +42,7 @@ export interface RelationshipChangeChildAction extends ModelAction {
 
 export interface RelationshipChangeChildCardinalityAction extends ModelAction {
    type: 'relationship:change-child-cardinality';
-   childCardinality: string;
+   childCardinality: Cardinality;
 }
 
 export interface RelationshipChangeChildRoleAction extends ModelAction {

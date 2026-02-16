@@ -13,7 +13,7 @@ import {
    getOrThrow
 } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { CrossModelRoot, InheritanceEdge, LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
+import { CrossModelRoot, InheritanceEdge, LogicalEntity, LogicalEntityNode } from '../../../language-server/ast.js';
 import { findDocument } from '../../../language-server/util/ast-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';
@@ -49,7 +49,7 @@ export class SystemDiagramCreateInheritanceOperationHandler extends JsonCreateEd
       const baseEntityGlobalId = this.modelState.idProvider.getGlobalId(baseEntityNode.entity.ref);
       const scope = this.modelState.services.language.references.ScopeProvider.getCompletionScope({
          container: { globalId: baseEntityGlobalId! },
-         property: 'superEntities'
+         property: LogicalEntity.inherits
       });
 
       const superEntityGlobalId = this.modelState.idProvider.getGlobalId(superEntityNode.entity.ref)!;
@@ -112,7 +112,7 @@ export class AddInheritanceCommand implements Command {
          return;
       }
 
-      baseEntity.superEntities.push({
+      baseEntity.inherits.push({
          ref: superEntity,
          $refText: toIdReference(this.modelState.idProvider.getGlobalId(superEntity) || superEntity.id || '')
       });
@@ -137,9 +137,9 @@ export class AddInheritanceCommand implements Command {
       if (!baseEntity || !superEntity) {
          return;
       }
-      const index = baseEntity.superEntities.findIndex(entity => entity.ref === superEntity);
+      const index = baseEntity.inherits.findIndex(entity => entity.ref === superEntity);
       if (index > -1) {
-         baseEntity.superEntities?.splice(index, 1);
+         baseEntity.inherits?.splice(index, 1);
       }
       const document = findDocument<CrossModelRoot>(baseEntity)!;
       await this.modelState.modelService.save({
@@ -164,5 +164,5 @@ export class AddInheritanceCommand implements Command {
 }
 
 function hasSuperEntity(baseEntity: LogicalEntity, superEntity: LogicalEntity): boolean {
-   return baseEntity.superEntities.some(entity => entity.ref === superEntity);
+   return baseEntity.inherits.some(entity => entity.ref === superEntity);
 }

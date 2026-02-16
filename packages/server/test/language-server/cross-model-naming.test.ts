@@ -3,7 +3,7 @@
  ********************************************************************************/
 import { describe, expect, test } from '@jest/globals';
 import { URI } from 'vscode-uri';
-import { LogicalEntity, LogicalEntityNode } from '../../src/language-server/generated/ast';
+import { LogicalEntity, LogicalEntityNode } from '../../src/language-server/ast';
 import {
    MockFileSystem,
    createCrossModelTestServices,

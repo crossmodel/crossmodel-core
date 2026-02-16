@@ -3,8 +3,7 @@
  ********************************************************************************/
 import { RenderProps, SOURCE_OBJECT_NODE_TYPE, TARGET_OBJECT_NODE_TYPE } from '@crossmodel/protocol';
 import { ArgsUtil, GLabel, GNode, GNodeBuilder } from '@eclipse-glsp/server';
-import { SourceObject, TargetObject, TargetObjectAttribute } from '../../../language-server/generated/ast.js';
-import { getAttributes } from '../../../language-server/util/ast-util.js';
+import { SourceObject, TargetObject, TargetObjectAttribute } from '../../../language-server/ast.js';
 import { AttributeCompartment, AttributesCompartmentBuilder, createHeader } from '../../common/nodes.js';
 import { MappingModelIndex } from './mapping-model-index.js';
 
@@ -29,9 +28,8 @@ export class GSourceObjectNodeBuilder extends GNodeBuilder<GSourceObjectNode> {
       this.add(createHeader(node.id || 'unresolved', this.proxy.id));
 
       // Add the children of the node
-      const attributes = getAttributes(node);
       const attributesContainer = new AttributesCompartmentBuilder().set(this.proxy.id);
-      for (const attribute of attributes) {
+      for (const attribute of node._attributes) {
          const attrComp = AttributeCompartment.builder().set(attribute, index);
          attrComp.addArg(RenderProps.SOURCE_OBJECT_IDX, sourceObjectIdx);
          attributesContainer.add(attrComp.build());
@@ -72,10 +70,8 @@ export class GTargetObjectNodeBuilder extends GNodeBuilder<GTargetObjectNode> {
       this.add(createHeader(node.entity?.ref?.name || node.entity?.ref?.id || 'unresolved', id));
 
       // Add the children of the node
-      const attributes = getAttributes(node);
-
       const attributesContainer = new AttributesCompartmentBuilder().set(id);
-      for (const attribute of attributes) {
+      for (const attribute of node._attributes) {
          const attrComp = AttributeCompartment.builder().set(attribute, index, (attr, attrId) => this.markExpression(node, attr, attrId));
          const mappingIdx = node.mappings.findIndex(mapping => mapping.attribute?.value.ref === attribute);
          if (mappingIdx >= 0) {

@@ -44,7 +44,7 @@ export class OpenableTextDocuments<T extends TextDocument> extends NormalizedTex
    public constructor(
       protected configuration: TextDocumentsConfiguration<T>,
       protected services: CrossModelSharedServices,
-      protected logger = services.logger.ClientLogger
+      protected logger = services.client.Logger.for('TextDocuments')
    ) {
       super(configuration);
    }
@@ -276,6 +276,6 @@ export class OpenableTextDocuments<T extends TextDocument> extends NormalizedTex
 
    protected log(uri: DocumentUri, message: string): void {
       const full = URI.parse(uri);
-      this.logger.info(`[Documents][${basename(full.fsPath)}] ${message}`);
+      this.logger.info(`[${basename(full.fsPath)}] ${message}`);
    }
 }

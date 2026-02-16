@@ -21,11 +21,11 @@ import { AstNode, Deferred, DocumentState, UriUtils, isAstNode } from 'langium';
 import { basename } from 'path';
 import { Disposable, OptionalVersionedTextDocumentIdentifier, Range, TextDocumentEdit, TextEdit, uinteger } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import * as ast from '../language-server/ast.js';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelServices, CrossModelSharedServices } from '../language-server/cross-model-module.js';
-import { CrossModelRoot, isCrossModelRoot } from '../language-server/generated/ast.js';
 import { findDocument } from '../language-server/util/ast-util.js';
-import { AstCrossModelDocument } from './open-text-document-manager.js';
+import { AstModelDocument } from './open-text-document-manager.js';
 import { LANGUAGE_CLIENT_ID } from './openable-text-documents.js';
 
 /**
@@ -38,7 +38,8 @@ export class ModelService {
       protected documentManager = shared.workspace.TextDocumentManager,
       protected documents: CrossModelLangiumDocuments = shared.workspace.LangiumDocuments,
       protected documentBuilder = shared.workspace.DocumentBuilder,
-      protected fileSystemProvider = shared.workspace.FileSystemProvider
+      protected fileSystemProvider = shared.workspace.FileSystemProvider,
+      protected logger = shared.client.Logger.for('ModelService')
    ) {
       // sync updates with language client
       this.documentBuilder.onDocumentPhase(DocumentState.Validated, async (changedDocument, _token) => {
@@ -50,9 +51,7 @@ export class ModelService {
          if (this.documentManager.isOpenInLanguageClient(textDocument.uri)) {
             // we only want to apply a text edit if the editor is already open
             // because opening and updating at the same time might cause problems as the open call resets the document to filesystem
-            shared.logger.ClientLogger.info(
-               `[Documents][${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`
-            );
+            this.logger.info(`[${basename(URI.parse(textDocument.uri).fsPath)}] Sync from ${sourceClientId} to ${LANGUAGE_CLIENT_ID}`);
             await this.shared.lsp.Connection?.workspace.applyEdit({
                label: 'Update Model',
                documentChanges: [
@@ -113,7 +112,7 @@ export class ModelService {
     * @param uri document URI
     * @param state minimum state the document should have before returning
     */
-   async request(uri: string, state = DocumentState.Validated): Promise<AstCrossModelDocument | undefined> {
+   async request(uri: string, state = DocumentState.Validated): Promise<AstModelDocument | undefined> {
       const documentUri = URI.parse(uri);
       await this.documentBuilder.waitUntil(state);
       if (this.documents.hasDocument(documentUri)) {
@@ -121,7 +120,7 @@ export class ModelService {
       }
       const document = await this.documents.getOrCreateDocument(documentUri);
       const root = document.parseResult.value;
-      return isCrossModelRoot(root) ? { root, diagnostics: document.diagnostics ?? [], uri } : undefined;
+      return ast.isCrossModelRoot(root) ? { root, diagnostics: document.diagnostics ?? [], uri } : undefined;
    }
 
    /**
@@ -133,7 +132,7 @@ export class ModelService {
     * @param model semantic model or textual representation of it
     * @returns the stored semantic model
     */
-   async update(args: UpdateModelArgs<CrossModelRoot>): Promise<AstCrossModelDocument> {
+   async update(args: UpdateModelArgs<ast.CrossModelRoot>): Promise<AstModelDocument> {
       await this.open(args);
       const documentUri = URI.parse(args.uri);
       const document = await this.documents.getOrCreateDocument(documentUri);
@@ -142,16 +141,16 @@ export class ModelService {
          throw new Error(`No AST node to update exists in '${args.uri}'`);
       }
       const textDocument = document.textDocument;
-      const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
+      const text = typeof args.model === 'string' ? args.model : this.serialize(args.model);
       if (text === textDocument.getText()) {
          return {
             diagnostics: document.diagnostics ?? [],
-            root: document.parseResult.value as CrossModelRoot,
+            root: document.parseResult.value,
             uri: args.uri
          };
       }
       const newVersion = textDocument.version + 1;
-      const pendingUpdate = new Deferred<AstCrossModelDocument>();
+      const pendingUpdate = new Deferred<AstModelDocument>();
       const listener = this.documentBuilder.onDocumentPhase(DocumentState.Validated, (updatedDocument, _token) => {
          if (updatedDocument.uri.toString() === documentUri.toString() && updatedDocument.textDocument.version === newVersion) {
             const crossModelDocument = updatedDocument as CrossModelLangiumDocument;
@@ -163,7 +162,7 @@ export class ModelService {
             listener.dispose();
          }
       });
-      const timeout = new Promise<AstCrossModelDocument>((_, reject) =>
+      const timeout = new Promise<AstModelDocument>((_, reject) =>
          setTimeout(() => {
             listener.dispose();
             reject('Update timed out.');
@@ -173,11 +172,11 @@ export class ModelService {
       return Promise.race([pendingUpdate.promise, timeout]);
    }
 
-   onModelUpdated(uri: string, listener: (model: ModelUpdatedEvent<AstCrossModelDocument>) => void): Disposable {
+   onModelUpdated(uri: string, listener: (model: ModelUpdatedEvent<AstModelDocument>) => void): Disposable {
       return this.documentManager.onUpdate(uri, listener);
    }
 
-   onModelSaved(uri: string, listener: (model: ModelSavedEvent<AstCrossModelDocument>) => void): Disposable {
+   onModelSaved(uri: string, listener: (model: ModelSavedEvent<AstModelDocument>) => void): Disposable {
       return this.documentManager.onSave(uri, listener);
    }
 
@@ -187,10 +186,10 @@ export class ModelService {
     * @param uri document uri
     * @param model semantic model or text
     */
-   async save(args: SaveModelArgs<CrossModelRoot>): Promise<void> {
+   async save(args: SaveModelArgs<ast.CrossModelRoot>): Promise<void> {
       // sync: implicit update of internal data structure to match file system (similar to workspace initialization)
       const documentUri = URI.parse(args.uri);
-      const text = typeof args.model === 'string' ? args.model : this.serialize(documentUri, args.model);
+      const text = typeof args.model === 'string' ? args.model : this.serialize(args.model);
       if (this.documents.hasDocument(documentUri)) {
          await this.update(args);
       } else {
@@ -203,12 +202,10 @@ export class ModelService {
    /**
     * Serializes the given semantic model by using the serializer service for the corresponding language.
     *
-    * @param uri document uri
     * @param model semantic model
     */
-   protected serialize(uri: URI, model: AstNode): string {
-      const serializer = this.shared.ServiceRegistry.getServices(uri).serializer.Serializer;
-      return serializer.serialize(model);
+   protected serialize(model: ast.CrossModelRoot): string {
+      return this.shared.ServiceRegistry.CrossModel.serializer.Serializer.serialize(model);
    }
 
    getId(node: AstNode, uri = findDocument(node)?.uri): string | undefined {

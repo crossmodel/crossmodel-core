@@ -8,14 +8,15 @@ import {
    AttributeMappingExpression,
    AttributeMappingSource,
    AttributeMappingTarget,
+   CrossModelRoot,
    CustomProperty,
    DataModel,
    DataModelDependency,
    IdentifiedObject,
    InheritanceEdge,
    JoinCondition,
-   LogicalAttribute,
    LogicalEntity,
+   LogicalEntityAttribute,
    LogicalEntityNode,
    LogicalIdentifier,
    Mapping,
@@ -24,27 +25,12 @@ import {
    RelationshipAttribute,
    RelationshipEdge,
    SourceObject,
-   SourceObjectAttribute,
    SourceObjectDependency,
    SystemDiagram,
    TargetObject,
-   TargetObjectAttribute,
    WithCustomProperties,
    reflection
-} from '../generated/ast.js';
-
-/**
- * Map of property names to their corresponding keywords in the serialized output.
- * Required because the grammar uses different keywords than the AST property names (e.g., 'inherits' vs 'superEntities').
- */
-const PROPERTY_KEYWORDS = new Map<string, string>([[LogicalEntity.superEntities, 'inherits']]);
-
-/**
- * Get the keyword for a property, or the property name itself if no keyword mapping exists.
- */
-export function getPropertyKeyword(property: string): string {
-   return PROPERTY_KEYWORDS.get(property) ?? property;
-}
+} from '../ast.js';
 
 /**
  * Properties whose values should not be quoted during serialization.
@@ -168,18 +154,22 @@ const CUSTOM_PROPERTIES = [WithCustomProperties.customProperties];
  */
 const PROPERTY_ORDER = new Map<string, string[]>([
    [
-      LogicalEntity.$type,
-      [...NAMED_OBJECT_PROPERTIES, LogicalEntity.superEntities, LogicalEntity.attributes, LogicalEntity.identifiers, ...CUSTOM_PROPERTIES]
+      CrossModelRoot.$type,
+      [CrossModelRoot.datamodel, CrossModelRoot.entity, CrossModelRoot.relationship, CrossModelRoot.systemDiagram, CrossModelRoot.mapping]
    ],
    [
-      LogicalAttribute.$type,
+      LogicalEntity.$type,
+      [...NAMED_OBJECT_PROPERTIES, LogicalEntity.inherits, LogicalEntity.attributes, LogicalEntity.identifiers, ...CUSTOM_PROPERTIES]
+   ],
+   [
+      LogicalEntityAttribute.$type,
       [
          ...NAMED_OBJECT_PROPERTIES,
-         LogicalAttribute.datatype,
-         LogicalAttribute.length,
-         LogicalAttribute.precision,
-         LogicalAttribute.scale,
-         LogicalAttribute.mandatory,
+         LogicalEntityAttribute.datatype,
+         LogicalEntityAttribute.length,
+         LogicalEntityAttribute.precision,
+         LogicalEntityAttribute.scale,
+         LogicalEntityAttribute.mandatory,
          ...CUSTOM_PROPERTIES
       ]
    ],
@@ -258,16 +248,21 @@ const PROPERTY_ORDER = new Map<string, string[]>([
    [DataModel.$type, [...NAMED_OBJECT_PROPERTIES, DataModel.type, DataModel.version, DataModel.dependencies, ...CUSTOM_PROPERTIES]],
    [DataModelDependency.$type, [DataModelDependency.datamodel, DataModelDependency.version]]
 ]);
-PROPERTY_ORDER.set(SourceObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
-PROPERTY_ORDER.set(TargetObjectAttribute.$type, PROPERTY_ORDER.get(LogicalAttribute.$type) ?? []);
 
 /**
- * Sorts properties in place according to the grammar's property order for the given type.
- * Properties not in the order list will have index -1, sorting them to the beginning.
+ * Returns the ordered property names for a given AST type, matching the grammar's property order.
+ * This is the single source of truth for property serialization order.
  */
-export function sortPropertiesByGrammarOrder<T extends { name: string }>(type: string, properties: T[]): void {
-   const order = PROPERTY_ORDER.get(type);
-   if (order) {
-      properties.sort((left, right) => order.indexOf(left.name) - order.indexOf(right.name));
-   }
+export function getOrderedPropertyNames(type: string): string[] {
+   return PROPERTY_ORDER.get(type) ?? [];
+}
+
+/**
+ * Check if a property is a reference property using the generated AST reflection metadata.
+ * Reference properties have a `referenceType` in their metadata.
+ */
+export function isReferenceProperty(type: string, property: string): boolean {
+   const typeMetaData = reflection.getTypeMetaData(type);
+   const propertyMetaData = typeMetaData.properties[property];
+   return propertyMetaData !== undefined && 'referenceType' in propertyMetaData;
 }

@@ -4,7 +4,7 @@
 import fs from 'fs';
 import { CompositeGeneratorNode, NL, toString } from 'langium/generate';
 import path from 'path';
-import { CrossModelRoot } from '../language-server/generated/ast.js';
+import { CrossModelRoot } from '../language-server/ast.js';
 import { extractDestinationAndName } from './cli-util.js';
 
 export function generateJavaScript(root: CrossModelRoot, filePath: string, destination: string | undefined): string {

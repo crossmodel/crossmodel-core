@@ -15,7 +15,7 @@ import {
 } from '@crossmodel/protocol';
 import { ArgsUtil, GEdge, GEdgeBuilder } from '@eclipse-glsp/server';
 import { combineIds } from '../../../language-server/cross-model-naming.js';
-import { InheritanceEdge, LogicalEntity, Relationship, RelationshipEdge } from '../../../language-server/generated/ast.js';
+import { InheritanceEdge, LogicalEntity, Relationship, RelationshipEdge } from '../../../language-server/ast.js';
 import { SystemModelIndex } from './system-model-index.js';
 
 export class GRelationshipEdge extends GEdge {

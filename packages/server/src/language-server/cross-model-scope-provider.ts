@@ -38,7 +38,7 @@ import {
    isSourceObject,
    isSourceObjectAttributeReference,
    isSourceObjectDependency
-} from './generated/ast.js';
+} from './ast.js';
 import { findDocument, fixDocument } from './util/ast-util.js';
 
 /**

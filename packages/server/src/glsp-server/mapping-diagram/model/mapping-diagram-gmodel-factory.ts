@@ -3,7 +3,7 @@
  ********************************************************************************/
 import { GEdge, GGraph, GModelFactory, GNode } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { AttributeMapping, SourceObject, TargetObject } from '../../../language-server/generated/ast.js';
+import { AttributeMapping, SourceObject, TargetObject } from '../../../language-server/ast.js';
 import { GTargetObjectEdge } from './edges.js';
 import { MappingModelState } from './mapping-model-state.js';
 import { GSourceObjectNode, GTargetObjectNode } from './nodes.js';

@@ -1,0 +1,8 @@
+entity:
+    id: DualEditorAutoSave
+    name: "DualEditorAutoSave"
+    description: "Test entity for dual editor auto-save"
+    attributes:
+      - id: TestAttr
+        name: "TestAttr"
+        datatype: "Text"

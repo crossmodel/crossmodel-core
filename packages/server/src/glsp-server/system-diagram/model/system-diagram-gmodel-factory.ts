@@ -3,7 +3,7 @@
  ********************************************************************************/
 import { GEdge, GGraph, GModelFactory, GNode, ModelState } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { InheritanceEdge, LogicalEntityNode, RelationshipEdge, isRelationshipEdge } from '../../../language-server/generated/ast.js';
+import { InheritanceEdge, LogicalEntityNode, RelationshipEdge, isRelationshipEdge } from '../../../language-server/ast.js';
 import { GInheritanceEdge, GRelationshipEdge } from './edges.js';
 import { GEntityNode } from './nodes.js';
 import { SystemModelState } from './system-model-state.js';

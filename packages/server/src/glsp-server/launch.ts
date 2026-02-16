@@ -33,7 +33,7 @@ export function startGLSPServer(services: CrossModelLSPServices, workspaceFolder
    const launchOptions: SocketLaunchOptions = { ...defaultSocketLaunchOptions, host: '127.0.0.1', logLevel: LogLevel.info };
 
    // create module based on launch options, e.g., logging etc.
-   const appModule = createAppModule(launchOptions, services.shared.logger.ClientLogger);
+   const appModule = createAppModule(launchOptions, services.shared.client.Logger);
    // create custom module to bind language services to support injection within GLSP classes
    const lspModule = createLSPModule(services);
 

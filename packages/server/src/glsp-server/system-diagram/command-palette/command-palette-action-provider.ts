@@ -5,7 +5,7 @@ import { DropFilesOperation, ModelStructure } from '@crossmodel/protocol';
 import { ContextActionsProvider, EditorContext, LabeledAction, ModelState, Point } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
 import { URI } from 'vscode-uri';
-import { LogicalEntityNode, RelationshipEdge } from '../../../language-server/generated/ast.js';
+import { LogicalEntityNode, RelationshipEdge } from '../../../language-server/ast.js';
 import { SystemModelState } from '../model/system-model-state.js';
 
 /**

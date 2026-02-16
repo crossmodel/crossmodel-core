@@ -4,7 +4,7 @@
 import { INHERITANCE_EDGE_TYPE } from '@crossmodel/protocol';
 import { EdgeCreationChecker, GModelElement, ModelState, getOrThrow } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
-import { LogicalEntity, LogicalEntityNode, isInheritanceEdge } from '../../../language-server/generated/ast.js';
+import { LogicalEntity, LogicalEntityNode, isInheritanceEdge } from '../../../language-server/ast.js';
 import { SystemModelState } from '../model/system-model-state.js';
 
 @injectable()
@@ -36,7 +36,7 @@ export class SystemEdgeCreationChecker implements EdgeCreationChecker {
       const baseEntityGlobalId = this.modelState.idProvider.getGlobalId(baseEntityNode.entity.ref);
       const scope = this.modelState.services.language.references.ScopeProvider.getCompletionScope({
          container: { globalId: baseEntityGlobalId! },
-         property: 'superEntities'
+         property: LogicalEntity.inherits
       });
 
       const superEntityGlobalId = this.modelState.idProvider.getGlobalId(superEntityNode.entity.ref)!;
@@ -65,6 +65,6 @@ export class SystemEdgeCreationChecker implements EdgeCreationChecker {
    }
 
    protected hasSuperEntity(baseEntity: LogicalEntity, superEntity: LogicalEntity): boolean {
-      return baseEntity.superEntities.some(entity => entity.ref === superEntity);
+      return baseEntity.inherits.some(entity => entity.ref === superEntity);
    }
 }

@@ -2,30 +2,32 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 
+import { DataModelType, LogicalEntityType, MappingType, RelationshipType, SystemDiagramType } from './model-service/transfer-model';
+
 export const DATAMODEL_FILE = 'datamodel.cm';
 
 const ModelFileTypeValues = {
    Generic: 'Generic',
-   DataModel: 'DataModel',
-   LogicalEntity: 'LogicalEntity',
-   Relationship: 'Relationship',
-   Mapping: 'Mapping',
-   SystemDiagram: 'SystemDiagram'
+   DataModel: DataModelType,
+   LogicalEntity: LogicalEntityType,
+   Relationship: RelationshipType,
+   Mapping: MappingType,
+   SystemDiagram: SystemDiagramType
 } as const;
 
 export const ModelFileType = {
    ...ModelFileTypeValues,
    getIconClass: (type?: ModelFileType) => {
       switch (type) {
-         case 'DataModel':
+         case DataModelType:
             return ModelStructure.DataModel.ICON_CLASS;
-         case 'LogicalEntity':
+         case LogicalEntityType:
             return ModelStructure.LogicalEntity.ICON_CLASS;
-         case 'Relationship':
+         case RelationshipType:
             return ModelStructure.Relationship.ICON_CLASS;
-         case 'SystemDiagram':
+         case SystemDiagramType:
             return ModelStructure.SystemDiagram.ICON_CLASS;
-         case 'Mapping':
+         case MappingType:
             return ModelStructure.Mapping.ICON_CLASS;
          default:
             return undefined;
@@ -33,13 +35,13 @@ export const ModelFileType = {
    },
    getFolder: (fileType?: ModelFileType): string => {
       switch (fileType) {
-         case 'LogicalEntity':
+         case LogicalEntityType:
             return ModelStructure.LogicalEntity.FOLDER;
-         case 'Relationship':
+         case RelationshipType:
             return ModelStructure.Relationship.FOLDER;
-         case 'SystemDiagram':
+         case SystemDiagramType:
             return ModelStructure.SystemDiagram.FOLDER;
-         case 'Mapping':
+         case MappingType:
             return ModelStructure.Mapping.FOLDER;
          default:
             return '';
@@ -47,17 +49,17 @@ export const ModelFileType = {
    },
    getFileExtension: (type?: ModelFileType): string => {
       switch (type) {
-         case 'DataModel':
+         case DataModelType:
             return ModelFileExtensions.DataModel;
-         case 'LogicalEntity':
+         case LogicalEntityType:
             return ModelFileExtensions.LogicalEntity;
          case 'Generic':
             return ModelFileExtensions.Generic;
-         case 'Mapping':
+         case MappingType:
             return ModelFileExtensions.Mapping;
-         case 'Relationship':
+         case RelationshipType:
             return ModelFileExtensions.Relationship;
-         case 'SystemDiagram':
+         case SystemDiagramType:
             return ModelFileExtensions.SystemDiagram;
          default:
             return '';
@@ -124,19 +126,19 @@ export const ModelFileExtensions = {
 
    getFileType(uri: string): ModelFileType | undefined {
       if (this.isDataModelFile(uri)) {
-         return 'DataModel';
+         return DataModelType;
       }
       if (this.isMappingFile(uri)) {
-         return 'Mapping';
+         return MappingType;
       }
       if (this.isSystemDiagramFile(uri)) {
-         return 'SystemDiagram';
+         return SystemDiagramType;
       }
       if (this.isRelationshipFile(uri)) {
-         return 'Relationship';
+         return RelationshipType;
       }
       if (this.isEntityFile(uri)) {
-         return 'LogicalEntity';
+         return LogicalEntityType;
       }
       if (this.isModelFile(uri)) {
          return 'Generic';
@@ -157,21 +159,21 @@ export const ModelFileExtensions = {
    },
 
    isFormFile(uri: string): boolean {
-      return ['LogicalEntity', 'DataModel', 'Relationship'].includes(this.getFileType(uri) || '');
+      return [LogicalEntityType, DataModelType, RelationshipType].includes(this.getFileType(uri) || '');
    },
 
    detectFileType(content: string): ModelFileType | undefined {
       if (content.startsWith('entity')) {
-         return 'LogicalEntity';
+         return LogicalEntityType;
       }
       if (content.startsWith('relationship')) {
-         return 'Relationship';
+         return RelationshipType;
       }
       if (content.startsWith('systemDiagram') || content.startsWith('diagram')) {
-         return 'SystemDiagram';
+         return SystemDiagramType;
       }
       if (content.startsWith('mapping')) {
-         return 'Mapping';
+         return MappingType;
       }
       return undefined;
    },

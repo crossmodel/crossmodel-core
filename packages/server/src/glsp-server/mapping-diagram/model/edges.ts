@@ -4,7 +4,7 @@
 
 import { RenderProps, TARGET_ATTRIBUTE_MAPPING_EDGE_TYPE, createLeftPortId, createRightPortId } from '@crossmodel/protocol';
 import { GEdge, GEdgeBuilder } from '@eclipse-glsp/server';
-import { AttributeMappingSource } from '../../../language-server/generated/ast.js';
+import { AttributeMappingSource } from '../../../language-server/ast.js';
 import { MappingModelIndex } from './mapping-model-index.js';
 
 export class GTargetObjectEdge extends GEdge {

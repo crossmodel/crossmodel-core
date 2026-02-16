@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2023 CrossBreeze.
  ********************************************************************************/
+import { asMutable } from '@crossmodel/protocol';
 import { AstNode, DefaultLangiumDocuments, DocumentState, LangiumDocument } from 'langium';
 import { CancellationToken } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+import { CrossModelRoot } from './ast.js';
 import { CrossModelDiagnostic } from './cross-model-document-validator.js';
-import { CrossModelRoot } from './generated/ast.js';
-import { fixDocument } from './util/ast-util.js';
 import { Utils } from './util/uri-util.js';
 
 export interface CrossModelLangiumDocument<T extends AstNode = CrossModelRoot> extends LangiumDocument<T> {
@@ -33,15 +33,16 @@ export class CrossModelLangiumDocuments extends DefaultLangiumDocuments {
    }
 
    createEmptyDocument(uri: URI): CrossModelLangiumDocument {
+      const root = asMutable<CrossModelRoot>({ $type: CrossModelRoot.$type });
       const document: CrossModelLangiumDocument = {
          uri,
-         parseResult: { lexerErrors: [], parserErrors: [], value: { $type: CrossModelRoot.$type } },
+         parseResult: { lexerErrors: [], parserErrors: [], value: root },
          references: [],
          state: DocumentState.Validated,
          textDocument: TextDocument.create(uri.toString(), '', 1, ''),
          diagnostics: []
       };
-      fixDocument(document.parseResult.value, document);
+      root.$document = document;
       return document;
    }
 

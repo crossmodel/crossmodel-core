@@ -7,8 +7,8 @@ import { AstNode, AstUtils, CstNode, GrammarUtils, NameProvider } from 'langium'
 import { URI } from 'vscode-uri';
 import { UNKNOWN_DATAMODEL_ID, UNKNOWN_DATAMODEL_REFERENCE } from './cross-model-datamodel-manager.js';
 import { CrossModelServices } from './cross-model-module.js';
-import { IdentifiedObject, isDataModel } from './generated/ast.js';
-import { findDocument, getOwner } from './util/ast-util.js';
+import { IdentifiedObject, isDataModel } from './ast.js';
+import { findDocument } from './util/ast-util.js';
 
 /** Property name for the id field, derived from the generated AST. */
 export const ID_PROPERTY = IdentifiedObject.id;
@@ -21,12 +21,17 @@ export type IdentifiedAstNode = AstNode & {
    [ID_PROPERTY]: string;
 };
 
-export function hasId(node?: AstNode): node is IdentifiedAstNode {
-   return !!node && ID_PROPERTY in node && typeof node[ID_PROPERTY] === 'string';
-}
-
 export function getId(node?: AstNode): string | undefined {
-   return hasId(node) ? node[ID_PROPERTY] : undefined;
+   if (!node) {
+      return undefined;
+   }
+   if (ID_PROPERTY in node && typeof node[ID_PROPERTY] === 'string') {
+      return node[ID_PROPERTY];
+   }
+   if ('_id' in node && typeof node['_id'] === 'string') {
+      return node['_id'];
+   }
+   return undefined;
 }
 
 export interface IdProvider extends NameProvider {
@@ -43,7 +48,7 @@ export interface IdProvider extends NameProvider {
 export const QUALIFIED_ID_SEPARATOR = '.';
 
 export function combineIds(...ids: string[]): string {
-   return ids.join(QUALIFIED_ID_SEPARATOR);
+   return ids.filter(id => id.length > 0).join(QUALIFIED_ID_SEPARATOR);
 }
 
 /**
@@ -83,7 +88,7 @@ export class DefaultIdProvider implements IdProvider {
       if (!id) {
          return undefined;
       }
-      let parent = this.getParent(node);
+      let parent = node.$container;
       // Recurse through the parents to get the full local id.
       // For example for custom property of an attribute its <entity-id.attribute-id.custom-property-id).
       while (parent) {
@@ -91,7 +96,7 @@ export class DefaultIdProvider implements IdProvider {
          if (parentId) {
             id = combineIds(parentId, id);
          }
-         parent = this.getParent(parent);
+         parent = parent.$container;
       }
       return id;
    }
@@ -144,10 +149,6 @@ export class DefaultIdProvider implements IdProvider {
       return GrammarUtils.findNodeForProperty(node.$cstNode, ID_PROPERTY);
    }
 
-   protected getParent(node: AstNode): AstNode | undefined {
-      return getOwner(node) ?? node.$container;
-   }
-
    findNextInternalId(type: string, proposal: string, container: AstNode): string {
       const idProposal = proposal.replaceAll('.', '_');
       const knownIds = AstUtils.streamAst(container)
@@ -162,8 +163,7 @@ export class DefaultIdProvider implements IdProvider {
       const idProposal = proposal.replaceAll('.', '_');
       const dataModelId = this.dataModelManager.getDataModelIdByUri(uri);
 
-      const knownIds = this.services.shared.workspace.IndexManager
-         .allElementsInDataModelOfType(dataModelId, type)
+      const knownIds = this.services.shared.workspace.IndexManager.allElementsInDataModelOfType(dataModelId, type)
          .map(element => element.name)
          .toArray();
 
@@ -172,12 +172,10 @@ export class DefaultIdProvider implements IdProvider {
 
    findNextGlobalId(type: string, proposal: string): string {
       const idProposal = proposal.replaceAll('.', '_');
-      const knownIds = this.services.shared.workspace.IndexManager
-         .allElements(type)
+      const knownIds = this.services.shared.workspace.IndexManager.allElements(type)
          .map(element => element.name)
          .toArray();
 
       return findNextUnique(idProposal, knownIds, identity);
    }
 }
-

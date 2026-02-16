@@ -69,6 +69,7 @@
     "shx": "0.4.0",
     "symlink-dir": "^5.1.0",
     "ts-jest": "^29.1.1",
+    "ts-morph": "^27.0.2",
     "ts-node": "^10.9.1",
     "typanion": "3.14.0",
     "typescript": ">=5.8.0",
