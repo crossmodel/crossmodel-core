@@ -30,16 +30,29 @@ export class CMApp extends TheiaGLSPApp {
       await integration.start();
       const shouldWait = args.waitForServers ?? true;
       if (shouldWait) {
+         // Wait for server-connection notifications to appear in the DOM.
+         // Theia auto-dismisses notifications quickly, so the <span> may already
+         // be hidden by the time we check. Using `state: 'attached'` (present in
+         // DOM, visible or not) avoids a noisy timeout when the notification was
+         // auto-dismissed before the overlay could be opened.
+         const overlay = integration.app.notificationOverlay;
+         const notificationSelector = (text: string): string =>
+            `.theia-notifications-overlay .theia-notifications-container.theia-notification-center .theia-notification-message span:has-text("${text}")`;
          try {
-            await integration.app.notificationOverlay.waitForEntry('Connected to Model Server on port');
-            await integration.app.notificationOverlay.waitForEntry('Connected to Graphical Server on port');
-            await integration.app.notificationOverlay.clearAllNotifications();
+            await integration.app.page.waitForSelector(notificationSelector('Connected to Model Server on port'), {
+               state: 'attached',
+               timeout: 10_000
+            });
+            await integration.app.page.waitForSelector(notificationSelector('Connected to Graphical Server on port'), {
+               state: 'attached',
+               timeout: 10_000
+            });
+            await overlay.clearAllNotifications();
          } catch (err) {
-            // If notifications didn't appear, continue so tests can proceed rather than fail/hang.
-            // Tests that require an active server should set `waitForServers: true` and assert accordingly.
-            // Log for debugging.
+            // If notifications didn't appear at all, continue so tests can proceed rather than fail.
+            const message = err instanceof Error ? err.message.split('\n')[0] : String(err);
             // eslint-disable-next-line no-console
-            console.warn('Server connection notifications not observed during startup:', err);
+            console.warn('Server connection notifications not observed during startup:', message);
          }
       }
 

@@ -188,9 +188,14 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          return;
       }
       console.debug(`[${this.options.clientId}] Save model`);
-      await this.modelService.save({ uri: doc.uri.toString(), model: doc.root, clientId: this.options.clientId });
-      // Mark this widget clean
-      this.setDirty(false);
+      const savedRoot = doc.root;
+      await this.modelService.save({ uri: doc.uri.toString(), model: savedRoot, clientId: this.options.clientId });
+      // Only mark clean if no new edits arrived while the save was in progress.
+      // If a new edit was made, this.document.root will differ from savedRoot
+      // and the widget must remain dirty.
+      if (this.document && deepEqual(this.document.root, savedRoot)) {
+         this.setDirty(false);
+      }
    }
 
    protected async openModelInEditor(): Promise<void> {
