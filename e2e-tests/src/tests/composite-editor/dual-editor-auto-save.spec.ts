@@ -1,9 +1,9 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
+import { expect, test } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { expect, test } from '@playwright/test';
 import { CMApp } from '../../page-objects/cm-app';
 
 const SETTINGS_RELPATH = '.theia/settings.json';
@@ -83,9 +83,14 @@ test.describe.serial('Dual Editor Save Behavior — Standalone Text Editor', () 
          // dialog appears at ANY point during the test, capture it immediately.
          let dialogDetected = false;
          const dialogLocator = app.page.locator('#theia-dialog-shell .dialogBlock');
-         dialogLocator.waitFor({ state: 'visible', timeout: 60000 }).then(() => {
-            dialogDetected = true;
-         }).catch(() => { /* no dialog — expected */ });
+         dialogLocator
+            .waitFor({ state: 'visible', timeout: 60000 })
+            .then(() => {
+               dialogDetected = true;
+            })
+            .catch(() => {
+               /* no dialog — expected */
+            });
 
          // Make multiple changes to exercise several auto-save cycles, which
          // increases the chance of exposing race conditions between the
@@ -98,7 +103,7 @@ test.describe.serial('Dual Editor Save Behavior — Standalone Text Editor', () 
             // Wait for auto-save to complete on the composite editor.
             await expect(async () => {
                expect(await formEditor.isDirty()).toBe(false);
-            }).toPass({ timeout: 15000 });
+            }).toPass({ timeout: 5000 });
 
             // Check if the dialog appeared during this cycle.
             expect(dialogDetected).toBe(false);
@@ -119,7 +124,7 @@ test.describe.serial('Dual Editor Save Behavior — Standalone Text Editor', () 
          await app.page.keyboard.press('Control+s');
          await expect(async () => {
             expect(await formEditor.isDirty()).toBe(false);
-         }).toPass({ timeout: 10000 });
+         }).toPass({ timeout: 5000 });
          await formEditor.close();
          await app.closeAnyDialog();
       } finally {
@@ -200,7 +205,7 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
          // Wait for auto-save to complete.
          await expect(async () => {
             expect(await formEditor.isDirty()).toBe(false);
-         }).toPass({ timeout: 15000 });
+         }).toPass({ timeout: 5000 });
 
          // No overwrite / conflict dialog should have appeared.
          const dialog = app.page.locator('#theia-dialog-shell');
@@ -218,7 +223,7 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
          await app.page.keyboard.press('Control+s');
          await expect(async () => {
             expect(await formEditor.isDirty()).toBe(false);
-         }).toPass({ timeout: 10000 });
+         }).toPass({ timeout: 5000 });
          await formEditor.close();
          await app.closeAnyDialog();
       } finally {
@@ -254,36 +259,20 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
 
          // --- Step 2: Switch to Code tab and verify the form change is there. ---
          const codeEditor = await formEditor.parent.switchToCodeEditor();
-         await expect(async () => {
-            const line = await codeEditor.textContentOfLineByLineNumber(4);
-            expect(line).toContain('FormEdit1');
-         }).toPass({ timeout: 5000 });
+         const line4 = await codeEditor.textContentOfLineByLineNumber(4);
+         expect(line4).toContain('FormEdit1');
 
          // --- Step 3: Make a change in the Code tab (replace the entity name on line 3). ---
-         // Cursor placement in composite editors can be unreliable, so we
-         // verify the edit took effect and retry (with undo) if it didn't.
-         await expect(async () => {
-            // Undo any partial edits from a previous failed attempt.
-            for (let i = 0; i < 25; i++) {
-               await app.page.keyboard.press('Control+z');
-            }
-            await app.page.waitForTimeout(200);
-            await codeEditor.placeCursorInLineWithLineNumber(3);
-            await app.page.keyboard.press('Home');
-            await app.page.keyboard.press('Home');
-            await app.page.keyboard.press('Shift+End');
-            await app.page.keyboard.type('    name: "CodeEdit"');
-            const line = await codeEditor.textContentOfLineByLineNumber(3);
-            expect(line).toContain('CodeEdit');
-         }).toPass({ timeout: 20000 });
+         await codeEditor.selectLineWithLineNumber(3);
+         await app.page.keyboard.type('    name: "CodeEdit"');
+         const line3 = await codeEditor.textContentOfLineByLineNumber(3);
+         expect(line3).toContain('CodeEdit');
          // Give the model server time to parse the updated code.
          await app.page.waitForTimeout(500);
 
          // --- Step 4: Switch back to Form tab and verify the code change is there. ---
          await formEditor.parent.switchToFormEditor();
-         await expect(async () => {
-            expect(await general.getName()).toBe('CodeEdit');
-         }).toPass({ timeout: 5000 });
+         expect(await general.getName()).toBe('CodeEdit');
 
          // --- Step 5: Make another change on the Form tab. ---
          await general.setDescription('FormEdit2');
@@ -291,7 +280,7 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
          // --- Step 6: Wait for auto-save to complete. ---
          await expect(async () => {
             expect(await formEditor.isDirty()).toBe(false);
-         }).toPass({ timeout: 15000 });
+         }).toPass({ timeout: 5000 });
 
          // No overwrite / conflict dialog should have appeared.
          const dialog = app.page.locator('#theia-dialog-shell');
@@ -299,10 +288,8 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
 
          // Verify the final state in the Code tab.
          await formEditor.parent.switchToCodeEditor();
-         await expect(async () => {
-            const nameLine = await codeEditor.textContentOfLineByLineNumber(3);
-            expect(nameLine).toContain('CodeEdit');
-         }).toPass({ timeout: 5000 });
+         const nameLine = await codeEditor.textContentOfLineByLineNumber(3);
+         expect(nameLine).toContain('CodeEdit');
          const descLine = await codeEditor.textContentOfLineByLineNumber(4);
          expect(descLine).toContain('FormEdit2');
 
@@ -314,7 +301,7 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
          await app.page.keyboard.press('Control+s');
          await expect(async () => {
             expect(await formEditor.isDirty()).toBe(false);
-         }).toPass({ timeout: 10000 });
+         }).toPass({ timeout: 5000 });
          await formEditor.close();
          await app.closeAnyDialog();
       } finally {
