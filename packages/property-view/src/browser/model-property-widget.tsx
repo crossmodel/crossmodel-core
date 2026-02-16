@@ -10,12 +10,15 @@ import { CrossModelWidget } from '@crossmodel/core/lib/browser';
 import { RenderProps } from '@crossmodel/protocol';
 import { CanRedoCallback, CanUndoCallback, ModelProviderProps, RedoCallback, UndoCallback } from '@crossmodel/react-model-ui';
 import { GLSPDiagramWidget, GlspSelection, getDiagramWidget } from '@eclipse-glsp/theia-integration';
-import { injectable } from '@theia/core/shared/inversify';
+import { ApplicationShell } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import * as deepEqual from 'fast-deep-equal';
 import { PropertiesRenderData } from './model-data-service';
 
 @injectable()
 export class ModelPropertyWidget extends CrossModelWidget implements PropertyViewContentWidget {
+   @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+
    protected renderData?: PropertiesRenderData;
    private _closeInProgress: Promise<void> | undefined;
 

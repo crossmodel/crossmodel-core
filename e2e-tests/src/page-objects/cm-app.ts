@@ -3,7 +3,7 @@
  ********************************************************************************/
 import { IntegrationArgs, TheiaGLSPApp } from '@eclipse-glsp/glsp-playwright';
 import { Page } from '@playwright/test';
-import { TheiaEditor, TheiaNotificationIndicator, TheiaNotificationOverlay, TheiaWorkspace } from '@theia/playwright';
+import { TheiaEditor, TheiaNotificationIndicator, TheiaNotificationOverlay, TheiaTextEditor, TheiaWorkspace } from '@theia/playwright';
 import { CMCompositeEditor, IntegratedEditorType } from './cm-composite-editor';
 import { CMExplorerView } from './cm-explorer-view';
 import { CMTheiaIntegration } from './cm-theia-integration';
@@ -101,6 +101,25 @@ export class CMApp extends TheiaGLSPApp {
       expectFileNodes?: boolean | undefined
    ): Promise<T> {
       return super.openEditor(filePath, editorFactory as new (f: string, a: TheiaGLSPApp) => T, editorName, expectFileNodes);
+   }
+
+   /**
+    * Opens the given file in a standalone Text Editor via the explorer
+    * context menu's "Open With..." quick pick.
+    */
+   async openStandaloneTextEditor(filePath: string): Promise<TheiaTextEditor> {
+      const explorer = await this.openExplorerView();
+      const fileNode = await explorer.getFileStatNodeByLabel(filePath);
+      const contextMenu = await fileNode.openContextMenu();
+      await contextMenu.clickMenuItem('Open With...');
+
+      const option = this.page.getByRole('option', { name: /Text Editor/ });
+      await option.waitFor({ state: 'visible' });
+      await option.click();
+
+      const editor = new TheiaTextEditor(filePath, this);
+      await editor.waitForVisible();
+      return editor;
    }
 
    async closeAnyDialog(): Promise<void> {

@@ -233,6 +233,9 @@ export class CompositeEditor
       this.title.caption = this.resourceUri.path.fsPath();
       this.title.iconClass = ModelFileType.getIconClass(this.fileType) ?? '';
       this.saveable = new ReverseCompositeSaveable(this, this.fileResourceResolver);
+      // Register this URI so that co-editors (standalone text editors for the
+      // same file) never trigger the "file changed on disk" dialog.
+      this.toDispose.push(this.fileResourceResolver.addManagedUri(this.options.uri));
       this.initializeContent();
    }
 
