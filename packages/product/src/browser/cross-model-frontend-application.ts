@@ -17,10 +17,8 @@ export class CrossModelFrontendApplication extends FrontendApplication {
       await this.showWidget(NavigatorWidgetFactory.ID, 'left');
       await this.showWidget(SearchInWorkspaceWidget.ID, 'left', false);
       await this.showWidget(SCM_VIEW_CONTAINER_ID, 'left', false);
-      await this.showWidget(PropertyViewWidget.ID, 'right');
-      await this.showWidget(PROBLEMS_WIDGET_ID, 'bottom');
-      this.shell.leftPanelHandler.resize(400);
-      this.shell.rightPanelHandler.resize(600);
+      await this.showWidget(PropertyViewWidget.ID, 'right', false);
+      await this.showWidget(PROBLEMS_WIDGET_ID, 'bottom', false);
    }
 
    protected async showWidget(widgetId: string, area: ApplicationShell.Area, reveal = true, rank = 100): Promise<void> {
