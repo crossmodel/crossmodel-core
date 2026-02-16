@@ -37,7 +37,8 @@ export class CMApp extends TheiaGLSPApp {
          // auto-dismissed before the overlay could be opened.
          const overlay = integration.app.notificationOverlay;
          const notificationSelector = (text: string): string =>
-            `.theia-notifications-overlay .theia-notifications-container.theia-notification-center .theia-notification-message span:has-text("${text}")`;
+            '.theia-notifications-overlay .theia-notifications-container.theia-notification-center' +
+            ` .theia-notification-message span:has-text("${text}")`;
          try {
             await integration.app.page.waitForSelector(notificationSelector('Connected to Model Server on port'), {
                state: 'attached',
