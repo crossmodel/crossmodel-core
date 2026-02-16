@@ -259,23 +259,35 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
 
          // --- Step 2: Switch to Code tab and verify the form change is there. ---
          const codeEditor = await formEditor.parent.switchToCodeEditor();
-         const line4 = await codeEditor.textContentOfLineByLineNumber(4);
-         expect(line4).toContain('FormEdit1');
+         await expect(async () => {
+            const line4 = await codeEditor.textContentOfLineByLineNumber(4);
+            expect(line4).toContain('FormEdit1');
+         }).toPass({ timeout: 5000 });
 
          // --- Step 3: Make a change in the Code tab (replace the entity name on line 3). ---
-         await codeEditor.selectLineWithLineNumber(3);
+         // Use Ctrl+G (Go to Line) for reliable keyboard-driven navigation —
+         // click-based cursor placement is unreliable in composite editors.
+         await app.page.keyboard.press('Control+g');
+         await app.page.waitForTimeout(300);
+         await app.page.keyboard.type('3');
+         await app.page.keyboard.press('Enter');
+         await app.page.waitForTimeout(200);
+         // Select the entire line and type the replacement.
+         await app.page.keyboard.press('Home');
+         await app.page.keyboard.press('Home');
+         await app.page.keyboard.press('Shift+End');
          await app.page.keyboard.type('    name: "CodeEdit"');
-         // Give the editor time to register the change
-         await app.page.waitForTimeout(500);
-         await codeEditor.waitForDirty();
+         // Give the editor and model server time to register and parse the change.
+         // (auto-save is active at 500ms, so dirty state is transient.)
+         await app.page.waitForTimeout(1000);
          const line3 = await codeEditor.textContentOfLineByLineNumber(3);
          expect(line3).toContain('CodeEdit');
-         // Give the model server time to parse the updated code.
-         await app.page.waitForTimeout(500);
 
          // --- Step 4: Switch back to Form tab and verify the code change is there. ---
          await formEditor.parent.switchToFormEditor();
-         expect(await general.getName()).toBe('CodeEdit');
+         await expect(async () => {
+            expect(await general.getName()).toBe('CodeEdit');
+         }).toPass({ timeout: 5000 });
 
          // --- Step 5: Make another change on the Form tab. ---
          await general.setDescription('FormEdit2');
