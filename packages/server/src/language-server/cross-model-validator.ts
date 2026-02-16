@@ -17,6 +17,7 @@ import {
    AttributeMappingExpression,
    BinaryExpression,
    CrossModelAstType,
+   DataModel,
    IdentifiedObject,
    InheritanceEdge,
    LogicalEntity,
@@ -40,6 +41,7 @@ import {
 import type { CrossModelServices } from './cross-model-module.js';
 import { ID_PROPERTY } from './cross-model-naming.js';
 import { findDocument, findSemanticRoot, isSemanticRoot } from './util/ast-util.js';
+import { isMissingCrossModelVersion, needsCrossModelMigration } from './util/crossmodel-version-util.js';
 import { getAttributeMappingExpressionRefRange } from './util/expression-range.js';
 
 export interface FilenameNotMatchingDiagnostic extends Diagnostic {
@@ -63,6 +65,7 @@ export function registerValidationChecks(services: CrossModelServices): void {
 
    const checks: ValidationChecks<CrossModelAstType> = {
       AstNode: validator.checkNode,
+      DataModel: validator.checkDataModel,
       IdentifiedObject: validator.checkIdentifiedObject,
       AttributeMapping: validator.checkAttributeMapping,
       LogicalEntityAttribute: validator.checkLogicalEntityAttribute,
@@ -89,6 +92,14 @@ export class CrossModelValidator {
       protected services: CrossModelServices,
       protected logger = services.shared.client.Logger.for('Validator')
    ) {}
+
+   checkDataModel(dataModel: DataModel, accept: ValidationAcceptor): void {
+      if (isMissingCrossModelVersion(dataModel)) {
+         accept('warning', 'This data model is missing a CrossModel version and needs migration.', { node: dataModel });
+      } else if (needsCrossModelMigration(dataModel)) {
+         accept('error', 'This data model was created with a different CrossModel version and needs migration.', { node: dataModel });
+      }
+   }
 
    checkNamedObject(namedObject: NamedObject, accept: ValidationAcceptor): void {
       if (namedObject.name === undefined || namedObject.name.length === 0) {

@@ -15,6 +15,8 @@ import {
    RelationshipType,
    TargetObjectType,
    findNextUnique,
+   getCrossModelEdition,
+   getCrossModelMajorVersion,
    isMemberPermittedInModel,
    quote,
    toId,
@@ -57,12 +59,27 @@ interface NewElementTemplate<T extends readonly InputOptions[] = readonly InputO
    getInputOptions?(parent: URI, modelService: ModelService): MaybePromise<T>;
 }
 
-const INITIAL_DATAMODEL_CONTENT = `datamodel:
+/**
+ * Generates the initial datamodel content with current CrossModel version.
+ * The version is read from CROSSMODEL_VERSION constant which is sourced from package.json.
+ */
+function getInitialDataModelContent(): string {
+   const edition = getCrossModelEdition();
+   const majorVersion = getCrossModelMajorVersion();
+   const crossmodelBlock =
+      edition !== undefined && majorVersion !== undefined
+         ? `
+    crossmodel:
+        edition: ${edition}
+        version: ${majorVersion}`
+         : '';
+   return `datamodel:
     id: _
     name: ""
     type: ${DataModelTypeInfos.logical.value}
-    version: 1.0.0
+    version: 1.0.0${crossmodelBlock}
 `;
+}
 
 const INITIAL_ENTITY_CONTENT = `entity:
     id: _
@@ -152,7 +169,7 @@ const NEW_ELEMENT_TEMPLATES: ReadonlyArray<NewElementTemplate> = [
       validateName: validateDataModelName,
       iconClass: ModelStructure.DataModel.ICON_CLASS,
       toUri: (parent, name) => parent.resolve(toId(name)).resolve(DATAMODEL_FILE),
-      content: INITIAL_DATAMODEL_CONTENT
+      content: getInitialDataModelContent
    }
 ];
 

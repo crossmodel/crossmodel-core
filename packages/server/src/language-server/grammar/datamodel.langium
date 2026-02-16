@@ -4,6 +4,7 @@ import 'common'
 interface DataModel extends NamedObject, WithCustomProperties {
     type: string;
     version?: string;
+    crossmodel?: CrossModelEditionInfo;
     dependencies: DataModelDependency[];
 }
 
@@ -13,6 +14,7 @@ DataModel returns DataModel:
             NamedObjectFragment
             'type' ':' type=DataModelType
             ('version' ':' version=VERSION)?
+            ('crossmodel' ':' crossmodel=CrossModelEditionInfo)?
             ('dependencies' ':'
                 INDENT
                     (LIST_ITEM dependencies+=DataModelDependency)+
@@ -22,7 +24,20 @@ DataModel returns DataModel:
         DEDENT
 ;
 
-DataModelType returns string: 'conceptual' | 'logical' | 'relational';
+interface CrossModelEditionInfo {
+    edition: string;
+    version: number;
+}
+
+CrossModelEditionInfo returns CrossModelEditionInfo:
+    INDENT
+        'edition' ':' edition=ID
+        'version' ':' version=NUMBER
+    DEDENT
+;
+
+DataModelType returns string:
+    'conceptual' | 'logical' | 'relational';
 
 interface DataModelDependency {
     datamodel: @DataModel;

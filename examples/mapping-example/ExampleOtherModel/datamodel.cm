@@ -2,3 +2,6 @@ datamodel:
     id: ExampleOtherModel
     name: "Example Other Model"
     type: logical
+    crossmodel:
+        edition: core
+        version: 0

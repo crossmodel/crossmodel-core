@@ -18,6 +18,7 @@ export const AttributeMappingExpressionType = 'AttributeMappingExpression';
 export const AttributeMappingSourceType = 'AttributeMappingSource';
 export const AttributeMappingTargetType = 'AttributeMappingTarget';
 export const BinaryExpressionType = 'BinaryExpression';
+export const CrossModelEditionInfoType = 'CrossModelEditionInfo';
 export const CrossModelRootType = 'CrossModelRoot';
 export const CustomPropertyType = 'CustomProperty';
 export const DataElementMappingType = 'DataElementMapping';
@@ -72,6 +73,7 @@ export type CrossModelKeywordNames = | "!="
     | "conceptual"
     | "conditions"
     | "cross-join"
+    | "crossmodel"
     | "customProperties"
     | "datamodel"
     | "datatype"
@@ -79,6 +81,7 @@ export type CrossModelKeywordNames = | "!="
     | "description"
     | "diagram"
     | "edges"
+    | "edition"
     | "entity"
     | "expression"
     | "expressions"
@@ -120,7 +123,7 @@ export type CrossModelKeywordNames = | "!="
     | "width"
     | "x"
     | "y";
-export const CrossModelKeywordNamesValues = ['!=', '.', '0..1', '0..N', '1..1', '1..N', ':', '<', '<=', '=', '>', '>=', 'TRUE', 'apply', 'attribute', 'attributes', 'backgroundColor', 'baseNode', 'borderColor', 'borderStyle', 'borderWeight', 'child', 'childCardinality', 'childRole', 'conceptual', 'conditions', 'cross-join', 'customProperties', 'datamodel', 'datatype', 'dependencies', 'description', 'diagram', 'edges', 'entity', 'expression', 'expressions', 'fontColor', 'from', 'height', 'id', 'identifiers', 'inherits', 'inner-join', 'join', 'language', 'left-join', 'length', 'logical', 'mandatory', 'mapping', 'mappings', 'name', 'nodes', 'parent', 'parentCardinality', 'parentRole', 'precision', 'primary', 'relational', 'relationship', 'scale', 'sourceNode', 'sources', 'superNode', 'systemDiagram', 'target', 'targetNode', 'true', 'type', 'value', 'version', 'width', 'x', 'y'] as const;
+export const CrossModelKeywordNamesValues = ['!=', '.', '0..1', '0..N', '1..1', '1..N', ':', '<', '<=', '=', '>', '>=', 'TRUE', 'apply', 'attribute', 'attributes', 'backgroundColor', 'baseNode', 'borderColor', 'borderStyle', 'borderWeight', 'child', 'childCardinality', 'childRole', 'conceptual', 'conditions', 'cross-join', 'crossmodel', 'customProperties', 'datamodel', 'datatype', 'dependencies', 'description', 'diagram', 'edges', 'edition', 'entity', 'expression', 'expressions', 'fontColor', 'from', 'height', 'id', 'identifiers', 'inherits', 'inner-join', 'join', 'language', 'left-join', 'length', 'logical', 'mandatory', 'mapping', 'mappings', 'name', 'nodes', 'parent', 'parentCardinality', 'parentRole', 'precision', 'primary', 'relational', 'relationship', 'scale', 'sourceNode', 'sources', 'superNode', 'systemDiagram', 'target', 'targetNode', 'true', 'type', 'value', 'version', 'width', 'x', 'y'] as const;
 export type BooleanExpression = NumberLiteral | SourceObjectAttributeReference | StringLiteral;
 export type Cardinality = '0..1' | '0..N' | '1..1' | '1..N';
 export const CardinalityValues = ['0..1', '0..N', '1..1', '1..N'] as const;
@@ -175,6 +178,12 @@ export interface BinaryExpression extends CrossModelElement {
    right: BooleanExpression;
 }
 
+export interface CrossModelEditionInfo extends CrossModelElement {
+   readonly $type: typeof CrossModelEditionInfoType;
+   edition: string;
+   version: number;
+}
+
 export interface CrossModelRoot extends CrossModelElement {
    readonly $type: typeof CrossModelRootType;
    datamodel?: DataModel;
@@ -225,6 +234,7 @@ export interface DataElementMapping extends IdentifiedObject {
 
 export interface DataModel extends NamedObject, WithCustomProperties {
    readonly $type: typeof DataModelType;
+   crossmodel?: CrossModelEditionInfo;
    dependencies: Array<DataModelDependency>;
    type: string;
    version?: string;
@@ -416,6 +426,10 @@ export function isBinaryExpression(item: unknown): item is BinaryExpression {
    return isCrossModelElement(item) && item.$type === BinaryExpressionType;
 }
 
+export function isCrossModelEditionInfo(item: unknown): item is CrossModelEditionInfo {
+   return isCrossModelElement(item) && item.$type === CrossModelEditionInfoType;
+}
+
 export function isCrossModelRoot(item: unknown): item is CrossModelRoot {
    return isCrossModelElement(item) && item.$type === CrossModelRootType;
 }
@@ -553,7 +567,7 @@ export function isTargetObjectAttribute(item: unknown): item is TargetObjectAttr
 }
 
 export function isCrossModelKeywordNames(item: unknown): item is CrossModelKeywordNames {
-   return item === '!=' || item === '.' || item === '0..1' || item === '0..N' || item === '1..1' || item === '1..N' || item === ':' || item === '<' || item === '<=' || item === '=' || item === '>' || item === '>=' || item === 'TRUE' || item === 'apply' || item === 'attribute' || item === 'attributes' || item === 'backgroundColor' || item === 'baseNode' || item === 'borderColor' || item === 'borderStyle' || item === 'borderWeight' || item === 'child' || item === 'childCardinality' || item === 'childRole' || item === 'conceptual' || item === 'conditions' || item === 'cross-join' || item === 'customProperties' || item === 'datamodel' || item === 'datatype' || item === 'dependencies' || item === 'description' || item === 'diagram' || item === 'edges' || item === 'entity' || item === 'expression' || item === 'expressions' || item === 'fontColor' || item === 'from' || item === 'height' || item === 'id' || item === 'identifiers' || item === 'inherits' || item === 'inner-join' || item === 'join' || item === 'language' || item === 'left-join' || item === 'length' || item === 'logical' || item === 'mandatory' || item === 'mapping' || item === 'mappings' || item === 'name' || item === 'nodes' || item === 'parent' || item === 'parentCardinality' || item === 'parentRole' || item === 'precision' || item === 'primary' || item === 'relational' || item === 'relationship' || item === 'scale' || item === 'sourceNode' || item === 'sources' || item === 'superNode' || item === 'systemDiagram' || item === 'target' || item === 'targetNode' || item === 'true' || item === 'type' || item === 'value' || item === 'version' || item === 'width' || item === 'x' || item === 'y';
+   return item === '!=' || item === '.' || item === '0..1' || item === '0..N' || item === '1..1' || item === '1..N' || item === ':' || item === '<' || item === '<=' || item === '=' || item === '>' || item === '>=' || item === 'TRUE' || item === 'apply' || item === 'attribute' || item === 'attributes' || item === 'backgroundColor' || item === 'baseNode' || item === 'borderColor' || item === 'borderStyle' || item === 'borderWeight' || item === 'child' || item === 'childCardinality' || item === 'childRole' || item === 'conceptual' || item === 'conditions' || item === 'cross-join' || item === 'crossmodel' || item === 'customProperties' || item === 'datamodel' || item === 'datatype' || item === 'dependencies' || item === 'description' || item === 'diagram' || item === 'edges' || item === 'edition' || item === 'entity' || item === 'expression' || item === 'expressions' || item === 'fontColor' || item === 'from' || item === 'height' || item === 'id' || item === 'identifiers' || item === 'inherits' || item === 'inner-join' || item === 'join' || item === 'language' || item === 'left-join' || item === 'length' || item === 'logical' || item === 'mandatory' || item === 'mapping' || item === 'mappings' || item === 'name' || item === 'nodes' || item === 'parent' || item === 'parentCardinality' || item === 'parentRole' || item === 'precision' || item === 'primary' || item === 'relational' || item === 'relationship' || item === 'scale' || item === 'sourceNode' || item === 'sources' || item === 'superNode' || item === 'systemDiagram' || item === 'target' || item === 'targetNode' || item === 'true' || item === 'type' || item === 'value' || item === 'version' || item === 'width' || item === 'x' || item === 'y';
 }
 
 export function isBooleanExpression(item: unknown): item is BooleanExpression {

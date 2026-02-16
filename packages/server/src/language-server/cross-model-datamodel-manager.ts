@@ -125,10 +125,15 @@ export class CrossModelDataModelManager {
       const content = await this.fileSystemProvider.readDirectory(folderPath);
       await Promise.all(
          content.map(async entry => {
-            if (entry.isDirectory) {
-               await this.initializeDataModels(entry.uri);
-            } else if (entry.isFile && isDataModelUri(entry.uri)) {
-               await this.updateDataModel(entry.uri);
+            try {
+               if (entry.isDirectory) {
+                  await this.initializeDataModels(entry.uri);
+               } else if (entry.isFile && isDataModelUri(entry.uri)) {
+                  await this.updateDataModel(entry.uri);
+               }
+            } catch (error) {
+               const path = this.shared.workspace.WorkspaceManager.wsRelativePath(entry.uri);
+               this.logger.error(`[DataModel] Failed to initialize data model at ${path}: ${error}`);
             }
          })
       );
@@ -236,12 +241,14 @@ export class CrossModelDataModelManager {
          const workspace = this.shared.workspace.WorkspaceManager;
          this.logger.info(`Re-build affected documents (${docs.length}): ${docs.map(doc => workspace.wsRelativePath(doc.uri)).join(', ')}`);
          docs.forEach(doc => {
-            this.langiumDocuments.invalidateDocument(doc.uri);
+            // Force re-parse/re-build of the document
+            this.documentBuilder.resetToState(doc, DocumentState.Changed);
             changed.push(doc.uri);
          });
       }
    }
 
+   // Adds the data model for the given URI. Returns the ID of the added data model.
    protected addDataModel(uri: URI, dataModel: DataModel): string[] {
       const dataModelInfo = new DataModelInfo(uri, dataModel);
       if (!dataModelInfo.isUnknown) {
@@ -279,19 +286,24 @@ export class CrossModelDataModelManager {
       return [];
    }
 
+   // Updates (or adds) the data model for the given URI. Returns the IDs of data models that were added/updated.
    protected async updateDataModel(uri: URI): Promise<string[]> {
-      const newDataModel = await parseDataModelFile(uri, this.langiumDocuments);
+      const wsRelPath = this.shared.workspace.WorkspaceManager.wsRelativePath(uri);
+      const newDataModel = await parseDataModelFile(uri, this.langiumDocuments, this.logger);
       if (!newDataModel) {
+         this.logger.error(`[DataModel] Failed to parse data model at ${wsRelPath}`);
          return [];
       }
 
       const toUpdate = [];
       const existingDataModelInfo = this.uriToDataModel.get(uri.toString());
       const newDataModelId = createDataModelId(newDataModel.id, newDataModel.version);
+      // data model ID changed, remove old one
       if (existingDataModelInfo && existingDataModelInfo?.id !== newDataModelId) {
          this.logger.info(`Replace data model "${existingDataModelInfo.id}" with "${newDataModelId}"`);
          toUpdate.push(...this.deleteDataModel(uri));
       }
+      // add new/updated data model
       toUpdate.push(...this.addDataModel(uri, newDataModel));
       return toUpdate;
    }
@@ -344,19 +356,25 @@ function getAndRemoveDataModelUris(uris: URI[]): URI[] {
    return dataModels;
 }
 
-async function parseDataModelFile(uri?: URI, langiumDocuments?: CrossModelLangiumDocuments): Promise<DataModel | undefined> {
+async function parseDataModelFile(
+   uri?: URI,
+   langiumDocuments?: CrossModelLangiumDocuments,
+   logger?: { error(message: string): void }
+): Promise<DataModel | undefined> {
    if (!uri || !langiumDocuments) {
       return undefined;
    }
    try {
       const document = await langiumDocuments.updateOrCreateDocument(uri);
       if (document.parseResult.lexerErrors.length > 0 || document.parseResult.parserErrors.length > 0) {
-         console.error('Parse errors in datamodel file:', document.parseResult.lexerErrors, document.parseResult.parserErrors);
+         const msg = `[DataModel] Parse errors in ${uri.fsPath}`;
+         logger ? logger.error(msg) : console.error(msg);
          return undefined;
       }
       return findDataModel(document);
    } catch (error) {
-      console.error('Failed to parse datamodel file:', error);
+      const msg = `[DataModel] Failed to parse ${uri.fsPath}: ${error}`;
+      logger ? logger.error(msg) : console.error(msg);
       return undefined;
    }
 }

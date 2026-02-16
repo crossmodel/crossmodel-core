@@ -15,3 +15,4 @@ export * from './model-service/transfer-model-document';
 export * from './model-service/transfer-model-util';
 export * from './model-service/transfer-model-validation';
 export * from './util';
+export * from './version';
