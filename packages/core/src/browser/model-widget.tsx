@@ -132,14 +132,14 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          return;
       }
       if (reason === 'saved') {
-         // Save events are confirmations that the file was written to disk.
-         // They never carry new content — only sync diagnostics.
+         // Save events confirm that the file was written to disk.
          // The language client may also fire a save event (with sourceClientId='language-client')
          // when it detects the file change, which must not overwrite the form's React state.
          this.document.diagnostics = document.diagnostics;
-         // Only clear dirty if no new edit arrived since the save was initiated.
-         // A late-arriving 'saved' event must not undo dirty state from a newer edit.
-         if (!this.hasPendingUpdate) {
+         // Only clear dirty if the saved content matches our current local content.
+         // If a new edit was made after the save started, the roots will differ
+         // and the widget must remain dirty.
+         if (deepEqual(this.document.root, document.root)) {
             this.setDirty(false);
          }
          return;

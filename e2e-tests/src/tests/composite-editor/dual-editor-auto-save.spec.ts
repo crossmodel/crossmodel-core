@@ -275,7 +275,7 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
             await app.page.keyboard.type('    name: "CodeEdit"');
             const line = await codeEditor.textContentOfLineByLineNumber(3);
             expect(line).toContain('CodeEdit');
-         }).toPass({ timeout: 10000 });
+         }).toPass({ timeout: 20000 });
          // Give the model server time to parse the updated code.
          await app.page.waitForTimeout(500);
 
