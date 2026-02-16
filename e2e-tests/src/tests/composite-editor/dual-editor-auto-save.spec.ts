@@ -227,7 +227,7 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
       }
    });
 
-   test('Edits across Form and Code tabs should auto-save without conflict dialog', async ({ }, testInfo) => {
+   test('Edits across Form and Code tabs should auto-save without conflict dialog', async () => {
       // This test performs multiple tab switches and keyboard-driven edits which
       // are timing-sensitive. Triple the timeout when running in parallel.
       test.slow();
