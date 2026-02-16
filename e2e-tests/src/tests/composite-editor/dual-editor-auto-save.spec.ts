@@ -260,14 +260,22 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
          }).toPass({ timeout: 5000 });
 
          // --- Step 3: Make a change in the Code tab (replace the entity name on line 3). ---
-         // Place cursor in line 3, then select the full line content via keyboard
-         // and overtype it. We avoid selectLineWithLineNumber (triple-click) because
-         // it can be unreliable inside Monaco in composite editors.
-         await codeEditor.placeCursorInLineWithLineNumber(3);
-         await app.page.keyboard.press('Home');
-         await app.page.keyboard.press('Home');
-         await app.page.keyboard.press('Shift+End');
-         await app.page.keyboard.type('    name: "CodeEdit"');
+         // Cursor placement in composite editors can be unreliable, so we
+         // verify the edit took effect and retry (with undo) if it didn't.
+         await expect(async () => {
+            // Undo any partial edits from a previous failed attempt.
+            for (let i = 0; i < 25; i++) {
+               await app.page.keyboard.press('Control+z');
+            }
+            await app.page.waitForTimeout(200);
+            await codeEditor.placeCursorInLineWithLineNumber(3);
+            await app.page.keyboard.press('Home');
+            await app.page.keyboard.press('Home');
+            await app.page.keyboard.press('Shift+End');
+            await app.page.keyboard.type('    name: "CodeEdit"');
+            const line = await codeEditor.textContentOfLineByLineNumber(3);
+            expect(line).toContain('CodeEdit');
+         }).toPass({ timeout: 10000 });
          // Give the model server time to parse the updated code.
          await app.page.waitForTimeout(500);
 

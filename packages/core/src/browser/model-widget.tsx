@@ -61,6 +61,7 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
 
    protected document?: CrossModelDocument;
    protected error: string | undefined;
+   protected hasPendingUpdate = false;
 
    @postConstruct()
    init(): void {
@@ -136,13 +137,24 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
          // The language client may also fire a save event (with sourceClientId='language-client')
          // when it detects the file change, which must not overwrite the form's React state.
          this.document.diagnostics = document.diagnostics;
-         this.setDirty(false);
+         // Only clear dirty if no new edit arrived since the save was initiated.
+         // A late-arriving 'saved' event must not undo dirty state from a newer edit.
+         if (!this.hasPendingUpdate) {
+            this.setDirty(false);
+         }
          return;
       }
       if (!deepEqual(this.document.root, document.root) || !deepEqual(this.document.diagnostics, document.diagnostics)) {
          console.debug(`[${this.options.clientId}] Receive update from ${sourceClientId} due to '${reason}'`);
          if (sourceClientId !== this.options.clientId) {
-            this.document = document;
+            // While a local edit is pending (debounce hasn't fired yet), don't
+            // overwrite this.document.root with server data — it would undo the
+            // user's in-progress edit.  Only sync diagnostics in that case.
+            if (this.hasPendingUpdate) {
+               this.document.diagnostics = document.diagnostics;
+            } else {
+               this.document = document;
+            }
             this.update();
          } else {
             this.document.diagnostics = document.diagnostics;
@@ -154,6 +166,7 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
    protected async sendUpdateToServer(root: CrossModelRoot): Promise<void> {
       if (this.document) {
          this.document.root = root;
+         this.hasPendingUpdate = false;
          console.debug(`[${this.options.clientId}] Send update to server`);
          // Do not use the returned document to avoid overwriting keystrokes typed during the server round-trip.
          // Diagnostics are synced separately via the handleUpdate event listener.
@@ -202,6 +215,8 @@ export class CrossModelWidget extends ReactWidget implements Saveable {
 
    protected handleUpdateRequest = (root: CrossModelRoot): void => {
       if (this.document && !deepEqual(this.document.root, root)) {
+         this.document.root = root;
+         this.hasPendingUpdate = true;
          this.setDirty(true);
          this.onContentChangedEmitter.fire();
          this.debouncedServerUpdate(root);
