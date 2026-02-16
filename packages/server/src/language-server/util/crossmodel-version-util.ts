@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { getCrossModelEdition, getCrossModelMajorVersion } from '@crossmodel/protocol';
-import { CrossModelEditionInfo, DataModel } from '../generated/ast.js';
+import { CrossModelEditionInfo, DataModel } from '../ast.js';
 
 /**
  * Checks if the datamodel has no CrossModel version/edition stored yet.
