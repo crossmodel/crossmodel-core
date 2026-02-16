@@ -265,6 +265,9 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
          // --- Step 3: Make a change in the Code tab (replace the entity name on line 3). ---
          await codeEditor.selectLineWithLineNumber(3);
          await app.page.keyboard.type('    name: "CodeEdit"');
+         // Give the editor time to register the change
+         await app.page.waitForTimeout(500);
+         await codeEditor.waitForDirty();
          const line3 = await codeEditor.textContentOfLineByLineNumber(3);
          expect(line3).toContain('CodeEdit');
          // Give the model server time to parse the updated code.
@@ -276,6 +279,7 @@ test.describe.serial('Dual Editor Save Behavior — Composite Form + Code Tabs',
 
          // --- Step 5: Make another change on the Form tab. ---
          await general.setDescription('FormEdit2');
+         await formEditor.waitForDirty();
 
          // --- Step 6: Wait for auto-save to complete. ---
          await expect(async () => {
