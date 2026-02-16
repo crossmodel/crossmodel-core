@@ -2,7 +2,7 @@
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
 import { injectable } from 'inversify';
-import { CrossModelRoot, Mapping } from '../../../language-server/generated/ast.js';
+import { CrossModelRoot, Mapping } from '../../../language-server/ast.js';
 import { CrossModelState } from '../../common/cross-model-state.js';
 import { MappingModelIndex } from './mapping-model-index.js';
 

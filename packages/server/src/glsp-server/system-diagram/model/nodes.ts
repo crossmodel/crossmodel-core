@@ -15,8 +15,7 @@ import {
    SEMANTIC_URI
 } from '@crossmodel/protocol';
 import { ArgsUtil, GNode, GNodeBuilder } from '@eclipse-glsp/server';
-import { LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
-import { getAttributes } from '../../../language-server/util/ast-util.js';
+import { LogicalEntity, LogicalEntityNode } from '../../../language-server/ast.js';
 import { AttributeCompartment, AttributesCompartmentBuilder, createHeader } from '../../common/nodes.js';
 import { SystemModelIndex } from './system-model-index.js';
 
@@ -53,11 +52,9 @@ export class GEntityNodeBuilder extends GNodeBuilder<GEntityNode> {
       this.add(createHeader(entityRef?.name || entityRef?.id || 'unresolved', this.proxy.id, LABEL_ENTITY));
 
       // Add the children of the node
-      const attributes = getAttributes(node);
       const attributesCompartment = new AttributesCompartmentBuilder().set(this.proxy.id);
-      for (const attribute of attributes) {
+      for (const attribute of node._attributes) {
          const attributeNode = AttributeCompartment.builder().set(attribute, index);
-         // FIXME: Refactor the code below to derive the primary to the backend (model-service/server).
          const primaryIdentifier = entityRef?.identifiers?.find(identifier => identifier.primary);
          const isCurrentlyInPrimary = primaryIdentifier?.attributes.some(attr => attr.ref?.id === attribute.id);
          attributeNode.addArg('identifier', !!isCurrentlyInPrimary).addLayoutOption('paddingLeft', 8).addLayoutOption('paddingRight', 8);

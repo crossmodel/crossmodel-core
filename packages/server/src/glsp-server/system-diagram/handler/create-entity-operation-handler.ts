@@ -14,7 +14,7 @@ import {
 } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
 import { Utils as UriUtils } from 'vscode-uri';
-import { CrossModelRoot, LogicalEntity, LogicalEntityNode } from '../../../language-server/generated/ast.js';
+import { CrossModelRoot, LogicalEntity, LogicalEntityNode } from '../../../language-server/ast.js';
 import { Utils } from '../../../language-server/util/uri-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';
@@ -41,6 +41,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       const node: LogicalEntityNode = {
          $type: LogicalEntityNode.$type,
          $container: container,
+         _attributes: [],
          id: this.modelState.idProvider.findNextInternalId(LogicalEntityNode.$type, entity.name + 'Node', container),
          entity: {
             $refText: toIdReference(this.modelState.idProvider.getNodeId(entity) || entity.id || ''),
@@ -84,7 +85,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
          name,
          attributes: [],
          identifiers: [],
-         superEntities: [],
+         inherits: [],
          customProperties: []
       };
 
@@ -93,9 +94,7 @@ export class SystemDiagramCreateEntityOperationHandler extends JsonCreateNodeOpe
       const uri = Utils.findNewUri(targetUri);
 
       entityRoot.entity = entity;
-      const text = this.modelState.semanticSerializer.serialize(entityRoot);
-
-      await this.modelState.modelService.save({ uri: uri.toString(), model: text, clientId: this.modelState.clientId });
+      await this.modelState.modelService.save({ uri: uri.toString(), model: entityRoot, clientId: this.modelState.clientId });
       // Notify client to expand the navigator and reveal the newly created file
       this.actionDispatcher.dispatchAfterNextUpdate(
          ExpandNavigatorForNewFileAction.create({ parentUri: dirName.toString(), uri: uri.toString() })

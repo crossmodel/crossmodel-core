@@ -14,7 +14,6 @@ import {
    FindIdArgs,
    FindNextId,
    FindReferenceableElements,
-   ModelDiagnostic,
    OnDataModelsUpdated,
    OnModelSaved,
    OnModelUpdated,
@@ -31,15 +30,11 @@ import {
    UpdateModel,
    UpdateModelArgs
 } from '@crossmodel/protocol';
-import { AstNode, AstUtils, isReference } from 'langium';
 import { Disposable } from 'vscode-jsonrpc';
 import * as rpc from 'vscode-jsonrpc/node.js';
 
-import { DiagnosticSeverity } from 'vscode-languageserver-protocol';
-import { CrossModelDiagnostic } from '../language-server/cross-model-document-validator.js';
-import * as ast from '../language-server/generated/ast.js';
-import { IMPLICIT_ID_PROPERTY } from '../language-server/util/ast-util.js';
-import { ModelService } from './model-service.js';
+import { CrossModelLSPServices } from '../integration.js';
+import { findDocument } from '../language-server/util/ast-util.js';
 
 /**
  * The model server handles request messages on the RPC connection and ensures that any return value
@@ -51,7 +46,10 @@ export class ModelServer implements Disposable {
 
    constructor(
       protected connection: rpc.MessageConnection,
-      protected modelService: ModelService
+      protected services: CrossModelLSPServices,
+      protected modelService = services.shared.model.ModelService,
+      protected converter = services.shared.client.Converter,
+      protected logger = services.shared.client.Logger.for('ModelServer')
    ) {
       this.initialize(connection);
    }
@@ -87,8 +85,12 @@ export class ModelServer implements Disposable {
       if (!node) {
          return undefined;
       }
-      const uri = AstUtils.getDocument(node).uri.toString();
-      const model = this.toSerializable(AstUtils.findRootNode(node)) as CrossModelRoot;
+      const document = findDocument(node);
+      if (!document) {
+         return undefined;
+      }
+      const uri = document.uri.toString();
+      const model = this.converter.toTransfer(document.parseResult.value);
       return { uri, model };
    }
 
@@ -118,13 +120,13 @@ export class ModelServer implements Disposable {
          this.modelService.onModelSaved(args.uri, event =>
             this.connection.sendNotification(OnModelSaved, {
                sourceClientId: event.sourceClientId,
-               document: this.toDocument(event.document)
+               document: this.converter.toTransferDocument(event.document)
             })
          ),
          this.modelService.onModelUpdated(args.uri, event =>
             this.connection.sendNotification(OnModelUpdated, {
                sourceClientId: event.sourceClientId,
-               document: this.toDocument(event.document),
+               document: this.converter.toTransferDocument(event.document),
                reason: event.reason
             })
          )
@@ -144,87 +146,19 @@ export class ModelServer implements Disposable {
 
    protected async requestModel(uri: string): Promise<CrossModelDocument | undefined> {
       const document = await this.modelService.request(uri);
-      return document ? this.toDocument(document) : undefined;
+      return document ? this.converter.toTransferDocument(document) : undefined;
    }
 
    protected async updateModel(args: UpdateModelArgs<CrossModelRoot>): Promise<CrossModelDocument> {
-      const updated = await this.modelService.update({ ...args, model: args.model as ast.CrossModelRoot });
-      return this.toDocument(updated);
+      const updated = await this.modelService.update({ ...args, model: this.converter.toAstText(args.model) });
+      return this.converter.toTransferDocument(updated);
    }
 
    protected async saveModel(args: SaveModelArgs<CrossModelRoot>): Promise<void> {
-      await this.modelService.save({ ...args, model: args.model as ast.CrossModelRoot });
+      await this.modelService.save({ ...args, model: this.converter.toAstText(args.model) });
    }
 
    dispose(): void {
       this.toDispose.forEach(disposable => disposable.dispose());
-   }
-
-   protected toDocument<T extends CrossModelDocument<ast.CrossModelRoot, CrossModelDiagnostic>>(
-      document: T
-   ): CrossModelDocument<CrossModelRoot, ModelDiagnostic> {
-      return {
-         uri: document.uri,
-         diagnostics: document.diagnostics.map(diagnostic => this.toModelDiagnostic(diagnostic)),
-         root: this.toSerializable(document.root)!
-      };
-   }
-
-   protected toModelDiagnostic(diagnostic: CrossModelDiagnostic): ModelDiagnostic {
-      const langiumCode = diagnostic.data?.code;
-      return {
-         message: diagnostic.message,
-         element: diagnostic.element,
-         property: diagnostic.property,
-         severity:
-            diagnostic.severity === DiagnosticSeverity.Error
-               ? 'error'
-               : diagnostic.severity === DiagnosticSeverity.Warning
-                 ? 'warning'
-                 : 'info',
-         code: diagnostic.code ?? diagnostic.data?.code,
-         type: langiumCode === 'lexing-error' ? 'lexing-error' : langiumCode === 'parsing-error' ? 'parsing-error' : 'validation-error'
-      };
-   }
-
-   /**
-    * Cleans the semantic object of any property that cannot be serialized as a String and thus cannot be sent to the client
-    * over the RPC connection.
-    *
-    * @param obj semantic object
-    * @returns serializable semantic object
-    */
-   protected toSerializable<T extends AstNode = ast.CrossModelRoot, O extends object = CrossModelRoot>(obj?: T): O | undefined {
-      if (!obj) {
-         return;
-      }
-      // We remove all $<property> from the semantic object with the exception of type
-      // they are added by Langium but have no additional value on the client side
-      // Furthermore we ensure that for references we use their string representation ($refText)
-      // instead of their real value to avoid sending whole serialized object graphs
-      return <O>Object.entries(obj)
-         .filter(([key, value]) => !key.startsWith('$') || key === '$type' || key === IMPLICIT_ID_PROPERTY)
-         .reduce((acc, [key, value]) => ({ ...acc, [key]: this.cleanValue(value) }), { $globalId: this.modelService.getGlobalId(obj) });
-   }
-
-   protected cleanValue(value: any): any {
-      if (Array.isArray(value)) {
-         return value.map(val => this.cleanValue(val));
-      } else if (this.isContainedObject(value)) {
-         return this.toSerializable(value);
-      } else {
-         return this.resolvedValue(value);
-      }
-   }
-
-   protected isContainedObject(value: any): boolean {
-      return value === Object(value) && !isReference(value);
-   }
-
-   protected resolvedValue(value: any): any {
-      if (isReference(value)) {
-         return value.$refText;
-      }
-      return value;
    }
 }

@@ -1,14 +1,29 @@
 /********************************************************************************
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
-import { CrossReferenceContext, EntityInherit, EntityInheritType, LogicalEntityType, toIdReference } from '@crossmodel/protocol';
+import {
+   CrossModelElement,
+   CrossReferenceContext,
+   LogicalEntity,
+   LogicalEntityType,
+   type Reference,
+   toIdReference
+} from '@crossmodel/protocol';
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteDropdownClickEvent, AutoCompleteSelectEvent } from 'primereact/autocomplete';
 import { DataTableRowEditEvent } from 'primereact/datatable';
 import * as React from 'react';
 import { useDiagnosticsManager, useEntity, useModelDispatch, useModelQueryApi, useReadonly } from '../../ModelContext';
 import { ErrorView } from '../ErrorView';
-import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 import { GridColumn, PrimeDataGrid } from './PrimeDataGrid';
+import { handleGridEditorKeyDown, wasSaveTriggeredByEnter } from './gridKeydownHandler';
+
+/** Client-side-only type constant (not in AST). */
+const EntityInheritType = 'EntityInherit' as const;
+
+export interface EntityInherit extends CrossModelElement {
+   readonly $type: typeof EntityInheritType;
+   parentId: Reference<LogicalEntity>;
+}
 
 export interface EntityInheritRow extends EntityInherit {
    idx: number;
@@ -38,8 +53,8 @@ function EntityInheritEditor(props: EntityInheritEditorProps): React.ReactElemen
    const entity = useEntity();
    const readonly = useReadonly();
    const diagnostics = useDiagnosticsManager();
-   const basePath = ['entity', 'superEntities'];
-   const fieldInfo = diagnostics.info(basePath, 'superEntities', rowData.idx);
+   const basePath = ['entity', 'inherits'];
+   const fieldInfo = diagnostics.info(basePath, 'inherits', rowData.idx);
    const error = fieldInfo.empty ? undefined : fieldInfo.text();
    const isDropdownClicked = React.useRef(false);
    // eslint-disable-next-line no-null/no-null
@@ -47,11 +62,11 @@ function EntityInheritEditor(props: EntityInheritEditorProps): React.ReactElemen
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: entity?.$globalId || '' },
-         syntheticElements: [{ property: 'superEntities', type: LogicalEntityType }],
-         property: 'superEntities'
+         container: { globalId: entity?._globalId || '' },
+         syntheticElements: [{ property: 'inherits', type: LogicalEntityType }],
+         property: 'inherits'
       }),
-      [entity.$globalId]
+      [entity._globalId]
    );
 
    const search = React.useCallback(
@@ -158,8 +173,8 @@ function EntityInheritProperty({
    editingRows: Record<string, boolean>;
 }): React.ReactNode {
    const diagnostics = useDiagnosticsManager();
-   const basePath = ['entity', 'superEntities'];
-   const info = diagnostics.info(basePath, 'superEntities', rowData.idx);
+   const basePath = ['entity', 'inherits'];
+   const info = diagnostics.info(basePath, 'inherits', rowData.idx);
    const error = info.empty ? undefined : info.text();
 
    const showInvalid = Boolean(error && !editingRows[rowData.id]);
@@ -182,10 +197,10 @@ export function EntityInheritsDataGrid(): React.ReactElement {
    // Update grid data when dependencies change, preserving any uncommitted rows
    React.useEffect(() => {
       setGridData(current => {
-         const committedData = (entity?.superEntities || []).map((dep: any, idx: number) => {
+         const committedData = (entity?.inherits || []).map((dep: any, idx: number) => {
             // dep can be either a string Reference or an object with different shapes
             const parentId =
-               typeof dep === 'string' ? dep : (dep?.parentId ?? dep?.$refText ?? (dep?.ref && (dep.ref.id || dep.ref.$globalId)) ?? '');
+               typeof dep === 'string' ? dep : (dep?.parentId ?? dep?.$refText ?? (dep?.ref && (dep.ref.id || dep.ref._globalId)) ?? '');
             return {
                $type: EntityInheritType,
                parentId,
@@ -199,7 +214,7 @@ export function EntityInheritsDataGrid(): React.ReactElement {
 
          return [...committedData, ...uncommittedRows];
       });
-   }, [entity?.superEntities, editingRows]);
+   }, [entity?.inherits, editingRows]);
 
    const filterOptions = React.useMemo(() => {
       const uniqueInheritances = [...new Set(gridData.map(item => item.parentId).filter(Boolean))];

@@ -2,8 +2,8 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { CustomProperty, DataModelDependency, unreachable } from '@crossmodel/protocol';
-import { DispatchAction, ModelAction, ModelState, undefinedIfEmpty } from './ModelReducer';
+import { CustomProperty, DataModelDependency, DataModelType, unreachable } from '@crossmodel/protocol';
+import { DispatchAction, ModelAction, ModelState } from './ModelReducer';
 
 export interface DataModelChangeIdAction extends ModelAction {
    type: 'datamodel:change-id';
@@ -22,7 +22,7 @@ export interface DataModelChangeDescriptionAction extends ModelAction {
 
 export interface DataModelChangeTypeAction extends ModelAction {
    type: 'datamodel:change-type';
-   dataModelType: string;
+   dataModelType: DataModelType;
 }
 
 export interface DataModelChangeVersionAction extends ModelAction {
@@ -92,7 +92,7 @@ export function isDataModelDispatchAction(action: DispatchAction): action is Dat
 }
 
 export function DataModelReducer(state: ModelState, action: DataModelDispatchAction): ModelState {
-   const dataModel = (state.model as any).datamodel;
+   const dataModel = state.model.datamodel;
    if (dataModel === undefined) {
       throw Error('Model error: DataModel action applied on undefined datamodel');
    }
@@ -104,16 +104,16 @@ export function DataModelReducer(state: ModelState, action: DataModelDispatchAct
          dataModel.id = action.id;
          break;
       case 'datamodel:change-name':
-         dataModel.name = undefinedIfEmpty(action.name);
+         dataModel.name = action.name;
          break;
       case 'datamodel:change-description':
-         dataModel.description = undefinedIfEmpty(action.description);
+         dataModel.description = action.description;
          break;
       case 'datamodel:change-type':
          dataModel.type = action.dataModelType;
          break;
       case 'datamodel:change-version':
-         dataModel.version = undefinedIfEmpty(action.version);
+         dataModel.version = action.version;
          break;
 
       case 'datamodel:dependency:update':
@@ -141,11 +141,7 @@ export function DataModelReducer(state: ModelState, action: DataModelDispatchAct
          break;
 
       case 'datamodel:customProperty:update':
-         dataModel.customProperties![action.customPropertyIdx] = {
-            ...action.customProperty,
-            name: undefinedIfEmpty(action.customProperty.name),
-            description: undefinedIfEmpty(action.customProperty.description)
-         };
+         dataModel.customProperties![action.customPropertyIdx] = action.customProperty;
          break;
 
       case 'datamodel:customProperty:add-customProperty':

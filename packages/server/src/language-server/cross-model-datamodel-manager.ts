@@ -10,7 +10,7 @@ import { URI } from 'vscode-uri';
 import { CrossModelLangiumDocuments } from './cross-model-langium-documents.js';
 import { CrossModelSharedServices } from './cross-model-module.js';
 import { QUALIFIED_ID_SEPARATOR } from './cross-model-naming.js';
-import { DataModel, DataModelDependency } from './generated/ast.js';
+import { DataModel, DataModelDependency } from './ast.js';
 import { findDataModel } from './util/ast-util.js';
 import { Utils } from './util/uri-util.js';
 
@@ -102,7 +102,7 @@ export class CrossModelDataModelManager {
       protected textDocuments = shared.workspace.TextDocuments,
       protected langiumDocuments = shared.workspace.LangiumDocuments,
       protected documentBuilder = shared.workspace.DocumentBuilder,
-      protected logger = shared.logger.ClientLogger
+      protected logger = shared.client.Logger.for('DataModel')
    ) {
       this.documentBuilder.onUpdate((changed, deleted) => this.onBuildUpdate(changed, deleted));
       this.documentBuilder.onBuildPhase(DocumentState.Parsed, (docs, token) => this.documentParsed(docs, token));
@@ -115,7 +115,7 @@ export class CrossModelDataModelManager {
    async initialize(folders: WorkspaceFolder[]): Promise<void> {
       const initializations: Promise<void>[] = [];
       for (const folder of folders) {
-         this.logger.info('[DataModel] Scan folder for data models: ' + UriUtils.basename(URI.parse(folder.uri)));
+         this.logger.info('Scan folder for data models: ' + UriUtils.basename(URI.parse(folder.uri)));
          initializations.push(this.initializeDataModels(URI.parse(folder.uri)));
       }
       await Promise.all(initializations);
@@ -234,14 +234,12 @@ export class CrossModelDataModelManager {
             .filter(info => affectedDataModels.some(affected => info.dependencies.includes(affected)))
             .forEach(info => affectedDataModels.push(info.id));
          affectedDataModels = [...new Set(affectedDataModels)];
-         this.logger.info(`[DataModel] Detect affected data models: ${affectedDataModels.join(', ')}`);
+         this.logger.info(`Detect affected data models: ${affectedDataModels.join(', ')}`);
 
          // invalidate all documents that belong to affected data models
          const docs = this.langiumDocuments.all.filter(doc => affectedDataModels.includes(this.getDataModelIdByDocument(doc))).toArray();
          const workspace = this.shared.workspace.WorkspaceManager;
-         this.logger.info(
-            `[DataModel] Re-build affected documents (${docs.length}): ${docs.map(doc => workspace.wsRelativePath(doc.uri)).join(', ')}`
-         );
+         this.logger.info(`Re-build affected documents (${docs.length}): ${docs.map(doc => workspace.wsRelativePath(doc.uri)).join(', ')}`);
          docs.forEach(doc => {
             // Force re-parse/re-build of the document
             this.documentBuilder.resetToState(doc, DocumentState.Changed);
@@ -265,12 +263,10 @@ export class CrossModelDataModelManager {
          // warn if other data model with same ID (but different URI) is registered
          const sameId = this.idToDataModel.get(dataModelInfo.id).find(info => info.uri.toString() !== uri.toString());
          if (sameId) {
-            this.logger.warn('[DataModel] A data model with the same id was already registered.');
+            this.logger.warn('A data model with the same id was already registered.');
          }
          this.idToDataModel.add(dataModelInfo.id, dataModelInfo);
-         this.logger.info(
-            `[DataModel] Add/Update data model "${dataModelInfo.id}" from ${this.shared.workspace.WorkspaceManager.wsRelativePath(uri)}`
-         );
+         this.logger.info(`Add/Update data model "${dataModelInfo.id}" from ${this.shared.workspace.WorkspaceManager.wsRelativePath(uri)}`);
          this.emitUpdate({ dataModel: this.convertDataModelInfoToProtocolDataModelInfo(dataModelInfo), reason: 'added' });
          return [dataModelInfo.id];
       }
@@ -282,9 +278,7 @@ export class CrossModelDataModelManager {
       if (dataModelInfo && !dataModelInfo?.isUnknown) {
          this.uriToDataModel.delete(uri.toString());
          if (this.idToDataModel.delete(dataModelInfo.id, dataModelInfo)) {
-            this.logger.info(
-               `[DataModel] Remove data model "${dataModelInfo.id}" from ${this.shared.workspace.WorkspaceManager.wsRelativePath(uri)}`
-            );
+            this.logger.info(`Remove data model "${dataModelInfo.id}" from ${this.shared.workspace.WorkspaceManager.wsRelativePath(uri)}`);
             this.emitUpdate({ dataModel: this.convertDataModelInfoToProtocolDataModelInfo(dataModelInfo), reason: 'removed' });
          }
          return [dataModelInfo.id];
@@ -306,7 +300,7 @@ export class CrossModelDataModelManager {
       const newDataModelId = createDataModelId(newDataModel.id, newDataModel.version);
       // data model ID changed, remove old one
       if (existingDataModelInfo && existingDataModelInfo?.id !== newDataModelId) {
-         this.logger.info(`[DataModel] Replace data model "${existingDataModelInfo.id}" with "${newDataModelId}"`);
+         this.logger.info(`Replace data model "${existingDataModelInfo.id}" with "${newDataModelId}"`);
          toUpdate.push(...this.deleteDataModel(uri));
       }
       // add new/updated data model

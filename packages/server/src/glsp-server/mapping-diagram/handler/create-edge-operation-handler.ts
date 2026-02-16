@@ -1,7 +1,7 @@
 /********************************************************************************
  * Copyright (c) 2024 CrossBreeze.
  ********************************************************************************/
-import { isLeftPortId, isPortId, TARGET_ATTRIBUTE_MAPPING_EDGE_TYPE } from '@crossmodel/protocol';
+import { TARGET_ATTRIBUTE_MAPPING_EDGE_TYPE, isLeftPortId, isPortId } from '@crossmodel/protocol';
 import {
    Command,
    CreateEdgeOperation,
@@ -11,8 +11,8 @@ import {
 } from '@eclipse-glsp/server';
 import { injectable } from 'inversify';
 import { combineIds } from '../../../language-server/cross-model-naming.js';
-import { isSourceObjectAttribute, isTargetObjectAttribute, SourceObject } from '../../../language-server/generated/ast.js';
-import { createAttributeMapping, createAttributeMappingSource, getOwner } from '../../../language-server/util/ast-util.js';
+import { isSourceObjectAttribute, isTargetObjectAttribute } from '../../../language-server/ast.js';
+import { createAttributeMapping, createAttributeMappingSource } from '../../../language-server/util/ast-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { MappingModelState } from '../model/mapping-model-state.js';
 
@@ -39,7 +39,7 @@ export class MappingEdgeCreationOperationHandler extends JsonCreateEdgeOperation
          const container = this.modelState.mapping.target;
          const sourceElement = this.modelState.index.findSemanticElement(sourceElementId, isSourceObjectAttribute);
          const targetElement = this.modelState.index.findSemanticElement(targetElementId, isTargetObjectAttribute);
-         const sourceObject = <SourceObject>getOwner(sourceElement);
+         const sourceObject = sourceElement?.$container;
          if (!targetElement?.id || !sourceElement?.id || !sourceObject?.id) {
             return;
          }

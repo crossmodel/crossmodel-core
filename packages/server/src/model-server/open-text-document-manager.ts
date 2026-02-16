@@ -10,10 +10,10 @@ import { Disposable } from 'vscode-languageserver';
 import { TextDocumentIdentifier, TextDocumentItem, VersionedTextDocumentIdentifier } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+import { CrossModelRoot } from '../language-server/ast.js';
 import { CrossModelDiagnostic } from '../language-server/cross-model-document-validator.js';
 import { CrossModelLangiumDocument, CrossModelLangiumDocuments } from '../language-server/cross-model-langium-documents.js';
 import { CrossModelSharedServices } from '../language-server/cross-model-module.js';
-import { CrossModelRoot } from '../language-server/generated/ast.js';
 import { CrossModelLanguageMetaData } from '../language-server/generated/module.js';
 import { OpenableTextDocuments } from './openable-text-documents.js';
 
@@ -22,7 +22,7 @@ export interface UpdateInfo {
    deleted: URI[];
 }
 
-export type AstCrossModelDocument = CrossModelDocument<CrossModelRoot, CrossModelDiagnostic>;
+export type AstModelDocument = CrossModelDocument<CrossModelRoot, CrossModelDiagnostic>;
 
 /**
  * A manager class that supports handling documents with a simple open-update-save/close lifecycle.
@@ -60,14 +60,14 @@ export class OpenTextDocumentManager {
     * @param listener Callback to be called
     * @returns Disposable object
     */
-   onSave(uri: string, listener: (model: ModelSavedEvent<AstCrossModelDocument>) => void): Disposable {
+   onSave(uri: string, listener: (model: ModelSavedEvent<AstModelDocument>) => void): Disposable {
       return this.textDocuments.onDidSave(async event => {
          const documentURI = URI.parse(event.document.uri);
 
          // Check if the uri of the saved document and the uri of the listener are equal.
          if (event.document.uri === uri && documentURI !== undefined && this.langiumDocs.hasDocument(documentURI)) {
             const document = await this.langiumDocs.getOrCreateDocument(documentURI);
-            const root = document.parseResult.value as CrossModelRoot;
+            const root = document.parseResult.value;
             return listener({
                document: {
                   root,
@@ -82,16 +82,16 @@ export class OpenTextDocumentManager {
       });
    }
 
-   onUpdate(uri: string, listener: (model: ModelUpdatedEvent<AstCrossModelDocument>) => void): Disposable {
+   onUpdate(uri: string, listener: (model: ModelUpdatedEvent<AstModelDocument>) => void): Disposable {
       return this.documentBuilder.onDocumentPhase(DocumentState.Validated, (document, _token) => {
          if (document.uri.toString() !== uri) {
             return;
          }
          const changedDocument = document as CrossModelLangiumDocument;
          const sourceClientId = this.getAuthor(changedDocument);
-         const event: ModelUpdatedEvent<AstCrossModelDocument> = {
+         const event: ModelUpdatedEvent<AstModelDocument> = {
             document: {
-               root: changedDocument.parseResult.value as CrossModelRoot,
+               root: changedDocument.parseResult.value,
                diagnostics: changedDocument.diagnostics ?? [],
                uri: changedDocument.textDocument.uri
             },

@@ -3,10 +3,10 @@
  ********************************************************************************/
 import { ModelService } from '@crossmodel/model-service/lib/common';
 import {
+   CrossModelTerminals,
    DATAMODEL_FILE,
    DataModelType,
    DataModelTypeInfos,
-   ID_REGEX,
    LogicalEntityType,
    MappingType,
    ModelFileExtensions,
@@ -486,8 +486,8 @@ export class CrossModelWorkspaceContribution extends WorkspaceCommandContributio
 
    protected async validateElementFileName(file: URI, name: string): Promise<DialogError> {
       // we automatically name some part in the initial code after the given name so ensure it is an ID
-      if (!ID_REGEX.test(name)) {
-         return nls.localizeByDefault(`'${name}' is not a valid name, must match: ${ID_REGEX}.`);
+      if (!CrossModelTerminals.ID.test(name)) {
+         return nls.localizeByDefault(`'${name}' is not a valid name, must match: ${CrossModelTerminals.ID}.`);
       }
       return this.validateFile(file);
    }
@@ -603,22 +603,22 @@ function join(parent: URI, name: string, ext: string): URI {
 
 function validateObjectName(input: string): string | undefined {
    const asId = toId(input);
-   if (!ID_REGEX.test(asId)) {
-      return `Derived ID '${asId}' does not match '${ID_REGEX}'.`;
+   if (!CrossModelTerminals.ID.test(asId)) {
+      return `Derived ID '${asId}' does not match '${CrossModelTerminals.ID}'.`;
    }
    return undefined;
 }
 
 function validateDataModelName(input: string): string | undefined {
-   if (!ID_REGEX.test(input)) {
-      return `Data Model ID '${input}' does not match '${ID_REGEX}'.`;
+   if (!CrossModelTerminals.ID.test(input)) {
+      return `Data Model ID '${input}' does not match '${CrossModelTerminals.ID}'.`;
    }
    return undefined;
 }
 
 function folderNameForMemberType(memberType: ModelFileType | string): string {
    try {
-      const folder = ModelFileType.getFolder(memberType as any);
+      const folder = ModelFileType.getFolder(memberType as ModelFileType);
       if (folder) {
          return folder;
       }

@@ -4,7 +4,7 @@
 import { AddSourceObjectOperation, codiconCSSString } from '@crossmodel/protocol';
 import { Args, CommandPaletteActionProvider, GModelElement, LabeledAction, Point } from '@eclipse-glsp/server';
 import { injectable } from 'inversify';
-import { SourceObject } from '../../../language-server/generated/ast.js';
+import { SourceObject } from '../../../language-server/ast.js';
 import { MappingModelState } from '../model/mapping-model-state.js';
 
 @injectable()

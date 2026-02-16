@@ -14,7 +14,7 @@ import {
 import { ActionDispatcher, Command, CreateEdgeOperation, JsonCreateEdgeOperationHandler, SelectAction } from '@eclipse-glsp/server';
 import { inject, injectable } from 'inversify';
 import { Utils as UriUtils } from 'vscode-uri';
-import { CrossModelRoot, LogicalEntityNode, Relationship, RelationshipEdge } from '../../../language-server/generated/ast.js';
+import { CrossModelRoot, LogicalEntityNode, Relationship, RelationshipEdge } from '../../../language-server/ast.js';
 import { Utils } from '../../../language-server/util/uri-util.js';
 import { CrossModelCommand } from '../../common/cross-model-command.js';
 import { SystemModelState } from '../model/system-model-state.js';
@@ -96,17 +96,14 @@ export class SystemDiagramCreateRelationshipOperationHandler extends JsonCreateE
          child: { $refText: toIdReference(targetNode.entity?.$refText || ''), ref: undefined },
          customProperties: []
       };
+      relationshipRoot.relationship = relationship;
 
       // search for unique file name for the relationship and use file base name as relationship name
       // if the user doesn't rename any files we should end up with unique names ;-)
       const dirName = UriUtils.joinPath(dataModel.directory, ModelStructure.Relationship.FOLDER);
       const targetUri = UriUtils.joinPath(dirName, relationship.id + ModelFileType.getFileExtension(ModelFileType.Relationship));
       const uri = Utils.findNewUri(targetUri);
-
-      relationshipRoot.relationship = relationship;
-      const text = this.modelState.semanticSerializer.serialize(relationshipRoot);
-
-      await this.modelState.modelService.save({ uri: uri.toString(), model: text, clientId: this.modelState.clientId });
+      await this.modelState.modelService.save({ uri: uri.toString(), model: relationshipRoot, clientId: this.modelState.clientId });
       // Notify client to expand the navigator and reveal the newly created file
       this.actionDispatcher.dispatchAfterNextUpdate(
          ExpandNavigatorForNewFileAction.create({ parentUri: dirName.toString(), uri: uri.toString() })

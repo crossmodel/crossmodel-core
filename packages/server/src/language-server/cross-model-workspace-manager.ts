@@ -18,7 +18,7 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
 
    constructor(
       protected services: CrossModelSharedServices,
-      protected logger = services.logger.ClientLogger
+      protected logger = services.client.Logger.for('Workspace')
    ) {
       super(services);
       this.initialBuildOptions = { validation: true };
@@ -26,12 +26,12 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
 
    override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken | undefined): Promise<void> {
       try {
-         this.logger.info(`[Workspace] Initialize: ${folders.length > 0 ? `${folders.map(f => f.name).join(', ')}` : '<empty>'}`);
+         this.logger.info(`Initialize: ${folders.length > 0 ? `${folders.map(f => f.name).join(', ')}` : '<empty>'}`);
          await super.initializeWorkspace(folders, cancelToken);
-         this.logger.info('[Workspace] Initialized.');
+         this.logger.info('Initialized.');
 
          // notify that the workspace is initialized
-         this.logger.info('[Workspace] Notify Listeners...');
+         this.logger.info('Notify Listeners...');
          if (this.workspace) {
             this.workspaceInitializedDeferred.resolve(this.getRootFolder(this.workspace));
          }
@@ -52,13 +52,13 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
 
    async updateDataModels(wsUri: string | undefined = this.workspace?.uri, cancelToken?: CancellationToken): Promise<void> {
       if (!wsUri) {
-         this.logger.warn('[Workspace] Rebuild DataModels: No workspace folder found, skipping.');
+         this.logger.warn('Rebuild DataModels: No workspace folder found, skipping.');
          return;
       }
-      this.logger.info('[Workspace] Rebuild DataModels: Wait for finishing build...');
+      this.logger.info('Rebuild DataModels: Wait for finishing build...');
       await this.documentBuilder.waitUntil(DocumentState.Validated);
       const update = this.services.workspace.DataModelManager.getDataModelInfos().map((info: { uri: URI }) => info.uri);
-      this.logger.info(`[Workspace] Rebuild DataModels: Update ${update.map(uri => this.wsRelativePath(uri.path, wsUri)).join(', ')}`);
+      this.logger.info(`Rebuild DataModels: Update ${update.map(uri => this.wsRelativePath(uri.path, wsUri)).join(', ')}`);
       await this.documentBuilder.update(update, [], cancelToken);
    }
 
@@ -67,7 +67,7 @@ export class CrossModelWorkspaceManager extends DefaultWorkspaceManager {
       _collector: (document: LangiumDocument<AstNode>) => void
    ): Promise<void> {
       // build up datamodel-system based on the workspace
-      this.logger.info('[Workspace] Initialize DataModels...');
+      this.logger.info('Initialize DataModels...');
       return this.services.workspace.DataModelManager.initialize(folders);
    }
 }

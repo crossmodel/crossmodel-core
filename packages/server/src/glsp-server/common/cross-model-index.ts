@@ -6,7 +6,7 @@ import { inject, injectable } from 'inversify';
 import { AstNode, AstUtils } from 'langium';
 import * as uuid from 'uuid';
 import { CrossModelLSPServices } from '../../integration.js';
-import { CrossModelRoot } from '../../language-server/generated/ast.js';
+import { CrossModelRoot } from '../../language-server/ast.js';
 
 /**
  * Custom model index that not only indexes the GModel elements but also the semantic elements (AstNodes) they represent.
@@ -41,7 +41,7 @@ export class CrossModelIndex extends GModelIndex {
 
    indexSemanticRoot(root: CrossModelRoot): void {
       this.idToSemanticNode.clear();
-      AstUtils.streamAst(root).forEach(node => this.indexAstNode(node));
+      AstUtils.streamAllContents(root).forEach(node => this.indexAstNode(node));
    }
 
    protected indexAstNode(node: AstNode): void {
@@ -68,7 +68,7 @@ export class CrossModelIndex extends GModelIndex {
    protected override doIndex(element: GModelElement): void {
       if (this.idToElement.has(element.id)) {
          // super method throws error which is a bit too extreme, simply log the error to the client
-         this.services.shared.logger.ClientLogger.error('Duplicate element id in graph: ' + element.id);
+         this.services.shared.client.Logger.for('Index').error('Duplicate element id in graph: ' + element.id);
          return;
       }
       super.doIndex(element);

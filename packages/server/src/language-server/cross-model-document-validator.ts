@@ -13,7 +13,10 @@ export interface CrossModelDiagnostic extends Diagnostic {
 }
 
 export class CrossModelDocumentValidator extends DefaultDocumentValidator {
-   constructor(protected services: CrossModelServices) {
+   constructor(
+      protected services: CrossModelServices,
+      protected logger = services.shared.client.Logger.for('DocumentValidator')
+   ) {
       super(services);
    }
 
@@ -25,7 +28,7 @@ export class CrossModelDocumentValidator extends DefaultDocumentValidator {
       const node = info.node;
       if (!node) {
          // Should not happen but lets be defensive
-         this.services.shared.logger.ClientLogger.warn('Cannot create diagnostic element path: DiagnosticInfo has no node.');
+         this.logger.warn('Cannot create diagnostic element path: DiagnosticInfo has no node.');
          return { ...super.toDiagnostic(severity, message, info), property: info.property, element: '' };
       }
 
@@ -36,7 +39,7 @@ export class CrossModelDocumentValidator extends DefaultDocumentValidator {
       const nodePath = astLocator.getAstNodePath(node) || astLocator.getAstNodePath(node.$container ?? { $type: 'Dummy' });
       if (!nodePath) {
          // we either could not determine any path (should not really happen)
-         this.services.shared.logger.ClientLogger.warn('Cannot create diagnostic element path: Unable to determine AST node path.');
+         this.logger.warn('Cannot create diagnostic element path: Unable to determine AST node path.');
          return { ...super.toDiagnostic(severity, message, info), property: info.property, element: '' };
       }
 

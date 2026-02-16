@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.26.3](https://github.com/crossmodel/crossmodel-core/compare/v0.26.2...v0.26.3) (2026-02-16)
+
+**Note:** Version bump only for package @crossmodel/composite-editor
+
+
+
+
+
+## [0.26.2](https://github.com/crossmodel/crossmodel-core/compare/v0.26.1...v0.26.2) (2026-02-11)
+
+
+### Bug Fixes
+
+* restore text editor undo/redo broken by custom handler ([#270](https://github.com/crossmodel/crossmodel-core/issues/270)) ([1eb68ff](https://github.com/crossmodel/crossmodel-core/commit/1eb68ffb9938d6609f306ffcd37d8b0959e35556))
+
+
+
+
+
 ## [0.26.1](https://github.com/crossmodel/crossmodel-core/compare/v0.26.0...v0.26.1) (2026-02-06)
 
 **Note:** Version bump only for package @crossmodel/composite-editor

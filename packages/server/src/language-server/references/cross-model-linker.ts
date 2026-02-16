@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { AstNode, DefaultLinker, DocumentState, LangiumDocument } from 'langium';
-import { isMapping, isSystemDiagram } from '../generated/ast.js';
+import { isMapping, isSystemDiagram } from '../ast.js';
 import { hasSemanticRoot } from '../util/ast-util.js';
 
 export class CrossModelLinker extends DefaultLinker {

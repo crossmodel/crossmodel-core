@@ -2,8 +2,8 @@
  * Copyright (c) 2025 CrossBreeze.
  ********************************************************************************/
 
-import { CustomProperty, LogicalAttribute, LogicalIdentifier as ProtocolLogicalIdentifier, unreachable } from '@crossmodel/protocol';
-import { DispatchAction, ModelAction, ModelState, moveDown, moveUp, undefinedIfEmpty } from './ModelReducer';
+import { CustomProperty, LogicalEntityAttribute, LogicalIdentifier as ProtocolLogicalIdentifier, unreachable } from '@crossmodel/protocol';
+import { DispatchAction, ModelAction, ModelState, moveDown, moveUp } from './ModelReducer';
 
 export type LogicalIdentifier = ProtocolLogicalIdentifier;
 
@@ -25,12 +25,12 @@ export interface EntityChangeDescriptionAction extends ModelAction {
 export interface LogicalAttributeUpdateAction extends ModelAction {
    type: 'entity:attribute:update';
    attributeIdx: number;
-   attribute: LogicalAttribute;
+   attribute: LogicalEntityAttribute;
 }
 
 export interface LogicalAttributeAddEmptyAction extends ModelAction {
    type: 'entity:attribute:add-attribute';
-   attribute: LogicalAttribute;
+   attribute: LogicalEntityAttribute;
 }
 
 export interface LogicalAttributeDeleteAction extends ModelAction {
@@ -40,7 +40,7 @@ export interface LogicalAttributeDeleteAction extends ModelAction {
 
 export interface LogicalAttributeReorderAction extends ModelAction {
    type: 'entity:attribute:reorder-attributes';
-   attributes: LogicalAttribute[];
+   attributes: LogicalEntityAttribute[];
 }
 
 export interface CustomPropertyUpdateAction extends ModelAction {
@@ -147,50 +147,20 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
 
    switch (action.type) {
       case 'entity:change-name':
-         entity.name = undefinedIfEmpty(action.name);
+         entity.name = action.name;
          break;
       case 'entity:change-id':
          entity.id = action.id;
          break;
       case 'entity:change-description':
-         entity.description = undefinedIfEmpty(action.description);
+         entity.description = action.description;
          break;
-
       case 'entity:attribute:update': {
-         // Filter out identifier property and update required fields
-         const cleanAttribute = { ...action.attribute };
-         delete cleanAttribute.identifier;
-         const existingAttribute = entity.attributes[action.attributeIdx];
-         entity.attributes[action.attributeIdx] = {
-            ...action.attribute,
-            name: undefinedIfEmpty(action.attribute.name),
-            description: undefinedIfEmpty(action.attribute.description),
-            datatype: undefinedIfEmpty(action.attribute.datatype),
-            ...(action.attribute.length !== undefined ? { length: action.attribute.length } : {}),
-            ...(action.attribute.precision !== undefined ? { precision: action.attribute.precision } : {}),
-            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {}),
-            // Preserve customProperties from either the action or existing attribute
-            ...((action.attribute as any).customProperties
-               ? { customProperties: (action.attribute as any).customProperties }
-               : (existingAttribute as any)?.customProperties
-                 ? { customProperties: (existingAttribute as any).customProperties }
-                 : {})
-         };
+         entity.attributes[action.attributeIdx] = action.attribute;
          break;
       }
-
       case 'entity:attribute:add-attribute':
-         entity.attributes.push({
-            ...action.attribute,
-            name: undefinedIfEmpty(action.attribute.name),
-            description: undefinedIfEmpty(action.attribute.description),
-            datatype: undefinedIfEmpty(action.attribute.datatype),
-            ...(action.attribute.length !== undefined ? { length: action.attribute.length } : {}),
-            ...(action.attribute.precision !== undefined ? { precision: action.attribute.precision } : {}),
-            ...(action.attribute.scale !== undefined ? { scale: action.attribute.scale } : {}),
-            // Preserve customProperties if they exist
-            ...((action.attribute as any).customProperties ? { customProperties: (action.attribute as any).customProperties } : {})
-         });
+         entity.attributes.push(action.attribute);
          break;
 
       case 'entity:attribute:delete-attribute':
@@ -202,11 +172,7 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          break;
 
       case 'entity:customProperty:update':
-         entity.customProperties![action.customPropertyIdx] = {
-            ...action.customProperty,
-            name: undefinedIfEmpty(action.customProperty.name),
-            description: undefinedIfEmpty(action.customProperty.description)
-         };
+         entity.customProperties![action.customPropertyIdx] = action.customProperty;
          break;
 
       case 'entity:customProperty:add-customProperty':
@@ -223,18 +189,12 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
 
       case 'entity:identifier:update':
          entity.identifiers = entity.identifiers || [];
-         entity.identifiers[action.identifierIdx] = {
-            ...action.identifier,
-            description: undefinedIfEmpty(action.identifier.description)
-         };
+         entity.identifiers[action.identifierIdx] = action.identifier;
          break;
 
       case 'entity:identifier:add-identifier':
          entity.identifiers = entity.identifiers || [];
-         entity.identifiers.push({
-            ...action.identifier,
-            description: undefinedIfEmpty(action.identifier.description)
-         });
+         entity.identifiers.push(action.identifier);
          break;
 
       case 'entity:identifier:delete-identifier':
@@ -243,28 +203,28 @@ export function EntityModelReducer(state: ModelState, action: EntityDispatchActi
          break;
 
       case 'entity:inherit:add':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         (entity as any).superEntities.push(typeof action.inherit === 'string' ? action.inherit : action.inherit);
+         entity.inherits = entity.inherits || [];
+         entity.inherits.push(action.inherit);
          break;
 
       case 'entity:inherit:update':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         (entity as any).superEntities[action.inheritIdx] = typeof action.inherit === 'string' ? action.inherit : action.inherit;
+         entity.inherits = entity.inherits || [];
+         entity.inherits[action.inheritIdx] = action.inherit;
          break;
 
       case 'entity:inherit:delete':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         (entity as any).superEntities.splice(action.inheritIdx, 1);
+         entity.inherits = entity.inherits || [];
+         entity.inherits.splice(action.inheritIdx, 1);
          break;
 
       case 'entity:inherit:move-up':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         moveUp((entity as any).superEntities, action.inheritIdx);
+         entity.inherits = entity.inherits || [];
+         moveUp(entity.inherits, action.inheritIdx);
          break;
 
       case 'entity:inherit:move-down':
-         (entity as any).superEntities = (entity as any).superEntities || [];
-         moveDown((entity as any).superEntities, action.inheritIdx);
+         entity.inherits = entity.inherits || [];
+         moveDown(entity.inherits, action.inheritIdx);
          break;
 
       case 'entity:identifier:reorder-identifiers':

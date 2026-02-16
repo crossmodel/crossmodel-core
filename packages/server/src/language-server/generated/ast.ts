@@ -262,7 +262,7 @@ export function isCustomProperty(item: unknown): item is CustomProperty {
 }
 
 export interface DataElement extends NamedObject {
-    readonly $type: 'DataElement' | 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
+    readonly $type: 'DataElement' | 'LogicalAttribute' | 'LogicalEntityAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
     datatype?: string;
 }
 
@@ -386,7 +386,7 @@ export function isDataModelType(item: unknown): item is DataModelType {
 }
 
 export interface IdentifiedObject extends langium.AstNode {
-    readonly $type: 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataElementContainerMapping' | 'DataElementMapping' | 'DataModel' | 'IdentifiedObject' | 'InheritanceEdge' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNode' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'NamedObject' | 'Relationship' | 'RelationshipEdge' | 'SourceDataElementContainer' | 'SourceObject' | 'SourceObjectAttribute' | 'SystemDiagram' | 'SystemDiagramEdge' | 'TargetObjectAttribute';
+    readonly $type: 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataElementContainerMapping' | 'DataElementMapping' | 'DataModel' | 'IdentifiedObject' | 'InheritanceEdge' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityAttribute' | 'LogicalEntityNode' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'NamedObject' | 'Relationship' | 'RelationshipEdge' | 'SourceDataElementContainer' | 'SourceObject' | 'SourceObjectAttribute' | 'SystemDiagram' | 'SystemDiagramEdge' | 'TargetObjectAttribute';
     id?: string;
 }
 
@@ -447,7 +447,7 @@ export function isJoinType(item: unknown): item is JoinType {
 }
 
 export interface LogicalAttribute extends DataElement, WithCustomProperties {
-    readonly $type: 'LogicalAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
+    readonly $type: 'LogicalAttribute' | 'LogicalEntityAttribute' | 'LogicalEntityNodeAttribute' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
     length?: number;
     mandatory: boolean;
     precision?: number;
@@ -474,9 +474,9 @@ export function isLogicalAttribute(item: unknown): item is LogicalAttribute {
 export interface LogicalEntity extends DataElementContainer, WithCustomProperties {
     readonly $container: CrossModelRoot;
     readonly $type: 'LogicalEntity';
-    attributes: Array<LogicalAttribute>;
+    attributes: Array<LogicalEntityAttribute>;
     identifiers: Array<LogicalIdentifier>;
-    superEntities: Array<langium.Reference<LogicalEntity>>;
+    inherits: Array<langium.Reference<LogicalEntity>>;
 }
 
 export const LogicalEntity = {
@@ -486,12 +486,34 @@ export const LogicalEntity = {
     description: 'description',
     id: 'id',
     identifiers: 'identifiers',
-    name: 'name',
-    superEntities: 'superEntities'
+    inherits: 'inherits',
+    name: 'name'
 } as const;
 
 export function isLogicalEntity(item: unknown): item is LogicalEntity {
     return reflection.isInstance(item, LogicalEntity.$type);
+}
+
+export interface LogicalEntityAttribute extends LogicalAttribute {
+    readonly $container: LogicalEntity;
+    readonly $type: 'LogicalEntityAttribute';
+}
+
+export const LogicalEntityAttribute = {
+    $type: 'LogicalEntityAttribute',
+    customProperties: 'customProperties',
+    datatype: 'datatype',
+    description: 'description',
+    id: 'id',
+    length: 'length',
+    mandatory: 'mandatory',
+    name: 'name',
+    precision: 'precision',
+    scale: 'scale'
+} as const;
+
+export function isLogicalEntityAttribute(item: unknown): item is LogicalEntityAttribute {
+    return reflection.isInstance(item, LogicalEntityAttribute.$type);
 }
 
 export interface LogicalEntityNode extends IdentifiedObject {
@@ -552,7 +574,7 @@ export function isLogicalEntityNodeAttribute(item: unknown): item is LogicalEnti
 export interface LogicalIdentifier extends NamedObject, WithCustomProperties {
     readonly $container: LogicalEntity;
     readonly $type: 'LogicalIdentifier';
-    attributes: Array<langium.Reference<LogicalAttribute>>;
+    attributes: Array<langium.Reference<LogicalEntityAttribute>>;
     primary: boolean;
 }
 
@@ -590,7 +612,7 @@ export function isMapping(item: unknown): item is Mapping {
 }
 
 export interface NamedObject extends IdentifiedObject {
-    readonly $type: 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataModel' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'NamedObject' | 'Relationship' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
+    readonly $type: 'CustomProperty' | 'DataElement' | 'DataElementContainer' | 'DataElementContainerLink' | 'DataModel' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityAttribute' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'NamedObject' | 'Relationship' | 'SourceObjectAttribute' | 'TargetObjectAttribute';
     description?: string;
     name?: string;
 }
@@ -655,8 +677,8 @@ export function isRelationship(item: unknown): item is Relationship {
 export interface RelationshipAttribute extends WithCustomProperties {
     readonly $container: Relationship;
     readonly $type: 'RelationshipAttribute';
-    child?: langium.Reference<LogicalAttribute>;
-    parent?: langium.Reference<LogicalAttribute>;
+    child?: langium.Reference<LogicalEntityAttribute>;
+    parent?: langium.Reference<LogicalEntityAttribute>;
 }
 
 export const RelationshipAttribute = {
@@ -882,7 +904,7 @@ export function isTargetObjectAttribute(item: unknown): item is TargetObjectAttr
 }
 
 export interface WithCustomProperties extends langium.AstNode {
-    readonly $type: 'AttributeMapping' | 'DataModel' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'Relationship' | 'RelationshipAttribute' | 'SourceObject' | 'SourceObjectAttribute' | 'TargetObject' | 'TargetObjectAttribute' | 'WithCustomProperties';
+    readonly $type: 'AttributeMapping' | 'DataModel' | 'LogicalAttribute' | 'LogicalEntity' | 'LogicalEntityAttribute' | 'LogicalEntityNodeAttribute' | 'LogicalIdentifier' | 'Mapping' | 'Relationship' | 'RelationshipAttribute' | 'SourceObject' | 'SourceObjectAttribute' | 'TargetObject' | 'TargetObjectAttribute' | 'WithCustomProperties';
     customProperties: Array<CustomProperty>;
 }
 
@@ -917,6 +939,7 @@ export type CrossModelAstType = {
     JoinCondition: JoinCondition
     LogicalAttribute: LogicalAttribute
     LogicalEntity: LogicalEntity
+    LogicalEntityAttribute: LogicalEntityAttribute
     LogicalEntityNode: LogicalEntityNode
     LogicalEntityNodeAttribute: LogicalEntityNodeAttribute
     LogicalIdentifier: LogicalIdentifier
@@ -1278,16 +1301,51 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                     name: LogicalEntity.identifiers,
                     defaultValue: []
                 },
-                name: {
-                    name: LogicalEntity.name
-                },
-                superEntities: {
-                    name: LogicalEntity.superEntities,
+                inherits: {
+                    name: LogicalEntity.inherits,
                     defaultValue: [],
                     referenceType: LogicalEntity.$type
+                },
+                name: {
+                    name: LogicalEntity.name
                 }
             },
             superTypes: [DataElementContainer.$type, WithCustomProperties.$type]
+        },
+        LogicalEntityAttribute: {
+            name: LogicalEntityAttribute.$type,
+            properties: {
+                customProperties: {
+                    name: LogicalEntityAttribute.customProperties,
+                    defaultValue: []
+                },
+                datatype: {
+                    name: LogicalEntityAttribute.datatype
+                },
+                description: {
+                    name: LogicalEntityAttribute.description
+                },
+                id: {
+                    name: LogicalEntityAttribute.id
+                },
+                length: {
+                    name: LogicalEntityAttribute.length
+                },
+                mandatory: {
+                    name: LogicalEntityAttribute.mandatory,
+                    defaultValue: false
+                },
+                name: {
+                    name: LogicalEntityAttribute.name
+                },
+                precision: {
+                    name: LogicalEntityAttribute.precision
+                },
+                scale: {
+                    name: LogicalEntityAttribute.scale
+                }
+            },
+            superTypes: [LogicalAttribute.$type]
         },
         LogicalEntityNode: {
             name: LogicalEntityNode.$type,
@@ -1370,7 +1428,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 attributes: {
                     name: LogicalIdentifier.attributes,
                     defaultValue: [],
-                    referenceType: LogicalAttribute.$type
+                    referenceType: LogicalEntityAttribute.$type
                 },
                 customProperties: {
                     name: LogicalIdentifier.customProperties,
@@ -1484,7 +1542,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
             properties: {
                 child: {
                     name: RelationshipAttribute.child,
-                    referenceType: LogicalAttribute.$type
+                    referenceType: LogicalEntityAttribute.$type
                 },
                 customProperties: {
                     name: RelationshipAttribute.customProperties,
@@ -1492,7 +1550,7 @@ export class CrossModelAstReflection extends langium.AbstractAstReflection {
                 },
                 parent: {
                     name: RelationshipAttribute.parent,
-                    referenceType: LogicalAttribute.$type
+                    referenceType: LogicalEntityAttribute.$type
                 }
             },
             superTypes: [WithCustomProperties.$type]

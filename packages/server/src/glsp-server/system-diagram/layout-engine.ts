@@ -20,7 +20,7 @@ import {
 } from '@eclipse-glsp/server';
 import ElkConstructor, { ELK, ElkExtendedEdge, ElkGraphElement, ElkLabel, ElkNode, ElkPort, ElkShape } from 'elkjs';
 import { inject, injectable } from 'inversify';
-import { isLogicalEntityNode, LogicalEntityNode } from '../../language-server/generated/ast.js';
+import { isLogicalEntityNode, LogicalEntityNode } from '../../language-server/ast.js';
 import { SystemModelState } from './model/system-model-state.js';
 
 /**

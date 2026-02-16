@@ -36,12 +36,12 @@ Relationship returns Relationship:
 ;
 
 interface RelationshipAttribute extends WithCustomProperties {
-    parent?: @LogicalAttribute
-    child?: @LogicalAttribute
+    parent?: @LogicalEntityAttribute
+    child?: @LogicalEntityAttribute
 }
 
 RelationshipAttribute returns RelationshipAttribute:
-    'parent' ':' (parent=[LogicalAttribute:IDReference])?
-    'child' ':' (child=[LogicalAttribute:IDReference])?
+    'parent' ':' (parent=[LogicalEntityAttribute:IDReference])?
+    'child' ':' (child=[LogicalEntityAttribute:IDReference])?
     CustomPropertiesFragment?
 ;

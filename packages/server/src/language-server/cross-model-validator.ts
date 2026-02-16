@@ -3,17 +3,15 @@
  ********************************************************************************/
 import {
    CrossModelValidationErrors,
+   DATAMODEL_FILE,
+   ModelFileExtensions,
+   ModelMemberPermissions,
    findAllExpressions,
    getExpressionText,
-   getSemanticRoot,
-   isMemberPermittedInModel,
-   ModelFileExtensions,
-   ModelMemberPermissions
+   isMemberPermittedInModel
 } from '@crossmodel/protocol';
 import { AstNode, Reference, UriUtils, ValidationAcceptor, ValidationChecks } from 'langium';
 import { Diagnostic } from 'vscode-languageserver-protocol';
-import type { CrossModelServices } from './cross-model-module.js';
-import { ID_PROPERTY } from './cross-model-naming.js';
 import {
    AttributeMapping,
    AttributeMappingExpression,
@@ -22,11 +20,8 @@ import {
    DataModel,
    IdentifiedObject,
    InheritanceEdge,
-   isCrossModelRoot,
-   isDataModel,
-   isSourceObjectAttributeReference,
-   LogicalAttribute,
    LogicalEntity,
+   LogicalEntityAttribute,
    LogicalIdentifier,
    Mapping,
    NamedObject,
@@ -38,9 +33,14 @@ import {
    SourceObjectCondition,
    SourceObjectDependency,
    TargetObject,
-   TargetObjectAttribute
-} from './generated/ast.js';
-import { findDocument, getOwner, isSemanticRoot } from './util/ast-util.js';
+   TargetObjectAttribute,
+   isCrossModelRoot,
+   isDataModel,
+   isSourceObjectAttributeReference
+} from './ast.js';
+import type { CrossModelServices } from './cross-model-module.js';
+import { ID_PROPERTY } from './cross-model-naming.js';
+import { findDocument, findSemanticRoot, isSemanticRoot } from './util/ast-util.js';
 import { isMissingCrossModelVersion, needsCrossModelMigration } from './util/crossmodel-version-util.js';
 import { getAttributeMappingExpressionRefRange } from './util/expression-range.js';
 
@@ -68,7 +68,7 @@ export function registerValidationChecks(services: CrossModelServices): void {
       DataModel: validator.checkDataModel,
       IdentifiedObject: validator.checkIdentifiedObject,
       AttributeMapping: validator.checkAttributeMapping,
-      LogicalAttribute: validator.checkLogicalAttribute,
+      LogicalEntityAttribute: validator.checkLogicalEntityAttribute,
       LogicalEntity: validator.checkLogicalEntity,
       Mapping: validator.checkMapping,
       Relationship: validator.checkRelationship,
@@ -88,7 +88,10 @@ export function registerValidationChecks(services: CrossModelServices): void {
  * Implementation of custom validations.
  */
 export class CrossModelValidator {
-   constructor(protected services: CrossModelServices) {}
+   constructor(
+      protected services: CrossModelServices,
+      protected logger = services.shared.client.Logger.for('Validator')
+   ) {}
 
    checkDataModel(dataModel: DataModel, accept: ValidationAcceptor): void {
       if (isMissingCrossModelVersion(dataModel)) {
@@ -141,7 +144,15 @@ export class CrossModelValidator {
       const basename = UriUtils.basename(document.uri);
       const extname = ModelFileExtensions.getFileExtension(basename) ?? UriUtils.extname(document.uri);
       const basenameWithoutExt = basename.slice(0, -extname.length);
-      if (basenameWithoutExt.toLowerCase() !== identifiedObject.id?.toLocaleLowerCase()) {
+      if (isDataModel(identifiedObject)) {
+         if (basename !== DATAMODEL_FILE) {
+            accept('error', `Data models need to be placed in ${DATAMODEL_FILE} file to be effective.`, {
+               node: identifiedObject,
+               property: IdentifiedObject.id,
+               data: { code: CrossModelValidationErrors.FilenameNotMatching }
+            });
+         }
+      } else if (basenameWithoutExt.toLowerCase() !== identifiedObject.id?.toLocaleLowerCase()) {
          accept('warning', `Filename should match element id: ${identifiedObject.id}`, {
             node: identifiedObject,
             property: IdentifiedObject.id,
@@ -150,15 +161,15 @@ export class CrossModelValidator {
       }
    }
 
-   checkLogicalAttribute(attribute: LogicalAttribute, accept: ValidationAcceptor): void {
+   checkLogicalEntityAttribute(attribute: LogicalEntityAttribute, accept: ValidationAcceptor): void {
       const datatype = attribute.datatype?.toLowerCase();
 
       // length can only be set for text & binary data type
       if (attribute.length !== undefined && datatype !== 'text' && datatype !== 'binary') {
          accept('error', 'Length is only applicable to Text or Binary datatypes.', {
             node: attribute,
-            property: LogicalAttribute.length,
-            data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.length) }
+            property: LogicalEntityAttribute.length,
+            data: { code: CrossModelValidationErrors.toMalformed(LogicalEntityAttribute.length) }
          });
       }
 
@@ -166,8 +177,8 @@ export class CrossModelValidator {
       if (attribute.precision !== undefined && datatype !== 'decimal' && datatype !== 'integer') {
          accept('error', 'Precision is only applicable to Decimal or Integer datatypes.', {
             node: attribute,
-            property: LogicalAttribute.precision,
-            data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.precision) }
+            property: LogicalEntityAttribute.precision,
+            data: { code: CrossModelValidationErrors.toMalformed(LogicalEntityAttribute.precision) }
          });
       }
 
@@ -175,8 +186,8 @@ export class CrossModelValidator {
       if (attribute.scale !== undefined && datatype !== 'decimal' && datatype !== 'datetime' && datatype !== 'time') {
          accept('error', 'Scale is only applicable to Decimal, DateTime, or Time datatypes.', {
             node: attribute,
-            property: LogicalAttribute.scale,
-            data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.scale) }
+            property: LogicalEntityAttribute.scale,
+            data: { code: CrossModelValidationErrors.toMalformed(LogicalEntityAttribute.scale) }
          });
       }
 
@@ -185,8 +196,8 @@ export class CrossModelValidator {
          if (attribute.scale > attribute.precision) {
             accept('error', 'Scale cannot be larger than Precision.', {
                node: attribute,
-               property: LogicalAttribute.scale,
-               data: { code: CrossModelValidationErrors.toMalformed(LogicalAttribute.scale) }
+               property: LogicalEntityAttribute.scale,
+               data: { code: CrossModelValidationErrors.toMalformed(LogicalEntityAttribute.scale) }
             });
          }
       }
@@ -196,7 +207,7 @@ export class CrossModelValidator {
       if (!isCrossModelRoot(node)) {
          return;
       }
-      const semanticRoot = getSemanticRoot(node);
+      const semanticRoot = findSemanticRoot(node);
       const info = this.services.shared.workspace.DataModelManager.getDataModelInfoByDocument(node.$document);
       const packageType = info?.type;
       // The problem is with the system type, not necessarily anything under it.
@@ -204,7 +215,7 @@ export class CrossModelValidator {
          return;
       }
       if (!isMemberPermittedInModel(packageType, semanticRoot.$type)) {
-         this.services.shared.logger.ClientLogger.info('Issuing a warning: ' + Object.entries(node).join('\n\t'));
+         this.logger.info('Issuing a warning: ' + Object.entries(node).join('\n\t'));
          accept('error', `Member of type '${semanticRoot?.$type}' is not permitted in a model of type '${packageType}'.`, { node });
       }
    }
@@ -228,15 +239,15 @@ export class CrossModelValidator {
       const cycle = this.findInheritanceCycle(entity);
       if (cycle.length > 0) {
          const message = `Inheritance cycle detected: ${cycle.join(' -> ')}.`;
-         for (let idx = 0; idx < entity.superEntities.length; idx++) {
-            const superEntityRef = entity.superEntities[idx];
+         for (let idx = 0; idx < entity.inherits.length; idx++) {
+            const superEntityRef = entity.inherits[idx];
             const refEntity = superEntityRef.ref;
             if (refEntity && refEntity.id && cycle.includes(refEntity.id)) {
                // Provide the parent node plus the property and index. Langium's DiagnosticInfo
                // may include an index for elements in lists; our CrossModelDocumentValidator
                // will use that index to construct the element path. This avoids trying to
                // cast the reference object to an AstNode.
-               accept('error', message, { node: entity, property: LogicalEntity.superEntities, index: idx });
+               accept('error', message, { node: entity, property: LogicalEntity.inherits, index: idx });
             }
          }
       }
@@ -259,7 +270,7 @@ export class CrossModelValidator {
          recursionStack.add(currentId);
          path.push(currentId);
 
-         for (const superEntityRef of current.superEntities) {
+         for (const superEntityRef of current.inherits) {
             const superEntity = superEntityRef.ref;
             if (!superEntity) {
                continue; // Ignore unresolved references
@@ -295,8 +306,8 @@ export class CrossModelValidator {
    checkRelationship(relationship: Relationship, accept: ValidationAcceptor): void {
       // we check that each attribute actually belongs to their respective entity (parent, child)
       // and that each attribute is only used once
-      const usedParentAttributes: LogicalAttribute[] = [];
-      const usedChildAttributes: LogicalAttribute[] = [];
+      const usedParentAttributes: LogicalEntityAttribute[] = [];
+      const usedChildAttributes: LogicalEntityAttribute[] = [];
       if (!relationship.child) {
          accept('error', 'Child entity is required.', {
             node: relationship,
@@ -382,7 +393,7 @@ export class CrossModelValidator {
    }
 
    checkInheritanceEdge(edge: InheritanceEdge, accept: ValidationAcceptor): void {
-      const superEntities = edge.baseNode.ref?.entity.ref?.superEntities ?? [];
+      const superEntities = edge.baseNode.ref?.entity.ref?.inherits ?? [];
       if (!superEntities.some(entity => entity.ref === edge.superNode.ref?.entity.ref)) {
          accept('error', 'Base entity must inherit from super entity', { node: edge, property: InheritanceEdge.superNode });
       }
@@ -494,7 +505,7 @@ export class CrossModelValidator {
          if (!reference.ref) {
             return true;
          }
-         const referencedSourceObject = getOwner(reference.ref);
+         const referencedSourceObject = reference.ref.$container;
          return (
             referencedSourceObject === sourceObject ||
             !!sourceObject.dependencies.find(dependency => dependency.source.ref === referencedSourceObject)

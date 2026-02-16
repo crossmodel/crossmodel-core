@@ -25,7 +25,7 @@ import {
    useRedo,
    useUndo
 } from '../../ModelContext';
-import { GridColumn, handleGenericRowReorder, PrimeDataGrid } from './PrimeDataGrid';
+import { GridColumn, PrimeDataGrid, handleGenericRowReorder } from './PrimeDataGrid';
 import { handleGridEditorKeyDown, handleUndoRedoKeys, wasSaveTriggeredByEnter } from './gridKeydownHandler';
 
 interface AttributeMappingSourceValueProps {
@@ -91,7 +91,7 @@ function AttributeMappingSourceEditor(props: AttributeMappingSourceEditorProps):
 
    const referenceCtx: CrossReferenceContext = React.useMemo(
       () => ({
-         container: { globalId: mapping.id },
+         container: { globalId: mapping.id! },
          syntheticElements: [
             { property: 'target', type: TargetObjectType },
             { property: 'mappings', type: AttributeMappingType },
@@ -233,7 +233,7 @@ export function AttributeMappingSourcesDataGrid({
    const sourcesRef = React.useRef<AttributeMappingSource[]>(attributeMapping.sources || []);
 
    const deriveSourceRowId = React.useCallback((source: Partial<AttributeMappingSource>, idx: number): string => {
-      const globalId = (source as { $globalId?: string })?.$globalId;
+      const globalId = (source as { _globalId?: string })?._globalId;
       return globalId ?? `source-${idx}`;
    }, []);
 

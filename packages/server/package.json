@@ -1,6 +1,6 @@
 {
   "name": "@crossmodel/server",
-  "version": "0.26.1",
+  "version": "0.26.3",
   "description": "CrossModel language, GLSP and model server components",
   "homepage": "https://github.com/crossmodel/crossmodel-core",
   "repository": {
@@ -25,8 +25,10 @@
     "syntaxes"
   ],
   "scripts": {
-    "build": "yarn langium:generate && tsc -b",
+    "build": "yarn generate && tsc -b",
     "clean": "rimraf lib tsconfig.tsbuildinfo",
+    "generate": "yarn langium:generate && yarn generate:transfer-model",
+    "generate:transfer-model": "tsx src/scripts/generate-transfer-model.ts",
     "langium:generate": "langium generate",
     "langium:watch": "langium generate --watch",
     "lint": "eslint -c ./.eslintrc.cjs --ext .ts,.tsx ./src",
@@ -34,7 +36,7 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@crossmodel/protocol": "0.26.1",
+    "@crossmodel/protocol": "0.26.3",
     "@eclipse-glsp/server": "2.5.0",
     "elkjs": "^0.11.0",
     "fast-json-patch": "^3.1.0",
@@ -51,6 +53,7 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "langium-cli": "^4.2.0"
+    "langium-cli": "^4.2.0",
+    "tsx": "^4.0.0"
   }
 }

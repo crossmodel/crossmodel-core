@@ -23,12 +23,12 @@ import {
    SourceModelStorage
 } from '@eclipse-glsp/server';
 import { inject, injectable, postConstruct } from 'inversify';
-import { AstNode, AstUtils } from 'langium';
+import { AstUtils, isMultiReference } from 'langium';
 import debounce from 'p-debounce';
 import { DiagnosticSeverity } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import { CrossModelRoot } from '../../language-server/generated/ast.js';
-import { AstCrossModelDocument } from '../../model-server/open-text-document-manager.js';
+import { findDocumentRoot } from '../../language-server/util/ast-util.js';
+import { AstModelDocument } from '../../model-server/open-text-document-manager.js';
 import { CrossModelState } from './cross-model-state.js';
 
 /**
@@ -76,7 +76,7 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
       );
    }
 
-   protected async update(uri: string, document?: AstCrossModelDocument): Promise<AstCrossModelDocument | undefined> {
+   protected async update(uri: string, document?: AstModelDocument): Promise<AstModelDocument | undefined> {
       const doc = document ?? (await this.state.modelService.request(uri));
       if (doc) {
          this.state.setSemanticRoot(uri, doc.root);
@@ -90,7 +90,7 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
       return doc;
    }
 
-   protected async updateEditMode(document: AstCrossModelDocument): Promise<Action[]> {
+   protected async updateEditMode(document: AstModelDocument): Promise<Action[]> {
       const actions = [];
       const prevEditMode = this.state.editMode;
       // Only set readonly mode for parse/lexing errors, not validation errors
@@ -111,7 +111,7 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
       return actions;
    }
 
-   protected updateAndSubmit = debounce(async (rootUri: string, document: AstCrossModelDocument): Promise<Action[]> => {
+   protected updateAndSubmit = debounce(async (rootUri: string, document: AstModelDocument): Promise<Action[]> => {
       await this.update(rootUri, document);
       return [...(await this.submissionHandler.submitModel('external')), ...(await this.updateEditMode(document))];
    }, 250);
@@ -122,15 +122,14 @@ export class CrossModelStorage implements SourceModelStorage, ClientSessionListe
       // save document and all related documents
       this.state.modelService.save({ uri: saveUri, model: this.state.semanticRoot, clientId: this.state.clientId });
       AstUtils.streamReferences(this.state.semanticRoot)
-         .map(refInfo => {
-            if ('items' in refInfo.reference) {
-               return refInfo.reference.items.map(item => item.ref).filter((ref): ref is AstNode => ref !== undefined);
+         .flatMap(refInfo => {
+            if (isMultiReference(refInfo.reference)) {
+               return refInfo.reference.items.map(item => item.ref).filter(ref => ref !== undefined);
             } else {
                return refInfo.reference.ref ? [refInfo.reference.ref] : [];
             }
          })
-         .flat()
-         .map(ref => AstUtils.findRootNode(ref) as CrossModelRoot)
+         .map(ref => findDocumentRoot(ref))
          .forEach(root =>
             this.state.modelService.save({ uri: root.$document!.uri.toString(), model: root, clientId: this.state.clientId })
          );

@@ -8,7 +8,7 @@ import { URI } from 'vscode-uri';
 import { CrossModelLSPServices } from '../../integration.js';
 import { DataModelInfo } from '../../language-server/cross-model-datamodel-manager.js';
 import { IdProvider } from '../../language-server/cross-model-naming.js';
-import { CrossModelRoot } from '../../language-server/generated/ast.js';
+import { CrossModelRoot } from '../../language-server/ast.js';
 import { ModelService } from '../../model-server/model-service.js';
 import { Serializer } from '../../model-server/serializer.js';
 import { CrossModelIndex } from './cross-model-index.js';

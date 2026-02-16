@@ -3,7 +3,7 @@
  ********************************************************************************/
 import { IntegrationArgs, TheiaGLSPApp } from '@eclipse-glsp/glsp-playwright';
 import { Page } from '@playwright/test';
-import { TheiaEditor, TheiaNotificationIndicator, TheiaNotificationOverlay, TheiaWorkspace } from '@theia/playwright';
+import { TheiaEditor, TheiaNotificationIndicator, TheiaNotificationOverlay, TheiaTextEditor, TheiaWorkspace } from '@theia/playwright';
 import { CMCompositeEditor, IntegratedEditorType } from './cm-composite-editor';
 import { CMExplorerView } from './cm-explorer-view';
 import { CMTheiaIntegration } from './cm-theia-integration';
@@ -30,16 +30,30 @@ export class CMApp extends TheiaGLSPApp {
       await integration.start();
       const shouldWait = args.waitForServers ?? true;
       if (shouldWait) {
+         // Wait for server-connection notifications to appear in the DOM.
+         // Theia auto-dismisses notifications quickly, so the <span> may already
+         // be hidden by the time we check. Using `state: 'attached'` (present in
+         // DOM, visible or not) avoids a noisy timeout when the notification was
+         // auto-dismissed before the overlay could be opened.
+         const overlay = integration.app.notificationOverlay;
+         const notificationSelector = (text: string): string =>
+            '.theia-notifications-overlay .theia-notifications-container.theia-notification-center' +
+            ` .theia-notification-message span:has-text("${text}")`;
          try {
-            await integration.app.notificationOverlay.waitForEntry('Connected to Model Server on port');
-            await integration.app.notificationOverlay.waitForEntry('Connected to Graphical Server on port');
-            await integration.app.notificationOverlay.clearAllNotifications();
+            await integration.app.page.waitForSelector(notificationSelector('Connected to Model Server on port'), {
+               state: 'attached',
+               timeout: 10_000
+            });
+            await integration.app.page.waitForSelector(notificationSelector('Connected to Graphical Server on port'), {
+               state: 'attached',
+               timeout: 10_000
+            });
+            await overlay.clearAllNotifications();
          } catch (err) {
-            // If notifications didn't appear, continue so tests can proceed rather than fail/hang.
-            // Tests that require an active server should set `waitForServers: true` and assert accordingly.
-            // Log for debugging.
+            // If notifications didn't appear at all, continue so tests can proceed rather than fail.
+            const message = err instanceof Error ? err.message.split('\n')[0] : String(err);
             // eslint-disable-next-line no-console
-            console.warn('Server connection notifications not observed during startup:', err);
+            console.warn('Server connection notifications not observed during startup:', message);
          }
       }
 
@@ -101,6 +115,25 @@ export class CMApp extends TheiaGLSPApp {
       expectFileNodes?: boolean | undefined
    ): Promise<T> {
       return super.openEditor(filePath, editorFactory as new (f: string, a: TheiaGLSPApp) => T, editorName, expectFileNodes);
+   }
+
+   /**
+    * Opens the given file in a standalone Text Editor via the explorer
+    * context menu's "Open With..." quick pick.
+    */
+   async openStandaloneTextEditor(filePath: string): Promise<TheiaTextEditor> {
+      const explorer = await this.openExplorerView();
+      const fileNode = await explorer.getFileStatNodeByLabel(filePath);
+      const contextMenu = await fileNode.openContextMenu();
+      await contextMenu.clickMenuItem('Open With...');
+
+      const option = this.page.getByRole('option', { name: /Text Editor/ });
+      await option.waitFor({ state: 'visible' });
+      await option.click();
+
+      const editor = new TheiaTextEditor(filePath, this);
+      await editor.waitForVisible();
+      return editor;
    }
 
    async closeAnyDialog(): Promise<void> {

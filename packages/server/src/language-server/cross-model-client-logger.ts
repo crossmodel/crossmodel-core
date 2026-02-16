@@ -8,7 +8,10 @@ import { CrossModelSharedServices } from './cross-model-module.js';
  * Centralized logger.
  */
 export class ClientLogger {
-   constructor(protected services: CrossModelSharedServices) {}
+   constructor(
+      protected services: CrossModelSharedServices,
+      protected component?: string
+   ) {}
 
    /**
     * Show an error message.
@@ -16,9 +19,7 @@ export class ClientLogger {
     * @param message The message to show.
     */
    error(message?: string): void {
-      if (message) {
-         this.services.lsp.Connection?.console.error(message);
-      }
+      this.send(msg => this.services.lsp.Connection?.console.error(msg), message);
    }
 
    /**
@@ -27,9 +28,7 @@ export class ClientLogger {
     * @param message The message to show.
     */
    warn(message?: string): void {
-      if (message) {
-         this.services.lsp.Connection?.console.warn(message);
-      }
+      this.send(msg => this.services.lsp.Connection?.console.warn(msg), message);
    }
 
    /**
@@ -38,9 +37,7 @@ export class ClientLogger {
     * @param message The message to show.
     */
    info(message?: string): void {
-      if (message) {
-         this.services.lsp.Connection?.console.info(message);
-      }
+      this.send(msg => this.services.lsp.Connection?.console.info(msg), message);
    }
 
    /**
@@ -49,9 +46,7 @@ export class ClientLogger {
     * @param message The message to debug.
     */
    debug(message?: string): void {
-      if (message) {
-         this.services.lsp.Connection?.console.debug(message);
-      }
+      this.send(msg => this.services.lsp.Connection?.console.debug(msg), message);
    }
 
    /**
@@ -60,8 +55,16 @@ export class ClientLogger {
     * @param message The message to log.
     */
    log(message?: string): void {
-      if (message) {
-         this.services.lsp.Connection?.console.log(message);
+      this.send(msg => this.services.lsp.Connection?.console.log(msg), message);
+   }
+
+   protected send(consumer?: (msg: string) => void, message?: string): void {
+      if (consumer && message) {
+         consumer(this.component ? `[${this.component}] ${message}` : message);
       }
+   }
+
+   for(component: string): ClientLogger {
+      return new ClientLogger(this.services, component);
    }
 }

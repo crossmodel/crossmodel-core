@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 import { AttributeMappingExpression, AttributeMappingExpressionType, AttributeMappingSource } from '@crossmodel/protocol';
-import { DispatchAction, ModelAction, ModelState, moveDown, moveUp, undefinedIfEmpty } from './ModelReducer';
+import { DispatchAction, ModelAction, ModelState, moveDown, moveUp } from './ModelReducer';
 
 export interface AttributeMappingChangeExpressionAction extends ModelAction {
    type: 'attribute-mapping:change-expression';
@@ -102,50 +102,21 @@ export function MappingTargetModelReducer(state: ModelState, action: MappingTarg
    }
 
    state.reason = action.type;
-
-   const getExpressions = (): AttributeMappingExpression[] => {
-      const current = (attributeMapping as any).expressions as AttributeMappingExpression[] | undefined;
-      if (current) {
-         return current;
-      }
-      const initialized: AttributeMappingExpression[] = [];
-      (attributeMapping as any).expressions = initialized;
-      return initialized;
-   };
-
-   const setExpressions = (expressions: AttributeMappingExpression[]): void => {
-      (attributeMapping as any).expressions = expressions;
-   };
-
-   const getSources = (): AttributeMappingSource[] => {
-      const current = attributeMapping.sources as AttributeMappingSource[] | undefined;
-      if (current) {
-         return current;
-      }
-      const initialized: AttributeMappingSource[] = [];
-      attributeMapping.sources = initialized;
-      return initialized;
-   };
-
-   const setSources = (sources: AttributeMappingSource[]): void => {
-      attributeMapping.sources = sources;
-   };
-
    switch (action.type) {
       case 'attribute-mapping:change-expression': {
-         const expressions = getExpressions();
+         const expressions = attributeMapping.expressions;
          const existing = expressions[0] ?? { $type: AttributeMappingExpressionType, language: '', expression: '' };
          const updated: AttributeMappingExpression = {
             $type: AttributeMappingExpressionType,
-            language: existing.language ?? '',
-            expression: undefinedIfEmpty(action.expression)
+            language: existing.language,
+            expression: action.expression
          };
-         setExpressions([updated, ...expressions.slice(1)]);
+         attributeMapping.expressions = [updated, ...expressions.slice(1)];
          break;
       }
 
       case 'attribute-mapping:add-expression': {
-         const expressions = getExpressions();
+         const expressions = attributeMapping.expressions;
          const next: AttributeMappingExpression[] = [
             ...expressions,
             {
@@ -154,83 +125,74 @@ export function MappingTargetModelReducer(state: ModelState, action: MappingTarg
                expression: action.expression.expression
             }
          ];
-         setExpressions(next as AttributeMappingExpression[]);
+         attributeMapping.expressions = next;
          break;
       }
 
       case 'attribute-mapping:update-expression': {
-         const expressions = getExpressions();
+         const expressions = attributeMapping.expressions;
          if (expressions[action.expressionIdx]) {
             const next = expressions.slice();
             next[action.expressionIdx] = {
                $type: AttributeMappingExpressionType,
                language: action.expression.language,
                expression: action.expression.expression
-            } as AttributeMappingExpression;
-            setExpressions(next as AttributeMappingExpression[]);
+            };
+            attributeMapping.expressions = next;
          }
          break;
       }
 
       case 'attribute-mapping:delete-expression': {
-         const expressions = getExpressions();
+         const expressions = attributeMapping.expressions;
          const next = expressions.slice();
          next.splice(action.expressionIdx, 1);
-         setExpressions(next as AttributeMappingExpression[]);
+         attributeMapping.expressions = next;
          break;
       }
 
       case 'attribute-mapping:reorder-expressions': {
-         setExpressions(
-            action.expressions.map(
-               expr =>
-                  ({
-                     $type: AttributeMappingExpressionType,
-                     language: expr.language,
-                     expression: expr.expression
-                  }) as AttributeMappingExpression
-            )
-         );
+         attributeMapping.expressions = action.expressions.slice();
          break;
       }
 
       case 'attribute-mapping:update-source': {
-         const next = getSources().slice();
+         const next = attributeMapping.sources.slice();
          next[action.sourceIdx] = { ...action.source };
-         setSources(next);
+         attributeMapping.sources = next;
          break;
       }
 
       case 'attribute-mapping:add-source': {
-         const next = getSources().slice();
+         const next = attributeMapping.sources.slice();
          next.push(action.source);
-         setSources(next);
+         attributeMapping.sources = next;
          break;
       }
 
       case 'attribute-mapping:move-source-up': {
-         const next = getSources().slice();
+         const next = attributeMapping.sources.slice();
          moveUp(next, action.sourceIdx);
-         setSources(next);
+         attributeMapping.sources = next;
          break;
       }
 
       case 'attribute-mapping:move-source-down': {
-         const next = getSources().slice();
+         const next = attributeMapping.sources.slice();
          moveDown(next, action.sourceIdx);
-         setSources(next);
+         attributeMapping.sources = next;
          break;
       }
 
       case 'attribute-mapping:delete-source': {
-         const next = getSources().slice();
+         const next = attributeMapping.sources.slice();
          next.splice(action.sourceIdx, 1);
-         setSources(next);
+         attributeMapping.sources = next;
          break;
       }
 
       case 'attribute-mapping:source:reorder-sources': {
-         setSources(action.sources.slice());
+         attributeMapping.sources = action.sources.slice();
          break;
       }
    }

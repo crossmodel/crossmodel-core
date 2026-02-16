@@ -3,7 +3,7 @@
  ********************************************************************************/
 import { getExpression, getExpressionPosition } from '@crossmodel/protocol';
 import type { Range } from 'vscode-languageserver-protocol';
-import type { AttributeMappingExpression } from '../generated/ast.js';
+import type { AttributeMappingExpression } from '../ast.js';
 import { findDocument } from './ast-util.js';
 
 /**

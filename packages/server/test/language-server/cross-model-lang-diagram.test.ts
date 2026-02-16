@@ -4,7 +4,7 @@
 import { describe, expect, test } from '@jest/globals';
 import { isReference } from 'langium';
 
-import { InheritanceEdge, RelationshipEdge, isInheritanceEdge, isRelationshipEdge } from '../../src/language-server/generated/ast';
+import { InheritanceEdge, RelationshipEdge, isInheritanceEdge, isRelationshipEdge } from '../../src/language-server/ast';
 import { diagram1, diagram2, diagram3, diagram4, diagram5, diagram6, diagram7 } from './test-utils/test-documents/diagram/index';
 import { createCrossModelTestServices, parseSystemDiagram } from './test-utils/utils';
 

@@ -1,25 +1,26 @@
 import 'terminals'
 import 'common'
 
+
 interface LogicalEntity extends DataElementContainer, WithCustomProperties {
-    superEntities: @LogicalEntity[];
-    attributes: LogicalAttribute[];
+    inherits: @LogicalEntity[];
+    attributes: LogicalEntityAttribute[];
     identifiers: LogicalIdentifier[];
 }
 
-// LogicalEntity definition 
+// LogicalEntity definition
 LogicalEntity returns LogicalEntity:
     'entity' ':'
         INDENT
             NamedObjectFragment
             ('inherits' ':'
                 INDENT
-                    (LIST_ITEM superEntities+=[LogicalEntity:IDReference])+
+                    (LIST_ITEM inherits+=[LogicalEntity:IDReference])+
                 DEDENT
             )?
             ('attributes' ':'
                 INDENT
-                    (LIST_ITEM attributes+=LogicalAttribute)+
+                    (LIST_ITEM attributes+=LogicalEntityAttribute)+
                 DEDENT
             )?
             ('identifiers' ':'
@@ -38,7 +39,10 @@ interface LogicalAttribute extends DataElement, WithCustomProperties {
     scale?: number;
 }
 
-LogicalAttribute returns LogicalAttribute:
+interface LogicalEntityAttribute extends LogicalAttribute {
+}
+
+LogicalEntityAttribute returns LogicalEntityAttribute:
     NamedObjectFragment
     ('datatype' ':' datatype=STRING)?
     ('length' ':' length=NUMBER)?
@@ -50,7 +54,7 @@ LogicalAttribute returns LogicalAttribute:
 
 interface LogicalIdentifier extends NamedObject, WithCustomProperties {
     primary?: boolean;
-    attributes: @LogicalAttribute[];
+    attributes: @LogicalEntityAttribute[];
 }
 
 LogicalIdentifier returns LogicalIdentifier:
@@ -58,7 +62,7 @@ LogicalIdentifier returns LogicalIdentifier:
     (primary?='primary' ':' ('TRUE' | 'true'))?
     ('attributes' ':'
         INDENT
-            (LIST_ITEM attributes+=[LogicalAttribute:IDReference])+
+            (LIST_ITEM attributes+=[LogicalEntityAttribute:IDReference])+
         DEDENT
     )?
     CustomPropertiesFragment?
