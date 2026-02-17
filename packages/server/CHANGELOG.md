@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.27.0](https://github.com/crossmodel/crossmodel-core/compare/v0.26.4...v0.27.0) (2026-02-17)
+
+
+### Features
+
+* Add crossmodel edition info to DataModel ([#266](https://github.com/crossmodel/crossmodel-core/issues/266)) ([90d6f37](https://github.com/crossmodel/crossmodel-core/commit/90d6f3735d1a0531f3ddb274b06ef5e9467a5f4d))
+
+
+
+
+
 ## [0.26.4](https://github.com/crossmodel/crossmodel-core/compare/v0.26.3...v0.26.4) (2026-02-16)
 
 **Note:** Version bump only for package @crossmodel/server
