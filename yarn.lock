@@ -1706,14 +1706,7 @@
   resolved "https://registry.yarnpkg.com/@isaacs/balanced-match/-/balanced-match-4.0.1.tgz#3081dadbc3460661b751e7591d7faea5df39dd29"
   integrity sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==
 
-"@isaacs/brace-expansion@^5.0.0":
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/@isaacs/brace-expansion/-/brace-expansion-5.0.1.tgz#0ef5a92d91f2fff2a37646ce54da9e5f599f6eff"
-  integrity sha512-WMz71T1JS624nWj2n2fnYAuPovhv7EUhk69R6i9dsVyzxt5eM3bjwvgk9L+APE1TRscGysAVMANkB0jh0LQZrQ==
-  dependencies:
-    "@isaacs/balanced-match" "^4.0.1"
-
-"@isaacs/brace-expansion@^5.0.1":
+"@isaacs/brace-expansion@^5.0.0", "@isaacs/brace-expansion@^5.0.1":
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/@isaacs/brace-expansion/-/brace-expansion-5.0.1.tgz#0ef5a92d91f2fff2a37646ce54da9e5f599f6eff"
   integrity sha512-WMz71T1JS624nWj2n2fnYAuPovhv7EUhk69R6i9dsVyzxt5eM3bjwvgk9L+APE1TRscGysAVMANkB0jh0LQZrQ==
@@ -3730,6 +3723,11 @@
     jsonc-parser "^2.2.0"
     tslib "^2.6.2"
     valid-filename "^2.0.1"
+
+"@tony.ganchev/eslint-plugin-header@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/@tony.ganchev/eslint-plugin-header/-/eslint-plugin-header-3.3.0.tgz#723ce34b15d8f19f822fdee23ead299c4339b2d8"
+  integrity sha512-yWP5n7GXWU2NdOJuQtGSKiRm4i+YwqSjNqHMCOscnzHiv9rI7PIap7DiHz4E4ajWa0MdQICxnwKrk5isvZFcjw==
 
 "@tootallnate/once@1", "@tootallnate/once@^1.1.2":
   version "1.1.2"
@@ -8178,11 +8176,6 @@ eslint-plugin-deprecation@^1.3.3:
     "@typescript-eslint/utils" "^6.0.0"
     tslib "^2.3.1"
     tsutils "^3.21.0"
-
-eslint-plugin-header@^3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-header/-/eslint-plugin-header-3.1.1.tgz#6ce512432d57675265fac47292b50d1eff11acd6"
-  integrity sha512-9vlKxuJ4qf793CmeeSrZUvVClw6amtpghq3CuWcB5cUNnWHQhgcqy5eF8oVKFk1G3Y/CbchGfEaw3wiIJaNmVg==
 
 eslint-plugin-import@^2.26.0:
   version "2.32.0"

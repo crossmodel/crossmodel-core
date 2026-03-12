@@ -1,9 +1,9 @@
+/* eslint-disable */
 /******************************************************************************
  * Generated from the Langium AST — DO NOT EDIT MANUALLY!
  * Run: yarn --cwd packages/server generate:transfer-model
  ******************************************************************************/
 
-/* eslint-disable */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type Reference<T> = string;

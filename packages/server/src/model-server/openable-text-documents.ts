@@ -1,8 +1,8 @@
+/* eslint-disable @tony.ganchev/header/header */
 /* --------------------------------------------------------------------------------------------
  * Copyright (c) Microsoft Corporation and EclipseSource. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-// eslint-disable-next-line header/header
 import { NormalizedTextDocuments } from 'langium/lsp';
 import { basename } from 'path';
 import {

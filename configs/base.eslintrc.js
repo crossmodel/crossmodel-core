@@ -7,7 +7,7 @@ module.exports = {
          jsx: true
       }
    },
-   plugins: ['@typescript-eslint', 'header', 'import', 'no-null', 'deprecation', 'jest'],
+   plugins: ['@typescript-eslint', '@tony.ganchev/header', 'import', 'no-null', 'deprecation', 'jest'],
    extends: [
       'eslint:recommended',
       'plugin:@typescript-eslint/recommended',
