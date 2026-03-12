@@ -59,7 +59,7 @@ module.exports = {
          }
       ],
       // eslint-plugin-header
-      'header/header': [
+      '@tony.ganchev/header/header': [
          2,
          'block',
          [

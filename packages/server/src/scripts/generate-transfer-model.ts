@@ -275,12 +275,12 @@ function generate(): void {
    const out: string[] = [];
 
    // Header
+   out.push('/* eslint-disable */');
    out.push('/******************************************************************************');
    out.push(' * Generated from the Langium AST — DO NOT EDIT MANUALLY!');
    out.push(' * Run: yarn --cwd packages/server generate:transfer-model');
    out.push(' ******************************************************************************/');
    out.push('');
-   out.push('/* eslint-disable */');
    out.push('');
    // Base types (inlined — no external dependency)
    out.push('// eslint-disable-next-line @typescript-eslint/no-unused-vars');
